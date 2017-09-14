@@ -24,8 +24,8 @@ describe("uuid-mssql", () => {
         const postRepository = connection.getRepository(Post);
         const questionRepository = connection.getRepository(Question);
         const queryRunner = connection.createQueryRunner();
-        const postTableSchema = await queryRunner.loadTableSchema("post");
-        const questionTableSchema = await queryRunner.loadTableSchema("question");
+        const postTableSchema = await queryRunner.getTable("post");
+        const questionTableSchema = await queryRunner.getTable("question");
         await queryRunner.release();
 
         const post = new Post();

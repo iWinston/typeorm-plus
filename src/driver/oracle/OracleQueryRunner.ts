@@ -310,15 +310,15 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Loads given table's data from the database.
      */
-    async loadTableSchema(tableName: string): Promise<TableSchema|undefined> {
-        const tableSchemas = await this.loadTableSchemas([tableName]);
+    async getTable(tableName: string): Promise<TableSchema|undefined> {
+        const tableSchemas = await this.getTables([tableName]);
         return tableSchemas.length > 0 ? tableSchemas[0] : undefined;
     }
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
+    async getTables(tableNames: string[]): Promise<TableSchema[]> {
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)
             return [];
@@ -487,7 +487,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (tableSchemaOrName instanceof TableSchema) {
             tableSchema = tableSchemaOrName;
         } else {
-            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+            tableSchema = await this.getTable(tableSchemaOrName);
         }
 
         if (!tableSchema)
@@ -523,7 +523,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (tableSchemaOrName instanceof TableSchema) {
             tableSchema = tableSchemaOrName;
         } else {
-            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+            tableSchema = await this.getTable(tableSchemaOrName);
         }
 
         if (!tableSchema)

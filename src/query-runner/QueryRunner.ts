@@ -12,6 +12,9 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  * Runs queries on a single database connection.
  *
  * todo: extract schema build operations out of query runner.
+ *
+ * todo: add following methods:
+ * - renameTable
  */
 export interface QueryRunner {
 
@@ -115,14 +118,16 @@ export interface QueryRunner {
     insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads a table by a given given name from the database and creates a TableSchema from them.
      */
-    loadTableSchema(tableName: string): Promise<TableSchema|undefined>;
+    getTable(tableName: string): Promise<TableSchema|undefined>;
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     *
+     * todo: make tableNames optional
      */
-    loadTableSchemas(tableNames: string[]): Promise<TableSchema[]>;
+    getTables(tableNames: string[]): Promise<TableSchema[]>;
 
     /**
      * Checks if table with the given name exist in the database.

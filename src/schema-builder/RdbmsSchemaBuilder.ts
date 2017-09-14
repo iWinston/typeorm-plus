@@ -116,7 +116,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected loadTableSchemas(): Promise<TableSchema[]> {
         const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.tableName);
-        return this.queryRunner.loadTableSchemas(tableNames);
+        return this.queryRunner.getTables(tableNames);
     }
 
     /**

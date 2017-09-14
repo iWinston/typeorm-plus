@@ -207,7 +207,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
+    async getTables(tableNames: string[]): Promise<TableSchema[]> {
 
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)

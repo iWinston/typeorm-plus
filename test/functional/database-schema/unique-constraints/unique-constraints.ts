@@ -21,7 +21,7 @@ describe("indices > reading index from entity schema and updating database", () 
         it("should create a table containing a unique constraint in one column", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             expect(tableSchema!.findColumnByName("lastname")!.isUnique).to.be.true;
@@ -33,7 +33,7 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
             
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             expect(tableSchema!.findColumnByName("lastname")!.isUnique).to.be.true;
@@ -48,7 +48,7 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
             
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             tableSchema!.findColumnByName("lastname")!.isUnique = false;
@@ -63,7 +63,7 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
             
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             tableSchema!.findColumnByName("lastname")!.isUnique = false;

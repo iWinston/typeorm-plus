@@ -19,7 +19,7 @@ describe("github issues > #695 Join columns are not using correct length", () =>
     it("should set correct length on to join columns", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.loadTableSchema("device_instances");
+        const tableSchema = await queryRunner.getTable("device_instances");
         await queryRunner.release();
 
         const device = new Device();

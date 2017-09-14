@@ -319,15 +319,15 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Loads given table's data from the database.
      */
-    async loadTableSchema(tableName: string): Promise<TableSchema|undefined> {
-        const tableSchemas = await this.loadTableSchemas([tableName]);
+    async getTable(tableName: string): Promise<TableSchema|undefined> {
+        const tableSchemas = await this.getTables([tableName]);
         return tableSchemas.length > 0 ? tableSchemas[0] : undefined;
     }
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadTableSchemas(tableNames: string[]): Promise<TableSchema[]> {
+    async getTables(tableNames: string[]): Promise<TableSchema[]> {
         // if no tables given then no need to proceed
         if (!tableNames || !tableNames.length)
             return [];
@@ -517,7 +517,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (tableSchemaOrName instanceof TableSchema) {
             tableSchema = tableSchemaOrName;
         } else {
-            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+            tableSchema = await this.getTable(tableSchemaOrName);
         }
 
         if (!tableSchema)
@@ -553,7 +553,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         if (tableSchemaOrName instanceof TableSchema) {
             tableSchema = tableSchemaOrName;
         } else {
-            tableSchema = await this.loadTableSchema(tableSchemaOrName);
+            tableSchema = await this.getTable(tableSchemaOrName);
         }
 
         if (!tableSchema)
