@@ -24,7 +24,7 @@ describe("database schema > column types > mysql", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.loadTableSchema("post");
+        const tableSchema = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();
@@ -148,7 +148,7 @@ describe("database schema > column types > mysql", () => {
 
         const postRepository = connection.getRepository(PostWithOptions);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.loadTableSchema("post_with_options");
+        const tableSchema = await queryRunner.getTable("post_with_options");
         await queryRunner.release();
 
         const post = new PostWithOptions();
@@ -226,7 +226,7 @@ describe("database schema > column types > mysql", () => {
 
         const postRepository = connection.getRepository(PostWithoutTypes);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.loadTableSchema("post_without_types");
+        const tableSchema = await queryRunner.getTable("post_without_types");
         await queryRunner.release();
 
         const post = new PostWithoutTypes();

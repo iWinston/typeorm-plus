@@ -22,7 +22,7 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.loadTableSchema("post");
+        const tableSchema = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();

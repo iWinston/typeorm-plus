@@ -1,5 +1,6 @@
 # Using CLI
 
+* [Initialize a new TypeORM project](#initialize-a-new-typeorm-project)
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
 * [Create a new migration](#create-a-new-migration)
@@ -10,7 +11,45 @@
 * [Log sync database schema queries without actual running them](#log-sync-database-schema-queries-without-actual-running-them)
 * [Drop database schema](#drop-database-schema)
 * [Run any sql query](#run-any-sql-query)
+* [Check version](#check-version)
 * Create database backup [TBD]
+
+## Initialize a new TypeORM project
+
+You can create a new project with everything already setup using following command:
+
+```
+typeorm init
+```
+
+It creates all files needed for a basic project with TypeORM:
+
+* package.json
+* README.md
+* tsconfig.json
+* ormconfig.json
+* src/entity/User.ts
+* src/index.ts
+
+Then you can run `npm install` to install all dependencies.
+Once all dependencies are installed you need to modify `ormconfig.json` and insert your own database settings.
+After that you can run your application by running `npm start` command.
+
+All files are generated inside current directory where you are.
+If you want to generate in a specific directory you can use `--name` option: 
+
+```
+typeorm init --name my-project
+```
+
+You can also generate a `docker-compose.yml` file if you want to use `docker` in your project by running following command:
+
+```
+typeorm init --docker
+```
+
+Using `typeorm init` command is the easiest and fastest way to setup a TypeORM project.
+
 
 ## Create a new entity
 
@@ -174,4 +213,12 @@ You can execute any sql query you want directly in the database using following 
 
 ```
 typeorm query "SELECT * FROM USERS"
+```
+
+## Check version
+
+You can check what typeorm version you have installed (both local and global) by running following command:
+
+```
+typeorm version
 ```
