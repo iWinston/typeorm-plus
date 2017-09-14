@@ -442,14 +442,14 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Loads given table's data from the database.
      */
-    async loadTableSchema(collectionName: string): Promise<TableSchema|undefined> {
+    async getTable(collectionName: string): Promise<TableSchema|undefined> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Loads all tables (with given names) from the database and creates a TableSchema from them.
      */
-    async loadTableSchemas(collectionNames: string[]): Promise<TableSchema[]> {
+    async getTables(collectionNames: string[]): Promise<TableSchema[]> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
         // так я от тебя не слышу что ты получаешь удовольствие. все что я слышу это как ты делаешь холодные расчеты для вы
     }

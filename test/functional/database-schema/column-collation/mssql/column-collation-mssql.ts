@@ -21,7 +21,7 @@ describe("database schema > column collation > mssql", () => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.loadTableSchema("post");
+        const tableSchema = await queryRunner.getTable("post");
         await queryRunner.release();
 
         const post = new Post();

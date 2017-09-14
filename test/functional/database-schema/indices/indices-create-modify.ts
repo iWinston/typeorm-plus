@@ -23,7 +23,7 @@ describe("indices > reading index from entity schema and updating database", () 
         it("should create a non unique index with 2 columns", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             expect(tableSchema!.indices.length).to.be.equal(1);
@@ -44,7 +44,7 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             expect(tableSchema!.indices.length).to.be.equal(1);
@@ -73,7 +73,7 @@ describe("indices > reading index from entity schema and updating database", () 
             await connection.synchronize(false);
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             expect(tableSchema!.indices.length).to.be.equal(1);

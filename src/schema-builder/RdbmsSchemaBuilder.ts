@@ -6,7 +6,6 @@ import {IndexSchema} from "./schema/IndexSchema";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {PrimaryKeySchema} from "./schema/PrimaryKeySchema";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {IndexMetadata} from "../metadata/IndexMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
@@ -116,7 +115,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected loadTableSchemas(): Promise<TableSchema[]> {
         const tableNames = this.entityToSyncMetadatas.map(metadata => metadata.tableName);
-        return this.queryRunner.loadTableSchemas(tableNames);
+        return this.queryRunner.getTables(tableNames);
     }
 
     /**
@@ -407,24 +406,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async dropColumnReferencedIndices(tableName: string, columnName: string): Promise<void> {
 
-        const allIndexMetadatas = this.connection.entityMetadatas.reduce(
-            (all, metadata) => all.concat(metadata.indices),
-            [] as IndexMetadata[]
-        );
-
         const tableSchema = this.tableSchemas.find(table => table.name === tableName);
         if (!tableSchema)
             return;
 
         // find depend indices to drop them
-        const dependIndices = allIndexMetadatas.filter(indexMetadata => {
-            return indexMetadata.tableName === tableName && !!indexMetadata.columns.find(column => column.databaseName === columnName);
-        });
-        if (!dependIndices.length)
-            return;
-
         const dependIndicesInTable = tableSchema.indices.filter(indexSchema => {
-            return !!dependIndices.find(indexMetadata => indexSchema.name === indexMetadata.name);
+            return indexSchema.tableName === tableName && !!indexSchema.columnNames.find(columnDatabaseName => columnDatabaseName === columnName);
         });
         if (dependIndicesInTable.length === 0)
             return;

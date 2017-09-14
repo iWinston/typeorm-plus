@@ -23,7 +23,7 @@ Its all possible with TypeORM:
 * automatic migrations generation
 * replication
 * connection pooling
-* caching [TBD]
+* query caching
 * CLI to simplify and automate your work with database
 
 And more...
