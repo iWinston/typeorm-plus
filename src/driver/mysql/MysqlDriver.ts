@@ -376,6 +376,14 @@ export class MysqlDriver implements Driver {
         }
     }
 
+    /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique || 
+            !!column.entityMetadata.indices.find(index => index.isUnique && index.columns.length === 1 && index.columns[0] === column);
+    }
+    
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 

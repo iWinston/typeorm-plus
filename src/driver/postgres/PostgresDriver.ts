@@ -449,6 +449,13 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique;
+    }
+
+    /**
      * Normalizes "default" value of the column.
      */
     createFullType(column: ColumnSchema): string {

@@ -354,6 +354,13 @@ export class OracleDriver implements Driver {
         }
     }
 
+    /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique;
+    }
+
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 
