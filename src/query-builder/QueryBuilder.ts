@@ -10,6 +10,7 @@ import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
+import {QueryPartialEntity} from "./QueryPartialEntity";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -167,22 +168,22 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
-    update(updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update(updateSet: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<T>(entity: ObjectType<T>, updateSet: ObjectLiteral): UpdateQueryBuilder<T>;
+    update<T>(entity: ObjectType<T>, updateSet?: QueryPartialEntity<T>): UpdateQueryBuilder<T>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update(entity: string, updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update(entity: Function|string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
      */
-    update(tableName: string, updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update(tableName: string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query and applies given update values.
@@ -223,11 +224,27 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets entity's relation with which this query builder gonna work.
      */
-    relation(entityTarget: Function|string, propertyPath: string): RelationQueryBuilder<Entity> {
+    relation(propertyPath: string): RelationQueryBuilder<Entity>;
+
+    /**
+     * Sets entity's relation with which this query builder gonna work.
+     */
+    relation<T>(entityTarget: ObjectType<T>|string, propertyPath: string): RelationQueryBuilder<T>;
+
+    /**
+     * Sets entity's relation with which this query builder gonna work.
+     */
+    relation(entityTargetOrPropertyPath: Function|string, maybePropertyPath?: string): RelationQueryBuilder<Entity> {
+        const entityTarget = arguments.length === 2 ? entityTargetOrPropertyPath : undefined;
+        const propertyPath = arguments.length === 2 ? maybePropertyPath as string : entityTargetOrPropertyPath as string;
+
         this.expressionMap.queryType = "relation";
-        // qb.expressionMap.propertyPath = propertyPath;
-        const mainAlias = this.createFromAlias(entityTarget);
-        this.expressionMap.setMainAlias(mainAlias);
+        this.expressionMap.relationPropertyPath = propertyPath;
+
+        if (entityTarget) {
+            const mainAlias = this.createFromAlias(entityTarget);
+            this.expressionMap.setMainAlias(mainAlias);
+        }
 
         // loading it dynamically because of circular issue
         const RelationQueryBuilderCls = require("./RelationQueryBuilder").RelationQueryBuilder;
@@ -235,6 +252,31 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new RelationQueryBuilderCls(this);
+    }
+
+
+    /**
+     * Checks if given relation exists in the entity.
+     * Returns true if relation exists, false otherwise.
+     */
+    hasRelation<T>(target: ObjectType<T>|string, relation: string): boolean;
+
+    /**
+     * Checks if given relations exist in the entity.
+     * Returns true if relation exists, false otherwise.
+     */
+    hasRelation<T>(target: ObjectType<T>|string, relation: string[]): boolean;
+
+    /**
+     * Checks if given relation or relations exist in the entity.
+     * Returns true if relation exists, false otherwise.
+     */
+    hasRelation<T>(target: ObjectType<T>|string, relation: string|string[]): boolean {
+        const entityMetadata = this.connection.getMetadata(target);
+        const relations = relation instanceof Array ? relation : [relation];
+        return relations.every(relation => {
+            return !!entityMetadata.findRelationWithPropertyPath(relation);
+        });
     }
 
     /**

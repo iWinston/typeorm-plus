@@ -183,6 +183,17 @@ export class QueryExpressionMap {
      */
     cacheId: string;
 
+    /**
+     * Property path of relation to work with.
+     * Used in relational query builder.
+     */
+    relationPropertyPath: string;
+
+    /**
+     * Entity (target) which relations will be updated.
+     */
+    of: any|any[];
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -310,6 +321,8 @@ export class QueryExpressionMap {
         map.cache = this.cache;
         map.cacheId = this.cacheId;
         map.cacheDuration = this.cacheDuration;
+        map.relationPropertyPath = this.relationPropertyPath;
+        map.of = this.of;
         return map;
     }
 
