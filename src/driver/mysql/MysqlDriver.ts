@@ -268,8 +268,8 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.valueTransformer)
-            value = columnMetadata.valueTransformer.transformTo(value);
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.transformTo(value);
 
         if (value === null || value === undefined)
             return value;
@@ -303,8 +303,8 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.valueTransformer)
-            value = columnMetadata.valueTransformer.transformFrom(value);
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.transformFrom(value);
 
         if (value === null || value === undefined)
             return value;

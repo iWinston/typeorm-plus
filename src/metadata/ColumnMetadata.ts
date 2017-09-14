@@ -210,7 +210,7 @@ export class ColumnMetadata {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    valueTransformer?: ValueTransformer<any, any>;
+    transformer?: ValueTransformer<any, any>;
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -282,8 +282,8 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
-        if (options.args.options.valueTransformer)
-            this.valueTransformer = options.args.options.valueTransformer;
+        if (options.args.options.transformer)
+            this.transformer = options.args.options.transformer;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {

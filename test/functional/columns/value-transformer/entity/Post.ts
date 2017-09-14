@@ -24,7 +24,7 @@ export class Post {
     @Column()
     title: string;
 
-    @Column({ type: String, valueTransformer: new TagTransformer() })
+    @Column({ type: String, transformer: new TagTransformer() })
     tags: string[];
 
 }
