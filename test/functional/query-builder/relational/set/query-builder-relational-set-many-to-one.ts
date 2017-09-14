@@ -8,6 +8,13 @@ import {Connection} from "../../../../../src/connection/Connection";
 describe("query builder > relational query builder > set operation > many to one relation", () => {
 
     let connections: Connection[];
+    let category1: Category,
+        category2: Category,
+        category3: Category,
+        post1: Post,
+        post2: Post,
+        post3: Post;
+
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         dropSchema: true,
@@ -15,30 +22,30 @@ describe("query builder > relational query builder > set operation > many to one
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    const category1 = new Category();
-    category1.name = "category #1";
-
-    const category2 = new Category();
-    category2.name = "category #2";
-
-    const category3 = new Category();
-    category3.name = "category #3";
-
-    const post1 = new Post();
-    post1.title = "post #1";
-
-    const post2 = new Post();
-    post2.title = "post #2";
-
-    const post3 = new Post();
-    post3.title = "post #3";
-
     async function prepareData(connection: Connection) {
+
+        category1 = new Category();
+        category1.name = "category #1";
         await connection.manager.save(category1);
+
+        category2 = new Category();
+        category2.name = "category #2";
         await connection.manager.save(category2);
+
+        category3 = new Category();
+        category3.name = "category #3";
         await connection.manager.save(category3);
+
+        post1 = new Post();
+        post1.title = "post #1";
         await connection.manager.save(post1);
+
+        post2 = new Post();
+        post2.title = "post #2";
         await connection.manager.save(post2);
+
+        post3 = new Post();
+        post3.title = "post #3";
         await connection.manager.save(post3);
     }
 
