@@ -1,9 +1,10 @@
 import {QueryBuilder} from "./QueryBuilder";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
- * Allows to build complex sql queries in a fashion way and execute those queries.
+ * Allows to work with entity relations and perform specific operations with those relations.
  *
- * todo: implement all functions using SpecificRepository code.
+ * todo: add transactions everywhere
  */
 export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
@@ -23,14 +24,70 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Sets entity (target) which relations will be updated.
+     */
+    of(entity: any|any[]): this {
+        this.expressionMap.of = entity;
+        return this;
+    }
+
+    /**
      * Sets entity relation's value.
      * Value can be entity, entity id or entity id map (if entity has composite ids).
      * Works only for many-to-one and one-to-one relations.
      * For many-to-many and one-to-many relations use #add and #remove methods instead.
      */
-    set(value: any): this {
+    async set(value: any): Promise<void> {
+        const relationMetadata = this.relationMetadata;
 
-        return this;
+        if (!this.expressionMap.of)
+            throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
+
+        // if there are multiple join columns then user must send id map as "value" argument. check if he really did it
+        if (relationMetadata.joinColumns &&
+            relationMetadata.joinColumns.length > 1 &&
+            (!(value instanceof Object) || Object.keys(value).length < relationMetadata.joinColumns.length))
+            throw new Error(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
+
+        if (relationMetadata.isManyToOne || relationMetadata.isOneToOneOwner) {
+
+            const updateSet = relationMetadata.joinColumns.reduce((updateSet, joinColumn) => {
+                const relationValue = value instanceof Object ? joinColumn.referencedColumn!.getEntityValue(value) : value;
+                joinColumn.setEntityValue(updateSet, relationValue);
+                return updateSet;
+            }, {} as any);
+
+            await this.createQueryBuilder()
+                .update(relationMetadata.entityMetadata.target)
+                .set(updateSet)
+                .whereInIds(this.expressionMap.of)
+                .execute();
+
+        } else if (relationMetadata.isOneToOneNotOwner) {
+
+            // for one to one inverse side we just inverse relations and
+
+            if (this.expressionMap.of instanceof Array)
+                throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
+
+            const of = this.expressionMap.of;
+            const updateSet = relationMetadata.inverseRelation!.joinColumns.reduce((updateSet, joinColumn) => {
+                const relationValue = of instanceof Object ? joinColumn.referencedColumn!.getEntityValue(of) : of;
+                joinColumn.setEntityValue(updateSet, relationValue);
+                return updateSet;
+            }, {} as any);
+
+            await this.createQueryBuilder()
+                .update(relationMetadata.inverseEntityMetadata.target)
+                .set(updateSet)
+                .whereInIds(value)
+                .execute();
+
+        } else {
+            throw new Error(`Set operation is only supported for many-to-one and one-to-one relations. ` +
+                `However given "${relationMetadata.propertyPath}" has ${relationMetadata.relationType} relation.`);
+        }
+
     }
 
     /**
@@ -40,9 +97,17 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
      */
-    add(value: any|any[]): this {
+    async add(value: any|any[]): Promise<void> {
+        const relationMetadata = this.relationMetadata;
 
-        return this;
+        if (!this.expressionMap.of)
+            throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
+
+        if (relationMetadata.isOneToMany) {
+
+        } else if (relationMetadata.isManyToMany) {
+
+        }
     }
 
     /**
@@ -52,23 +117,68 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
      */
-    remove(value: any|any[]): this {
+    async remove(value: any|any[]): Promise<void> {
 
-        return this;
+    }
+
+    /**
+     * Adds (binds) and removes (unbinds) given values to/from entity relation.
+     * Value can be entity, entity id or entity id map (if entity has composite ids).
+     * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
+     * Works only for many-to-many and one-to-many relations.
+     * For many-to-one and one-to-one use #set method instead.
+     */
+    async addAndRemove(added: any|any[], removed: any|any[]): Promise<void> {
     }
 
     /**
      * Gets entity's relation id.
      */
-    async getIdOf(): Promise<any> {
+    async getId(): Promise<any> {
 
     }
 
     /**
      * Gets entity's relation ids.
      */
-    async getIdsOf(): Promise<any[]> {
+    async getIds(): Promise<any[]> {
         return [];
+    }
+
+    /**
+     * Loads a single entity (relational) from the relation.
+     * You can also provide id of relational entity to filter by.
+     */
+    async loadOne(id: any): Promise<Entity|undefined> {
+        return undefined;
+    }
+
+    /**
+     * Loads many entities (relational) from the relation.
+     * You can also provide ids of relational entities to filter by.
+     */
+    async loadMany(ids?: any[]): Promise<Entity[]> {
+        return [];
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets relation metadata of the relation this query builder works with.
+     *
+     * todo: add proper exceptions
+     */
+    protected get relationMetadata(): RelationMetadata {
+        if (!this.expressionMap.mainAlias)
+            throw new Error(`Entity to work with is not specified!`); // todo: better message
+
+        const relationMetadata = this.expressionMap.mainAlias.metadata.findRelationWithPropertyPath(this.expressionMap.relationPropertyPath);
+        if (!relationMetadata)
+            throw new Error(`Relation ${this.expressionMap.relationPropertyPath} was not found in entity ${this.expressionMap.mainAlias.name}`); // todo: better message
+
+        return relationMetadata;
     }
 
 }

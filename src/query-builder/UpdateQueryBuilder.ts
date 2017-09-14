@@ -88,7 +88,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    whereInIds(ids: any[]): this {
+    whereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.where(whereExpression, parameters);
         return this;
@@ -97,7 +98,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    andWhereInIds(ids: any[]): this {
+    andWhereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.andWhere(whereExpression, parameters);
         return this;
@@ -106,7 +108,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new OR WHERE with conditions for the given ids.
      */
-    orWhereInIds(ids: any[]): this {
+    orWhereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.orWhere(whereExpression, parameters);
         return this;
