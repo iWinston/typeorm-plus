@@ -1,4 +1,5 @@
 import {ColumnType} from "../../driver/types/ColumnTypes";
+import {ValueTransformer} from "./ValueTransformer";
 
 /**
  * Describes all column's options.
@@ -95,4 +96,10 @@ export interface ColumnOptions {
      */
     isArray?: boolean; // todo: rename to array?: boolean
 
+    /**
+     * Specifies a value transformer that is to be used to (un)marshal
+     * this column when reading or writing to the database.
+     */
+    valueTransformer?: ValueTransformer<any, any>;
+    
 }

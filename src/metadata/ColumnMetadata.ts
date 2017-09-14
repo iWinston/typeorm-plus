@@ -6,6 +6,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
+import {ValueTransformer} from "../decorator/options/ValueTransformer";
 
 /**
  * This metadata contains all information about entity's column.
@@ -205,6 +206,12 @@ export class ColumnMetadata {
      */
     referencedColumn: ColumnMetadata|undefined;
 
+    /**
+     * Specifies a value transformer that is to be used to (un)marshal
+     * this column when reading or writing to the database.
+     */
+    valueTransformer?: ValueTransformer<any, any>;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -275,6 +282,8 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
+        if (options.args.options.valueTransformer)
+            this.valueTransformer = options.args.options.valueTransformer;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {
