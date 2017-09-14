@@ -22,7 +22,7 @@ describe("sequences > creating a sequence and marking the column as generated", 
         it("should check that the primary key column is generated automatically", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.loadTableSchema("person");
+            const tableSchema = await queryRunner.getTable("person");
             await queryRunner.release();
 
             expect(tableSchema!.findColumnByName("Id")!.isGenerated).to.be.true;

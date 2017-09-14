@@ -17,7 +17,7 @@ describe("jsonb type", () => {
     it("should make correct schema with Postgres' jsonb type", () => Promise.all(connections.map(async connection => {
         await connection.synchronize(true);
         const queryRunner = connection.createQueryRunner();
-        let schema = await queryRunner.loadTableSchema("record");
+        let schema = await queryRunner.getTable("record");
         await queryRunner.release();
         expect(schema).not.to.be.empty;
         expect(schema!.columns.find(columnSchema => columnSchema.name === "config" && columnSchema.type === "json")).to.be.not.empty;

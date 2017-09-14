@@ -22,7 +22,7 @@ describe("uuid-postgres", () => {
 
     it("should make correct schema with Postgres' uuid type", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
-        const schema = await queryRunner.loadTableSchema("record");
+        const schema = await queryRunner.getTable("record");
         await queryRunner.release();
         expect(schema).not.to.be.empty;
         expect(schema!.columns.find(columnSchema => columnSchema.name === "id" && columnSchema.type === "uuid" && columnSchema.isGenerated)).to.be.not.empty;
@@ -43,8 +43,8 @@ describe("uuid-postgres", () => {
         const postRepository = connection.getRepository(Post);
         const questionRepository = connection.getRepository(Question);
         const queryRunner = connection.createQueryRunner();
-        const postTableSchema = await queryRunner.loadTableSchema("post");
-        const questionTableSchema = await queryRunner.loadTableSchema("question");
+        const postTableSchema = await queryRunner.getTable("post");
+        const questionTableSchema = await queryRunner.getTable("question");
         await queryRunner.release();
 
         const post = new Post();
