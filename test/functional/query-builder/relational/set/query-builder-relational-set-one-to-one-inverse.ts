@@ -5,7 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {expect} from "chai";
 import {Connection} from "../../../../../src/connection/Connection";
 
-describe.only("query builder > relational query builder > set operation > one-to-one non owner side", () => {
+describe("query builder > relational query builder > set operation > one-to-one non owner side", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -51,7 +51,7 @@ describe.only("query builder > relational query builder > set operation > one-to
             .of(image1)
             .set(post1);
 
-        const loadedPost1 = await connection.manager.findOneById(Post,1, { relations: ["image"] });
+        const loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["image"] });
         expect(loadedPost1!.image).to.be.eql({ id: 1, url: "image #1" });
 
         const loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["image"] });
@@ -73,7 +73,7 @@ describe.only("query builder > relational query builder > set operation > one-to
         const loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["image"] });
         expect(loadedPost1!.image).to.be.undefined;
 
-        const loadedPost2 = await connection.manager.findOneById(Post,2, { relations: ["image"] });
+        const loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["image"] });
         expect(loadedPost2!.image).to.be.eql({ id: 2, url: "image #2" });
 
         const loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["image"] });
@@ -95,7 +95,7 @@ describe.only("query builder > relational query builder > set operation > one-to
         const loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["image"] });
         expect(loadedPost2!.image).to.be.undefined;
 
-        const loadedPost3 = await connection.manager.findOneById(Post,3, { relations: ["image"] });
+        const loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["image"] });
         expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" });
     })));
 
@@ -108,13 +108,13 @@ describe.only("query builder > relational query builder > set operation > one-to
             .of({ id: 3 })
             .set([{ id: 1 }, { id: 3 }]);
 
-        const loadedPost1 = await connection.manager.findOneById(Post,1, { relations: ["image"] });
+        const loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["image"] });
         expect(loadedPost1!.image).to.be.eql({ id: 3, url: "image #3" });
 
-        const loadedPost2 = await connection.manager.findOneById(Post,2, { relations: ["image"] });
+        const loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["image"] });
         expect(loadedPost2!.image).to.be.undefined;
 
-        const loadedPost3 = await connection.manager.findOneById(Post,3, { relations: ["image"] });
+        const loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["image"] });
         expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" });
     })));
 
