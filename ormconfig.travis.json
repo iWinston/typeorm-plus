@@ -36,7 +36,7 @@
     "database": "test"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
