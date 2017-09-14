@@ -16,7 +16,7 @@ describe("basic-lazy-relations", () => {
 
     let userSchema: any, profileSchema: any;
     try {
-        const resourceDir = __dirname + "/../../../../../test/functional/lazy-relations/basic-lazy-relation/";
+        const resourceDir = __dirname + "/../../../../../../test/functional/lazy-relations/basic-lazy-relation/";
         userSchema = require(resourceDir + "schema/user.json");
         profileSchema = require(resourceDir + "schema/profile.json");
     } catch (err) {
