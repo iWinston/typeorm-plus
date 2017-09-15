@@ -188,4 +188,40 @@ describe.only("query builder > relational query builder > add operation > one to
         expect(loadedPost3!.category).to.be.undefined;
     })));
 
+    it("should handle addAndRemove method as well", () => Promise.all(connections.map(async connection => {
+        await prepareData(connection);
+
+        // add initial data
+        await connection
+            .createQueryBuilder()
+            .relation(Category, "posts")
+            .of(category3) // category
+            .add(post2); // post
+
+        loadedPost1 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
+
+        // when nothing is specified nothing should be performed
+        await connection
+            .createQueryBuilder()
+            .relation(Category, "posts")
+            .of(category3) // category
+            .addAndRemove([], []); // post
+
+        loadedPost1 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
+
+        // now add and remove =)
+        await connection
+            .createQueryBuilder()
+            .relation(Category, "posts")
+            .of(category3) // category
+            .addAndRemove([post1, post3], [post2]); // post
+
+        const loadedCategory = await connection.manager.findOneById(Category, 3, { relations: ["posts"] });
+        expect(loadedCategory!.posts).to.contain({ id: 1, title: "post #1" });
+        expect(loadedCategory!.posts).to.not.contain({ id: 2, title: "post #2" });
+        expect(loadedCategory!.posts).to.contain({ id: 3, title: "post #3" });
+    })));
+
 });

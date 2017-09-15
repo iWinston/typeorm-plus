@@ -182,6 +182,8 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 return updateSet;
             }, {} as any);
 
+            if (!this.expressionMap.of || (this.expressionMap.of instanceof Array && !this.expressionMap.of.length)) return;
+
             await this.createQueryBuilder()
                 .update(relation.entityMetadata.target)
                 .set(updateSet)
@@ -202,10 +204,11 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 relation.inverseRelation!.joinColumns.map((column, columnIndex) => {
                     const parameterName = "joinColumn_" + ofIndex + "_" + columnIndex;
                     parameters[parameterName] = of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of;
-                    return `${column.propertyPath} = :${parameterName}`;
+                    conditions.push(`${column.propertyPath} = :${parameterName}`);
                 });
             });
             const condition = conditions.map(str => "(" + str + ")").join(" OR ");
+            if (!condition) return;
 
             await this.createQueryBuilder()
                 .update(relation.inverseEntityMetadata.target)
@@ -225,6 +228,8 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 joinColumn.setEntityValue(updateSet, relationValue);
                 return updateSet;
             }, {} as any);
+
+            if (!value || (value instanceof Array && !value.length)) return;
 
             await this.createQueryBuilder()
                 .update(relation.inverseEntityMetadata.target)
@@ -253,12 +258,13 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 });
             });
 
+            if (!bulkInserted.length) return;
+
             await this.createQueryBuilder()
                 .insert()
                 .into(junctionMetadata.tableName)
                 .values(bulkInserted)
                 .execute();
-
         }
     }
 
@@ -276,6 +282,11 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // DELETE FROM post WHERE post.categoryId = of AND post.id = id
             const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
             const values = value instanceof Array ? value : [value];
+
+            const updateSet: ObjectLiteral = {};
+            relation.inverseRelation!.joinColumns.forEach(column => {
+                updateSet[column.propertyName] = null;
+            });
 
             const parameters: ObjectLiteral = {};
             const conditions: string[] = [];
@@ -296,11 +307,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 }));
             });
             const condition = conditions.map(str => "(" + str + ")").join(" OR ");
-
-            const updateSet: ObjectLiteral = {};
-            relation.inverseRelation!.joinColumns.forEach(column => {
-                updateSet[column.propertyName] = null;
-            });
+            if (!condition) return;
 
             await this.createQueryBuilder()
                 .update(relation.inverseEntityMetadata.target)
