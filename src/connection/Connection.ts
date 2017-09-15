@@ -377,36 +377,18 @@ export class Connection {
     }
 
     /**
-     * Creates a new entity manager with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
+     * Gets entity metadata of the junction table (many-to-many table).
      */
-    /*createIsolatedManager(): EntityManager {
-        if (this.driver instanceof MongoDriver)
-            throw new Error(`You can use createIsolatedManager only for non MongoDB connections.`);
+    getManyToManyMetadata(entityTarget: Function|string, relationPropertyPath: string) {
+        const relationMetadata = this.getMetadata(entityTarget).findRelationWithPropertyPath(relationPropertyPath);
+        if (!relationMetadata)
+            throw new Error(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
+        if (!relationMetadata.isManyToMany)
+            throw new Error(`Relation "${entityTarget}#${relationPropertyPath}" does not have a many-to-many relationship.` +
+                `You can use this method only on many-to-many relations.`);
 
-        // sqlite has a single query runner and does not support isolated managers
-        if (this.driver instanceof SqliteDriver)
-            return this.manager;
-
-        return new EntityManagerFactory().create(this, this.driver.createQueryRunner());
-    }*/
-
-    /**
-     * Creates a new repository with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with repository, don't forget to release its query runner (to release database connection back to pool).
-     */
-    /*createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        if (this.driver instanceof MongoDriver)
-            throw new Error(`You can use createIsolatedRepository only for non MongoDB connections.`);
-
-        // sqlite has a single query runner and does not support isolated repositories
-        if (this.driver instanceof SqliteDriver)
-            return this.manager.getRepository(entityClassOrName);
-
-        return this.createIsolatedManager().getRepository(entityClassOrName);
-    }*/
+        return relationMetadata.junctionEntityMetadata;
+    }
 
     // -------------------------------------------------------------------------
     // Deprecated Public Methods

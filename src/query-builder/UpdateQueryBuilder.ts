@@ -2,7 +2,6 @@ import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpression} from "./WhereExpression";
@@ -48,7 +47,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Values needs to be updated.
      */
-    set(values: QueryPartialEntity<Entity>): this {
+    set(values: ObjectLiteral): this {
         this.expressionMap.valuesSet = values;
         return this;
     }

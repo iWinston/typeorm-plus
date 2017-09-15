@@ -1,5 +1,6 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
@@ -38,56 +39,23 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-many and one-to-many relations use #add and #remove methods instead.
      */
     async set(value: any): Promise<void> {
-        const relationMetadata = this.relationMetadata;
+        const relation = this.relationMetadata;
 
-        if (!this.expressionMap.of)
+        if (!this.expressionMap.of) // todo: move this check before relation query builder creation?
             throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
 
+        if (relation.isManyToMany || relation.isOneToMany)
+            throw new Error(`Set operation is only supported for many-to-one and one-to-one relations. ` +
+                `However given "${relation.propertyPath}" has ${relation.relationType} relation. ` +
+                `Use .add() method instead.`);
+
         // if there are multiple join columns then user must send id map as "value" argument. check if he really did it
-        if (relationMetadata.joinColumns &&
-            relationMetadata.joinColumns.length > 1 &&
-            (!(value instanceof Object) || Object.keys(value).length < relationMetadata.joinColumns.length))
+        if (relation.joinColumns &&
+            relation.joinColumns.length > 1 &&
+            (!(value instanceof Object) || Object.keys(value).length < relation.joinColumns.length))
             throw new Error(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
 
-        if (relationMetadata.isManyToOne || relationMetadata.isOneToOneOwner) {
-
-            const updateSet = relationMetadata.joinColumns.reduce((updateSet, joinColumn) => {
-                const relationValue = value instanceof Object ? joinColumn.referencedColumn!.getEntityValue(value) : value;
-                joinColumn.setEntityValue(updateSet, relationValue);
-                return updateSet;
-            }, {} as any);
-
-            await this.createQueryBuilder()
-                .update(relationMetadata.entityMetadata.target)
-                .set(updateSet)
-                .whereInIds(this.expressionMap.of)
-                .execute();
-
-        } else if (relationMetadata.isOneToOneNotOwner) {
-
-            // for one to one inverse side we just inverse relations and
-
-            if (this.expressionMap.of instanceof Array)
-                throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
-
-            const of = this.expressionMap.of;
-            const updateSet = relationMetadata.inverseRelation!.joinColumns.reduce((updateSet, joinColumn) => {
-                const relationValue = of instanceof Object ? joinColumn.referencedColumn!.getEntityValue(of) : of;
-                joinColumn.setEntityValue(updateSet, relationValue);
-                return updateSet;
-            }, {} as any);
-
-            await this.createQueryBuilder()
-                .update(relationMetadata.inverseEntityMetadata.target)
-                .set(updateSet)
-                .whereInIds(value)
-                .execute();
-
-        } else {
-            throw new Error(`Set operation is only supported for many-to-one and one-to-one relations. ` +
-                `However given "${relationMetadata.propertyPath}" has ${relationMetadata.relationType} relation.`);
-        }
-
+        return this.updateRelation(value);
     }
 
     /**
@@ -98,16 +66,23 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-one and one-to-one use #set method instead.
      */
     async add(value: any|any[]): Promise<void> {
-        const relationMetadata = this.relationMetadata;
+        const relation = this.relationMetadata;
 
-        if (!this.expressionMap.of)
+        if (!this.expressionMap.of) // todo: move this check before relation query builder creation?
             throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
 
-        if (relationMetadata.isOneToMany) {
+        if (relation.isManyToOne || relation.isOneToOne)
+            throw new Error(`Add operation is only supported for many-to-many and one-to-many relations. ` +
+                `However given "${relation.propertyPath}" has ${relation.relationType} relation. ` +
+                `Use .set() method instead.`);
 
-        } else if (relationMetadata.isManyToMany) {
+        // if there are multiple join columns then user must send id map as "value" argument. check if he really did it
+        if (relation.joinColumns &&
+            relation.joinColumns.length > 1 &&
+            (!(value instanceof Object) || Object.keys(value).length < relation.joinColumns.length))
+            throw new Error(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
 
-        }
+        return this.updateRelation(value);
     }
 
     /**
@@ -118,7 +93,17 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-one and one-to-one use #set method instead.
      */
     async remove(value: any|any[]): Promise<void> {
+        const relation = this.relationMetadata;
 
+        if (!this.expressionMap.of) // todo: move this check before relation query builder creation?
+            throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
+
+        if (relation.isManyToOne || relation.isOneToOne)
+            throw new Error(`Add operation is only supported for many-to-many and one-to-many relations. ` +
+                `However given "${relation.propertyPath}" has ${relation.relationType} relation. ` +
+                `Use .set(null) method instead.`);
+
+        return this.removeRelation(value);
     }
 
     /**
@@ -129,6 +114,8 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-one and one-to-one use #set method instead.
      */
     async addAndRemove(added: any|any[], removed: any|any[]): Promise<void> {
+        await this.remove(removed);
+        await this.add(added);
     }
 
     /**
@@ -149,7 +136,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Loads a single entity (relational) from the relation.
      * You can also provide id of relational entity to filter by.
      */
-    async loadOne(id: any): Promise<Entity|undefined> {
+    async loadOne(id?: any): Promise<Entity|undefined> {
         return undefined;
     }
 
@@ -181,430 +168,182 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return relationMetadata;
     }
 
-}
+    /**
+     * Performs set or add operation on a relation.
+     */
+    protected async updateRelation(value: any|any[]): Promise<void> {
+        const relation = this.relationMetadata;
 
+        if (relation.isManyToOne || relation.isOneToOneOwner) {
 
-/**
- * Repository for more specific operations.
- *
- * @deprecated Don't use it yet
- *
- * todo: most of these methods looks like can be part of query builder functionality
- * todo: maybe instead of SpecificRepository we should have SpecificQueryBuilder? (better name needed)
- * todo: it can be used like createQueryBuilder().specific().setRelation
- * todo: or maybe split specific into multiple different purpose QueryBuilders ? For example RelationQueryBuilder
- * todo: with methods like createQueryBuilder().relation(Post, "categories").set(value).add(value).remove(value)
- * todo: add and remove for many-to-many, set for many-to-one and value can be entity or simply entity id or id map
- * todo: also createQueryBuilder().relation(Post, "categories").getIdsOf(postIds)
- * todo: also createQueryBuilder().relation(Post, "categories").getCountOf(postIds)
- */
-/*export class SpecificRepository<Entity extends ObjectLiteral> {
+            const updateSet = relation.joinColumns.reduce((updateSet, joinColumn) => {
+                const relationValue = value instanceof Object ? joinColumn.referencedColumn!.getEntityValue(value) : value;
+                joinColumn.setEntityValue(updateSet, relationValue);
+                return updateSet;
+            }, {} as any);
 
- // -------------------------------------------------------------------------
- // Constructor
- // -------------------------------------------------------------------------
+            await this.createQueryBuilder()
+                .update(relation.entityMetadata.target)
+                .set(updateSet)
+                .whereInIds(this.expressionMap.of)
+                .execute();
 
- constructor(protected connection: Connection,
- protected metadata: EntityMetadata,
- protected queryRunner?: QueryRunner) {
- }
+        } else if ((relation.isOneToOneNotOwner || relation.isOneToMany) && value === null) { // we handle null a bit different way
 
- // -------------------------------------------------------------------------
- // Public Methods
- // -------------------------------------------------------------------------
- */
-/**
- * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
- * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async setRelation(relationName: string, entityId: any, relatedEntityId: any): Promise<void>;
-
-/**
- * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
- * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async setRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void>;
-
-/**
- * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
- * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async setRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityId: any): Promise<void> {
-        const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
-        if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
-        // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
-        //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
-        if (relation.isManyToMany)
-            throw new Error(`Many-to-many relation is not supported for this operation. Use #addToRelation method for many-to-many relations.`);
-
-        // todo: fix issues with joinColumns[0]
-
-        let table: string, values: any = {}, conditions: any = {};
-        if (relation.isOwning) {
-            table = relation.entityMetadata.tableName;
-            values[relation.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
-            conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
-        } else {
-            table = relation.inverseEntityMetadata.tableName;
-            values[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = relatedEntityId;
-            conditions[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = entityId;
-        }
-
-
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
-        await usedQueryRunner.update(table, values, conditions);
-        if (!this.queryRunner) // means created by this method
-            await usedQueryRunner.release();
-    }*/
-
-/**
- * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
- * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async setInverseRelation(relationName: string, relatedEntityId: any, entityId: any): Promise<void>;
-
-/**
- * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
- * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async setInverseRelation(relationName: ((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void>;
-
-/**
- * Sets given relatedEntityId to the value of the relation of the entity with entityId id.
- * Should be used when you want quickly and efficiently set a relation (for many-to-one and one-to-many) to some entity.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async setInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityId: any): Promise<void> {
-        const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        // todo: fix issues with joinColumns[0]
-        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
-        if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
-        // if (relation.isManyToMany || relation.isOneToMany || relation.isOneToOneNotOwner)
-        //     throw new Error(`Only many-to-one and one-to-one with join column are supported for this operation. ${this.metadata.name}#${propertyName} relation type is ${relation.relationType}`);
-        if (relation.isManyToMany)
-            throw new Error(`Many-to-many relation is not supported for this operation. Use #addToRelation method for many-to-many relations.`);
-
-        let table: string, values: any = {}, conditions: any = {};
-        if (relation.isOwning) {
-            table = relation.inverseEntityMetadata.tableName;
-            values[relation.inverseRelation!.joinColumns[0].databaseName] = relatedEntityId;
-            conditions[relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName] = entityId;
-        } else {
-            table = relation.entityMetadata.tableName;
-            values[relation.joinColumns[0].databaseName] = relatedEntityId;
-            conditions[relation.joinColumns[0].referencedColumn!.databaseName] = entityId;
-        }
-
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
-        await usedQueryRunner.update(table, values, conditions);
-        if (!this.queryRunner) // means created by this method
-            await usedQueryRunner.release();
-    }*/
-
-/**
- * Adds a new relation between two entities into relation's many-to-many table.
- * Should be used when you want quickly and efficiently add a relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addToRelation(relationName: string, entityId: any, relatedEntityIds: any[]): Promise<void>;
-
-/**
- * Adds a new relation between two entities into relation's many-to-many table.
- * Should be used when you want quickly and efficiently add a relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addToRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void>;
-
-/**
- * Adds a new relation between two entities into relation's many-to-many table.
- * Should be used when you want quickly and efficiently add a relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async addToRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
-        const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
-        if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
-        if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
-
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
-        const insertPromises = relatedEntityIds.map(relatedEntityId => {
-            const values: any = {};
-            if (relation.isOwning) {
-                values[relation.junctionEntityMetadata!.columns[0].databaseName] = entityId;
-                values[relation.junctionEntityMetadata!.columns[1].databaseName] = relatedEntityId;
-            } else {
-                values[relation.junctionEntityMetadata!.columns[1].databaseName] = entityId;
-                values[relation.junctionEntityMetadata!.columns[0].databaseName] = relatedEntityId;
-            }
-
-            return usedQueryRunner.insert(relation.junctionEntityMetadata!.tableName, values);
-        });
-        await Promise.all(insertPromises);
-
-        if (!this.queryRunner) // means created by this method
-            await usedQueryRunner.release();
-    }*/
-
-/**
- * Adds a new relation between two entities into relation's many-to-many table from inverse side of the given relation.
- * Should be used when you want quickly and efficiently add a relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addToInverseRelation(relationName: string, relatedEntityId: any, entityIds: any[]): Promise<void>;
-
-/**
- * Adds a new relation between two entities into relation's many-to-many table from inverse side of the given relation.
- * Should be used when you want quickly and efficiently add a relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addToInverseRelation(relationName: ((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void>;
-
-/**
- * Adds a new relation between two entities into relation's many-to-many table from inverse side of the given relation.
- * Should be used when you want quickly and efficiently add a relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async addToInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
-        const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
-        if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
-        if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
-
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner();
-        try {
-            const insertPromises = entityIds.map(entityId => {
-                const values: any = {};
-                if (relation.isOwning) {
-                    values[relation.junctionEntityMetadata!.columns[0].databaseName] = entityId;
-                    values[relation.junctionEntityMetadata!.columns[1].databaseName] = relatedEntityId;
-                } else {
-                    values[relation.junctionEntityMetadata!.columns[1].databaseName] = entityId;
-                    values[relation.junctionEntityMetadata!.columns[0].databaseName] = relatedEntityId;
-                }
-
-                return usedQueryRunner.insert(relation.junctionEntityMetadata!.tableName, values);
+            const updateSet: ObjectLiteral = {};
+            relation.inverseRelation!.joinColumns.forEach(column => {
+                updateSet[column.propertyName] = null;
             });
-            await Promise.all(insertPromises);
 
-        } finally {
-            if (!this.queryRunner) // means created by this method
-                await usedQueryRunner.release();
-        }
-    }*/
-
-/**
- * Removes a relation between two entities from relation's many-to-many table.
- * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async removeFromRelation(relationName: string, entityId: any, relatedEntityIds: any[]): Promise<void>;
-
-/**
- * Removes a relation between two entities from relation's many-to-many table.
- * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async removeFromRelation(relationName: ((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void>;
-
-/**
- * Removes a relation between two entities from relation's many-to-many table.
- * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async removeFromRelation(relationProperty: string|((t: Entity) => string|any), entityId: any, relatedEntityIds: any[]): Promise<void> {
-        const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
-        if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
-        if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
-
-        // check if given relation entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
-        if (!relatedEntityIds || !relatedEntityIds.length)
-            return Promise.resolve();
-
-        const qb = this.connection.manager
-            .createQueryBuilder(this.queryRunner)
-            .delete()
-            .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
-
-        const firstColumnName = this.connection.driver.escapeColumn(relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName);
-        const secondColumnName = this.connection.driver.escapeColumn(relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName);
-
-        relatedEntityIds.forEach((relatedEntityId, index) => {
-            qb.orWhere(`(${firstColumnName}=:entityId AND ${secondColumnName}=:relatedEntity_${index})`)
-                .setParameter("relatedEntity_" + index, relatedEntityId);
-        });
-
-        await qb
-            .setParameter("entityId", entityId)
-            .execute();
-    }*/
-
-/**
- * Removes a relation between two entities from relation's many-to-many table.
- * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async removeFromInverseRelation(relationName: string, relatedEntityId: any, entityIds: any[]): Promise<void>;
-
-/**
- * Removes a relation between two entities from relation's many-to-many table.
- * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async removeFromInverseRelation(relationName: ((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void>;
-
-/**
- * Removes a relation between two entities from relation's many-to-many table.
- * Should be used when you want quickly and efficiently remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async removeFromInverseRelation(relationProperty: string|((t: Entity) => string|any), relatedEntityId: any, entityIds: any[]): Promise<void> {
-        const propertyPath = this.metadata.computePropertyPath(relationProperty);
-        const relation = this.metadata.findRelationWithPropertyPath(propertyPath);
-        if (!relation)
-            throw new Error(`Relation with property path ${propertyPath} in entity was not found.`);
-        if (!relation.isManyToMany)
-            throw new Error(`Only many-to-many relation supported for this operation. However ${this.metadata.name}#${propertyPath} relation type is ${relation.relationType}`);
-
-        // check if given entity ids is empty - then nothing to do here (otherwise next code will remove all ids)
-        if (!entityIds || !entityIds.length)
-            return Promise.resolve();
-
-        const qb = this.connection.manager
-            .createQueryBuilder(this.queryRunner)
-            .delete()
-            .from(relation.junctionEntityMetadata!.tableName, "junctionEntity");
-
-        const firstColumnName = relation.isOwning ? relation.junctionEntityMetadata!.columns[1].databaseName : relation.junctionEntityMetadata!.columns[0].databaseName;
-        const secondColumnName = relation.isOwning ? relation.junctionEntityMetadata!.columns[0].databaseName : relation.junctionEntityMetadata!.columns[1].databaseName;
-
-        entityIds.forEach((entityId, index) => {
-            qb.orWhere(`(${firstColumnName}=:relatedEntityId AND ${secondColumnName}=:entity_${index})`)
-              .setParameter("entity_" + index, entityId);
-        });
-
-        await qb.setParameter("relatedEntityId", relatedEntityId).execute();
-    }*/
-
-/**
- * Performs both #addToRelation and #removeFromRelation operations.
- * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addAndRemoveFromRelation(relation: string, entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
-
-/**
- * Performs both #addToRelation and #removeFromRelation operations.
- * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addAndRemoveFromRelation(relation: ((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void>;
-
-/**
- * Performs both #addToRelation and #removeFromRelation operations.
- * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async addAndRemoveFromRelation(relation: string|((t: Entity) => string|any), entityId: any, addRelatedEntityIds: any[], removeRelatedEntityIds: any[]): Promise<void> {
-        await Promise.all([
-            this.addToRelation(relation as any, entityId, addRelatedEntityIds),
-            this.removeFromRelation(relation as any, entityId, removeRelatedEntityIds)
-        ]);
-    }*/
-
-/**
- * Performs both #addToRelation and #removeFromRelation operations.
- * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addAndRemoveFromInverseRelation(relation: string, relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void>;
-
-/**
- * Performs both #addToRelation and #removeFromRelation operations.
- * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
- */
-// async addAndRemoveFromInverseRelation(relation: ((t: Entity) => string|any), relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void>;
-
-/**
- * Performs both #addToRelation and #removeFromRelation operations.
- * Should be used when you want quickly and efficiently and and remove a many-to-many relation between two entities.
- * Note that event listeners and event subscribers won't work (and will not send any events) when using this operation.
-
- async addAndRemoveFromInverseRelation(relation: string|((t: Entity) => string|any), relatedEntityId: any, addEntityIds: any[], removeEntityIds: any[]): Promise<void> {
-        await Promise.all([
-            this.addToInverseRelation(relation as any, relatedEntityId, addEntityIds),
-            this.removeFromInverseRelation(relation as any, relatedEntityId, removeEntityIds)
-        ]);
-    }*/
-
-// -------------------------------------------------------------------------
-// Protected Methods
-// -------------------------------------------------------------------------
-
-/**
- * Converts entity or entities to id or ids map.
-
- protected convertEntityOrEntitiesToIdOrIds(columns: ColumnMetadata[], entityOrEntities: Entity[]|Entity|any|any[]): any|any[] {
-        if (entityOrEntities instanceof Array) {
-            return entityOrEntities.map(entity => this.convertEntityOrEntitiesToIdOrIds(columns, entity));
-
-        } else {
-            if (entityOrEntities instanceof Object) {
-                return columns.reduce((ids, column) => {
-                    ids[column.databaseName] = column.getEntityValue(entityOrEntities);
-                    return ids;
-                }, {} as ObjectLiteral);
-            } else {
-                return entityOrEntities;
-            }
-        }
-    }*/
-
-/**
- * Extracts unique objects from given entity and all its downside relations.
-
- protected extractObjectsById(entity: any, metadata: EntityMetadata, entityWithIds: Subject[] = []): Promise<Subject[]> {
-        const promises = metadata.relations.map(relation => {
-            const relMetadata = relation.inverseEntityMetadata;
-
-            const value = relation.getEntityValue(entity);
-            if (!value)
-                return undefined;
-
-            if (value instanceof Array) {
-                const subPromises = value.map((subEntity: any) => {
-                    return this.extractObjectsById(subEntity, relMetadata, entityWithIds);
+            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
+            const parameters: ObjectLiteral = {};
+            const conditions: string[] = [];
+            ofs.forEach((of, ofIndex) => {
+                relation.inverseRelation!.joinColumns.map((column, columnIndex) => {
+                    const parameterName = "joinColumn_" + ofIndex + "_" + columnIndex;
+                    parameters[parameterName] = of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of;
+                    return `${column.propertyPath} = :${parameterName}`;
                 });
-                return Promise.all(subPromises);
+            });
+            const condition = conditions.map(str => "(" + str + ")").join(" OR ");
 
-            } else {
-                return this.extractObjectsById(value, relMetadata, entityWithIds);
-            }
-        });
+            await this.createQueryBuilder()
+                .update(relation.inverseEntityMetadata.target)
+                .set(updateSet)
+                .where(condition)
+                .setParameters(parameters)
+                .execute();
 
-        return Promise.all<any>(promises.filter(result => !!result)).then(() => {
-            if (!entityWithIds.find(entityWithId => entityWithId.entity === entity)) {
-                const entityWithId = new Subject(metadata, entity);
-                entityWithIds.push(entityWithId);
-            }
+        } else if (relation.isOneToOneNotOwner || relation.isOneToMany) {
 
-            return entityWithIds;
-        });
-    }  */
+            if (this.expressionMap.of instanceof Array)
+                throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
 
-// }
+            const of = this.expressionMap.of;
+            const updateSet = relation.inverseRelation!.joinColumns.reduce((updateSet, joinColumn) => {
+                const relationValue = of instanceof Object ? joinColumn.referencedColumn!.getEntityValue(of) : of;
+                joinColumn.setEntityValue(updateSet, relationValue);
+                return updateSet;
+            }, {} as any);
+
+            await this.createQueryBuilder()
+                .update(relation.inverseEntityMetadata.target)
+                .set(updateSet)
+                .whereInIds(value)
+                .execute();
+
+        } else { // many to many
+            const junctionMetadata = relation.junctionEntityMetadata!;
+            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
+            const values = value instanceof Array ? value : [value];
+            const firstColumnValues = relation.isManyToManyOwner ? ofs : values;
+            const secondColumnValues = relation.isManyToManyOwner ? values : ofs;
+
+            const bulkInserted: ObjectLiteral[] = [];
+            firstColumnValues.forEach(firstColumnVal => {
+                secondColumnValues.forEach(secondColumnVal => {
+                    const inserted: ObjectLiteral = {};
+                    junctionMetadata.ownerColumns.forEach(column => {
+                        inserted[column.databaseName] = firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(firstColumnVal) : firstColumnVal;
+                    });
+                    junctionMetadata.inverseColumns.forEach(column => {
+                        inserted[column.databaseName] = secondColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
+                    });
+                    bulkInserted.push(inserted);
+                });
+            });
+
+            await this.createQueryBuilder()
+                .insert()
+                .into(junctionMetadata.tableName)
+                .values(bulkInserted)
+                .execute();
+
+        }
+    }
+
+    /**
+     * Performs remove operation on a relation.
+     */
+    protected async removeRelation(value: any|any[]): Promise<void> {
+        const relation = this.relationMetadata;
+
+        if (relation.isOneToMany) {
+
+            // if (this.expressionMap.of instanceof Array)
+            //     throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
+
+            // DELETE FROM post WHERE post.categoryId = of AND post.id = id
+            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
+            const values = value instanceof Array ? value : [value];
+
+            const parameters: ObjectLiteral = {};
+            const conditions: string[] = [];
+            ofs.forEach((of, ofIndex) => {
+                conditions.push(...values.map((value, valueIndex) => {
+                    return [
+                        ...relation.inverseRelation!.joinColumns.map((column, columnIndex) => {
+                            const parameterName = "joinColumn_" + ofIndex + "_" + valueIndex + "_" + columnIndex;
+                            parameters[parameterName] = of instanceof Object ? column.referencedColumn!.getEntityValue(of) : of;
+                            return `${column.propertyPath} = :${parameterName}`;
+                        }),
+                        ...relation.inverseRelation!.entityMetadata.primaryColumns.map((column, columnIndex) => {
+                            const parameterName = "primaryColumn_" + valueIndex + "_" + valueIndex + "_" + columnIndex;
+                            parameters[parameterName] = value instanceof Object ? column.getEntityValue(value) : value;
+                            return `${column.propertyPath} = :${parameterName}`;
+                        })
+                    ].join(" AND ");
+                }));
+            });
+            const condition = conditions.map(str => "(" + str + ")").join(" OR ");
+
+            const updateSet: ObjectLiteral = {};
+            relation.inverseRelation!.joinColumns.forEach(column => {
+                updateSet[column.propertyName] = null;
+            });
+
+            await this.createQueryBuilder()
+                .update(relation.inverseEntityMetadata.target)
+                .set(updateSet)
+                .where(condition)
+                .setParameters(parameters)
+                .execute();
+
+        } else { // many to many
+
+            const junctionMetadata = relation.junctionEntityMetadata!;
+            const ofs = this.expressionMap.of instanceof Array ? this.expressionMap.of : [this.expressionMap.of];
+            const values = value instanceof Array ? value : [value];
+            const firstColumnValues = relation.isManyToManyOwner ? ofs : values;
+            const secondColumnValues = relation.isManyToManyOwner ? values : ofs;
+
+            const parameters: ObjectLiteral = {};
+            const conditions: string[] = [];
+            firstColumnValues.forEach((firstColumnVal, firstColumnValIndex) => {
+                conditions.push(...secondColumnValues.map((secondColumnVal, secondColumnValIndex) => {
+                    return [
+                        ...junctionMetadata.ownerColumns.map((column, columnIndex) => {
+                            const parameterName = "firstValue_" + firstColumnValIndex + "_" + secondColumnValIndex + "_" + columnIndex;
+                            parameters[parameterName] = firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(firstColumnVal) : firstColumnVal;
+                            return `${column.databaseName} = :${parameterName}`;
+                        }),
+                        ...junctionMetadata.inverseColumns.map((column, columnIndex) => {
+                            const parameterName = "secondValue_" + firstColumnValIndex + "_" + secondColumnValIndex + "_" + columnIndex;
+                            parameters[parameterName] = firstColumnVal instanceof Object ? column.referencedColumn!.getEntityValue(secondColumnVal) : secondColumnVal;
+                            return `${column.databaseName} = :${parameterName}`;
+                        })
+                    ].join(" AND ");
+                }));
+            });
+            const condition = conditions.map(str => "(" + str + ")").join(" OR ");
+
+            await this.createQueryBuilder()
+                .delete()
+                .from(junctionMetadata.tableName)
+                .where(condition)
+                .setParameters(parameters)
+                .execute();
+        }
+    }
+
+}
