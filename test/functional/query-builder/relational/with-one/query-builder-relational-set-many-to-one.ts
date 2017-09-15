@@ -5,7 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {expect} from "chai";
 import {Connection} from "../../../../../src/connection/Connection";
 
-describe.only("query builder > relational query builder > set operation > many to one relation", () => {
+describe("query builder > relational query builder > set operation > many to one relation", () => {
 
     let connections: Connection[];
     let category1: Category,
