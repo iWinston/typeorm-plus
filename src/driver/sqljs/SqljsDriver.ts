@@ -76,7 +76,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            if(this.options.databaseForImport.length > 0) {
+            if (this.options.databaseForImport.length > 0) {
                 this.databaseConnection = new this.sqlite.Database(this.options.databaseForImport);
             }
             else {
@@ -90,12 +90,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        if (PlatformTools.type == "browser") {
+        if (PlatformTools.type === "browser") {
             this.sqlite = window.SQL;
         }
         else {
             try {
-                this.sqlite = PlatformTools.load('sql.js');
+                this.sqlite = PlatformTools.load("sql.js");
 
             } catch (e) {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js");

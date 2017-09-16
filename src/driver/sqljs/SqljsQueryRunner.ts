@@ -51,7 +51,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
             const result: any[] = [];
 
-            while(statement.step()) {
+            while (statement.step()) {
                 result.push(statement.getAsObject());
             }
             
@@ -82,7 +82,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
                 let value = keyValues[generatedColumn.databaseName];
                 // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
-                if(generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
+                if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
                     value = databaseConnection.exec("SELECT last_insert_rowid()")[0].values[0][0];
                 }
                 
