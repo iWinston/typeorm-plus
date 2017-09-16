@@ -6,7 +6,7 @@ Its all possible with TypeORM:
 
 * write code in TypeScript or JavaScript
 * works on node.js / browser / ionic / electron platforms [TBD]
-* supports mysql / mariadb / postgres / sqlite / sql server / oracle / websql / sqljs [TBD]
+* supports mysql / mariadb / postgres / sqlite / sql server / oracle / websql / sqljs
 * supports all data types your database support
 * schema configuration using decorators / json / xml / yml files
 * you produce performant, flexible, clean and maintainable code using it
