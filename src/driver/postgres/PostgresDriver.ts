@@ -258,6 +258,9 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.to(value);
+
         if (value === null || value === undefined)
             return value;
 
@@ -291,6 +294,9 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
+
         if (value === null || value === undefined)
             return value;
 
@@ -446,6 +452,13 @@ export class PostgresDriver implements Driver {
         } else {
             return column.default;
         }
+    }
+
+    /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique;
     }
 
     /**

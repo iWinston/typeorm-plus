@@ -31,6 +31,9 @@ export class CordovaDriver extends AbstractSqliteDriver {
         if (!this.options.database)
             throw new DriverOptionNotSetError("database");
 
+        if (!this.options.location)
+            throw new DriverOptionNotSetError("location");
+
         // load sqlite package
         this.loadDependencies();
     }

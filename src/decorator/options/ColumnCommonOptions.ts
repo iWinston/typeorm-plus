@@ -1,3 +1,5 @@
+import {ValueTransformer} from "./ValueTransformer";
+
 /**
  * Column options specific to all column types.
  */
@@ -46,5 +48,11 @@ export interface ColumnCommonOptions {
      * Supported only by postgres.
      */
     isArray?: boolean;
+
+    /**
+     * Specifies a value transformer that is to be used to (un)marshal
+     * this column when reading or writing to the database.
+     */
+    transformer?: ValueTransformer;
 
 }

@@ -548,6 +548,8 @@ Used in some column types.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
+* `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to
+marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
