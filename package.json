@@ -40,8 +40,10 @@
   "devDependencies": {
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "0.0.31",
+    "@types/mkdirp": "^0.5.1",
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.0.26",
+    "@types/rimraf": "^2.0.2",
     "@types/sinon": "^2.3.3",
     "chai": "^3.5.0",
     "chai-as-promised": "^7.1.1",
@@ -66,6 +68,7 @@
     "pg": "^7.3.0",
     "redis": "^2.8.0",
     "remap-istanbul": "^0.9.5",
+    "rimraf": "^2.6.2",
     "sinon": "^2.4.1",
     "sinon-chai": "^2.13.0",
     "sqlite3": "^3.1.10",
