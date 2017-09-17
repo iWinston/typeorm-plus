@@ -120,12 +120,11 @@ You'll also need to enable `es6` in the `lib` section of compiler options, or in
 TypeORM was tested with Node.js version 4 and above. 
 If you have errors during app bootstrap, try to upgrade your Node.js version to the latest version.
 
-#### Usage in the browser with WebSQL (experimental)
+#### Usage in the browser with WebSQL (experimental) or in a Cordova/Phonegap/Ionic app
 
-TypeORM works in the browser and has experimental support of WebSQL.
-If you want to use TypeORM in the browser then you need to `npm i typeorm-browser` instead of `typeorm`.
-More information about it is in [this page](https://typeorm.github.io/usage-in-browser.html). 
-Also take a look at [this sample](https://github.com/typeorm/browser-example).
+TypeORM works in the browser and has experimental support of WebSQL and supports the [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin for Cordova/Phonegap/Ionic.
+More information about how to install and use TypeORM in the browser or an app can be found in the [docs](docs/usage-in-the-browser-and-cordova.md). 
+Also take a look at the [browser](https://github.com/typeorm/browser-example) and [cordova](https://github.com/typeorm/cordova-example) example.
 
 ## Quick start
 

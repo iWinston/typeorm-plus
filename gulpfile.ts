@@ -141,7 +141,7 @@ export class Gulpfile {
      */
     @Task()
     browserUglify() {
-        return gulp.src("./build/browser/typeorm-browser.js")
+        return gulp.src("./build/package/typeorm-browser.js")
             .pipe(uglify())
             .pipe(rename("typeorm-browser.min.js"))
             .pipe(gulp.dest("./build/package"));
