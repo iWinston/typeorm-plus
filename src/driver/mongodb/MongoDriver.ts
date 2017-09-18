@@ -234,7 +234,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

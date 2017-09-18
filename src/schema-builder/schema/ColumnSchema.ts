@@ -63,7 +63,7 @@ export class ColumnSchema {
      * Column type's length. Used only on some column types.
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
-    length?: number;
+    length?: number | string;
 
     /**
      * Defines column character set.
