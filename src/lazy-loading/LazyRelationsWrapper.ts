@@ -106,7 +106,7 @@ export class LazyRelationsWrapper {
             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, conditions);
 
         joinColumns.forEach(joinColumn => {
-            qb.andWhere(`${qb.escape(relation.entityMetadata.name)}.${joinColumn.referencedColumn!.databaseName} = :${joinColumn.referencedColumn!.databaseName}`)
+            qb.andWhere(`${qb.escape(relation.entityMetadata.name)}.${qb.escape(joinColumn.referencedColumn!.databaseName)} = :${joinColumn.referencedColumn!.databaseName}`)
                 .setParameter(`${joinColumn.referencedColumn!.databaseName}`, joinColumn.referencedColumn!.getEntityValue(entity));
         });
         return qb.getOne();
