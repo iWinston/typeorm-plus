@@ -6,6 +6,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
+import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
  * Table schema in the database represented in this class.
@@ -225,7 +226,8 @@ export class TableSchema {
                     columnSchema.isNullable !== columnMetadata.isNullable ||
                     columnSchema.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
-                    columnSchema.isGenerated !== columnMetadata.isGenerated;
+                    columnSchema.isGenerated !== columnMetadata.isGenerated ||
+                    !this.compareColumnLengths(driver, columnSchema, columnMetadata);
         });
     }
 
@@ -236,6 +238,17 @@ export class TableSchema {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Compare column lengths only if the datatype supports it.
+     */
+
+    private compareColumnLengths(driver: Driver, columnSchema: ColumnSchema, columnMetadata: ColumnMetadata): boolean {
+
+        const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
+        return driver.withLengthColumnType.indexOf(normalizedColumn) !== -1 && columnSchema.length !== columnMetadata.length;
+
+    }    
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
