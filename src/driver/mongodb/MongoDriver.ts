@@ -256,6 +256,13 @@ export class MongoDriver implements Driver {
     normalizeIsUnique(column: ColumnMetadata): boolean {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): number | string | undefined {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
     
     /**
      * Normalizes "default" value of the column.

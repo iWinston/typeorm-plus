@@ -411,6 +411,21 @@ export class SqlServerDriver implements Driver {
         return column.isUnique;
     }
 
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): number | string | undefined {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType])
+            return this.dataTypeDefaults[normalizedType].length;       
+
+        return undefined;
+    }
+
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 

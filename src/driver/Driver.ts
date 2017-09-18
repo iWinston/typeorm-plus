@@ -120,6 +120,11 @@ export interface Driver {
     normalizeIsUnique(column: ColumnMetadata): boolean;
 
     /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): number | string | undefined;
+
+    /**
      * Normalizes "default" value of the column.
      */
     createFullType(column: ColumnSchema): string;
