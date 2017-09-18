@@ -167,10 +167,10 @@ export class ColumnSchema {
     /**
      * Creates a new column based on the given column metadata.
      */
-    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string): ColumnSchema {
+    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string, normalizedLength: number | string | undefined): ColumnSchema {
         const columnSchema = new ColumnSchema();
         columnSchema.name = columnMetadata.databaseName;
-        columnSchema.length = columnMetadata.length;
+        columnSchema.length = normalizedLength;
         columnSchema.charset = columnMetadata.charset;
         columnSchema.collation = columnMetadata.collation;
         columnSchema.precision = columnMetadata.precision;

@@ -306,7 +306,11 @@ export class TableSchema {
         const tableSchema = new TableSchema(entityMetadata.tableName);
         tableSchema.engine = entityMetadata.engine;
         entityMetadata.columns.forEach(column => {
-            tableSchema.columns.push(ColumnSchema.create(column, driver.normalizeType(column), driver.normalizeDefault(column)));
+            const columnSchema = ColumnSchema.create(column, 
+                driver.normalizeType(column), 
+                driver.normalizeDefault(column),
+                driver.getColumnLength(column)); 
+            tableSchema.columns.push(columnSchema);
         });
 
         return tableSchema;

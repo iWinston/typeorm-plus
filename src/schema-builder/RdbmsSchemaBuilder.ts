@@ -288,7 +288,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // generate a map of new/old columns
             const newAndOldColumnSchemas = updatedColumnSchemas.map(changedColumnSchema => {
                 const columnMetadata = metadata.columns.find(column => column.databaseName === changedColumnSchema.name);
-                const newColumnSchema = ColumnSchema.create(columnMetadata!, this.connection.driver.normalizeType(columnMetadata!), this.connection.driver.normalizeDefault(columnMetadata!));
+                const newColumnSchema = ColumnSchema.create(columnMetadata!, 
+                    this.connection.driver.normalizeType(columnMetadata!), 
+                    this.connection.driver.normalizeDefault(columnMetadata!),
+                    this.connection.driver.getColumnLength(columnMetadata!));
                 tableSchema.replaceColumn(changedColumnSchema, newColumnSchema);
 
                 return {
@@ -478,6 +481,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 columnMetadata,
                 this.connection.driver.normalizeType(columnMetadata),
                 this.connection.driver.normalizeDefault(columnMetadata),
+                this.connection.driver.getColumnLength(columnMetadata)
             );
         });
     }
