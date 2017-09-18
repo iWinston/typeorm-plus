@@ -188,7 +188,7 @@ describe("query builder > relational query builder > add operation > one to many
         expect(loadedPost3!.category).to.be.undefined;
     })));
 
-    it("should handle addAndRemove method as well", () => Promise.all(connections.map(async connection => {
+    it.only("should handle addAndRemove method as well", () => Promise.all(connections.map(async connection => {
         await prepareData(connection);
 
         // add initial data
