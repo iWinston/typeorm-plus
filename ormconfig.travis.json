@@ -7,8 +7,7 @@
     "port": 3306,
     "username": "test",
     "password": "test",
-    "database": "test",
-    "logging": true
+    "database": "test"
   },
   {
     "skip": false,
