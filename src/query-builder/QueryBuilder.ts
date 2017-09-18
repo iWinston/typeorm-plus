@@ -359,9 +359,10 @@ export abstract class QueryBuilder<Entity> {
 
     /**
      * Creates a completely new query builder.
+     * Uses same query runner as current QueryBuilder.
      */
     createQueryBuilder(): this {
-        return new (this.constructor as any)(this.connection);
+        return new (this.constructor as any)(this.connection, this.queryRunner);
     }
 
     /**
@@ -554,7 +555,6 @@ export abstract class QueryBuilder<Entity> {
 
         if (where instanceof Brackets) {
             const whereQueryBuilder = this.createQueryBuilder();
-            whereQueryBuilder.queryRunner = this.queryRunner;
             where.whereFactory(whereQueryBuilder as any);
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
