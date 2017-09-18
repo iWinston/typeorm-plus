@@ -12,7 +12,7 @@ import {
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
  * So we run tests only for mysql.
  */
-describe.only("named-columns-lazy-relations", () => {
+describe("named-columns-lazy-relations", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
