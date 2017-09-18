@@ -94,6 +94,7 @@ export class LazyRelationsWrapper {
      *              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
      */
     protected loadManyToOneOrOneToOneOwner(relation: RelationMetadata, entity: ObjectLiteral): Promise<any> {
+        const primaryColumns = relation.entityMetadata.primaryColumns;
         const joinColumns = relation.isOwning ? relation.joinColumns : relation.inverseRelation!.joinColumns;
         const conditions = joinColumns.map(joinColumn => {
             return `${relation.entityMetadata.name}.${relation.propertyName} = ${relation.propertyName}.${joinColumn.referencedColumn!.propertyName}`;
@@ -105,9 +106,9 @@ export class LazyRelationsWrapper {
             .from(relation.type, relation.propertyName) // Category, category
             .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name, conditions);
 
-        joinColumns.forEach(joinColumn => {
-            qb.andWhere(`${qb.escape(relation.entityMetadata.name)}.${qb.escape(joinColumn.referencedColumn!.databaseName)} = :${joinColumn.referencedColumn!.databaseName}`)
-                .setParameter(`${joinColumn.referencedColumn!.databaseName}`, joinColumn.referencedColumn!.getEntityValue(entity));
+        primaryColumns.forEach(primaryColumn => {
+            qb.andWhere(`${qb.escape(relation.entityMetadata.name)}.${qb.escape(primaryColumn.databaseName)} = :${primaryColumn.databaseName}`)
+                .setParameter(`${primaryColumn.databaseName}`, primaryColumn.getEntityValue(entity));
         });
         return qb.getOne();
     }
