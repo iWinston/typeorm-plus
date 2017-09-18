@@ -201,12 +201,16 @@ describe("query builder > relational query builder > add operation > one to many
         loadedPost1 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
+        console.log("addAndRemove");
+
         // when nothing is specified nothing should be performed
         await connection
             .createQueryBuilder()
             .relation(Category, "posts")
             .of(category3) // category
             .addAndRemove([], []); // post
+
+        console.log("find");
 
         loadedPost1 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
