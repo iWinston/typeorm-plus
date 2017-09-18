@@ -106,6 +106,21 @@ export class MysqlDriver implements Driver {
     ];
 
     /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnType: ColumnType[] = [
+        "int",
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "bigint",
+        "char",
+        "varchar",
+        "blob",
+        "text"
+    ];
+
+    /**
      * ORM has special columns and we need to know what database column types should be for those columns.
      * Column types are driver dependant.
      */

@@ -103,9 +103,24 @@ export class AbstractSqliteDriver implements Driver {
         "boolean",
         "date",
         "time",
-        "datetime",
+        "datetime"
     ];
 
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnType: ColumnType[] = [
+        "character",
+        "varchar",
+        "varying character",
+        "nchar",
+        "native character",
+        "nvarchar",
+        "text",
+        "blob",
+        "clob"
+    ];
+    
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.

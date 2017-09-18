@@ -110,6 +110,16 @@ export class OracleDriver implements Driver {
     ];
 
     /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnType: ColumnType[] = [
+        "char",
+        "nchar",
+        "nvarchar2",
+        "varchar2"
+    ];
+    
+    /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
      */

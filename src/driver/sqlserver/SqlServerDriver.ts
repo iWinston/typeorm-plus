@@ -110,9 +110,21 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"
+        "xml"        
     ];
 
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnType: ColumnType[] = [
+        "char",
+        "varchar",
+        "nchar",
+        "nvarchar",
+        "binary",
+        "varbinary"
+    ];
+    
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.

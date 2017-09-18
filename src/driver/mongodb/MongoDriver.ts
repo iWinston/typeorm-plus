@@ -59,6 +59,11 @@ export class MongoDriver implements Driver {
     supportedDataTypes: ColumnType[] = [];
 
     /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnType: ColumnType[] = [];
+
+    /**
      * Mongodb does not need to have a strong defined mapped column types because they are not used in schema sync.
      */
     mappedDataTypes: MappedColumnTypes = {
