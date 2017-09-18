@@ -22,7 +22,7 @@ describe("named-tables-and-columns-lazy-relations", () => {
         ],
         schemaCreate: true,
         dropSchema: true,
-        enabledDrivers: ["mysql"] // we can properly test lazy-relations only on one platform
+        enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

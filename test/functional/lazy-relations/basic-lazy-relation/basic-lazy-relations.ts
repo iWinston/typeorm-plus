@@ -34,7 +34,7 @@ describe("basic-lazy-relations", () => {
         entitySchemas: [ userSchema, profileSchema ],
         schemaCreate: true,
         dropSchema: true,
-        enabledDrivers: ["mysql"] // we can properly test lazy-relations only on one platform
+        enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
