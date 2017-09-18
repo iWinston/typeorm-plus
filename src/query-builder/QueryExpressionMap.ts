@@ -8,6 +8,7 @@ import {Connection} from "../connection/Connection";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -285,6 +286,22 @@ export class QueryExpressionMap {
         const [aliasName, propertyPath] = aliasExpression.split(".");
         const alias = this.findAliasByName(aliasName);
         return alias.metadata.findColumnWithPropertyName(propertyPath);
+    }
+
+    /**
+     * Gets relation metadata of the relation this query builder works with.
+     *
+     * todo: add proper exceptions
+     */
+    get relationMetadata(): RelationMetadata {
+        if (!this.mainAlias)
+            throw new Error(`Entity to work with is not specified!`); // todo: better message
+
+        const relationMetadata = this.mainAlias.metadata.findRelationWithPropertyPath(this.relationPropertyPath);
+        if (!relationMetadata)
+            throw new Error(`Relation ${this.relationPropertyPath} was not found in entity ${this.mainAlias.name}`); // todo: better message
+
+        return relationMetadata;
     }
 
     /**
