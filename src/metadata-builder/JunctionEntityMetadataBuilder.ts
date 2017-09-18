@@ -101,6 +101,8 @@ export class JunctionEntityMetadataBuilder {
         });
 
         // set junction table columns
+        entityMetadata.ownerColumns = junctionColumns;
+        entityMetadata.inverseColumns = inverseJunctionColumns;
         entityMetadata.ownColumns = [...junctionColumns, ...inverseJunctionColumns];
         entityMetadata.ownColumns.forEach(column => column.relationMetadata = relation);
 

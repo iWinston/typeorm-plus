@@ -139,6 +139,18 @@ export class EntityMetadata {
     columns: ColumnMetadata[] = [];
 
     /**
+     * In the case if this entity metadata is junction table's entity metadata,
+     * this will contain all referenced columns of owner entity.
+     */
+    ownerColumns: ColumnMetadata[] = [];
+
+    /**
+     * In the case if this entity metadata is junction table's entity metadata,
+     * this will contain all referenced columns of inverse entity.
+     */
+    inverseColumns: ColumnMetadata[] = [];
+
+    /**
      * Entity's relation id metadatas.
      */
     relationIds: RelationIdMetadata[] = [];
