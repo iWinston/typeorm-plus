@@ -68,7 +68,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     subQuery(): SelectQueryBuilder<any> {
         const qb = this.createQueryBuilder();
-        qb.queryRunner = this.queryRunner;
         qb.expressionMap.subQuery = true;
         return qb;
     }

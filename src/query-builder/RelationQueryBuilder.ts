@@ -117,9 +117,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * For many-to-one and one-to-one use #set method instead.
      */
     async addAndRemove(added: any|any[], removed: any|any[]): Promise<void> {
-        console.log("remove");
         await this.remove(removed);
-        console.log("add");
         await this.add(added);
     }
 
