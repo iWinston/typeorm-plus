@@ -6,6 +6,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
+import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
@@ -245,8 +246,14 @@ export class TableSchema {
 
     private compareColumnLengths(driver: Driver, columnSchema: ColumnSchema, columnMetadata: ColumnMetadata): boolean {
 
-        const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
-        return driver.withLengthColumnType.indexOf(normalizedColumn) !== -1 && columnSchema.length !== columnMetadata.length;
+        // sqlite does not really support sizes in datatypes
+        if (!(driver instanceof AbstractSqliteDriver)) {
+            const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
+            if (driver.withLengthColumnType.indexOf(normalizedColumn) !== -1)
+                return  columnSchema.length === columnMetadata.length;
+        }
+
+        return true;
 
     }    
 
