@@ -300,8 +300,12 @@ export class MysqlQueryRunner implements QueryRunner {
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`
             );
         }
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${tableName}\` WHERE \`descendant\` = ${parentId}`);
-        return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+        if (hasLevel) {
+            const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${tableName}\` WHERE \`descendant\` = ${parentId}`);
+            return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+        } else {
+            return -1;
+        }
     }
 
     /**
