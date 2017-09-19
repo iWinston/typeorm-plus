@@ -8,8 +8,6 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mssql", "mysql", "oracle", "postgres", "sqlite"],
-        schemaCreate: true,
         dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
