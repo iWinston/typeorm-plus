@@ -1,11 +1,11 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {ConnectionMetadataBuilder} from "../../../src/connection/ConnectionMetadataBuilder";
-import {EntityMetadataValidator} from "../../../src/metadata-builder/EntityMetadataValidator";
+import {Connection} from "../../../../../src/connection/Connection";
+import {EntityMetadataValidator} from "../../../../../src/metadata-builder/EntityMetadataValidator";
+import {ConnectionMetadataBuilder} from "../../../../../src/connection/ConnectionMetadataBuilder";
 
-describe("entity-metadata-validator", () => {
+describe("relations > eager relations > circular eager relations", () => {
 
-    it("should throw error if relation count decorator used with ManyToOne or OneToOne relations", () => {
+    it("should throw error if eager: true is set on both sides of relationship", () => {
         const connection = new Connection({ // dummy connection options, connection won't be established anyway
             type: "mysql",
             host: "localhost",

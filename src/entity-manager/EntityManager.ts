@@ -861,16 +861,14 @@ export class EntityManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Joins all eager relations.
+     * Joins all eager relations recursively.
      */
     protected joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
-        metadata.relations
-            .filter(relation => relation.isEager)
-            .forEach(relation => {
-                const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
-                qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
-                this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
-            });
+        metadata.eagerRelations.forEach(relation => {
+            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
+        });
     }
 
 }
