@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {Connection} from "../../../../../src/connection/Connection";
 import {
     Post,
 } from "./entity/Post";
@@ -12,18 +12,7 @@ import {
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
  * So we run tests only for mysql.
  */
-describe("basic-lazy-relations", () => {
-
-    let userSchema: any, profileSchema: any;
-    try {
-        const resourceDir = __dirname + "/../../../../../../test/functional/lazy-relations/basic-lazy-relation/";
-        userSchema = require(resourceDir + "schema/user.json");
-        profileSchema = require(resourceDir + "schema/profile.json");
-    } catch (err) {
-        const resourceDir = __dirname + "/";
-        userSchema = require(resourceDir + "schema/user.json");
-        profileSchema = require(resourceDir + "schema/profile.json");
-    }
+describe("named-tables-lazy-relations", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -31,7 +20,6 @@ describe("basic-lazy-relations", () => {
             Post,
             Category,
         ],
-        entitySchemas: [ userSchema, profileSchema ],
         schemaCreate: true,
         dropSchema: true,
         enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
@@ -127,32 +115,6 @@ describe("basic-lazy-relations", () => {
         likePost.title = "Hello post";
         likePost.text = "This is post about post";
         twoSidePosts.should.contain(likePost);
-    })));
-
-    it("should persist and hydrate successfully on a one-to-one relation with inverse side loaded from entity schema", () => Promise.all(connections.map(async connection => {
-        const userRepository = connection.getRepository("User");
-        const profileRepository = connection.getRepository("Profile");
-
-        const profile: any = profileRepository.create();
-        profile.country = "Japan";
-        await profileRepository.save(profile);
-
-        const newUser: any = userRepository.create();
-        newUser.firstName = "Umed";
-        newUser.secondName = "San";
-        newUser.profile = Promise.resolve(profile);
-        await userRepository.save(newUser);
-
-        newUser.profile.should.eventually.be.eql(profile);
-
-        // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
-        const loadedUser: any = await userRepository.findOneById(1);
-        loadedUser.firstName.should.be.equal("Umed");
-        loadedUser.secondName.should.be.equal("San");
-        loadedUser.profile.should.be.instanceOf(Promise);
-
-        const lazyLoadedProfile = await loadedUser.profile;
-        lazyLoadedProfile.country.should.be.equal("Japan");
     })));
 
     it("should persist and hydrate successfully on a many-to-one relation without inverse side", () => Promise.all(connections.map(async connection => {
