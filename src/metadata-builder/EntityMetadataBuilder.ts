@@ -338,6 +338,8 @@ export class EntityMetadataBuilder {
         entityMetadata.ownColumns.forEach(column => column.build(this.connection));
         entityMetadata.ownRelations.forEach(relation => relation.build());
         entityMetadata.relations = entityMetadata.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), entityMetadata.ownRelations);
+        entityMetadata.eagerRelations = entityMetadata.relations.filter(relation => relation.isEager);
+        entityMetadata.lazyRelations = entityMetadata.relations.filter(relation => relation.isLazy);
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOne);
         entityMetadata.oneToManyRelations = entityMetadata.relations.filter(relation => relation.isOneToMany);
         entityMetadata.manyToOneRelations = entityMetadata.relations.filter(relation => relation.isManyToOne);

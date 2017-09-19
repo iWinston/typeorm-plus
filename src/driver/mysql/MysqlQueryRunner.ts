@@ -300,8 +300,12 @@ export class MysqlQueryRunner implements QueryRunner {
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`
             );
         }
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${tableName}\` WHERE \`descendant\` = ${parentId}`);
-        return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+        if (hasLevel) {
+            const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM \`${tableName}\` WHERE \`descendant\` = ${parentId}`);
+            return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -372,10 +376,10 @@ export class MysqlQueryRunner implements QueryRunner {
                         || columnSchema.type === "bigint" || columnSchema.type === "year") {
 
                         const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
-                        columnSchema.length = parseInt(length);
+                        columnSchema.length = length ? length.toString() : "";
 
                     } else {
-                        columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                        columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
                     }
 
                     if (columnSchema.type === "enum") {

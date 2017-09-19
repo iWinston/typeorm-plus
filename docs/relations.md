@@ -640,15 +640,14 @@ They will be loaded automatically:
 ```typescript
 const questionRepository = connection.getRepository(Question);
 
-// questions will be loaded with its categories:
-const questions = await questionRepository.find({ relations: ["categories"] });
-
-// questions will be loaded with its categories:
-const questions = await connection
-    .getRepository(Question)
-    .createQueryBuilder("question")
-    .getMany();
+// questions will be loaded with its categories
+const questions = await questionRepository.find();
 ```
+
+Eager relations are working only when you use `find*` methods.
+If you use `QueryBuilder` eager relations are disabled and you control by yourself what you are going to load using `leftJoinAndSelect` methods.
+Eager relations can be used only on one side of relationship,
+using `eager: true` on both sides of relationship is disallowed.
 
 ## Lazy relations
 

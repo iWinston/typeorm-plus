@@ -107,6 +107,7 @@ describe("closure-table", () => {
         await categoryRepository.save(b1);
         await categoryRepository.save(c1);
 
+        await categoryRepository.save(c1);
         c1.childCategories.push(c12);
         await categoryRepository.save(c1);
         // await categoryRepository.persist(c11);

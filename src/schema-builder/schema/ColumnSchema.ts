@@ -63,7 +63,7 @@ export class ColumnSchema {
      * Column type's length. Used only on some column types.
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
-    length?: number;
+    length: string = "";
 
     /**
      * Defines column character set.
@@ -99,7 +99,7 @@ export class ColumnSchema {
     constructor(options?: {
         name?: string,
         type?: string,
-        length?: number,
+        length?: string,
         charset?: string,
         collation?: string,
         precision?: number,
@@ -116,7 +116,7 @@ export class ColumnSchema {
         if (options) {
             this.name = options.name || "";
             this.type = options.type || "";
-            this.length = options.length;
+            this.length = options.length || "";
             this.charset = options.charset;
             this.collation = options.collation;
             this.precision = options.precision;
@@ -167,10 +167,10 @@ export class ColumnSchema {
     /**
      * Creates a new column based on the given column metadata.
      */
-    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string): ColumnSchema {
+    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string, normalizedLength: string): ColumnSchema {
         const columnSchema = new ColumnSchema();
         columnSchema.name = columnMetadata.databaseName;
-        columnSchema.length = columnMetadata.length;
+        columnSchema.length = normalizedLength;
         columnSchema.charset = columnMetadata.charset;
         columnSchema.collation = columnMetadata.collation;
         columnSchema.precision = columnMetadata.precision;

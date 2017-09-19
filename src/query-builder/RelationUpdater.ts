@@ -74,8 +74,6 @@ export class RelationUpdater {
 
         } else if (relation.isOneToOneNotOwner || relation.isOneToMany) {
 
-            console.log("here we do update! value: ", value);
-
             if (this.expressionMap.of instanceof Array)
                 throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
 
@@ -87,8 +85,6 @@ export class RelationUpdater {
             }, {} as any);
 
             if (!value || (value instanceof Array && !value.length)) return;
-
-            console.log("executing update");
 
             await this.queryBuilder
                 .createQueryBuilder()

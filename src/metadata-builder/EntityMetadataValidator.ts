@@ -34,9 +34,10 @@ export class EntityMetadataValidator {
     /**
      * Validates all given entity metadatas.
      */
-    validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
+    async validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
         entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas, driver));
         this.validateDependencies(entityMetadatas);
+        this.validateEagerRelations(entityMetadatas);
     }
 
     /**
@@ -74,6 +75,8 @@ export class EntityMetadataValidator {
                 const normalizedColumn = driver.normalizeType(column) as ColumnType;
                 if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
                     throw new DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
+                if (column.length && driver.withLengthColumnTypes.indexOf(normalizedColumn) === -1)
+                    throw new Error(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
             });
         }
 
@@ -158,6 +161,10 @@ export class EntityMetadataValidator {
                 throw new Error(`Relation ${entityMetadata.name}#${relation.propertyName} and ${relation.inverseRelation!.entityMetadata.name}#${relation.inverseRelation!.propertyName} both has cascade remove set. ` +
                     `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`);
         }); // todo: maybe better just deny removal from one to one relation without join column?
+
+        entityMetadata.eagerRelations.forEach(relation => {
+
+        });
     }
 
     /**
@@ -182,6 +189,21 @@ export class EntityMetadataValidator {
         } catch (err) {
             throw new CircularRelationsError(err.toString().replace("Error: Dependency Cycle Found: ", ""));
         }
+    }
+
+    /**
+     * Validates eager relations to prevent circular dependency in them.
+     */
+    protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.eagerRelations.forEach(relation => {
+                if (relation.inverseRelation && relation.inverseRelation.isEager)
+                    throw new Error(`Circular eager relations are disallowed. ` +
+                        `${entityMetadata.targetName}#${relation.propertyPath} contains "eager: true", and its inverse side ` +
+                        `${relation.inverseEntityMetadata.targetName}#${relation.inverseRelation.propertyPath} contains "eager: true" as well.` +
+                        ` Remove "eager: true" from one side of the relation.`);
+            });
+        });
     }
 
 }

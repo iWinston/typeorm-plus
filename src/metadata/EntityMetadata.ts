@@ -134,6 +134,16 @@ export class EntityMetadata {
     relations: RelationMetadata[] = [];
 
     /**
+     * List of eager relations this metadata has.
+     */
+    eagerRelations: RelationMetadata[] = [];
+
+    /**
+     * List of eager relations this metadata has.
+     */
+    lazyRelations: RelationMetadata[] = [];
+
+    /**
      * Columns of the entity, including columns that are coming from the embeddeds of this entity.
      */
     columns: ColumnMetadata[] = [];
