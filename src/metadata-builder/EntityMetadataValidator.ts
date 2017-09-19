@@ -74,6 +74,8 @@ export class EntityMetadataValidator {
                 const normalizedColumn = driver.normalizeType(column) as ColumnType;
                 if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
                     throw new DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
+                if (column.length && driver.withLengthColumnTypes.indexOf(normalizedColumn) === -1)
+                    throw new Error(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
             });
         }
 

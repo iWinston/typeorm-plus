@@ -373,7 +373,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["column_name"];
                     columnSchema.type = dbColumn["data_type"].toLowerCase();
-                    columnSchema.length = dbColumn["character_maximum_length"];
+                    columnSchema.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
                     columnSchema.precision = dbColumn["numeric_precision"];
                     columnSchema.scale = dbColumn["numeric_scale"];
                     columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
@@ -602,16 +602,16 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
         // update sequence generation
         if (oldColumn.isGenerated !== newColumn.isGenerated) {
             if (!oldColumn.isGenerated && newColumn.type !== "uuid") {
-                const up = `CREATE SEQUENCE "${tableSchema.name}_id_seq" OWNED BY "${tableSchema.name}"."${oldColumn.name}"`;
+                const up = `CREATE SEQUENCE "${tableSchema.name}_${oldColumn.name}_seq" OWNED BY "${tableSchema.name}"."${oldColumn.name}"`;
                 sql.push({up, down: `-- TODO: revert ${up}`}); // TODO: Add revert logic
 
-                const up2 = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableSchema.name}_id_seq"')`;
+                const up2 = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}" SET DEFAULT nextval('"${tableSchema.name}_${oldColumn.name}_seq"')`;
                 sql.push({up: up2, down: `-- TODO: revert ${up2}`}); // TODO: Add revert logic
             } else {
                 const up = `ALTER TABLE "${tableSchema.name}" ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`;
                 sql.push({up, down: `-- TODO: revert ${up}`}); // TODO: Add revert logic
 
-                const up2 = `DROP SEQUENCE "${tableSchema.name}_id_seq"`;
+                const up2 = `DROP SEQUENCE "${tableSchema.name}_${oldColumn.name}_seq"`;
                 sql.push({up: up2, down: `-- TODO: revert ${up2}`}); // TODO: Add revert logic
             }
         }

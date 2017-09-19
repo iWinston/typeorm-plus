@@ -47,6 +47,11 @@ export interface Driver {
     dataTypeDefaults: DataTypeDefaults;
 
     /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[];
+
+    /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
      */
@@ -102,7 +107,7 @@ export interface Driver {
     /**
      * Transforms type of the given column to a database column type.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string;
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string;
 
     /**
      * Normalizes "default" value of the column.
@@ -113,6 +118,11 @@ export interface Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean;
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string;
 
     /**
      * Normalizes "default" value of the column.

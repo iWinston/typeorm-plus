@@ -159,9 +159,9 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("float4")!.type.should.be.equal("real");
         tableSchema!.findColumnByName("money")!.type.should.be.equal("money");
         tableSchema!.findColumnByName("char")!.type.should.be.equal("character");
-        tableSchema!.findColumnByName("char")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("character")!.type.should.be.equal("character");
-        tableSchema!.findColumnByName("character")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("character")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
         tableSchema!.findColumnByName("text")!.type.should.be.equal("text");
@@ -187,7 +187,7 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("inet")!.type.should.be.equal("inet");
         tableSchema!.findColumnByName("macaddr")!.type.should.be.equal("macaddr");
         tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit");
-        tableSchema!.findColumnByName("bit")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("bit")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("varbit")!.type.should.be.equal("bit varying");
         tableSchema!.findColumnByName("bitVarying")!.type.should.be.equal("bit varying");
         tableSchema!.findColumnByName("uuid")!.type.should.be.equal("uuid");
@@ -241,13 +241,13 @@ describe("database schema > column types > postgres", () => {
         tableSchema!.findColumnByName("decimal")!.precision!.should.be.equal(5);
         tableSchema!.findColumnByName("decimal")!.scale!.should.be.equal(2);
         tableSchema!.findColumnByName("char")!.type.should.be.equal("character");
-        tableSchema!.findColumnByName("char")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal("3");
         tableSchema!.findColumnByName("character")!.type.should.be.equal("character");
-        tableSchema!.findColumnByName("character")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("character")!.length!.should.be.equal("3");
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("character varying");
-        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(30);
+        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal("30");
         tableSchema!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
-        tableSchema!.findColumnByName("characterVarying")!.length!.should.be.equal(30);
+        tableSchema!.findColumnByName("characterVarying")!.length!.should.be.equal("30");
         tableSchema!.findColumnByName("timestamp")!.type.should.be.equal("timestamp without time zone");
         tableSchema!.findColumnByName("timestamp")!.precision!.should.be.equal(3);
         tableSchema!.findColumnByName("timestampWithTimeZone")!.type.should.be.equal("timestamp with time zone");

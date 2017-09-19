@@ -103,9 +103,24 @@ export class AbstractSqliteDriver implements Driver {
         "boolean",
         "date",
         "time",
-        "datetime",
+        "datetime"
     ];
 
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [
+        "character",
+        "varchar",
+        "varying character",
+        "nchar",
+        "native character",
+        "nvarchar",
+        "text",
+        "blob",
+        "clob"
+    ];
+    
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -287,7 +302,7 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         if (column.type === Number || column.type === "int") {
             return "integer";
 
@@ -340,6 +355,21 @@ export class AbstractSqliteDriver implements Driver {
     }
     
     /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
+
+        return "";
+    }
+    
+    /**
      * Normalizes "default" value of the column.
      */
     createFullType(column: ColumnSchema): string {
@@ -354,7 +384,7 @@ export class AbstractSqliteDriver implements Driver {
         } else if (column.scale) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)

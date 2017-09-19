@@ -6,6 +6,8 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
+import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
+import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
  * Table schema in the database represented in this class.
@@ -225,7 +227,8 @@ export class TableSchema {
                     columnSchema.isNullable !== columnMetadata.isNullable ||
                     columnSchema.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
                     // columnSchema.isPrimary !== columnMetadata.isPrimary ||
-                    columnSchema.isGenerated !== columnMetadata.isGenerated;
+                    columnSchema.isGenerated !== columnMetadata.isGenerated ||
+                    !this.compareColumnLengths(driver, columnSchema, columnMetadata);
         });
     }
 
@@ -236,6 +239,28 @@ export class TableSchema {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Compare column lengths only if the datatype supports it.
+     */
+
+    private compareColumnLengths(driver: Driver, columnSchema: ColumnSchema, columnMetadata: ColumnMetadata): boolean {
+
+        // sqlite does not really support sizes in datatypes
+        if (!(driver instanceof AbstractSqliteDriver)) {
+            const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
+            if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
+                let metadataLength = driver.getColumnLength(columnMetadata);
+
+                // if we found something to compare with then do it, else skip it
+                if (metadataLength)
+                    return columnSchema.length === metadataLength;
+            }
+        }
+
+        return true;
+
+    }    
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
@@ -286,7 +311,11 @@ export class TableSchema {
         const tableSchema = new TableSchema(entityMetadata.tableName);
         tableSchema.engine = entityMetadata.engine;
         entityMetadata.columns.forEach(column => {
-            tableSchema.columns.push(ColumnSchema.create(column, driver.normalizeType(column), driver.normalizeDefault(column)));
+            const columnSchema = ColumnSchema.create(column, 
+                driver.normalizeType(column), 
+                driver.normalizeDefault(column),
+                driver.getColumnLength(column)); 
+            tableSchema.columns.push(columnSchema);
         });
 
         return tableSchema;

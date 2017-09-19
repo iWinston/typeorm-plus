@@ -110,9 +110,21 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"
+        "xml"        
     ];
 
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [
+        "char",
+        "varchar",
+        "nchar",
+        "nvarchar",
+        "binary",
+        "varbinary"
+    ];
+    
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -331,7 +343,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         if (column.type === Number) {
             return "int";
 
@@ -399,6 +411,21 @@ export class SqlServerDriver implements Driver {
         return column.isUnique;
     }
 
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
+
+        return "";
+    }
+
     createFullType(column: ColumnSchema): string {
         let type = column.type;
 
@@ -411,7 +438,7 @@ export class SqlServerDriver implements Driver {
         } else if (column.scale) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)

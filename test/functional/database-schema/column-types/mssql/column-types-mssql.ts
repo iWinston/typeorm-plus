@@ -105,7 +105,7 @@ describe("database schema > column types > mssql", () => {
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("name")!.length!.should.be.equal(255);
+        tableSchema!.findColumnByName("name")!.length!.should.be.equal("255");
         tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit");
         tableSchema!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
         tableSchema!.findColumnByName("smallint")!.type.should.be.equal("smallint");
@@ -119,19 +119,19 @@ describe("database schema > column types > mssql", () => {
         tableSchema!.findColumnByName("smallmoney")!.type.should.be.equal("smallmoney");
         tableSchema!.findColumnByName("money")!.type.should.be.equal("money");
         tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
-        tableSchema!.findColumnByName("char")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(255);
+        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal("255");
         tableSchema!.findColumnByName("text")!.type.should.be.equal("text");
         tableSchema!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        tableSchema!.findColumnByName("nchar")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("nchar")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("nvarchar")!.length!.should.be.equal(255);
+        tableSchema!.findColumnByName("nvarchar")!.length!.should.be.equal("255");
         tableSchema!.findColumnByName("ntext")!.type.should.be.equal("ntext");
         tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
-        tableSchema!.findColumnByName("binary")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("binary")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("image")!.type.should.be.equal("image");
         tableSchema!.findColumnByName("date")!.type.should.be.equal("date");
         tableSchema!.findColumnByName("dateObj")!.type.should.be.equal("date");
@@ -204,17 +204,17 @@ describe("database schema > column types > mssql", () => {
         tableSchema!.findColumnByName("float")!.type.should.be.equal("real");
         tableSchema!.findColumnByName("float")!.precision!.should.be.equal(24);
         tableSchema!.findColumnByName("char")!.type.should.be.equal("char");
-        tableSchema!.findColumnByName("char")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("char")!.length!.should.be.equal("3");
         tableSchema!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal(50);
+        tableSchema!.findColumnByName("varchar")!.length!.should.be.equal("50");
         tableSchema!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        tableSchema!.findColumnByName("nchar")!.length!.should.be.equal(3);
+        tableSchema!.findColumnByName("nchar")!.length!.should.be.equal("3");
         tableSchema!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("nvarchar")!.length!.should.be.equal(40);
+        tableSchema!.findColumnByName("nvarchar")!.length!.should.be.equal("40");
         tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
-        tableSchema!.findColumnByName("binary")!.length!.should.be.equal(5);
+        tableSchema!.findColumnByName("binary")!.length!.should.be.equal("5");
         tableSchema!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal(5);
+        tableSchema!.findColumnByName("varbinary")!.length!.should.be.equal("5");
         tableSchema!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
         tableSchema!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
         tableSchema!.findColumnByName("time")!.type.should.be.equal("time");
@@ -249,10 +249,10 @@ describe("database schema > column types > mssql", () => {
 
         tableSchema!.findColumnByName("id")!.type.should.be.equal("int");
         tableSchema!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        tableSchema!.findColumnByName("name")!.length!.should.be.equal(255);
+        tableSchema!.findColumnByName("name")!.length!.should.be.equal("255");
         tableSchema!.findColumnByName("bit")!.type.should.be.equal("bit");
         tableSchema!.findColumnByName("binary")!.type.should.be.equal("binary");
-        tableSchema!.findColumnByName("binary")!.length!.should.be.equal(1);
+        tableSchema!.findColumnByName("binary")!.length!.should.be.equal("1");
         tableSchema!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 
     })));

@@ -35,7 +35,7 @@ describe("github issues > #695 Join columns are not using correct length", () =>
         await connection.manager.save(deviceInstance);
 
         tableSchema!.findColumnByName("device_id")!.type.should.be.equal("char");
-        tableSchema!.findColumnByName("device_id")!.length!.should.be.equal(12);
+        tableSchema!.findColumnByName("device_id")!.length!.should.be.equal("12");
 
     })));
 

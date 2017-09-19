@@ -59,6 +59,11 @@ export class MongoDriver implements Driver {
     supportedDataTypes: ColumnType[] = [];
 
     /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [];
+
+    /**
      * Mongodb does not need to have a strong defined mapped column types because they are not used in schema sync.
      */
     mappedDataTypes: MappedColumnTypes = {
@@ -234,7 +239,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
@@ -249,6 +254,13 @@ export class MongoDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
     
