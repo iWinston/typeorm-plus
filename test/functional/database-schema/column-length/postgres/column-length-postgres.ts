@@ -24,20 +24,20 @@ describe("database schema > column length > mssql", () => {
         const tableSchema = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("characterVarying")!.length).to.be.equal(50);
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal(50);
-        expect(tableSchema!.findColumnByName("character")!.length).to.be.equal(50);
-        expect(tableSchema!.findColumnByName("char")!.length).to.be.equal(50);
+        expect(tableSchema!.findColumnByName("characterVarying")!.length).to.be.equal("50");
+        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("50");
+        expect(tableSchema!.findColumnByName("character")!.length).to.be.equal("50");
+        expect(tableSchema!.findColumnByName("char")!.length).to.be.equal("50");
     
     })));
 
     it("all types should update their size", () => Promise.all(connections.map(async connection => {
         
         let metadata = connection.getMetadata(Post);
-        metadata.findColumnWithPropertyName("characterVarying")!.length = 100;
-        metadata.findColumnWithPropertyName("varchar")!.length = 100;
-        metadata.findColumnWithPropertyName("character")!.length = 100;
-        metadata.findColumnWithPropertyName("char")!.length = 100;
+        metadata.findColumnWithPropertyName("characterVarying")!.length = "100";
+        metadata.findColumnWithPropertyName("varchar")!.length = "100";
+        metadata.findColumnWithPropertyName("character")!.length = "100";
+        metadata.findColumnWithPropertyName("char")!.length = "100";
 
         await connection.synchronize(false);        
 
@@ -45,10 +45,10 @@ describe("database schema > column length > mssql", () => {
         const tableSchema = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("characterVarying")!.length).to.be.equal(100);
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal(100);
-        expect(tableSchema!.findColumnByName("character")!.length).to.be.equal(100);
-        expect(tableSchema!.findColumnByName("char")!.length).to.be.equal(100);
+        expect(tableSchema!.findColumnByName("characterVarying")!.length).to.be.equal("100");
+        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("100");
+        expect(tableSchema!.findColumnByName("character")!.length).to.be.equal("100");
+        expect(tableSchema!.findColumnByName("char")!.length).to.be.equal("100");
             
     })));
     
