@@ -98,7 +98,7 @@ export interface EntitySchema { // todo: make it-to-date
              * Column type's length. For example type = "string" and length = 100 means that ORM will create a column with
              * type varchar(100).
              */
-            length?: string;
+            length?: string | number;
 
             /**
              * Specifies if this column will use AUTO_INCREMENT or not (e.g. generated number).
