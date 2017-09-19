@@ -7,7 +7,7 @@ import {Editor} from "./entity/Editor";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe.only("relations > eager relations > basic", () => {
+describe("relations > eager relations > basic", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
