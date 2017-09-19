@@ -122,7 +122,7 @@ export interface Driver {
     /**
      * Calculates column length taking into account the default length values.
      */
-    getColumnLength(column: ColumnMetadata): number | string | undefined;
+    getColumnLength(column: ColumnMetadata): string;
 
     /**
      * Normalizes "default" value of the column.

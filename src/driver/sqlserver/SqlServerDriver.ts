@@ -414,16 +414,16 @@ export class SqlServerDriver implements Driver {
     /**
      * Calculates column length taking into account the default length values.
      */
-    getColumnLength(column: ColumnMetadata): number | string | undefined {
+    getColumnLength(column: ColumnMetadata): string {
         
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType])
-            return this.dataTypeDefaults[normalizedType].length;       
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
 
-        return undefined;
+        return "";
     }
 
     createFullType(column: ColumnSchema): string {
@@ -438,7 +438,7 @@ export class SqlServerDriver implements Driver {
         } else if (column.scale) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)

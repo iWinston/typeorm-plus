@@ -373,7 +373,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema = '${this.schemaName}' 
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["column_name"];
                     columnSchema.type = dbColumn["data_type"].toLowerCase();
-                    columnSchema.length = dbColumn["character_maximum_length"];
+                    columnSchema.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
                     columnSchema.precision = dbColumn["numeric_precision"];
                     columnSchema.scale = dbColumn["numeric_scale"];
                     columnSchema.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;

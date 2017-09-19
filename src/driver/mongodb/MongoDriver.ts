@@ -260,7 +260,7 @@ export class MongoDriver implements Driver {
     /**
      * Calculates column length taking into account the default length values.
      */
-    getColumnLength(column: ColumnMetadata): number | string | undefined {
+    getColumnLength(column: ColumnMetadata): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
     
