@@ -57,32 +57,32 @@ export interface EntitySchema { // todo: make it-to-date
             /**
              * Indicates if this column is a primary column.
              */
-            primary: boolean;
+            primary?: boolean;
 
             /**
              * Indicates if this column is a created date column.
              */
-            createDate: boolean;
+            createDate?: boolean;
 
             /**
              * Indicates if this column is an update date column.
              */
-            updateDate: boolean;
+            updateDate?: boolean;
 
             /**
              * Indicates if this column is a version column.
              */
-            version: boolean;
+            version?: boolean;
 
             /**
              * Indicates if this column is a treeChildrenCount column.
              */
-            treeChildrenCount: boolean;
+            treeChildrenCount?: boolean;
 
             /**
              * Indicates if this column is a treeLevel column.
              */
-            treeLevel: boolean;
+            treeLevel?: boolean;
 
             /**
              * Column type. Must be one of the value from the ColumnTypes class.
