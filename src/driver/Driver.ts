@@ -49,7 +49,7 @@ export interface Driver {
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withLengthColumnType: ColumnType[];
+    withLengthColumnTypes: ColumnType[];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.

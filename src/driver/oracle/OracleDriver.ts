@@ -112,7 +112,7 @@ export class OracleDriver implements Driver {
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withLengthColumnType: ColumnType[] = [
+    withLengthColumnTypes: ColumnType[] = [
         "char",
         "nchar",
         "nvarchar2",

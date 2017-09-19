@@ -108,7 +108,7 @@ export class MysqlDriver implements Driver {
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withLengthColumnType: ColumnType[] = [
+    withLengthColumnTypes: ColumnType[] = [
         "int",
         "tinyint",
         "smallint",

@@ -249,7 +249,7 @@ export class TableSchema {
         // sqlite does not really support sizes in datatypes
         if (!(driver instanceof AbstractSqliteDriver)) {
             const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
-            if (driver.withLengthColumnType.indexOf(normalizedColumn) !== -1) {
+            if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
                 let metadataLength = driver.getColumnLength(columnMetadata);
 
                 // if we found something to compare with then do it, else skip it

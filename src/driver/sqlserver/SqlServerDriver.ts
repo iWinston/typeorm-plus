@@ -116,7 +116,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withLengthColumnType: ColumnType[] = [
+    withLengthColumnTypes: ColumnType[] = [
         "char",
         "varchar",
         "nchar",
