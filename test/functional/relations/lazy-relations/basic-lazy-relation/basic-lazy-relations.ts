@@ -15,15 +15,10 @@ import {
 describe("basic-lazy-relations", () => {
 
     let userSchema: any, profileSchema: any;
-    try {
-        const resourceDir = __dirname + "/../../../../../../test/functional/lazy-relations/basic-lazy-relation/";
-        userSchema = require(resourceDir + "schema/user.json");
-        profileSchema = require(resourceDir + "schema/profile.json");
-    } catch (err) {
-        const resourceDir = __dirname + "/";
-        userSchema = require(resourceDir + "schema/user.json");
-        profileSchema = require(resourceDir + "schema/profile.json");
-    }
+    const appRoot = require("app-root-path");
+    const resourceDir = appRoot + "/test/functional/relations/lazy-relations/basic-lazy-relation/";
+    userSchema = require(resourceDir + "schema/user.json");
+    profileSchema = require(resourceDir + "schema/profile.json");
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -50,4 +50,12 @@ export interface RelationOptions {
      */
     lazy?: boolean;
 
+    /**
+     * Set this relation to be eager.
+     * Eager relations are always loaded automatically when relation's owner entity is loaded using find* methods.
+     * Only using QueryBuilder prevents loading eager relations.
+     * Eager flag cannot be set from both sides of relation - you can eager load only one side of the relationship.
+     */
+    eager?: boolean;
+
 }
