@@ -1424,9 +1424,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
-        const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns.filter(column => column.isSelect === true) : metadata.columns.filter(column => {
+        const columns: ColumnMetadata[] = [];
+        if (hasMainAlias) {
+            columns.push(...metadata.columns.filter(column => column.isSelect === true));
+        }
+        columns.push(...metadata.columns.filter(column => {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
-        });
+        }));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
         // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
