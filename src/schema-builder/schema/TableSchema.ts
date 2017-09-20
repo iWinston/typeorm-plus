@@ -253,8 +253,9 @@ export class TableSchema {
                 let metadataLength = driver.getColumnLength(columnMetadata);
 
                 // if we found something to compare with then do it, else skip it
+                // use use case insensitive comparison to catch "MAX" vs "Max" case
                 if (metadataLength)
-                    return columnSchema.length === metadataLength;
+                    return columnSchema.length.toLowerCase() === metadataLength.toLowerCase();
             }
         }
 

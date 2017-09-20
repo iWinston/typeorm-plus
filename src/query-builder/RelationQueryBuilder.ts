@@ -124,17 +124,15 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Gets entity's relation id.
-     */
     async getId(): Promise<any> {
 
-    }
+    }*/
 
     /**
      * Gets entity's relation ids.
-     */
     async getIds(): Promise<any[]> {
         return [];
-    }
+    }*/
 
     /**
      * Loads a single entity (relational) from the relation.
@@ -161,9 +159,5 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
     async loadMany<T = any>(): Promise<T[]> {
         return this.loadOne();
     }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
 
 }

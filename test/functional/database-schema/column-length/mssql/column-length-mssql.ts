@@ -71,9 +71,9 @@ describe("database schema > column length > mssql", () => {
         const tableSchema = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("-1");
-        expect(tableSchema!.findColumnByName("nvarchar")!.length).to.be.equal("-1");
-        expect(tableSchema!.findColumnByName("varbinary")!.length).to.be.equal("-1");
+        expect(tableSchema!.findColumnByName("varchar")!.length).to.be.equal("MAX");
+        expect(tableSchema!.findColumnByName("nvarchar")!.length).to.be.equal("MAX");
+        expect(tableSchema!.findColumnByName("varbinary")!.length).to.be.equal("MAX");
             
     })));
     
