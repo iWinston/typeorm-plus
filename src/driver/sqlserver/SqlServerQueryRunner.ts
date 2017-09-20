@@ -539,7 +539,11 @@ export class SqlServerQueryRunner implements QueryRunner {
                     const columnSchema = new ColumnSchema();
                     columnSchema.name = dbColumn["COLUMN_NAME"];
                     columnSchema.type = dbColumn["DATA_TYPE"].toLowerCase();
+
                     columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
+                    if (columnSchema.length === "-1")
+                        columnSchema.length = "MAX";
+
                     columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
                     columnSchema.scale = dbColumn["NUMERIC_SCALE"];
                     columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
