@@ -51,7 +51,7 @@ describe("columns > no-selection functionality", () => {
         expect(loadedPost!.authorName).to.be.undefined;
     })));
 
-    it("should not select columns with QueryBuilder marked with select: false option", () => Promise.all(connections.map(async connection => {
+    it("should select columns with select: false even columns were implicitly selected", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
 
         // create and save a post first
