@@ -268,6 +268,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 columnSchema.isPrimary = dbColumn["pk"] === 1;
                 columnSchema.comment = ""; // todo later
                 columnSchema.isGenerated = autoIncrementColumnName === dbColumn["name"];
+                if (columnSchema.isGenerated) {
+                    columnSchema.generationStrategy = "increment";
+                }
 
                 // parse datatype and attempt to retrieve length
                 let pos = columnSchema.type.indexOf("(");
