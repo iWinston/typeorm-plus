@@ -461,8 +461,8 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void> {
-        return Promise.resolve();
+    createSchema(schemas: string[]): Promise<void[]> {
+        return Promise.resolve([]);
     }
 
     /**

@@ -29,6 +29,7 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
             type: "regular",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
             engine: options && options.engine ? options.engine : undefined,
+            schema: options && options.schema ? options.schema : undefined,
             skipSync: !!(options && options.skipSync === true)
         };
         getMetadataArgsStorage().tables.push(args);

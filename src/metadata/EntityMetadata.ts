@@ -96,6 +96,12 @@ export class EntityMetadata {
     tableName: string;
 
     /**
+     * Entity table path. Contains database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    tablePath: string;
+
+    /**
      * Gets the table name without global table prefix.
      * When querying table you need a table name with prefix, but in some scenarios,
      * for example when you want to name a junction table that contains names of two other tables,
@@ -112,6 +118,16 @@ export class EntityMetadata {
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
      */
     engine?: string;
+
+    /**
+     * Database name.
+     */
+    database?: string;
+
+    /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
@@ -371,6 +387,7 @@ export class EntityMetadata {
         this.target = options.args.target;
         this.tableType = options.args.type;
         this.engine = options.args.engine;
+        this.schema = options.args.schema;
         this.givenTableName = options.args.name;
         this.skipSync = options.args.skipSync || false;
         this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
@@ -378,6 +395,7 @@ export class EntityMetadata {
         this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
+        this.tablePath = this.buildTablePath();
 
         this.isClassTableChild = this.tableType === "class-table-child";
         this.isSingleTableChild = this.tableType === "single-table-child";
@@ -627,5 +645,22 @@ export class EntityMetadata {
         this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
+    }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Builds table path using schema name and table name.
+     */
+    protected buildTablePath(): string {
+        let tablePath = this.tableName;
+        if (this.schema)
+            tablePath = this.schema + "." + tablePath;
+        if (this.database)
+            tablePath = this.database + "." + tablePath;
+
+        return tablePath;
     }
 }

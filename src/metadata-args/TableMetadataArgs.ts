@@ -34,6 +34,11 @@ export interface TableMetadataArgs {
     engine?: string;
 
     /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
+
+    /**
      * Whether table must be synced during schema build or not
      */
     skipSync?: boolean;

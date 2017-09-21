@@ -464,7 +464,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void> {
+    createSchema(schemas: string[]): Promise<void[]> {
         throw new Error(`Schema create queries are not supported by MongoDB driver.`);
     }
 

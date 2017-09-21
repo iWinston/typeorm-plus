@@ -19,6 +19,11 @@ export interface EntityOptions {
     engine?: string;
 
     /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
+
+    /**
      * Specifies if this table will be skipped during schema synchronization.
      */
     skipSync?: boolean;

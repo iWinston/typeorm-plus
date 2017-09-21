@@ -362,8 +362,8 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void> {
-        return Promise.resolve();
+    createSchema(schemas: string[]): Promise<void[]> {
+        return Promise.resolve([]);
     }
 
     /**
@@ -559,7 +559,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableName: string, indexName: string): Promise<void> {
+    async dropIndex(tableSchemeOrName: TableSchema|string, indexName: string): Promise<void> {
         const sql = `DROP INDEX "${indexName}"`;
         await this.query(sql);
     }

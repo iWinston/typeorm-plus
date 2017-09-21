@@ -11,6 +11,10 @@ import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
 import {QueryPartialEntity} from "./QueryPartialEntity";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -407,6 +411,26 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Gets escaped table name with schema name if SqlServer driver used with custom
+     * schema name, otherwise returns escaped table name.
+     */
+    protected getTableName(tableName: string): string {
+        if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
+            if (this.connection.hasMetadata(tableName) && this.connection.getMetadata(tableName).schema) {
+                return `${this.escape(this.connection.getMetadata(tableName).schema!)}.${this.escape(tableName)}`;
+
+            } else if ((this.connection.driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema) {
+                return `${this.escape((this.connection.driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema!)}.${this.escape(tableName)}`;
+
+            } else {
+                return this.escape(tableName);
+            }
+        } else {
+            return this.escape(tableName);
+        }
+    }
 
     /**
      * Gets name of the table where insert should be performed.

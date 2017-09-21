@@ -427,8 +427,8 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void> {
-        return Promise.resolve();
+    createSchema(schemas: string[]): Promise<void[]> {
+        return Promise.resolve([]);
     }
 
     /**
@@ -660,7 +660,8 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableName: string, indexName: string): Promise<void> {
+    async dropIndex(tableSchemeOrName: TableSchema|string, indexName: string): Promise<void> {
+        const tableName = tableSchemeOrName instanceof TableSchema ? tableSchemeOrName.name : tableSchemeOrName;
         const sql = `ALTER TABLE "${tableName}" DROP INDEX "${indexName}"`;
         await this.query(sql);
     }
