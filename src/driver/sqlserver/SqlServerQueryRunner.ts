@@ -871,33 +871,17 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
         const primaryColumnNames = tableSchema.primaryKeys.map(primaryKey => `"` + primaryKey.columnName + `"`);
         if (primaryColumnNames.length > 0)
             await this.query(`ALTER TABLE ${this.escapeTablePath(tableSchema)} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
-
     }
 
     /**
      * Creates a new foreign key.
      */
     async createForeignKey(tableSchemaOrPath: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
-        let schema;
-        if (tableSchemaOrPath instanceof TableSchema) {
-            schema = tableSchemaOrPath.schema || this.driver.options.schema;
-        } else {
-            if (tableSchemaOrPath.split(".").length === 3) {
-                schema = tableSchemaOrPath.split(".")[1];
-            }  else if (tableSchemaOrPath.split(".").length === 2) {
-                schema = tableSchemaOrPath.split(".")[0];
-            } else {
-                schema = this.driver.options.schema;
-            }
-        }
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-        let sql = schema ? `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
+        let sql = `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY (${columnNames}) ` +
-            `REFERENCES "${schema}"."${foreignKey.referencedTableName}"(${referencedColumnNames})`
-                         : `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
-            `FOREIGN KEY (${columnNames}) ` +
-            `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
+            `REFERENCES ${this.escapeTablePath(foreignKey.referencedTablePath)}(${referencedColumnNames})`;
         if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
         return this.query(sql);
     }

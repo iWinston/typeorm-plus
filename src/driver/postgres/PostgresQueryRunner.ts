@@ -871,15 +871,11 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     }
 
     protected foreignKeySql(tableSchemaOrPath: TableSchema|string, foreignKey: ForeignKeySchema): { add: string, drop: string } {
-        const schema = this.extractSchema(tableSchemaOrPath);
-        let add = schema ? `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
+        let add = `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
-            `REFERENCES "${schema}"."${foreignKey.referencedTableName}"("${foreignKey.referencedColumnNames.join("\", \"")}")`
-            : `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
-            `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
-            `REFERENCES "${foreignKey.referencedTableName}"("${foreignKey.referencedColumnNames.join("\", \"")}")`;
-        if (foreignKey.onDelete) add += " ON DELETE " + foreignKey.onDelete;
+            `REFERENCES ${this.escapeTablePath(foreignKey.referencedTablePath)}("${foreignKey.referencedColumnNames.join("\", \"")}")`;
 
+        if (foreignKey.onDelete) add += " ON DELETE " + foreignKey.onDelete;
         const drop = `ALTER TABLE ${this.escapeTablePath(tableSchemaOrPath)} DROP CONSTRAINT "${foreignKey.name}"`;
 
         return {add, drop};
