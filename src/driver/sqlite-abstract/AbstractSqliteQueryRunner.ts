@@ -268,6 +268,19 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 columnSchema.isPrimary = dbColumn["pk"] === 1;
                 columnSchema.comment = ""; // todo later
                 columnSchema.isGenerated = autoIncrementColumnName === dbColumn["name"];
+
+                // parse datatype and attempt to retrieve length
+                let pos = columnSchema.type.indexOf("(");
+                if (pos !== -1) {
+                    let dataType = columnSchema.type.substr(0, pos);
+                    if (!!this.driver.withLengthColumnTypes.find(col => col === dataType)) {
+                        let len = parseInt(columnSchema.type.substring(pos + 1, columnSchema.type.length - 1));
+                        if (len) {
+                            columnSchema.length = len.toString();
+                            columnSchema.type = dataType; // remove the length part from the datatype
+                        }
+                    }
+                }
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
