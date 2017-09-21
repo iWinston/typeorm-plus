@@ -104,6 +104,8 @@ export {DeleteQueryBuilder} from "./query-builder/DeleteQueryBuilder";
 export {InsertQueryBuilder} from "./query-builder/InsertQueryBuilder";
 export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
 export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
+export {Brackets} from "./query-builder/Brackets";
+export {WhereExpression} from "./query-builder/WhereExpression";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
