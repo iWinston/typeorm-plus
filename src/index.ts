@@ -127,6 +127,7 @@ export {EntitySchemaTable} from "./entity-schema/EntitySchemaTable";
 export {EntitySchemaColumn} from "./entity-schema/EntitySchemaColumn";
 export {EntitySchemaIndex} from "./entity-schema/EntitySchemaIndex";
 export {EntitySchemaRelation} from "./entity-schema/EntitySchemaRelation";
+export {ColumnType} from "./driver/types/ColumnTypes";
 
 // -------------------------------------------------------------------------
 // Deprecated
