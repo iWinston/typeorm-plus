@@ -6,7 +6,6 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
-import {AbstractSqliteDriver} from "../../driver/sqlite-abstract/AbstractSqliteDriver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
@@ -246,17 +245,14 @@ export class TableSchema {
 
     private compareColumnLengths(driver: Driver, columnSchema: ColumnSchema, columnMetadata: ColumnMetadata): boolean {
 
-        // sqlite does not really support sizes in datatypes
-        if (!(driver instanceof AbstractSqliteDriver)) {
-            const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
-            if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
-                let metadataLength = driver.getColumnLength(columnMetadata);
+        const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
+        if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
+            let metadataLength = driver.getColumnLength(columnMetadata);
 
-                // if we found something to compare with then do it, else skip it
-                // use use case insensitive comparison to catch "MAX" vs "Max" case
-                if (metadataLength)
-                    return columnSchema.length.toLowerCase() === metadataLength.toLowerCase();
-            }
+            // if we found something to compare with then do it, else skip it
+            // use use case insensitive comparison to catch "MAX" vs "Max" case
+            if (metadataLength)
+                return columnSchema.length.toLowerCase() === metadataLength.toLowerCase();
         }
 
         return true;
