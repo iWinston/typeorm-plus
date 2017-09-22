@@ -38,14 +38,14 @@ export interface EntitySchema { // todo: make it-to-date
     /**
      * Entity relation's options.
      */
-    relations: {
+    relations?: {
         [relationName: string]: EntitySchemaRelation;
     };
 
     /**
     * Entity indices options.
     */
-    indices: {
+    indices?: {
         [indexName: string]: EntitySchemaIndex;
     };
 

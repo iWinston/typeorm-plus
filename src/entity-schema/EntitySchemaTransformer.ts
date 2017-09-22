@@ -86,7 +86,7 @@ export class EntitySchemaTransformer {
             // add relation metadata args from the schema
             if (schema.relations) {
                 Object.keys(schema.relations).forEach(relationName => {
-                    const relationSchema = schema.relations[relationName];
+                    const relationSchema = schema.relations![relationName];
                     const relation: RelationMetadataArgs = {
                         target: schema.target || schema.name,
                         propertyName: relationName,
@@ -152,7 +152,7 @@ export class EntitySchemaTransformer {
             // add relation metadata args from the schema
             if (schema.indices) {
                 Object.keys(schema.indices).forEach(indexName => {
-                    const indexSchema = schema.indices[indexName];
+                    const indexSchema = schema.indices![indexName];
                     const indexAgrs: IndexMetadataArgs = {
                         target: schema.target || schema.name,
                         name: indexName,
