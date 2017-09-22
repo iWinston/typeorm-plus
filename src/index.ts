@@ -123,6 +123,11 @@ export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
 export {BaseEntity} from "./repository/BaseEntity";
 export {EntitySchema} from "./entity-schema/EntitySchema";
+export {EntitySchemaTable} from "./entity-schema/EntitySchemaTable";
+export {EntitySchemaColumn} from "./entity-schema/EntitySchemaColumn";
+export {EntitySchemaIndex} from "./entity-schema/EntitySchemaIndex";
+export {EntitySchemaRelation} from "./entity-schema/EntitySchemaRelation";
+export {ColumnType} from "./driver/types/ColumnTypes";
 
 // -------------------------------------------------------------------------
 // Deprecated
