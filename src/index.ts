@@ -122,7 +122,11 @@ export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
 export {BaseEntity} from "./repository/BaseEntity";
-export {EntitySchema, EntitySchemaTable, EntitySchemaColumn, EntitySchemaIndex, EntitySchemaRelation} from "./entity-schema/EntitySchema";
+export {EntitySchema} from "./entity-schema/EntitySchema";
+export {EntitySchemaTable} from "./entity-schema/EntitySchemaTable";
+export {EntitySchemaColumn} from "./entity-schema/EntitySchemaColumn";
+export {EntitySchemaIndex} from "./entity-schema/EntitySchemaIndex";
+export {EntitySchemaRelation} from "./entity-schema/EntitySchemaRelation";
 
 // -------------------------------------------------------------------------
 // Deprecated
