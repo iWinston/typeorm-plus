@@ -27,12 +27,10 @@ export class InitCommand {
                 alias: "database",
                 describe: "Database type you'll use in your project."
             })
-            .option("e", {
-                alias: "express",
+            .option("express", {
                 describe: "Indicates if express should be included in the project."
             })
-            .option("d", {
-                alias: "docker",
+            .option("docker", {
                 describe: "Set to true if docker-compose must be generated as well. False by default."
             });
     }
@@ -244,25 +242,17 @@ import {User} from "../entity/User";
 
 export class UserController {
 
-    private userRepository: UserRepository = getRepository(User);
+    private userRepository = getRepository(User);
 
-    all(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findAll();
+    async all(request: Request, response: Response, next: NextFunction) {
+        return this.userRepository.find();
     }
 
-    one(request: Request, response: Response, next: NextFunction) {
-        const user = await this.userRepository.findOneById(request.params.id);
-        if (!user) {
-            response.status = 404;
-            return { 
-                error: "User " + request.params.id + " was not found" 
-            };
-        }
-        
-        return user;
+    async one(request: Request, response: Response, next: NextFunction) {
+        return this.userRepository.findOneById(request.params.id);
     }
 
-    save(request: Request, response: Response, next: NextFunction) {
+    async save(request: Request, response: Response, next: NextFunction) {
         return this.userRepository.save(request.body);
     }
 
@@ -283,8 +273,8 @@ import {createConnection} from "typeorm";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import {Request, Response} from "express";
-import {User} from "./entity/User";
 import {Routes} from "./routes";
+import {User} from "./entity/User";
 
 createConnection().then(async connection => {
 
@@ -294,8 +284,8 @@ createConnection().then(async connection => {
 
     // register express routes from defined application routes
     Routes.forEach(route => {
-        (app as any)[route.method]((req: Request, res: Response, next: Function) => {
-            const result = (new (route.controller as any)[route.method](req, res, next);
+        (app as any)[route.method](route.route, (req: Request, res: Response, next: Function) => {
+            const result = (new (route.controller as any))[route.action](req, res, next);
             if (result instanceof Promise) {
                 result.then(result => result !== null && result !== undefined ? res.send(result) : undefined);
 
@@ -309,7 +299,21 @@ createConnection().then(async connection => {
     // ...
 
     // start express server
-    const server = app.listen(3000);
+    app.listen(3000);
+
+    // insert new users for test
+    await connection.manager.save(connection.manager.create(User, {
+        firstName: "Timber",
+        lastName: "Saw",
+        age: 27
+    }));
+    await connection.manager.save(connection.manager.create(User, {
+        firstName: "Phantom",
+        lastName: "Assassin",
+        age: 24
+    }));
+
+    console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
     
 }).catch(error => console.log(error));
 `;
