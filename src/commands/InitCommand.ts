@@ -1,5 +1,7 @@
 import {CommandUtils} from "./CommandUtils";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 const chalk = require("chalk");
+import * as path from "path";
 
 /**
  * Generates a new project with TypeORM.
@@ -21,6 +23,14 @@ export class InitCommand {
                 alias: "name",
                 describe: "Name of the project directory."
             })
+            .option("db", {
+                alias: "database",
+                describe: "Database type you'll use in your project."
+            })
+            .option("e", {
+                alias: "express",
+                describe: "Indicates if express should be included in the project."
+            })
             .option("d", {
                 alias: "docker",
                 describe: "Set to true if docker-compose must be generated as well. False by default."
@@ -29,20 +39,29 @@ export class InitCommand {
 
     async handler(argv: any) {
         try {
+            const database = argv.database || "mysql";
+            const isExpress = argv.express !== undefined ? true : false;
             const isDocker = argv.docker !== undefined ? true : false;
             const basePath = process.cwd() + (argv.name ? ("/" + argv.name) : "");
-            await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(), false);
+            const projectName = argv.name ? path.basename(argv.name) : undefined;
+            await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
-                await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(), false);
+                await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
             await CommandUtils.createFile(basePath + "/README.md", InitCommand.getReadmeTemplate({ docker: isDocker }), false);
             await CommandUtils.createFile(basePath + "/tsconfig.json", InitCommand.getTsConfigTemplate());
-            await CommandUtils.createFile(basePath + "/ormconfig.json", InitCommand.getOrmConfigTemplate());
-            await CommandUtils.createFile(basePath + "/src/entity/User.ts", InitCommand.getUserEntityTemplate());
-            await CommandUtils.createFile(basePath + "/src/index.ts", InitCommand.getAppIndexTemplate());
+            await CommandUtils.createFile(basePath + "/ormconfig.json", InitCommand.getOrmConfigTemplate(database));
+            await CommandUtils.createFile(basePath + "/src/entity/User.ts", InitCommand.getUserEntityTemplate(database));
+            await CommandUtils.createFile(basePath + "/src/index.ts", InitCommand.getAppIndexTemplate(isExpress));
             await CommandUtils.createDirectories(basePath + "/src/migration");
 
+            // generate extra files for express application
+            if (isExpress) {
+                await CommandUtils.createFile(basePath + "/src/routes.ts", InitCommand.getRoutesTemplate());
+                await CommandUtils.createFile(basePath + "/src/controller/UserController.ts", InitCommand.getControllerTemplate());
+            }
+
             const packageJsonContents = await CommandUtils.readFile(basePath + "/package.json");
-            await CommandUtils.createFile(basePath + "/package.json", InitCommand.appendPackageJson(packageJsonContents));
+            await CommandUtils.createFile(basePath + "/package.json", InitCommand.appendPackageJson(packageJsonContents, database, isExpress));
 
             if (argv.name) {
                 console.log(chalk.green(`Project created inside ${chalk.blue(basePath)} directory.`));
@@ -64,15 +83,9 @@ export class InitCommand {
     /**
      * Gets contents of the ormconfig file.
      */
-    protected static getOrmConfigTemplate(): string {
-        return JSON.stringify({
-            type: "mysql",
-            host: "localhost",
-            port: 3306,
-            username: "test",
-            password: "test",
-            database: "test",
-            syncrhonize: true,
+    protected static getOrmConfigTemplate(database: string): string {
+        const options: ObjectLiteral = {
+            synchronize: true,
             logging: false,
             entities: [
                 "src/entity/**/*.ts"
@@ -83,7 +96,70 @@ export class InitCommand {
             subscribers: [
                 "src/subscriber/**/*.ts"
             ]
-        }, undefined, 3);
+        };
+        switch (database) {
+            case "mysql":
+                Object.assign(options, {
+                    type: "mysql",
+                    host: "localhost",
+                    port: 3306,
+                    username: "test",
+                    password: "test",
+                    database: "test",
+                });
+                break;
+            case "mariadb":
+                Object.assign(options, {
+                    type: "mariadb",
+                    host: "localhost",
+                    port: 3306,
+                    username: "test",
+                    password: "test",
+                    database: "test",
+                });
+                break;
+            case "sqlite":
+                Object.assign(options, {
+                    "database": "database.db",
+                });
+                break;
+            case "postgres":
+                Object.assign(options, {
+                    "type": "postgres",
+                    "host": "localhost",
+                    "port": 5432,
+                    "username": "test",
+                    "password": "test",
+                    "database": "test",
+                });
+                break;
+            case "mssql":
+                Object.assign(options, {
+                    "type": "mssql",
+                    "host": "localhost",
+                    "username": "sa",
+                    "password": "Admin12345",
+                    "database": "tempdb",
+                });
+                break;
+            case "oracle":
+                Object.assign(options, {
+                    "type": "oracle",
+                    "host": "localhost",
+                    "username": "system",
+                    "password": "oracle",
+                    "port": 1521,
+                    "sid": "xe.oracle.docker",
+                });
+                break;
+            case "mongodb":
+                Object.assign(options, {
+                    "type": "mongodb",
+                    "database": "test",
+                });
+                break;
+        }
+        return JSON.stringify(options, undefined, 3);
     }
 
     /**
@@ -107,13 +183,13 @@ export class InitCommand {
     /**
      * Gets contents of the user entity.
      */
-    protected static getUserEntityTemplate(): string {
-        return `import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+    protected static getUserEntityTemplate(database: string): string {
+        return `import {Entity, ${ database === "monogdb" ? "ObjectIdColumn" : "PrimaryGeneratedColumn" }, Column} from "typeorm";
 
 @Entity()
 export class User {
 
-    @PrimaryGeneratedColumn()
+    ${ database === "monogdb" ? "@ObjectIdColumn()" : "@PrimaryGeneratedColumn()" }
     id: number;
 
     @Column()
@@ -130,10 +206,116 @@ export class User {
     }
 
     /**
+     * Gets contents of the route file (used when express is enabled).
+     */
+    protected static getRoutesTemplate(): string {
+        return `import {UserController} from "./controller/UserController";
+
+export const Routes = [{
+    method: "get",
+    route: "/users",
+    controller: UserController,
+    action: "all"
+}, {
+    method: "get",
+    route: "/users/:id",
+    controller: UserController,
+    action: "one"
+}, {
+    method: "post",
+    route: "/users",
+    controller: UserController,
+    action: "save"
+}, {
+    method: "delete",
+    route: "/users",
+    controller: UserController,
+    action: "remove"
+}];`;
+    }
+
+    /**
+     * Gets contents of the user controller file (used when express is enabled).
+     */
+    protected static getControllerTemplate(): string {
+        return `import {getRepository} from "typeorm";
+import {NextFunction, Request, Response} from "express";
+import {User} from "../entity/User";
+
+export class UserController {
+
+    private userRepository: UserRepository = getRepository(User);
+
+    all(request: Request, response: Response, next: NextFunction) {
+        return this.userRepository.findAll();
+    }
+
+    one(request: Request, response: Response, next: NextFunction) {
+        const user = await this.userRepository.findOneById(request.params.id);
+        if (!user) {
+            response.status = 404;
+            return { 
+                error: "User " + request.params.id + " was not found" 
+            };
+        }
+        
+        return user;
+    }
+
+    save(request: Request, response: Response, next: NextFunction) {
+        return this.userRepository.save(request.body);
+    }
+
+    async remove(request: Request, response: Response, next: NextFunction) {
+        await this.userRepository.removeById(request.params.id);
+    }
+
+}`;
+    }
+
+    /**
      * Gets contents of the main (index) application file.
      */
-    protected static getAppIndexTemplate(): string {
-        return `import "reflect-metadata";
+    protected static getAppIndexTemplate(express: boolean): string {
+        if (express) {
+            return `import "reflect-metadata";
+import {createConnection} from "typeorm";
+import * as express from "express";
+import * as bodyParser from "body-parser";
+import {Request, Response} from "express";
+import {User} from "./entity/User";
+import {Routes} from "./routes";
+
+createConnection().then(async connection => {
+
+    // create express app
+    const app = express();
+    app.use(bodyParser.json());
+
+    // register express routes from defined application routes
+    Routes.forEach(route => {
+        (app as any)[route.method]((req: Request, res: Response, next: Function) => {
+            const result = (new (route.controller as any)[route.method](req, res, next);
+            if (result instanceof Promise) {
+                result.then(result => result !== null && result !== undefined ? res.send(result) : undefined);
+
+            } else if (result !== null && result !== undefined) {
+                res.json(result);
+            }
+        });
+    });
+
+    // setup express app here
+    // ...
+
+    // start express server
+    const server = app.listen(3000);
+    
+}).catch(error => console.log(error));
+`;
+
+        } else {
+            return `import "reflect-metadata";
 import {createConnection} from "typeorm";
 import {User} from "./entity/User";
 
@@ -152,16 +334,18 @@ createConnection().then(async connection => {
     console.log("Loaded users: ", users);
      
     console.log("Here you can setup and run express/koa/any other framework.");
-});
+    
+}).catch(error => console.log(error));
 `;
+        }
     }
 
     /**
      * Gets contents of the new package.json file.
      */
-    protected static getPackageJsonTemplate(): string {
+    protected static getPackageJsonTemplate(projectName?: string): string {
         return JSON.stringify({
-            name: "typeorm",
+            name: projectName || "new-typeorm-project",
             version: "0.0.1",
             description: "Awesome project developed with TypeORM.",
             devDependencies: {
@@ -176,13 +360,15 @@ createConnection().then(async connection => {
     /**
      * Gets contents of the new docker-compose.yml file.
      */
-    protected static getDockerComposeTemplate(): string {
-        return `version: '3'
+    protected static getDockerComposeTemplate(database: string): string {
+
+        switch (database) {
+            case "mysql":
+                return `version: '3'
 services:
 
   mysql:
     image: "mysql:5.7.10"
-    container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
     environment:
@@ -192,6 +378,68 @@ services:
       MYSQL_DATABASE: "test"
 
 `;
+            case "mariadb":
+                return `version: '3'
+services:
+
+  mariadb:
+    image: "mariadb:10.1.16"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "test"
+      MYSQL_PASSWORD: "test"
+      MYSQL_DATABASE: "test"
+
+`;
+            case "postgres":
+                return `version: '3'
+services:
+
+  postgres:
+    image: "postgres:9.6.1"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+
+`;
+            case "sqlite":
+                return `version: '3'
+services:
+`;
+            case "oracle":
+                throw new Error(`You cannot initialize a project with docker for Oracle driver yet.`); // todo: implement for oracle as well
+
+            case "mssql":
+                return `version: '3'
+services:
+
+  mssql:
+    image: "microsoft/mssql-server-linux:rc2"
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Admin12345"
+      ACCEPT_EULA: "Y"
+
+`;
+            case "mongodb":
+                return `version: '3'
+services:
+
+  mongodb:
+    image: "mongo:3.4.1"
+    container_name: "typeorm-mongodb"
+    ports:
+      - "27017:27017"
+
+`;
+        }
+        return "";
     }
 
     /**
@@ -221,20 +469,48 @@ Steps to run this project:
     /**
      * Appends to a given package.json template everything needed.
      */
-    protected static appendPackageJson(packageJsonContents: string/*, docker: boolean*/): string {
+    protected static appendPackageJson(packageJsonContents: string, database: string, express: boolean /*, docker: boolean*/): string {
         const packageJson = JSON.parse(packageJsonContents);
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {};
         Object.assign(packageJson.devDependencies, {
             "ts-node": "3.3.0",
-            typescript: "2.5.2"
+            "@types/node": "^8.0.29",
+            "typescript": "2.5.2"
         });
 
         if (!packageJson.dependencies) packageJson.dependencies = {};
         Object.assign(packageJson.dependencies, {
-            mysql: "2.14.1",
-            typeorm: "0.1.0-alpha.42" // require("../package.json").version
+            "typeorm": require("../package.json").version,
+            "reflect-metadata": "^0.1.10"
         });
+
+        switch (database) {
+            case "mysql":
+            case "mariadb":
+                packageJson.dependencies["mysql"] = "^2.14.1";
+                break;
+            case "postgres":
+                packageJson.dependencies["pg"] = "^7.3.0";
+                break;
+            case "sqlite":
+                packageJson.dependencies["sqlite3"] = "^3.1.10";
+                break;
+            case "oracle":
+                packageJson.dependencies["oracledb"] = "^1.13.1";
+                break;
+            case "mssql":
+                packageJson.dependencies["mssql"] = "^4.0.4";
+                break;
+            case "mongodb":
+                packageJson.dependencies["mongodb"] = "^2.2.31";
+                break;
+        }
+
+        if (express) {
+            packageJson.dependencies["express"] = "^4.15.4";
+            packageJson.dependencies["body-parser"] = "^1.18.1";
+        }
 
         if (!packageJson.scripts) packageJson.scripts = {};
         Object.assign(packageJson.scripts, {
