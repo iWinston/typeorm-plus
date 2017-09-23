@@ -232,6 +232,7 @@ MyProject
 │   │   └── User.ts  // sample entity
 │   ├── migration    // place where your migrations will be stored
 │   └── index.ts     // start point of your application
+├── .gitignore       // standard gitignore file
 ├── ormconfig.json   // your database and ORM configuration
 ├── package.json     // your node module dependencies
 ├── README.md        // simple readme file of your project

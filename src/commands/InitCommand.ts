@@ -45,6 +45,7 @@ export class InitCommand {
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
+            await CommandUtils.createFile(basePath + "/.gitignore", InitCommand.getGitIgnoreFile());
             await CommandUtils.createFile(basePath + "/README.md", InitCommand.getReadmeTemplate({ docker: isDocker }), false);
             await CommandUtils.createFile(basePath + "/tsconfig.json", InitCommand.getTsConfigTemplate());
             await CommandUtils.createFile(basePath + "/ormconfig.json", InitCommand.getOrmConfigTemplate(database));
@@ -82,19 +83,7 @@ export class InitCommand {
      * Gets contents of the ormconfig file.
      */
     protected static getOrmConfigTemplate(database: string): string {
-        const options: ObjectLiteral = {
-            synchronize: true,
-            logging: false,
-            entities: [
-                "src/entity/**/*.ts"
-            ],
-            migrations: [
-                "src/migration/**/*.ts"
-            ],
-            subscribers: [
-                "src/subscriber/**/*.ts"
-            ]
-        };
+        const options: ObjectLiteral = { };
         switch (database) {
             case "mysql":
                 Object.assign(options, {
@@ -157,6 +146,19 @@ export class InitCommand {
                 });
                 break;
         }
+        Object.assign(options, {
+            synchronize: true,
+            logging: false,
+            entities: [
+                "src/entity/**/*.ts"
+            ],
+            migrations: [
+                "src/migration/**/*.ts"
+            ],
+            subscribers: [
+                "src/subscriber/**/*.ts"
+            ]
+        });
         return JSON.stringify(options, undefined, 3);
     }
 
@@ -170,12 +172,25 @@ export class InitCommand {
                 target: "es5",
                 module: "commonjs",
                 moduleResolution: "node",
+                outDir: "./build",
                 emitDecoratorMetadata: true,
                 experimentalDecorators: true,
                 sourceMap: true
             }
         }
         , undefined, 3);
+    }
+
+    /**
+     * Gets contents of the .gitignore file.
+     */
+    protected static getGitIgnoreFile(): string {
+        return `.idea/
+.vscode/
+node_modules/
+build/
+tmp/
+temp/`;
     }
 
     /**
