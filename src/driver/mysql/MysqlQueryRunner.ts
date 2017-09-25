@@ -802,9 +802,9 @@ export class MysqlQueryRunner implements QueryRunner {
 
     protected escapeTablePath(tableSchemaOrPath: TableSchema|string): string {
         if (tableSchemaOrPath instanceof TableSchema)
-            return tableSchemaOrPath.database ? `${tableSchemaOrPath.database}.${tableSchemaOrPath.name}` : tableSchemaOrPath.name;
+            return tableSchemaOrPath.database ? `${tableSchemaOrPath.database}\`.\`${tableSchemaOrPath.name}` : `${tableSchemaOrPath.name}`;
 
-        return tableSchemaOrPath;
+        return `${tableSchemaOrPath}`;
     }
 
     /**

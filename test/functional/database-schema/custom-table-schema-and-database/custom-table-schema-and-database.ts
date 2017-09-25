@@ -7,8 +7,10 @@ import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver"
 import {User} from "./entity/User";
 import {Category} from "./entity/Category";
 import {Person} from "./entity/Person";
+import {Question} from "./entity/Question";
+import {Answer} from "./entity/Answer";
 
-describe("database schema > custom-table-schema", () => {
+describe("database schema > custom-table-schema-and-database", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -168,6 +170,54 @@ describe("database schema > custom-table-schema", () => {
         }
 
         tableSchema!.schema!.should.be.equal("persons_schema");
+    })));
+
+    it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        const questionTablePath = connection.driver instanceof SqlServerDriver ? "testDB.questions.question" : "questions.question";
+        const answerTablePath = connection.driver instanceof SqlServerDriver ? "secondDB.answers.answer" : "answers.answer";
+        const questionTableSchema = await queryRunner.getTable(questionTablePath);
+        const answerTableSchema = await queryRunner.getTable(answerTablePath);
+        await queryRunner.release();
+
+        const question = new Question();
+        question.name = "Question #1";
+        await connection.getRepository(Question).save(question);
+
+        const answer1 = new Answer();
+        answer1.text = "answer 1";
+        answer1.questionId = question.id;
+        await connection.getRepository(Answer).save(answer1);
+
+        const answer2 = new Answer();
+        answer2.text = "answer 2";
+        answer2.questionId = question.id;
+        await connection.getRepository(Answer).save(answer2);
+
+        const query = connection.createQueryBuilder()
+            .select()
+            .from(Question, "question")
+            .addFrom(Answer, "answer")
+            .where("question.id = :id", {id: 1})
+            .andWhere("answer.questionId = question.id");
+
+        (await query.getRawOne())!.should.be.not.empty;
+
+        if (connection.driver instanceof PostgresDriver)
+            query.getSql().should.be.equal(`SELECT * FROM "questions"."question" "question", "answers"."answer" "answer"` +
+                ` WHERE "question"."id" = $1 AND "answer"."questionId" = "question"."id"`);
+
+        if (connection.driver instanceof SqlServerDriver) {
+            query.getSql().should.be.equal(`SELECT * FROM "testDB"."questions"."question" "question", "secondDB"."answers"."answer"` +
+                ` "answer" WHERE "question"."id" = @0 AND "answer"."questionId" = "question"."id"`);
+
+            questionTableSchema!.database!.should.be.equal("testDB");
+            answerTableSchema!.database!.should.be.equal("secondDB");
+        }
+
+        questionTableSchema!.schema!.should.be.equal("questions");
+        answerTableSchema!.schema!.should.be.equal("answers");
     })));
 
 });
