@@ -291,6 +291,11 @@ export abstract class QueryBuilder<Entity> {
      * Adds all parameters from the given object.
      */
     setParameters(parameters: ObjectLiteral): this {
+
+        // set parent query builder parameters as well in sub-query mode
+        if (this.expressionMap.parentQueryBuilder)
+            this.expressionMap.parentQueryBuilder.setParameters(parameters);
+
         Object.keys(parameters).forEach(key => {
             this.expressionMap.parameters[key] = parameters[key];
         });

@@ -9,9 +9,7 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
-        enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -47,22 +45,13 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
             .select(["id"])
             .where("innerTestEntity.id = :innerId", { innerId: 1 });
 
-        const mainQuery = queryBuilder
+        const results = await queryBuilder
             .select("testEntity")
-            .where(`testEntity.id IN ${subQuery.getQuery()}`);
-            // .setParameters({innerId: 1});
+            .where(`testEntity.id IN ${subQuery.getQuery()}`)
+            .getMany();
 
-            /**
-             * To @pleerock:
-             * using setParameters should work, but I think sub queries should set their
-             * own parameters on execution
-             */
-
-
-        const result = await mainQuery.getMany();
-
-        expect(result).not.to.be.empty;
-        expect(result).to.eql({ id: 1, name: "Entity #1" });
+        expect(results.length).to.be.equal(1);
+        expect(results).to.eql([{ id: 1, name: "Entity #1" }]);
     })));
 
 });

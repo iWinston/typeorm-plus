@@ -9,6 +9,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {QueryBuilder} from "./QueryBuilder";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -159,6 +160,11 @@ export class QueryExpressionMap {
      * Indicates if query builder creates a subquery.
      */
     subQuery: boolean = false;
+
+    /**
+     * If QueryBuilder was created in a subquery mode then its parent QueryBuilder (who created subquery) will be stored here.
+     */
+    parentQueryBuilder: QueryBuilder<any>;
 
     /**
      * Indicates if property names are prefixed with alias names during property replacement.
