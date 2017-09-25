@@ -504,20 +504,22 @@ export class SqlServerQueryRunner implements QueryRunner {
             }
         });
 
-        const schemaNames = tablePaths
-            .filter(tablePath => tablePath.indexOf(".") !== -1)
-            .map(tablePath => {
-                return tablePath.split(".").length === 3 ? tablePath.split(".")[1] : tablePath.split(".")[0];
+        let schemaNames: string[] = [];
+        tablePaths.filter(tablePath => tablePath.indexOf(".") !== -1)
+            .forEach(tablePath => {
+                if (tablePath.split(".").length === 3) {
+                    if (tablePath.split(".")[1] !== "")
+                        schemaNames.push(tablePath.split(".")[1]);
+                } else {
+                    schemaNames.push(tablePath.split(".")[0]);
+                }
             });
         schemaNames.push(this.driver.options.schema || "SCHEMA_NAME()");
 
-        // const dbNames = ["secondDB", "test"];
         const dbNames = tablePaths
             .filter(tablePath => tablePath.split(".").length === 3)
-            .map(tablePath => {
-                return tablePath.split(".")[0];
-            });
-        if (this.driver.database)
+            .map(tablePath => tablePath.split(".")[0]);
+        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
             dbNames.push(this.driver.database);
 
         // load tables, columns, indices and foreign keys
@@ -1026,12 +1028,17 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
                     tablePath = `${tableSchemaOrPath.database}.${tablePath}`;
             } else {
                 tablePath = tableSchemaOrPath.name;
+                if (tableSchemaOrPath.database)
+                    tablePath = `${tableSchemaOrPath.database}..${tablePath}`;
             }
         } else {
             tablePath = tableSchemaOrPath.indexOf(".") === -1 && this.driver.options.schema ? this.driver.options.schema + "." + tableSchemaOrPath : tableSchemaOrPath;
         }
 
         return tablePath.split(".").map(i => {
+            // this condition need because when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+            if (i === "")
+                return i;
             return disableEscape ? i : `"${i}"`;
         }).join(".");
     }
@@ -1040,7 +1047,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
         if (tablePath.split(".").length === 3) {
             return {
                 database:  "'" + tablePath.split(".")[0] + "'",
-                schema: "'" + tablePath.split(".")[1] + "'",
+                schema:  tablePath.split(".")[1] === "" ? "SCHEMA_NAME()" : "'" + tablePath.split(".")[1] + "'",
                 tableName: "'" + tablePath.split(".")[2] + "'"
             };
         } else if (tablePath.split(".").length === 2) {

@@ -16,6 +16,7 @@ import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Contains all entity metadata.
@@ -668,8 +669,13 @@ export class EntityMetadata {
         let tablePath = this.tableName;
         if (this.schema)
             tablePath = this.schema + "." + tablePath;
-        if (this.database && !(driver instanceof PostgresDriver))
-            tablePath = this.database + "." + tablePath;
+        if (this.database && !(driver instanceof PostgresDriver)) {
+            if (!this.schema && driver instanceof SqlServerDriver) {
+                tablePath = this.database + ".." + tablePath;
+            } else {
+                tablePath = this.database + "." + tablePath;
+            }
+        }
 
         return tablePath;
     }

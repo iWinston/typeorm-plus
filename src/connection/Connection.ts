@@ -232,7 +232,7 @@ export class Connection {
             const databases = this.entityMetadatas
                 .filter(metadata => metadata.database)
                 .map(metadata => metadata.database!);
-            if (this.driver.database)
+            if (this.driver.database && !databases.find(database => database === this.driver.database))
                 databases.push(this.driver.database);
             await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(tableSchemas, database));
         } else {

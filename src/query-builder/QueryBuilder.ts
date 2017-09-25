@@ -419,25 +419,37 @@ export abstract class QueryBuilder<Entity> {
      */
     protected getTableName(tableName: string): string {
         let tablePath = tableName;
-        if (this.connection.driver instanceof SqlServerDriver
-            || this.connection.driver instanceof PostgresDriver
-            || this.connection.driver instanceof MysqlDriver) {
-            if (this.connection.hasMetadata(tableName)) {
-                if (this.connection.getMetadata(tableName).schema) {
-                    tablePath = `${this.connection.getMetadata(tableName).schema}.${tableName}`;
+        const driver = this.connection.driver;
+        const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
+        const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
 
-                } else if ((this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema) {
-                    tablePath = `${(this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema!}.${tableName}`;
+        if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
+            if (metadata) {
+                if (metadata.schema) {
+                    tablePath = `${metadata.schema}.${tableName}`;
+                } else if (schema) {
+                    tablePath = `${schema}.${tableName}`;
                 }
 
-                if (this.connection.getMetadata(tableName).database && !(this.connection.driver instanceof PostgresDriver))
-                    tablePath = `${this.connection.getMetadata(tableName).database}.${tablePath}`;
+                if (metadata.database && !(driver instanceof PostgresDriver)) {
+                    if (!schema && !metadata.schema && driver instanceof SqlServerDriver) {
+                        tablePath = `${metadata.database}..${tablePath}`;
+                    } else {
+                        tablePath = `${metadata.database}.${tablePath}`;
+                    }
+                }
 
-            } else if ((this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema) {
-                tablePath = `${(this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema!}.${tableName}`;
+            } else if (schema) {
+                tablePath = `${schema!}.${tableName}`;
             }
         }
-        return tablePath.split(".").map(i => this.escape(i)).join(".");
+        return tablePath.split(".")
+            .map(i => {
+                // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+                if (i === "")
+                    return i;
+                return this.escape(i);
+            }).join(".");
     }
 
     /**

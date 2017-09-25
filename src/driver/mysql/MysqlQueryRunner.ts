@@ -333,7 +333,7 @@ export class MysqlQueryRunner implements QueryRunner {
         const dbNames = tablePaths
             .filter(tablePath => tablePath.indexOf(".") !== -1)
             .map(tablePath => tablePath.split(".")[0]);
-        if (this.driver.database)
+        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
             dbNames.push(this.driver.database);
 
         // load tables, columns, indices and foreign keys
@@ -358,7 +358,7 @@ export class MysqlQueryRunner implements QueryRunner {
         return Promise.all(dbTables.map(async dbTable => {
             const tableSchema = new TableSchema(dbTable["TABLE_NAME"]);
             tableSchema.database = dbTable["TABLE_SCHEMA"];
-            const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
+            const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_SCHEMA"]}\`.\`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
 
             // create column schemas from the loaded columns
             tableSchema.columns = dbColumns
@@ -804,7 +804,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (tableSchemaOrPath instanceof TableSchema)
             return tableSchemaOrPath.database ? `${tableSchemaOrPath.database}\`.\`${tableSchemaOrPath.name}` : `${tableSchemaOrPath.name}`;
 
-        return `${tableSchemaOrPath}`;
+        return tableSchemaOrPath.split(".").map(i => `${i}`).join("\`.\`");
     }
 
     /**
