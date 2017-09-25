@@ -15,6 +15,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -417,19 +418,26 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tableName: string): string {
-        if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
-            if (this.connection.hasMetadata(tableName) && this.connection.getMetadata(tableName).schema) {
-                return `${this.escape(this.connection.getMetadata(tableName).schema!)}.${this.escape(tableName)}`;
+        let tablePath = tableName;
+        if (this.connection.driver instanceof SqlServerDriver
+            || this.connection.driver instanceof PostgresDriver
+            || this.connection.driver instanceof MysqlDriver) {
+            if (this.connection.hasMetadata(tableName)) {
+                if (this.connection.getMetadata(tableName).schema) {
+                    tablePath = `${this.connection.getMetadata(tableName).schema}.${tableName}`;
 
-            } else if ((this.connection.driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema) {
-                return `${this.escape((this.connection.driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema!)}.${this.escape(tableName)}`;
+                } else if ((this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema) {
+                    tablePath = `${(this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema!}.${tableName}`;
+                }
 
-            } else {
-                return this.escape(tableName);
+                if (this.connection.getMetadata(tableName).database && !(this.connection.driver instanceof PostgresDriver))
+                    tablePath = `${this.connection.getMetadata(tableName).database}.${tablePath}`;
+
+            } else if ((this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema) {
+                tablePath = `${(this.connection.driver.options as SqlServerConnectionOptions | PostgresConnectionOptions).schema!}.${tableName}`;
             }
-        } else {
-            return this.escape(tableName);
         }
+        return tablePath.split(".").map(i => this.escape(i)).join(".");
     }
 
     /**

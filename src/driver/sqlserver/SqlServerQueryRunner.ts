@@ -15,6 +15,7 @@ import {MssqlParameter} from "./MssqlParameter";
 import {OrmUtils} from "../../util/OrmUtils";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {PromiseUtils} from "../../util/PromiseUtils";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -544,8 +545,7 @@ export class SqlServerQueryRunner implements QueryRunner {
         }).join(" UNION ALL ");
 
         const indicesSql = dbNames.map(dbName => {
-            return `
-            SELECT TABLE_NAME = t.name, INDEX_NAME = ind.name, IndexId = ind.index_id, ColumnId = ic.index_column_id, 
+            return `SELECT TABLE_NAME = t.name, INDEX_NAME = ind.name, IndexId = ind.index_id, ColumnId = ic.index_column_id, 
                     COLUMN_NAME = col.name, IS_UNIQUE = ind.is_unique, ind.*, ic.*, col.* 
                     FROM ${dbName}.sys.indexes ind 
                     INNER JOIN ${dbName}.sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id
@@ -670,14 +670,25 @@ export class SqlServerQueryRunner implements QueryRunner {
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
+    createSchema(schemaPaths: string[]): Promise<void[]> {
         if (this.driver.options.schema)
-            schemas.push(this.driver.options.schema);
-        return Promise.all(schemas.map(schema => {
-            const query = `IF NOT EXISTS (SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${schema}') 
-BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schema}' END`;
-            return this.query(query);
-        }));
+            schemaPaths.push(this.driver.options.schema);
+
+        return PromiseUtils.runInSequence(schemaPaths, async path => {
+            if (path.indexOf(".") === -1) {
+                const query = `IF SCHEMA_ID('${path}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${path}' END`;
+                return this.query(query);
+            } else {
+                const dbName = path.split(".")[0];
+                const schema = path.split(".")[1];
+                const currentDBQuery = await this.query(`SELECT DB_NAME() AS db_name`);
+                const currentDB = currentDBQuery[0]["db_name"];
+                await this.query(`USE ${dbName}`);
+                const query = `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schema}' END`;
+                await this.query(query);
+                return this.query(`USE ${currentDB}`);
+            }
+        });
     }
 
     /**
@@ -957,7 +968,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
                 }));
             }));
             await Promise.all(allTablesResults.map(tablesResult => {
-                const dropTableSql = `DROP TABLE "${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
+                const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
                 return this.query(dropTableSql);
             }));
 

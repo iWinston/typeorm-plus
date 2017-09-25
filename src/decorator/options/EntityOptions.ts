@@ -19,6 +19,11 @@ export interface EntityOptions {
     engine?: string;
 
     /**
+     * Database name. Used in Mysql and Sql Server.
+     */
+    database?: string;
+
+    /**
      * Schema name. Used in Postgres and Sql Server.
      */
     schema?: string;

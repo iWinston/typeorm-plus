@@ -130,13 +130,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
-        let schemas: string[] = [];
-        this.connection.entityMetadatas.forEach(entityMetadata => {
-            const existSchema = schemas.find(schema => schema === entityMetadata.schema);
-            if (entityMetadata.schema && !existSchema)
-                schemas.push(entityMetadata.schema);
-        });
-        await this.queryRunner.createSchema(schemas);
+        const schemaPaths: string[] = [];
+        this.connection.entityMetadatas
+            .filter(entityMetadata => !!entityMetadata.schemaPath)
+            .forEach(entityMetadata => {
+                const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
+                if (!existSchemaPath)
+                    schemaPaths.push(entityMetadata.schemaPath!);
+            });
+        await this.queryRunner.createSchema(schemaPaths);
 
         await this.dropOldForeignKeys();
         // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible

@@ -299,6 +299,8 @@ export class PostgresQueryRunner implements QueryRunner {
 
     /**
      * Inserts rows into closure table.
+     *
+     * todo: rethink its place
      */
     async insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
         let sql = "";

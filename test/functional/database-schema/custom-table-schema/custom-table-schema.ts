@@ -6,6 +6,7 @@ import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {User} from "./entity/User";
 import {Category} from "./entity/Category";
+import {Person} from "./entity/Person";
 
 describe("database schema > custom-table-schema", () => {
 
@@ -47,7 +48,7 @@ describe("database schema > custom-table-schema", () => {
     it("should correctly create tables when custom table schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("user_schema.user");
+        const tableSchema = await queryRunner.getTable("userSchema.user");
         await queryRunner.release();
 
         const user = new User();
@@ -59,12 +60,12 @@ describe("database schema > custom-table-schema", () => {
             .getSql();
 
         if (connection.driver instanceof PostgresDriver)
-            sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "user_schema"."user" "user" WHERE "user"."id" = $1`);
+            sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = $1`);
 
         if (connection.driver instanceof SqlServerDriver)
-            sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "user_schema"."user" "user" WHERE "user"."id" = @0`);
+            sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = @0`);
 
-        tableSchema!.schema!.should.be.equal("user_schema");
+        tableSchema!.schema!.should.be.equal("userSchema");
     })));
 
     it("should correctly work with cross-schema queries", () => Promise.all(connections.map(async connection => {
@@ -135,12 +136,38 @@ describe("database schema > custom-table-schema", () => {
         (await query.getRawOne())!.should.be.not.empty;
 
         if (connection.driver instanceof PostgresDriver)
-            query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "user_schema"."user" "user",` +
+            query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
                 ` "custom"."post" "post" WHERE "category"."id" = $1 AND "post"."id" = "category"."postId"`);
 
         if (connection.driver instanceof SqlServerDriver)
-            query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "user_schema"."user" "user",` +
+            query.getSql().should.be.equal(`SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
                 ` "custom"."post" "post" WHERE "category"."id" = @0 AND "post"."id" = "category"."postId"`);
+    })));
+
+    it("should correctly create tables when custom database and custom schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        const tablePath = connection.driver instanceof SqlServerDriver ? "testDB.persons_schema.person" : "persons_schema.person";
+        const tableSchema = await queryRunner.getTable(tablePath);
+        await queryRunner.release();
+
+        const person = new Person();
+        person.name = "Person #1";
+        await connection.getRepository(Person).save(person);
+
+        const sql = connection.createQueryBuilder(Person, "person")
+            .where("person.id = :id", {id: 1})
+            .getSql();
+
+        if (connection.driver instanceof PostgresDriver)
+            sql.should.be.equal(`SELECT "person"."id" AS "person_id", "person"."name" AS "person_name" FROM "persons_schema"."person" "person" WHERE "person"."id" = $1`);
+
+        if (connection.driver instanceof SqlServerDriver) {
+            sql.should.be.equal(`SELECT "person"."id" AS "person_id", "person"."name" AS "person_name" FROM "testDB"."persons_schema"."person" "person" WHERE "person"."id" = @0`);
+            tableSchema!.database!.should.be.equal("testDB");
+        }
+
+        tableSchema!.schema!.should.be.equal("persons_schema");
     })));
 
 });

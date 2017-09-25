@@ -14,6 +14,8 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import {Driver} from "../driver/Driver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 
 /**
  * Contains all entity metadata.
@@ -100,6 +102,12 @@ export class EntityMetadata {
      * E.g. "myDB"."mySchema"."myTable"
      */
     tablePath: string;
+
+    /**
+     * Entity schema path. Contains database name and schema name.
+     * E.g. "myDB"."mySchema"
+     */
+    schemaPath?: string;
 
     /**
      * Gets the table name without global table prefix.
@@ -387,6 +395,7 @@ export class EntityMetadata {
         this.target = options.args.target;
         this.tableType = options.args.type;
         this.engine = options.args.engine;
+        this.database = options.args.database;
         this.schema = options.args.schema;
         this.givenTableName = options.args.name;
         this.skipSync = options.args.skipSync || false;
@@ -395,7 +404,8 @@ export class EntityMetadata {
         this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
-        this.tablePath = this.buildTablePath();
+        this.tablePath = this.buildTablePath(options.connection.driver);
+        this.schemaPath = this.buildSchemaPath(options.connection.driver);
 
         this.isClassTableChild = this.tableType === "class-table-child";
         this.isSingleTableChild = this.tableType === "single-table-child";
@@ -652,15 +662,26 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds table path using schema name and table name.
+     * Builds table path using database name and schema name and table name.
      */
-    protected buildTablePath(): string {
+    protected buildTablePath(driver: Driver): string {
         let tablePath = this.tableName;
         if (this.schema)
             tablePath = this.schema + "." + tablePath;
-        if (this.database)
+        if (this.database && !(driver instanceof PostgresDriver))
             tablePath = this.database + "." + tablePath;
 
         return tablePath;
     }
+
+    /**
+     * Builds table path using schema name and database name.
+     */
+    protected buildSchemaPath(driver: Driver): string|undefined {
+        if (!this.schema)
+            return undefined;
+
+        return this.database && !(driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
+    }
+
 }

@@ -28,6 +28,8 @@ import {LoggerFactory} from "../logger/LoggerFactory";
 import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -226,13 +228,13 @@ export class Connection {
             .filter(metadata => metadata.schema)
             .map(metadata => metadata.schema!);
 
-        if (this.driver instanceof SqlServerDriver) {
+        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
             const databases = this.entityMetadatas
                 .filter(metadata => metadata.database)
                 .map(metadata => metadata.database!);
             if (this.driver.database)
                 databases.push(this.driver.database);
-            await Promise.all(databases.map(database => queryRunner.clearDatabase(tableSchemas, database)));
+            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(tableSchemas, database));
         } else {
             await queryRunner.clearDatabase(tableSchemas);
         }
