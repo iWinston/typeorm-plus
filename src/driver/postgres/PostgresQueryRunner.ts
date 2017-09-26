@@ -929,8 +929,14 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
      */
     protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " SERIAL";
+        if (column.isGenerated === true && column.generationStrategy === "increment") { // don't use skipPrimary here since updates can update already exist primary without auto inc.
+            if (column.type === "integer")
+                c += " SERIAL";
+            if (column.type === "smallint")
+                c += " SMALLSERIAL";
+            if (column.type === "bigint")
+                c += " BIGSERIAL";
+        }
         if (!column.isGenerated || column.type === "uuid")
             c += " " + this.connection.driver.createFullType(column);
         if (column.charset)
