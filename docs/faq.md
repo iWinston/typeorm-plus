@@ -5,6 +5,7 @@
 * [How to do validation?](#how-to-do-validation)
 * [What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?](#what-does-owner-side-in-relations-mean-or-why-we-need-to-put-joincolumn-and-jointable-decorators)
 * [How do I add extra columns into many-to-many (junction) table?](how-do-i-add-extra-columns-into-many-to-many-junction-table)
+* [How to use TypeORM with dependency injection tool?](#how-to-use-typeorm-with-dependency-injection-tool)
 * [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 
@@ -98,6 +99,21 @@ Its not possible to add extra columns into table created by many-to-many relatio
 You'll need to create a separate entity and bind it using two many-to-one relations with target entities
 (effect will be same as creating a many-to-many table), 
 and add extra columns in there.
+
+## How to use TypeORM with dependency injection tool?
+
+In TypeORM you can use service container. Service container allows to inject custom services in some places, like in subscribers or custom naming strategies. Or for example, you can get access to ConnectionManager from any place using service container.
+
+Here is example how you can setup typedi service container with TypeORM. But note, that you can setup any service container with TypeORM.
+
+```typescript
+import {useContainer, createConnection} from "typeorm";
+import {Container} from "typedi";
+
+// its important to setup container before you start to work with TypeORM
+useContainer(Container);
+createConnection({/* ... */});
+```
 
 ## How to handle outDir TypeScript compiler option?
 
