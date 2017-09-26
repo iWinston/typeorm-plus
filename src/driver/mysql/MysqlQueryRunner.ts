@@ -449,6 +449,14 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        const result = await this.query(`SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '${database}'`);
+        return result.length ? true : false;
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableSchemaOrPath: TableSchema|string): Promise<boolean> {
@@ -467,6 +475,13 @@ export class MysqlQueryRunner implements QueryRunner {
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${parsedTablePath.database}' AND TABLE_NAME = '${parsedTablePath.tableName}' AND COLUMN_NAME = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
+    }
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]> {
+        return this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
     }
 
     /**

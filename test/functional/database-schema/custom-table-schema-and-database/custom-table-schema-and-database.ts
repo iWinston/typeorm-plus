@@ -238,7 +238,8 @@ describe("database schema > custom-table-schema-and-database", () => {
         it("should correctly create tables when custom database used in Entity decorator", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const tableSchema = await queryRunner.getTable("secondDB.person");
+            const tablePath = connection.driver instanceof SqlServerDriver ? "secondDB..person" : "secondDB.person";
+            const tableSchema = await queryRunner.getTable(tablePath);
             await queryRunner.release();
 
             const person = new Person();

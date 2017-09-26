@@ -130,9 +130,19 @@ export interface QueryRunner {
     getTables(tablePaths: string[]): Promise<TableSchema[]>;
 
     /**
+     * Checks if database with the given name exist.
+     */
+    hasDatabase(database: string): Promise<boolean>;
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     hasTable(tablePath: string): Promise<boolean>;
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]>;
 
     /**
      * Creates a schema if it's not created.

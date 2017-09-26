@@ -660,6 +660,15 @@ export class SqlServerQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        const result = await this.query(`SELECT DB_ID('${database}') as db_id`);
+        const dbId = result[0]["db_id"];
+        return !!dbId;
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tablePath: string): Promise<boolean> {
@@ -667,6 +676,13 @@ export class SqlServerQueryRunner implements QueryRunner {
         const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.schema}' AND TABLE_SCHEMA = '${parsedTablePath.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
+    }
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]> {
+        return this.query(`IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}`);
     }
 
     /**
@@ -951,6 +967,10 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
      * Removes all tables from the currently connected database.
      */
     async clearDatabase(tableSchemas?: string[], database?: string): Promise<void> {
+        const isDatabaseExist = await this.hasDatabase(database!);
+        if (!isDatabaseExist)
+            return Promise.resolve();
+
         if (!tableSchemas)
             tableSchemas = [];
         tableSchemas.push(this.driver.options.schema || "SCHEMA_NAME()");
@@ -960,6 +980,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
 
         await this.startTransaction();
         try {
+
             let allTablesSql = `SELECT * FROM ${database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA IN (${schemaNamesString})`;
             const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
             await Promise.all(allTablesResults.map(async tablesResult => {

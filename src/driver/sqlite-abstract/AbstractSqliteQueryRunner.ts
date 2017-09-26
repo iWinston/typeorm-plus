@@ -351,12 +351,26 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
         const sql = `SELECT * FROM sqlite_master WHERE type = 'table' AND name = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
+    }
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]> {
+        return Promise.resolve([]);
     }
 
     /**

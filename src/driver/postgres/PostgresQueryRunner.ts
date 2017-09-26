@@ -465,6 +465,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     }
 
     /**
+     * Checks if database with the given name exist.
+     */
+    async hasDatabase(database: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tablePath: string): Promise<boolean> {
@@ -472,6 +479,14 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
         const sql = `SELECT * FROM information_schema.tables WHERE table_schema = ${parsedTablePath.schema} AND table_name = ${parsedTablePath.tableName}`;
         const result = await this.query(sql);
         return result.length ? true : false;
+    }
+
+    /**
+     * Creates a database if it's not created.
+     * Postgres does not supports database creation inside a transaction block.
+     */
+    createDatabase(database: string): Promise<void[]> {
+        return Promise.resolve([]);
     }
 
     /**
