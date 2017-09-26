@@ -12,7 +12,6 @@
 * [Drop database schema](#drop-database-schema)
 * [Run any sql query](#run-any-sql-query)
 * [Check version](#check-version)
-* Create database backup [TBD]
 
 ## Initialize a new TypeORM project
 
