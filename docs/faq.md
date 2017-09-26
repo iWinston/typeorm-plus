@@ -1,17 +1,41 @@
 # FAQ and best practices
 
+* [How do I change a column name in the database?](#how-do-i-change-a-column-name-in-the-database)
+* [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-value-of-default-some-function,-for-example-now)
 * [How to do validation?](#how-to-do-validation)
 * [What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?](#what-does-owner-side-in-relations-mean-or-why-we-need-to-put-joincolumn-and-jointable-decorators)
+* [How do I add extra columns into many-to-many (junction) table?](how-do-i-add-extra-columns-into-many-to-many-junction-table)
 * [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 
+
+## How do I change a column name in the database?
+
+By default column names are generated from property names.
+You can simply change it by specifying a `name` column option:
+
+```typescript
+@Column({ name: "is_active" })
+isActive: boolean;
+```
+
+## How can I set value of default some function, for example `NOW()`?
+
+`default` column option supports a function. 
+If you are passing a function which returns string,
+it will use that string as a default value without escaping it.
+For example: 
+
+```typescript
+@Column({ default: () => "NOW()" })
+date: Date;
+```
 
 ## How to do validation?
 
 Validation is not part of TypeORM because validation is a separate process
 don't really related to what ORM does.
 If you want to use validation use [class-validator](https://github.com/pleerock/class-validator) library - it works perfectly with TypeORM.
-
 ## What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?
 
 Let's start with `one-to-one` relation.
@@ -68,6 +92,13 @@ both decorators are different and where you put `@ManyToOne` decorator that tabl
 `@JoinColumn` and `@JoinTable` decorators are also can be used to specify additional
 join column / junction table settings, like join column name or junction table name. 
 
+## How do I add extra columns into many-to-many (junction) table?
+
+Its not possible to add extra columns into table created by many-to-many relation.
+You'll need to create a separate entity and bind it using two many-to-one relations with target entities
+(effect will be same as creating a many-to-many table), 
+and add extra columns in there.
+
 ## How to handle outDir TypeScript compiler option?
 
 When you are using `outDir` compiler option don't forget to copy into output directory assets and resources your app is using.
@@ -87,10 +118,14 @@ If you are using ts-node you can specify `ts` entities inside your connection op
 
 ```
 {
-    entities: "src/entity/*.ts",
-    subscribers: "src/subscriber/*.ts"
+    entities: ["src/entity/*.ts"],
+    subscribers: ["src/subscriber/*.ts"]
 }
 ```
+
+Also, if you are compiling js files into same folder where your typescript files are, 
+make sure to use `outDir` of the typescript compiler to prevent 
+[issues](https://github.com/TypeStrong/ts-node/issues/432). 
 
 Also if you want to use CLI via ts-node you can execute typeorm following way:
 
