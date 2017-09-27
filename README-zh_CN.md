@@ -333,7 +333,7 @@ createConnection(/*...*/).then(connection => {
     photo.isPublished = true;
 
     connection.manager
-            .persist(photo)
+            .save(photo)
             .then(photo => {
                 console.log("Photo has been saved");
             });
@@ -358,7 +358,7 @@ createConnection(/*...*/).then(async connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    await connection.manager.persist(photo);
+    await connection.manager.save(photo);
     console.log("Photo has been saved");
 
 }).catch(error => console.log(error));
@@ -403,7 +403,7 @@ createConnection(/*...*/).then(async connection => {
 
     let photoRepository = connection.getRepository(Photo);
 
-    await photoRepository.persist(photo);
+    await photoRepository.save(photo);
     console.log("Photo has been saved");
 
     let savedPhotos = await photoRepository.find();
@@ -458,7 +458,7 @@ createConnection(/*...*/).then(async connection => {
     /*...*/
     let photoToUpdate = await photoRepository.findOneById(1);
     photoToUpdate.name = "Me, my friends and polar bears";
-    await photoRepository.persist(photoToUpdate);
+    await photoRepository.save(photoToUpdate);
 
 }).catch(error => console.log(error));
 ```
@@ -577,10 +577,10 @@ createConnection(/*...*/).then(async connection => {
     let metadataRepository = connection.getRepository(PhotoMetadata);
 
     // 先来把photo存到数据库
-    await photoRepository.persist(photo);
+    await photoRepository.save(photo);
 
     // photo存完了，再存下photo的元信息
-    await metadataRepository.persist(metadata);
+    await metadataRepository.save(metadata);
 
     // 搞定
     console.log("metadata is saved, and relation between metadata and photo is created in the database too");
@@ -730,7 +730,7 @@ createConnection(options).then(async connection => {
     let photoRepository = connection.getRepository(Photo);
 
     // 存photo
-    await photoRepository.persist(photo);
+    await photoRepository.save(photo);
     // photo metadata也自动存上了
     console.log("Photo is saved, photo metadata is saved too.")
 
@@ -903,8 +903,8 @@ photo2.albums = [album2];
 let photoRepository = connection.getRepository(Photo);
 
 // 依次存储photos，由于cascade，albums也同样会自动存起来
-await photoRepository.persist(photo1);
-await photoRepository.persist(photo2);
+await photoRepository.save(photo1);
+await photoRepository.save(photo2);
 
 console.log("Both photos have been saved");
 ```

@@ -295,7 +295,7 @@ export class EntityManager {
                         const metadata = this.connection.getMetadata(entityTarget);
 
                         const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                        await databaseEntityLoader.persist(entity, metadata);
+                        await databaseEntityLoader.save(entity, metadata);
 
                         const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
                         executors.push(executor);
@@ -306,7 +306,7 @@ export class EntityManager {
                     const metadata = this.connection.getMetadata(finalTarget);
 
                     const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                    await databaseEntityLoader.persist(entity, metadata);
+                    await databaseEntityLoader.save(entity, metadata);
 
                     const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
                     executors.push(executor);

@@ -40,7 +40,7 @@ typeorm.createConnection({
     };
 
     var postRepository = connection.getRepository("Post");
-    postRepository.persist(post)
+    postRepository.save(post)
         .then(function(savedPost) {
             console.log("Post has been saved: ", savedPost);
             console.log("Now lets load all posts: ");
