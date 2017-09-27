@@ -41,17 +41,17 @@ export class EntitySchemaTransformer {
 
             // add columns metadata args from the schema
             Object.keys(schema.columns).forEach(columnName => {
-                const columnSchema = schema.columns[columnName];
+                const tableColumn = schema.columns[columnName];
                 let mode: ColumnMode = "regular";
-                if (columnSchema.createDate)
+                if (tableColumn.createDate)
                     mode = "createDate";
-                if (columnSchema.updateDate)
+                if (tableColumn.updateDate)
                     mode = "updateDate";
-                if (columnSchema.version)
+                if (tableColumn.version)
                     mode = "version";
-                if (columnSchema.treeChildrenCount)
+                if (tableColumn.treeChildrenCount)
                     mode = "treeChildrenCount";
-                if (columnSchema.treeLevel)
+                if (tableColumn.treeLevel)
                     mode = "treeLevel";
 
                 const columnAgrs: ColumnMetadataArgs = {
@@ -59,25 +59,25 @@ export class EntitySchemaTransformer {
                     mode: mode,
                     propertyName: columnName,
                     options: {
-                        type: columnSchema.type,
-                        name: columnSchema.name,
-                        length: columnSchema.length,
-                        primary: columnSchema.primary,
-                        unique: columnSchema.unique,
-                        nullable: columnSchema.nullable,
-                        comment: columnSchema.comment,
-                        default: columnSchema.default,
-                        precision: columnSchema.precision,
-                        scale: columnSchema.scale
+                        type: tableColumn.type,
+                        name: tableColumn.name,
+                        length: tableColumn.length,
+                        primary: tableColumn.primary,
+                        unique: tableColumn.unique,
+                        nullable: tableColumn.nullable,
+                        comment: tableColumn.comment,
+                        default: tableColumn.default,
+                        precision: tableColumn.precision,
+                        scale: tableColumn.scale
                     }
                 };
                 metadataArgsStorage.columns.push(columnAgrs);
 
-                if (columnSchema.generated) {
+                if (tableColumn.generated) {
                     const generationArgs: GeneratedMetadataArgs = {
                         target: schema.target || schema.name,
                         propertyName: columnName,
-                        strategy: typeof columnSchema.generated === "string" ? columnSchema.generated : "increment"
+                        strategy: typeof tableColumn.generated === "string" ? tableColumn.generated : "increment"
                     };
                     metadataArgsStorage.generations.push(generationArgs);
                 }
@@ -152,13 +152,13 @@ export class EntitySchemaTransformer {
             // add relation metadata args from the schema
             if (schema.indices) {
                 Object.keys(schema.indices).forEach(indexName => {
-                    const indexSchema = schema.indices![indexName];
+                    const tableIndex = schema.indices![indexName];
                     const indexAgrs: IndexMetadataArgs = {
                         target: schema.target || schema.name,
                         name: indexName,
-                        unique: indexSchema.unique,
-                        sparse: indexSchema.sparse,           
-                        columns: indexSchema.columns
+                        unique: tableIndex.unique,
+                        sparse: tableIndex.sparse,
+                        columns: tableIndex.columns
                     };
                     metadataArgsStorage.indices.push(indexAgrs);                        
                 });

@@ -1,7 +1,7 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/schema/Table";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
@@ -252,24 +252,24 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                 }
             }
 
-            // create column schemas from the loaded columns
+            // create columns from the loaded columns
             table.columns = dbColumns.map(dbColumn => {
-                const columnSchema = new ColumnSchema();
-                columnSchema.name = dbColumn["name"];
-                columnSchema.type = dbColumn["type"].toLowerCase();
-                columnSchema.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
-                columnSchema.isNullable = dbColumn["notnull"] === 0;
-                columnSchema.isPrimary = dbColumn["pk"] === 1;
-                columnSchema.comment = ""; // todo later
-                columnSchema.isGenerated = autoIncrementColumnName === dbColumn["name"];
+                const tableColumn = new TableColumn();
+                tableColumn.name = dbColumn["name"];
+                tableColumn.type = dbColumn["type"].toLowerCase();
+                tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
+                tableColumn.isNullable = dbColumn["notnull"] === 0;
+                tableColumn.isPrimary = dbColumn["pk"] === 1;
+                tableColumn.comment = ""; // todo later
+                tableColumn.isGenerated = autoIncrementColumnName === dbColumn["name"];
                 const columnForeignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
                         const keyName = namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
-                        return new ForeignKeySchema(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
+                        return new TableForeignKey(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
                     });
                 table.addForeignKeys(columnForeignKeys);
-                return columnSchema;
+                return tableColumn;
             });
 
             // create primary key schema
@@ -279,7 +279,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
                     const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
                     indexColumns.forEach(indexColumn => {
-                        table.primaryKeys.push(new PrimaryKeySchema(index["name"], indexColumn));
+                        table.primaryKeys.push(new TablePrimaryKey(index["name"], indexColumn));
                     });
                 }));
 
@@ -311,12 +311,12 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                         return Promise.resolve(undefined);
 
                     } else {
-                        return new IndexSchema(dbTable["name"], dbIndex!["name"], indexColumns, dbIndex!["unique"] === "1");
+                        return new TableIndex(dbTable["name"], dbIndex!["name"], indexColumns, dbIndex!["unique"] === "1");
                     }
                 });
 
             const indices = await Promise.all(indicesPromises);
-            table.indices = indices.filter(index => !!index) as IndexSchema[];*/
+            table.indices = indices.filter(index => !!index) as TableIndex[];*/
 
             return table;
         }));
@@ -351,7 +351,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema): string {
+    protected buildCreateColumnSql(column: TableColumn): string {
         let c = "\"" + column.name + "\"";
         if (column instanceof ColumnMetadata) {
             c += " " + this.driver.normalizeType(column);

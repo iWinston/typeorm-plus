@@ -1,5 +1,5 @@
 import {Table} from "../schema-builder/schema/Table";
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
 import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
 import {ObjectLiteral} from "../common/ObjectLiteral";
@@ -185,13 +185,13 @@ export class MigrationExecutor {
         const tableExist = await this.queryRunner.hasTable("migrations"); // todo: table name should be configurable
         if (!tableExist) {
             await this.queryRunner.createTable(new Table("migrations", [
-                new ColumnSchema({
+                new TableColumn({
                     name: "timestamp",
                     type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }),
                     isPrimary: true,
                     isNullable: false
                 }),
-                new ColumnSchema({
+                new TableColumn({
                     name: "name",
                     type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }),
                     isNullable: false

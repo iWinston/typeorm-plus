@@ -1,7 +1,7 @@
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
 import {Table} from "../schema-builder/schema/Table";
-import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
-import {IndexSchema} from "../schema-builder/schema/IndexSchema";
+import {TableForeignKey} from "../schema-builder/schema/TableForeignKey";
+import {TableIndex} from "../schema-builder/schema/TableIndex";
 import {Connection} from "../connection/Connection";
 import {ReadStream} from "../platform/PlatformTools";
 import {InsertResult} from "../driver/InsertResult";
@@ -169,27 +169,27 @@ export interface QueryRunner {
     /**
      * Adds a new column in the table.
      */
-    addColumn(tableName: string, column: ColumnSchema): Promise<void>;
+    addColumn(tableName: string, column: TableColumn): Promise<void>;
 
     /**
      * Adds a new column in the table.
      */
-    addColumn(table: Table, column: ColumnSchema): Promise<void>;
+    addColumn(table: Table, column: TableColumn): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
-    addColumns(table: string, columns: ColumnSchema[]): Promise<void>;
+    addColumns(table: string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
-    addColumns(table: Table, columns: ColumnSchema[]): Promise<void>;
+    addColumns(table: Table, columns: TableColumn[]): Promise<void>;
 
     /**
      * Renames column in the given table.
      */
-    renameColumn(table: Table, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+    renameColumn(table: Table, oldColumn: TableColumn, newColumn: TableColumn): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -199,27 +199,27 @@ export interface QueryRunner {
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: Table, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+    changeColumn(table: Table, oldColumn: TableColumn, newColumn: TableColumn): Promise<void>;
 
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
+    changeColumn(table: string, oldColumn: string, newColumn: TableColumn): Promise<void>;
 
     /**
      * Changes a columns in the table.
      */
-    changeColumns(table: Table, changedColumns: { oldColumn: ColumnSchema, newColumn: ColumnSchema }[]): Promise<void>;
+    changeColumns(table: Table, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
     /**
      * Drops the column in the table.
      */
-    dropColumn(table: Table, column: ColumnSchema): Promise<void>;
+    dropColumn(table: Table, column: TableColumn): Promise<void>;
 
     /**
      * Drops the columns in the table.
      */
-    dropColumns(table: Table, columns: ColumnSchema[]): Promise<void>;
+    dropColumns(table: Table, columns: TableColumn[]): Promise<void>;
 
     /**
      * Updates primary keys in the table.
@@ -229,47 +229,47 @@ export interface QueryRunner {
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
+    createForeignKey(tableName: string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(table: Table, foreignKey: ForeignKeySchema): Promise<void>;
+    createForeignKey(table: Table, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Creates a new foreign keys.
      */
-    createForeignKeys(table: Table, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    createForeignKeys(table: Table, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKey(table: string, foreignKey: ForeignKeySchema): Promise<void>;
+    dropForeignKey(table: string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKey(table: Table, foreignKey: ForeignKeySchema): Promise<void>;
+    dropForeignKey(table: Table, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKeys(table: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    dropForeignKeys(table: string, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKeys(table: Table, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    dropForeignKeys(table: Table, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Creates a new index.
      */
-    createIndex(tableName: string, index: IndexSchema): Promise<void>;
+    createIndex(tableName: string, index: TableIndex): Promise<void>;
 
     /**
      * Drops an index from the table.
      */
-    dropIndex(tableSchemeOrPath: Table|string, index: IndexSchema|string): Promise<void>;
+    dropIndex(tableSchemeOrPath: Table|string, index: TableIndex|string): Promise<void>;
 
     /**
      * Truncates table.

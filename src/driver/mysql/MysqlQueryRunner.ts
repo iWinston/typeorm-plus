@@ -2,11 +2,11 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {Table} from "../../schema-builder/schema/Table";
-import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
-import {PrimaryKeySchema} from "../../schema-builder/schema/PrimaryKeySchema";
-import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
+import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
+import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
+import {TableIndex} from "../../schema-builder/schema/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
@@ -360,63 +360,63 @@ export class MysqlQueryRunner implements QueryRunner {
             table.database = dbTable["TABLE_SCHEMA"];
             const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_SCHEMA"]}\`.\`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
 
-            // create column schemas from the loaded columns
+            // create columns from the loaded columns
             table.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
                 .map(dbColumn => {
-                    const columnSchema = new ColumnSchema();
-                    columnSchema.name = dbColumn["COLUMN_NAME"];
+                    const tableColumn = new TableColumn();
+                    tableColumn.name = dbColumn["COLUMN_NAME"];
 
                     const columnType = dbColumn["COLUMN_TYPE"].toLowerCase();
                     const endIndex = columnType.indexOf("(");
-                    columnSchema.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
+                    tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
 
-                    columnSchema.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
-                    columnSchema.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    columnSchema.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
-                    columnSchema.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
-                    columnSchema.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
-                    columnSchema.comment = dbColumn["COLUMN_COMMENT"];
-                    columnSchema.precision = dbColumn["NUMERIC_PRECISION"];
-                    columnSchema.scale = dbColumn["NUMERIC_SCALE"];
-                    columnSchema.charset = dbColumn["CHARACTER_SET_NAME"];
-                    columnSchema.collation = dbColumn["COLLATION_NAME"];
+                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
+                    tableColumn.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                    tableColumn.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
+                    tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
+                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
+                    tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
+                    tableColumn.scale = dbColumn["NUMERIC_SCALE"];
+                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
+                    tableColumn.collation = dbColumn["COLLATION_NAME"];
 
-                    if (columnSchema.type === "int" || columnSchema.type === "tinyint"
-                        ||  columnSchema.type === "smallint" || columnSchema.type === "mediumint"
-                        || columnSchema.type === "bigint" || columnSchema.type === "year") {
+                    if (tableColumn.type === "int" || tableColumn.type === "tinyint"
+                        ||  tableColumn.type === "smallint" || tableColumn.type === "mediumint"
+                        || tableColumn.type === "bigint" || tableColumn.type === "year") {
 
                         const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
-                        columnSchema.length = length ? length.toString() : "";
+                        tableColumn.length = length ? length.toString() : "";
 
                     } else {
-                        columnSchema.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
+                        tableColumn.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
                     }
 
-                    if (columnSchema.type === "enum") {
+                    if (tableColumn.type === "enum") {
                         const colType = dbColumn["COLUMN_TYPE"];
                         const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
-                        columnSchema.enum = (items as string[]).map(item => {
+                        tableColumn.enum = (items as string[]).map(item => {
                             return item.substring(1, item.length - 1);
                         });
                     }
 
-                    if (columnSchema.type === "datetime" || columnSchema.type === "time" || columnSchema.type === "timestamp") {
-                        columnSchema.precision = dbColumn["DATETIME_PRECISION"];
+                    if (tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") {
+                        tableColumn.precision = dbColumn["DATETIME_PRECISION"];
                     }
 
-                    return columnSchema;
+                    return tableColumn;
                 });
 
             // create primary keys
             table.primaryKeys = primaryKeys.map(primaryKey => {
-                return new PrimaryKeySchema(primaryKey["Key_name"], primaryKey["Column_name"]);
+                return new TablePrimaryKey(primaryKey["Key_name"], primaryKey["Column_name"]);
             });
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === table.name)
-                .map(dbForeignKey => new ForeignKeySchema(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+                .map(dbForeignKey => new TableForeignKey(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
 
             // create index schemas from the loaded indices
             table.indices = dbIndices
@@ -440,9 +440,9 @@ export class MysqlQueryRunner implements QueryRunner {
                         }
                     }
 
-                    return new IndexSchema(dbTable["TABLE_NAME"], dbIndexName, columnNames, currentDbIndices[0]["NON_UNIQUE"] === 0);
+                    return new TableIndex(dbTable["TABLE_NAME"], dbIndexName, columnNames, currentDbIndices[0]["NON_UNIQUE"] === 0);
                 })
-                .filter(index => !!index) as IndexSchema[]; // remove empty returns
+                .filter(index => !!index) as TableIndex[]; // remove empty returns
 
             return table;
         }));
@@ -462,7 +462,6 @@ export class MysqlQueryRunner implements QueryRunner {
     async hasTable(tableOrPath: Table|string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tableOrPath);
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${parsedTablePath.database}' AND TABLE_NAME = '${parsedTablePath.tableName}'`;
-        console.log(sql);
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -470,9 +469,9 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Checks if column with the given name exist in the given table.
      */
-    async hasColumn(tableOrPath: Table|string, column: ColumnSchema|string): Promise<boolean> {
+    async hasColumn(tableOrPath: Table|string, column: TableColumn|string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tableOrPath);
-        const columnName = column instanceof ColumnSchema ? column.name : column;
+        const columnName = column instanceof TableColumn ? column.name : column;
         const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${parsedTablePath.database}' AND TABLE_NAME = '${parsedTablePath.tableName}' AND COLUMN_NAME = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -493,7 +492,7 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new table from the given table and column schemas inside it.
+     * Creates a new table from the given table and column inside it.
      */
     async createTable(table: Table): Promise<void> {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
@@ -516,18 +515,18 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new column from the column schema in the table.
+     * Creates a new column from the column in the table.
      */
-    async addColumn(tableOrPath: Table|string, column: ColumnSchema): Promise<void> {
+    async addColumn(tableOrPath: Table|string, column: TableColumn): Promise<void> {
         const sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` ADD ${this.buildCreateColumnSql(column, false)}`;
         const revertSql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP \`${column.name}\``;
         return this.schemaQuery(sql, revertSql);
     }
 
     /**
-     * Creates a new columns from the column schema in the table.
+     * Creates a new columns from the column in the table.
      */
-    async addColumns(tableOrName: Table|string, columns: ColumnSchema[]): Promise<void> {
+    async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const queries = columns.map(column => this.addColumn(tableOrName as any, column));
         await Promise.all(queries);
     }
@@ -535,7 +534,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Renames column in the given table.
      */
-    async renameColumn(tableOrName: Table|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
+    async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
 
         let table: Table|undefined = undefined;
         if (tableOrName instanceof Table) {
@@ -546,22 +545,22 @@ export class MysqlQueryRunner implements QueryRunner {
                 throw new Error(`Table ${tableOrName} was not found.`);
         }
 
-        let oldColumn: ColumnSchema|undefined = undefined;
-        if (oldColumnSchemaOrName instanceof ColumnSchema) {
-            oldColumn = oldColumnSchemaOrName;
+        let oldColumn: TableColumn|undefined = undefined;
+        if (oldTableColumnOrName instanceof TableColumn) {
+            oldColumn = oldTableColumnOrName;
         } else {
-            oldColumn = table.columns.find(column => column.name === oldColumnSchemaOrName);
+            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
         }
 
         if (!oldColumn)
-            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableOrName}" table.`);
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
-        let newColumn: ColumnSchema|undefined = undefined;
-        if (newColumnSchemaOrName instanceof ColumnSchema) {
-            newColumn = newColumnSchemaOrName;
+        let newColumn: TableColumn|undefined = undefined;
+        if (newTableColumnOrName instanceof TableColumn) {
+            newColumn = newTableColumnOrName;
         } else {
             newColumn = oldColumn.clone();
-            newColumn.name = newColumnSchemaOrName;
+            newColumn.name = newTableColumnOrName;
         }
 
         return this.changeColumn(table, oldColumn, newColumn);
@@ -570,7 +569,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    async changeColumn(tableOrName: Table|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
+    async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
         let table: Table|undefined = undefined;
         if (tableOrName instanceof Table) {
             table = tableOrName;
@@ -581,15 +580,15 @@ export class MysqlQueryRunner implements QueryRunner {
         if (!table)
             throw new Error(`Table ${tableOrName} was not found.`);
 
-        let oldColumn: ColumnSchema|undefined = undefined;
-        if (oldColumnSchemaOrName instanceof ColumnSchema) {
-            oldColumn = oldColumnSchemaOrName;
+        let oldColumn: TableColumn|undefined = undefined;
+        if (oldTableColumnOrName instanceof TableColumn) {
+            oldColumn = oldTableColumnOrName;
         } else {
-            oldColumn = table.columns.find(column => column.name === oldColumnSchemaOrName);
+            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
         }
 
         if (!oldColumn)
-            throw new Error(`Column "${oldColumnSchemaOrName}" was not found in the "${tableOrName}" table.`);
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
         if (newColumn.isUnique === false && oldColumn.isUnique === true)
             await this.query(`ALTER TABLE \`${this.escapeTablePath(table)}\` DROP INDEX \`${oldColumn.name}\``); // todo: add revert code
@@ -602,7 +601,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
+    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         const updatePromises = changedColumns.map(async changedColumn => {
             return this.changeColumn(table, changedColumn.oldColumn, changedColumn.newColumn);
         });
@@ -613,7 +612,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: ColumnSchema): Promise<void> {
+    async dropColumn(table: Table, column: TableColumn): Promise<void> {
         const sql = `ALTER TABLE \`${this.escapeTablePath(table)}\` DROP \`${column.name}\``;
         const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` ADD ${this.buildCreateColumnSql(column, false)}`;
         return this.schemaQuery(sql, revertSql);
@@ -622,7 +621,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: ColumnSchema[]): Promise<void> {
+    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
         const dropPromises = columns.map(column => this.dropColumn(table, column));
         await Promise.all(dropPromises);
     }
@@ -647,7 +646,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableOrPath: Table|string, foreignKey: ForeignKeySchema): Promise<void> {
+    async createForeignKey(tableOrPath: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
         let sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
@@ -661,7 +660,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableOrName: Table|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
+    async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName as any, foreignKey));
         await Promise.all(promises);
     }
@@ -669,7 +668,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableOrPath: Table|string, foreignKey: ForeignKeySchema): Promise<void> {
+    async dropForeignKey(tableOrPath: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP FOREIGN KEY \`${foreignKey.name}\``;
 
         const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
@@ -685,7 +684,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableOrName: Table|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
+    async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName as any, foreignKey));
         await Promise.all(promises);
     }
@@ -693,7 +692,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(tableOrPath: Table|string, index: IndexSchema): Promise<void> {
+    async createIndex(tableOrPath: Table|string, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(tableOrPath)}\`(${columns})`;
         const revertSql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP INDEX \`${index.name}\``;
@@ -703,11 +702,11 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableOrPath: Table|string, index: IndexSchema|string): Promise<void> {
-        const indexName = index instanceof IndexSchema ? index.name : index;
+    async dropIndex(tableOrPath: Table|string, index: TableIndex|string): Promise<void> {
+        const indexName = index instanceof TableIndex ? index.name : index;
         const sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP INDEX \`${indexName}\``;
 
-        if (index instanceof IndexSchema) {
+        if (index instanceof TableIndex) {
             const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
             const revertSql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(tableOrPath)}\`(${columns})`;
             await this.schemaQuery(sql, revertSql);
@@ -827,7 +826,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Builds a part of query to create/change a column.
      */
-    protected buildCreateColumnSql(column: ColumnSchema, skipPrimary: boolean) {
+    protected buildCreateColumnSql(column: TableColumn, skipPrimary: boolean) {
         let c = "`" + column.name + "` " + this.connection.driver.createFullType(column);
         if (column.enum)
             c += "(" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
