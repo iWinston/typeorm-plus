@@ -9,6 +9,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {QueryBuilder} from "./QueryBuilder";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -161,6 +162,11 @@ export class QueryExpressionMap {
     subQuery: boolean = false;
 
     /**
+     * If QueryBuilder was created in a subquery mode then its parent QueryBuilder (who created subquery) will be stored here.
+     */
+    parentQueryBuilder: QueryBuilder<any>;
+
+    /**
      * Indicates if property names are prefixed with alias names during property replacement.
      * By default this is enabled, however we need this because aliases are not supported in UPDATE and DELETE queries,
      * but user can use them in WHERE expressions.
@@ -244,7 +250,7 @@ export class QueryExpressionMap {
     /**
      * Creates a new alias and adds it to the current expression map.
      */
-    createAlias(options: { name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
+    createAlias(options: { type: "from"|"select"|"join"|"other", name?: string, target?: Function|string, tableName?: string, subQuery?: string, metadata?: EntityMetadata }): Alias {
 
         let aliasName = options.name;
         if (!aliasName && options.tableName)
@@ -255,6 +261,7 @@ export class QueryExpressionMap {
             aliasName = options.target;
 
         const alias = new Alias();
+        alias.type = options.type;
         if (aliasName)
             alias.name = aliasName;
         if (options.metadata)

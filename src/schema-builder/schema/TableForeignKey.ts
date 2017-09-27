@@ -3,7 +3,7 @@ import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
 /**
  * Foreign key from the database stored in this class.
  */
-export class ForeignKeySchema {
+export class TableForeignKey {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -25,6 +25,11 @@ export class ForeignKeySchema {
     referencedTableName: string;
 
     /**
+     * Table path referenced in the foreign key.
+     */
+    referencedTablePath: string;
+
+    /**
      * Column names which included by this foreign key.
      */
     referencedColumnNames: string[];
@@ -43,12 +48,14 @@ export class ForeignKeySchema {
                 columnNames: string[],
                 referencedColumnNames: string[],
                 referencedTable: string,
+                referencedTablePath: string,
                 onDelete?: string) {
 
         this.name = name;
         this.columnNames = columnNames;
         this.referencedColumnNames = referencedColumnNames;
         this.referencedTableName = referencedTable;
+        this.referencedTablePath = referencedTablePath;
         this.onDelete = onDelete;
     }
 
@@ -60,11 +67,12 @@ export class ForeignKeySchema {
      * Creates a new copy of this foreign key with exactly same properties.
      */
     clone() {
-        return new ForeignKeySchema(
+        return new TableForeignKey(
             this.name,
             this.columnNames,
             this.referencedColumnNames,
-            this.referencedTableName
+            this.referencedTableName,
+            this.referencedTablePath
         );
     }
 
@@ -76,11 +84,12 @@ export class ForeignKeySchema {
      * Creates a new foreign schema from the given foreign key metadata.
      */
     static create(metadata: ForeignKeyMetadata) {
-        return new ForeignKeySchema(
+        return new TableForeignKey(
             metadata.name,
             metadata.columnNames,
             metadata.referencedColumnNames,
             metadata.referencedTableName,
+            metadata.referencedEntityMetadata.tablePath,
             metadata.onDelete
         );
     }
