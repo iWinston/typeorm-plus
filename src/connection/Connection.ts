@@ -407,19 +407,6 @@ export class Connection {
     }
 
     // -------------------------------------------------------------------------
-    // Deprecated Public Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Gets entity manager that allows to perform repository operations with any entity in this connection.
-     *
-     * @deprecated use manager instead.
-     */
-    get entityManager(): EntityManager {
-        return this.manager;
-    }
-
-    // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 

@@ -916,26 +916,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Sets maximal number of entities to take.
-     *
-     * @deprecated use take method instead
-     */
-    setMaxResults(take?: number): this {
-        this.expressionMap.take = take;
-        return this;
-    }
-
-    /**
-     * Sets number of entities to skip.
-     *
-     * @deprecated use skip method instead
-     */
-    setFirstResult(skip?: number): this {
-        this.expressionMap.skip = skip;
-        return this;
-    }
-
-    /**
      * Sets locking mode.
      */
     setLock(lockMode: "optimistic", lockVersion: number): this;

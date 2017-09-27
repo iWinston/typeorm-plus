@@ -75,6 +75,10 @@ Also now all
 There is no need to use `EmbeddableEntity` and `AbstractEntity` decorators at all - entity will work as expected without them.
 Instead of `@Embedded(type => X)` decorator now `@Column(type => X)` must be used instead 
 * `tablesPrefix`, `autoSchemaSync`, `autoMigrationsRun`, `dropSchemaOnConnection` options were removed. Use `entityPrefix`, `synchronize`, `migrationsRun`, `dropSchema` options instead
+* removed `setMaxResults`, `setFirstResult` methods in `QueryBuilder`. Use `take` and `skip` methods instead.
+* removed `persist` method from the `Repository` and `EntityManager`. Use `save` method instead.
+* removed `entityManager` property from the `Connection`. Use `manager` property instead.
+* removed `getEntityManager` from `typeorm` namespace. Use `getManager` method instead.
 
 ### NEW FEATURES
 
