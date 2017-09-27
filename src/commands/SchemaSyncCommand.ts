@@ -32,9 +32,9 @@ export class SchemaSyncCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
                 logging: ["query", "schema"]
             });
             connection = await createConnection(connectionOptions);

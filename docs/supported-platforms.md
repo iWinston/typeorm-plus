@@ -44,7 +44,7 @@ createConnection({
     entities: [
         Photo
     ],
-    autoSchemaSync: true
+    synchronize: true
 });
 ```
 

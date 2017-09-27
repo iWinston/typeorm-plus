@@ -259,7 +259,7 @@ createConnection({
     entities: [
         Photo
     ],
-    autoSchemaSync: true,
+    synchronize: true,
 }).then(connection => {
     // 这里可以写实体操作相关的代码 
 }).catch(error => console.log(error));
@@ -271,7 +271,7 @@ mysql, mariadb, postgres, sqlite, mssql or oracle.
 
 把Photo实体加到数据连接的实体列表中，所有需要在这个连接下使用的实体都必须加到这个列表中。
 
-`autoSchemaSync`选项可以在应用启动时确保你的实体和数据库保持同步。 
+`synchronize`选项可以在应用启动时确保你的实体和数据库保持同步。 
 
 ### 引用目录下的所有实体
 
@@ -293,7 +293,7 @@ createConnection({
     entities: [
         __dirname + "/entity/*.js"
     ],
-    autoSchemaSync: true,
+    synchronize: true,
 }).then(connection => {
     // here you can start to work with your entities
 }).catch(error => console.log(error));

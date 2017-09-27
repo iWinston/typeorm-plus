@@ -55,9 +55,9 @@ export class MigrationGenerateCommand {
             const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
                 logging: false
             });
             connection = await createConnection(connectionOptions);
@@ -81,11 +81,12 @@ export class MigrationGenerateCommand {
                         downSqls.push("        await queryRunner.query(`" + query.down.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
-            const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
-            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-            await CommandUtils.createFile(path, fileContent);
 
             if (upSqls.length) {
+                const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
+                const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+                await CommandUtils.createFile(path, fileContent);
+
                 console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
 
             } else {

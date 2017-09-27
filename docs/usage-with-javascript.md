@@ -21,7 +21,7 @@ typeorm.createConnection({
         require("./entity/Post"),
         require("./entity/Category")
     ],
-    autoSchemaSync: true
+    synchronize: true
 }).then(function (connection) {
 
     var category1 = {

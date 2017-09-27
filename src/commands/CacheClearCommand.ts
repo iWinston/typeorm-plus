@@ -33,9 +33,9 @@ export class CacheClearCommand {
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
                 subscribers: [],
-                dropSchemaOnConnection: false,
-                autoSchemaSync: false,
-                autoMigrationsRun: false,
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
                 logging: ["schema"]
             });
             connection = await createConnection(connectionOptions);

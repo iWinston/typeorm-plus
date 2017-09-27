@@ -35,7 +35,6 @@ export class MigrationRunCommand {
             const connectionOptions = await connectionOptionsReader.get(argv.connection);
             Object.assign(connectionOptions, {
                 subscribers: [],
-                dropSchemaOnConnection: false,
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,

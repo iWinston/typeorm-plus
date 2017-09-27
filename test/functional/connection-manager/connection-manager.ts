@@ -159,7 +159,7 @@ describe("ConnectionManager", () => {
      /*   it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchema: true,
-                autoSchemaSync: true,
+                synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
@@ -182,7 +182,7 @@ describe("ConnectionManager", () => {
     /*    it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
                 dropSchema: true,
-                autoSchemaSync: true,
+                synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };

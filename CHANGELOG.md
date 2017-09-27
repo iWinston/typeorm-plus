@@ -66,11 +66,7 @@ Also now all
 * Now `logging` options in connection options is simple "true", or "all", or list of logging modes can be supplied 
 * removed `driver` section in connection options. Define options right in the connection options section.
 * `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead
-* `tablesPrefix` in connection options is deprecated. Use `entityPrefix` instead
-* `autoMigrationsRun` in connection options is deprecated. Use `migrationsRun` instead
-* `autoSchemaSync` in connection options is deprecated. Use `synchronize` instead
-* `dropSchemaOnConnection` in connection options is deprecated. Use `dropSchema` instead
-* `schemaName` in connection options is deprecated. Use `schema` instead
+* `schemaName` in connection options is removed. Use `schema` instead
 * `TYPEORM_AUTO_SCHEMA_SYNC` env variable is now called `TYPEORM_SYNCHRONIZE`
 * `schemaSync` method in `Connection` has been renamed to `synchronize`
 * `getEntityManager` has been deprecated. Use `getManager` instead.
@@ -78,6 +74,7 @@ Also now all
 * `EmbeddableEntity`, `Embedded`, `AbstractEntity` decorators has been removed. 
 There is no need to use `EmbeddableEntity` and `AbstractEntity` decorators at all - entity will work as expected without them.
 Instead of `@Embedded(type => X)` decorator now `@Column(type => X)` must be used instead 
+* `tablesPrefix`, `autoSchemaSync`, `autoMigrationsRun`, `dropSchemaOnConnection` options were removed. Use `entityPrefix`, `synchronize`, `migrationsRun`, `dropSchema` options instead
 
 ### NEW FEATURES
 
