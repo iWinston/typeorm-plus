@@ -63,6 +63,9 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         const options = Object.assign({}, {
             database: this.driver.options.database,
+            version: this.driver.options.version,
+            description: this.driver.options.description,
+            size: this.driver.options.size,
         }, this.driver.options.extra || {});
 
         this.databaseConnectionPromise = new Promise<void>((ok, fail) => {
