@@ -158,7 +158,12 @@ export class InitCommand {
             ],
             subscribers: [
                 "src/subscriber/**/*.ts"
-            ]
+            ],
+            cli: {
+                entitiesDir: "src/entity",
+                migrationsDir: "src/migration",
+                subscribersDir: "src/subscriber"
+            }
         });
         return JSON.stringify(options, undefined, 3);
     }
