@@ -75,6 +75,7 @@ describe("query builder > sub-query", () => {
         const posts = await qb
             .where("post.title IN " + qb.subQuery().select("usr.name").from(User, "usr").where("usr.registered = :registered").getQuery())
             .setParameter("registered", true)
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -97,6 +98,7 @@ describe("query builder > sub-query", () => {
                 return "post.title IN " + subQuery;
             })
             .setParameter("registered", true)
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -119,6 +121,7 @@ describe("query builder > sub-query", () => {
                 return "post.title IN " + subQuery;
             })
             .setParameter("registered", true)
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -139,6 +142,7 @@ describe("query builder > sub-query", () => {
             .createQueryBuilder("post")
             .where("post.title IN (" + userQb.getQuery() + ")")
             .setParameters(userQb.getParameters())
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -234,6 +238,7 @@ describe("query builder > sub-query", () => {
                     .where("usr.registered = :registered", { registered: true });
             }, "usr")
             .where("post.title = usr.name")
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -258,6 +263,7 @@ describe("query builder > sub-query", () => {
             .select("post.id", "id")
             .addSelect(`(${subQuery})`, "name")
             .from(Post, "post")
+            .orderBy("post.id")
             .getRawMany();
 
         posts.should.be.eql([
@@ -281,6 +287,7 @@ describe("query builder > sub-query", () => {
                     .limit(1);
             }, "name")
             .from(Post, "post")
+            .orderBy("post.id")
             .getRawMany();
 
         posts.should.be.eql([
@@ -303,6 +310,7 @@ describe("query builder > sub-query", () => {
             .getRepository(Post)
             .createQueryBuilder("post")
             .innerJoin("post.categories", "category", `category.name IN (${subQuery})`)
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -326,6 +334,7 @@ describe("query builder > sub-query", () => {
             .innerJoin(subQuery => {
                 return subQuery.select().from("category", "category");
             }, "category", `category.name IN (${joinConditionSubQuery})`)
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
@@ -354,6 +363,7 @@ describe("query builder > sub-query", () => {
             .getRepository(Post)
             .createQueryBuilder("post")
             .innerJoin("(" + joinSubQuery + ")", "category", `category.name IN (${joinConditionSubQuery})`)
+            .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
