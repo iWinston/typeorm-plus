@@ -311,4 +311,56 @@ describe("query builder > sub-query", () => {
         ]);
     })));
 
+    it("should execute sub query in joins with subquery factory (as selection)", () => Promise.all(connections.map(async connection => {
+        await prepare(connection);
+
+        const joinConditionSubQuery = connection
+            .createQueryBuilder()
+            .select("usr.name", "name")
+            .from(User, "usr")
+            .getQuery();
+
+        const posts = await connection
+            .getRepository(Post)
+            .createQueryBuilder("post")
+            .innerJoin(subQuery => {
+                return subQuery.select().from("category", "category");
+            }, "category", `category.name IN (${joinConditionSubQuery})`)
+            .getMany();
+
+        posts.should.be.eql([
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
+            { id: 3, title: "Umed Khudoiberdiev" },
+        ]);
+    })));
+
+    it("should execute sub query in joins as string (as selection)", () => Promise.all(connections.map(async connection => {
+        await prepare(connection);
+
+        const joinConditionSubQuery = connection
+            .createQueryBuilder()
+            .select("usr.name", "name")
+            .from(User, "usr")
+            .getQuery();
+
+        const joinSubQuery = connection
+            .createQueryBuilder()
+            .select()
+            .from("category", "category")
+            .getQuery();
+
+        const posts = await connection
+            .getRepository(Post)
+            .createQueryBuilder("post")
+            .innerJoin("(" + joinSubQuery + ")", "category", `category.name IN (${joinConditionSubQuery})`)
+            .getMany();
+
+        posts.should.be.eql([
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
+            { id: 3, title: "Umed Khudoiberdiev" },
+        ]);
+    })));
+
 });
