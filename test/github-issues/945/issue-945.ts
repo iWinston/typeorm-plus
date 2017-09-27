@@ -18,10 +18,10 @@ describe("github issues > #945 synchronization with multiple primary keys", () =
 
         if (tableSchema) {
             const firstId = tableSchema.columns.find(column => {
-                return column.name == 'id1';
+                return column.name === "id1";
             });
             const secondId = tableSchema.columns.find(column => {
-                return column.name == 'id2';
+                return column.name === "id2";
             });
 
             if (firstId && secondId) {
