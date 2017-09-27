@@ -1,7 +1,7 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
-import {TableSchema} from "../../schema-builder/schema/TableSchema";
+import {Table} from "../../schema-builder/schema/Table";
 import {ForeignKeySchema} from "../../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../../schema-builder/schema/IndexSchema";
 import {
@@ -442,14 +442,14 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Loads given table's data from the database.
      */
-    async getTable(collectionName: string): Promise<TableSchema|undefined> {
+    async getTable(collectionName: string): Promise<Table|undefined> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    async getTables(collectionNames: string[]): Promise<TableSchema[]> {
+    async getTables(collectionNames: string[]): Promise<Table[]> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
         // так я от тебя не слышу что ты получаешь удовольствие. все что я слышу это как ты делаешь холодные расчеты для вы
     }
@@ -485,7 +485,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new table from the given table schema and column schemas inside it.
      */
-    async createTable(table: TableSchema): Promise<void> {
+    async createTable(table: Table): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -506,84 +506,84 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new column from the column schema in the table.
      */
-    async addColumn(tableSchemaOrName: TableSchema|string, column: ColumnSchema): Promise<void> {
+    async addColumn(tableOrName: Table|string, column: ColumnSchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new columns from the column schema in the table.
      */
-    async addColumns(tableSchemaOrName: TableSchema|string, columns: ColumnSchema[]): Promise<void> {
+    async addColumns(tableOrName: Table|string, columns: ColumnSchema[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Renames column in the given table.
      */
-    async renameColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
+    async renameColumn(tableOrName: Table|string, oldColumnSchemaOrName: ColumnSchema|string, newColumnSchemaOrName: ColumnSchema|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumn(tableSchemaOrName: TableSchema|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
+    async changeColumn(tableOrName: Table|string, oldColumnSchemaOrName: ColumnSchema|string, newColumn: ColumnSchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Changes a column in the table.
      */
-    async changeColumns(tableSchema: TableSchema, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
+    async changeColumns(table: Table, changedColumns: { newColumn: ColumnSchema, oldColumn: ColumnSchema }[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: TableSchema, column: ColumnSchema): Promise<void> {
+    async dropColumn(table: Table, column: ColumnSchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void> {
+    async dropColumns(table: Table, columns: ColumnSchema[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Updates table's primary keys.
      */
-    async updatePrimaryKeys(tableSchema: TableSchema): Promise<void> {
+    async updatePrimaryKeys(table: Table): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new foreign key.
      */
-    async createForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
+    async createForeignKey(tableOrName: Table|string, foreignKey: ForeignKeySchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Creates a new foreign keys.
      */
-    async createForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
+    async createForeignKeys(tableOrName: Table|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableSchemaOrName: TableSchema|string, foreignKey: ForeignKeySchema): Promise<void> {
+    async dropForeignKey(tableOrName: Table|string, foreignKey: ForeignKeySchema): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
      * Drops a foreign keys from the table.
      */
-    async dropForeignKeys(tableSchemaOrName: TableSchema|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
+    async dropForeignKeys(tableOrName: Table|string, foreignKeys: ForeignKeySchema[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

@@ -1,5 +1,5 @@
 import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
-import {TableSchema} from "../schema-builder/schema/TableSchema";
+import {Table} from "../schema-builder/schema/Table";
 import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
 import {IndexSchema} from "../schema-builder/schema/IndexSchema";
 import {Connection} from "../connection/Connection";
@@ -62,7 +62,7 @@ export interface QueryRunner {
      * Be careful with using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    clearDatabase(tableSchemas?: string[], database?: string): Promise<void>;
+    clearDatabase(tables?: string[], database?: string): Promise<void>;
 
     /**
      * Starts transaction.
@@ -118,16 +118,16 @@ export interface QueryRunner {
     insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
     /**
-     * Loads a table by a given given name from the database and creates a TableSchema from them.
+     * Loads a table by a given given name from the database and creates a Table from them.
      */
-    getTable(tablePath: string): Promise<TableSchema|undefined>;
+    getTable(tablePath: string): Promise<Table|undefined>;
 
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads all tables (with given names) from the database and creates a Table from them.
      *
      * todo: make tableNames optional
      */
-    getTables(tablePaths: string[]): Promise<TableSchema[]>;
+    getTables(tablePaths: string[]): Promise<Table[]>;
 
     /**
      * Checks if database with the given name exist.
@@ -152,7 +152,7 @@ export interface QueryRunner {
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    createTable(table: TableSchema): Promise<void>;
+    createTable(table: Table): Promise<void>;
 
     // todo: create createTableIfNotExist method
 
@@ -174,22 +174,22 @@ export interface QueryRunner {
     /**
      * Adds a new column in the table.
      */
-    addColumn(table: TableSchema, column: ColumnSchema): Promise<void>;
+    addColumn(table: Table, column: ColumnSchema): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
-    addColumns(tableSchema: string, columns: ColumnSchema[]): Promise<void>;
+    addColumns(table: string, columns: ColumnSchema[]): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
-    addColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void>;
+    addColumns(table: Table, columns: ColumnSchema[]): Promise<void>;
 
     /**
      * Renames column in the given table.
      */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+    renameColumn(table: Table, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -199,7 +199,7 @@ export interface QueryRunner {
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+    changeColumn(table: Table, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
 
     /**
      * Changes a column in the table.
@@ -209,22 +209,22 @@ export interface QueryRunner {
     /**
      * Changes a columns in the table.
      */
-    changeColumns(table: TableSchema, changedColumns: { oldColumn: ColumnSchema, newColumn: ColumnSchema }[]): Promise<void>;
+    changeColumns(table: Table, changedColumns: { oldColumn: ColumnSchema, newColumn: ColumnSchema }[]): Promise<void>;
 
     /**
      * Drops the column in the table.
      */
-    dropColumn(table: TableSchema, column: ColumnSchema): Promise<void>;
+    dropColumn(table: Table, column: ColumnSchema): Promise<void>;
 
     /**
      * Drops the columns in the table.
      */
-    dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void>;
+    dropColumns(table: Table, columns: ColumnSchema[]): Promise<void>;
 
     /**
      * Updates primary keys in the table.
      */
-    updatePrimaryKeys(table: TableSchema): Promise<void>;
+    updatePrimaryKeys(table: Table): Promise<void>;
 
     /**
      * Creates a new foreign key.
@@ -234,12 +234,12 @@ export interface QueryRunner {
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+    createForeignKey(table: Table, foreignKey: ForeignKeySchema): Promise<void>;
 
     /**
      * Creates a new foreign keys.
      */
-    createForeignKeys(table: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    createForeignKeys(table: Table, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
@@ -249,7 +249,7 @@ export interface QueryRunner {
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKey(table: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+    dropForeignKey(table: Table, foreignKey: ForeignKeySchema): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
@@ -259,7 +259,7 @@ export interface QueryRunner {
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKeys(table: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    dropForeignKeys(table: Table, foreignKeys: ForeignKeySchema[]): Promise<void>;
 
     /**
      * Creates a new index.
@@ -269,7 +269,7 @@ export interface QueryRunner {
     /**
      * Drops an index from the table.
      */
-    dropIndex(tableSchemeOrPath: TableSchema|string, index: IndexSchema|string): Promise<void>;
+    dropIndex(tableSchemeOrPath: Table|string, index: IndexSchema|string): Promise<void>;
 
     /**
      * Truncates table.

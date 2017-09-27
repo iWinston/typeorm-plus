@@ -30,14 +30,14 @@ export class EntitySchemaTransformer {
         schemas.forEach(schema => {
 
             // add table metadata args from the schema
-            const tableSchema = schema.table || {} as any;
-            const table: TableMetadataArgs = {
+            const table = schema.table || {} as any;
+            const tableMetadata: TableMetadataArgs = {
                 target: schema.target || schema.name,
-                name: tableSchema.name,
-                type: tableSchema.type || "regular",
-                orderBy: tableSchema.orderBy
+                name: table.name,
+                type: table.type || "regular",
+                orderBy: table.orderBy
             };
-            metadataArgsStorage.tables.push(table);
+            metadataArgsStorage.tables.push(tableMetadata);
 
             // add columns metadata args from the schema
             Object.keys(schema.columns).forEach(columnName => {

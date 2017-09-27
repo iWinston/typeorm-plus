@@ -86,7 +86,7 @@ export * from "./schema-builder/schema/ColumnSchema";
 export * from "./schema-builder/schema/ForeignKeySchema";
 export * from "./schema-builder/schema/IndexSchema";
 export * from "./schema-builder/schema/PrimaryKeySchema";
-export * from "./schema-builder/schema/TableSchema";
+export * from "./schema-builder/schema/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/sqlserver/MssqlParameter";
 

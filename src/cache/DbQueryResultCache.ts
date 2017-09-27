@@ -1,6 +1,6 @@
 import {QueryResultCache} from "./QueryResultCache";
 import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
-import {TableSchema} from "../schema-builder/schema/TableSchema";
+import {Table} from "../schema-builder/schema/Table";
 import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
@@ -46,7 +46,7 @@ export class DbQueryResultCache implements QueryResultCache {
         if (tableExist)
             return;
 
-        await queryRunner.createTable(new TableSchema("query-result-cache", [ // createTableIfNotExist
+        await queryRunner.createTable(new Table("query-result-cache", [ // createTableIfNotExist
             new ColumnSchema({
                 name: "id",
                 isNullable: true,

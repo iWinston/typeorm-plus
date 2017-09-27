@@ -9,9 +9,9 @@ import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
 
 /**
- * Table schema in the database represented in this class.
+ * Table in the database represented in this class.
  */
-export class TableSchema {
+export class Table {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -43,9 +43,9 @@ export class TableSchema {
     primaryKeys: PrimaryKeySchema[] = [];
 
     /**
-     * Indicates if table schema was just created.
+     * Indicates if table was just created.
      * This is needed, for example to check if we need to skip primary keys creation
-     * for new table schemas.
+     * for new tables.
      */
     justCreated: boolean = false;
 
@@ -114,10 +114,10 @@ export class TableSchema {
     // -------------------------------------------------------------------------
 
     /**
-     * Clones this table schema to a new table schema with all properties cloned.
+     * Clones this table to a new table with all properties cloned.
      */
-    clone(): TableSchema {
-        const cloned = new TableSchema(this.name);
+    clone(): Table {
+        const cloned = new Table(this.name);
         cloned.columns = this.columns.map(column => column.clone());
         cloned.indices = this.indices.map(index => index.clone());
         cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
@@ -129,7 +129,7 @@ export class TableSchema {
     }
 
     /**
-     * Adds column schemas.
+     * Adds columns.
      */
     addColumns(columns: ColumnSchema[]) {
         this.columns = this.columns.concat(columns);
@@ -143,7 +143,7 @@ export class TableSchema {
     }
 
     /**
-     * Removes a column schema from this table schema.
+     * Removes a columns from this table.
      */
     removeColumn(columnToRemove: ColumnSchema) {
         const foundColumn = this.columns.find(column => column.name === columnToRemove.name);
@@ -152,7 +152,7 @@ export class TableSchema {
     }
 
     /**
-     * Remove all column schemas from this table schema.
+     * Remove all columns from this table.
      */
     removeColumns(columns: ColumnSchema[]) {
         columns.forEach(column => this.removeColumn(column));
@@ -184,14 +184,14 @@ export class TableSchema {
     }
 
     /**
-     * Adds foreign key schemas.
+     * Adds foreign keys.
      */
     addForeignKeys(foreignKeys: ForeignKeySchema[]) {
         this.foreignKeys = this.foreignKeys.concat(foreignKeys);
     }
 
     /**
-     * Removes foreign key from this table schema.
+     * Removes foreign key from this table.
      */
     removeForeignKey(removedForeignKey: ForeignKeySchema) {
         const fk = this.foreignKeys.find(foreignKey => foreignKey.name === removedForeignKey.name); // this must be by name
@@ -200,14 +200,14 @@ export class TableSchema {
     }
 
     /**
-     * Removes all foreign keys from this table schema.
+     * Removes all foreign keys from this table.
      */
     removeForeignKeys(dbForeignKeys: ForeignKeySchema[]) {
         dbForeignKeys.forEach(foreignKey => this.removeForeignKey(foreignKey));
     }
 
     /**
-     * Removes index schema from this table schema.
+     * Removes indices from this table.
      */
     removeIndex(indexSchema: IndexSchema) {
         const index = this.indices.find(index => index.name === indexSchema.name);
@@ -216,7 +216,7 @@ export class TableSchema {
     }
 
     /**
-     * Differentiate columns of this table schema and columns from the given column metadatas columns
+     * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
     findChangedColumns(driver: Driver, columnMetadatas: ColumnMetadata[]): ColumnSchema[] {
@@ -274,7 +274,7 @@ export class TableSchema {
     }    
 
     /**
-     * Checks if "DEFAULT" values in the column metadata and in the database schema are equal.
+     * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
     protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
 
@@ -314,24 +314,24 @@ export class TableSchema {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates table schema from a given entity metadata.
+     * Creates table from a given entity metadata.
      *
      * todo: need deeper implementation
      */
     static create(entityMetadata: EntityMetadata, driver: Driver) {
-        const tableSchema = new TableSchema(entityMetadata.tableName);
-        tableSchema.engine = entityMetadata.engine;
-        tableSchema.database = entityMetadata.database;
-        tableSchema.schema = entityMetadata.schema;
+        const table = new Table(entityMetadata.tableName);
+        table.engine = entityMetadata.engine;
+        table.database = entityMetadata.database;
+        table.schema = entityMetadata.schema;
         entityMetadata.columns.forEach(column => {
             const columnSchema = ColumnSchema.create(column, 
                 driver.normalizeType(column), 
                 driver.normalizeDefault(column),
                 driver.getColumnLength(column)); 
-            tableSchema.columns.push(columnSchema);
+            table.columns.push(columnSchema);
         });
 
-        return tableSchema;
+        return table;
     }
 
 }

@@ -1,4 +1,4 @@
-import {TableSchema} from "../schema-builder/schema/TableSchema";
+import {Table} from "../schema-builder/schema/Table";
 import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
 import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
@@ -184,7 +184,7 @@ export class MigrationExecutor {
     protected async createMigrationsTableIfNotExist(): Promise<void> {
         const tableExist = await this.queryRunner.hasTable("migrations"); // todo: table name should be configurable
         if (!tableExist) {
-            await this.queryRunner.createTable(new TableSchema("migrations", [
+            await this.queryRunner.createTable(new Table("migrations", [
                 new ColumnSchema({
                     name: "timestamp",
                     type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }),
