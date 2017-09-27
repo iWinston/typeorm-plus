@@ -29,7 +29,7 @@ export class MigrationGenerateCommand {
                 alias: "dir",
                 describe: "Directory where migration should be created."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -58,7 +58,7 @@ export class MigrationGenerateCommand {
                 dropSchemaOnConnection: false,
                 autoSchemaSync: false,
                 autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: false }
+                logging: false
             });
             connection = await createConnection(connectionOptions);
             const sqlQueries = await connection.driver.createSchemaBuilder().log();
@@ -91,15 +91,14 @@ export class MigrationGenerateCommand {
             } else {
                 console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`));
             }
+            await connection.close();
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during migration generation:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 

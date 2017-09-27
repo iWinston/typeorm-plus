@@ -13,13 +13,13 @@ export class CacheClearCommand {
 
     builder(yargs: any) {
         return yargs
-            .option("c", {
-                alias: "connection",
+            .option("connection", {
+                alias: "c",
                 default: "default",
                 describe: "Name of the connection on which run a query."
             })
-            .option("cf", {
-                alias: "config",
+            .option("config", {
+                alias: "f",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
@@ -36,7 +36,7 @@ export class CacheClearCommand {
                 dropSchemaOnConnection: false,
                 autoSchemaSync: false,
                 autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: true }
+                logging: ["schema"]
             });
             connection = await createConnection(connectionOptions);
 
@@ -46,14 +46,14 @@ export class CacheClearCommand {
             await connection.queryResultCache.clear();
             console.log(chalk.green("Cache was successfully cleared"));
 
+            if (connection) await connection.close();
+
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during cache clear:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 

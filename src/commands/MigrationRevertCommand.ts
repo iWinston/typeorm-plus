@@ -18,7 +18,7 @@ export class MigrationRevertCommand {
                 default: "default",
                 describe: "Name of the connection on which run a query."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
                 default: "ormconfig",
                 describe: "Name of the file with connection configuration."
@@ -36,21 +36,18 @@ export class MigrationRevertCommand {
                 dropSchemaOnConnection: false,
                 autoSchemaSync: false,
                 autoMigrationsRun: false,
-                logging: { logQueries: false, logFailedQueryError: false, logSchemaCreation: true }
+                logging: ["schema"]
             });
             connection = await createConnection(connectionOptions);
-
             await connection.undoLastMigration();
-            // console.log(chalk.green("Migrations were successfully reverted.")); // todo: make log inside "runMigrations" method
+            await connection.close();
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
             console.log(chalk.black.bgRed("Error during migration revert:"));
             console.error(err);
-            // throw err;
-
-        } finally {
-            if (connection)
-                await connection.close();
+            process.exit(1);
         }
     }
 

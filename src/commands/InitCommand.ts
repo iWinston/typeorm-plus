@@ -72,6 +72,7 @@ export class InitCommand {
         } catch (err) {
             console.log(chalk.black.bgRed("Error during project initialization:"));
             console.error(err);
+            process.exit(1);
         }
     }
 
