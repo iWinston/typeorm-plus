@@ -15,7 +15,6 @@ import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MssqlParameter} from "./MssqlParameter";
 import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
-import {RandomGenerator} from "../../util/RandomGenerator";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 
 /**
@@ -297,9 +296,6 @@ export class SqlServerDriver implements Driver {
             || columnMetadata.type === "datetimeoffset") {
             return DateUtils.mixedDateToDate(value, true, true);
 
-        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
-            return RandomGenerator.uuid4();
-
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -360,7 +356,7 @@ export class SqlServerDriver implements Driver {
             return "binary";
 
         } else if (column.type === "uuid") {
-            return "nvarchar";
+            return "uniqueidentifier";
 
         } else if (column.type === "simple-array") {
             return "ntext";
@@ -380,7 +376,6 @@ export class SqlServerDriver implements Driver {
         } else {
             return column.type as string || "";
         }
-
     }
 
     /**
