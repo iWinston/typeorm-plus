@@ -10,6 +10,37 @@
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 
 
+## How do I update a database schema?
+
+One of the main responsibility of TypeORM is to make your database tables in sync with your entities.
+There are two ways that help you to achieve this:
+
+* Use `synchronize: true` in your connection options:
+    
+    ```typescript
+    import {createConnection} from "typeorm";
+    
+    createConnection({
+        synchronize: true
+    });
+    ```
+
+    This option makes your database to be in sync with entities each time you run this code. 
+    This option is perfect during development, but in production you may not want this option to be enabled.
+
+* Use command line tools and run schema sync manually in the command line:
+    
+    ```
+    typeorm schema:sync
+    ```
+    
+    This command will execute schema synchronization. 
+    Note, to make command line tools to work, you must create a ormconfig.json file.
+
+Schema sync is extremely fast. 
+If you are considering to disable synchronize option during development because of performance issues, 
+first check how fast it is.
+
 ## How do I change a column name in the database?
 
 By default column names are generated from property names.
