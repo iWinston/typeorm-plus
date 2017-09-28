@@ -162,7 +162,13 @@ export class Table {
      * Adds all given primary keys.
      */
     addPrimaryKeys(addedKeys: TablePrimaryKey[]) {
-        addedKeys.forEach(key => this.primaryKeys.push(key));
+        addedKeys.forEach(key => {
+            this.primaryKeys.push(key);
+            const index = this.columns.findIndex(column => column.name === key.columnName);
+            if (index !== -1) {
+                this.columns[index].isPrimary = true;
+            }
+        });
     }
 
     /**
@@ -171,6 +177,10 @@ export class Table {
     removePrimaryKeys(droppedKeys: TablePrimaryKey[]) {
         droppedKeys.forEach(key => {
             this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
+            const index = this.columns.findIndex(column => column.name === key.columnName);
+            if (index !== -1) {
+                this.columns[index].isPrimary = false;
+            }
         });
     }
 
