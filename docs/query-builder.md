@@ -1121,7 +1121,7 @@ This code is equivalent of doing this:
 import {getManager} from "typeorm";
 
 const postRepository = getRepository(Post);
-const post = postRepository.findOneById(1, { relations: ["categories"] });
+const post = await postRepository.findOneById(1, { relations: ["categories"] });
 post.categories.push(category);
 await postRepository.save(post);
 ```
