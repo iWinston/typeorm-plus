@@ -28,7 +28,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 
 /**
@@ -1551,7 +1551,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const distinctAlias = this.escape(mainAlias);
         let countSql: string = "";
         if (metadata.hasMultiplePrimaryKeys) {
-            if (this.connection.driver instanceof SqliteDriver) {
+            if (this.connection.driver instanceof AbstractSqliteDriver) {
                 countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escape(primaryColumn.databaseName);
                     return `${distinctAlias}.${propertyName}`;
