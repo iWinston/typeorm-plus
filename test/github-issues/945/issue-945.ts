@@ -14,7 +14,8 @@ describe("github issues > #945 synchronization with multiple primary keys", () =
     after(() => closeTestingConnections(connections));
 
     it("schema should include two primary keys", () => Promise.all(connections.map(async connection => {
-        const tableSchema = await connection.createQueryRunner().getTable("test_entity");
+        const queryRunner = connection.createQueryRunner();
+        const tableSchema = await queryRunner.getTable("test_entity");
 
         if (tableSchema) {
             const firstId = tableSchema.primaryKeys.find(column => {
@@ -28,6 +29,8 @@ describe("github issues > #945 synchronization with multiple primary keys", () =
             expect(firstId).not.to.be.undefined;
             expect(secondId).not.to.be.undefined;
         }
+        
+        await queryRunner.release();
     })));
 
 });
