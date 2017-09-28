@@ -265,7 +265,8 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 tableColumn.type = dbColumn["type"].toLowerCase();
                 tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;
                 tableColumn.isNullable = dbColumn["notnull"] === 0;
-                tableColumn.isPrimary = dbColumn["pk"] === 1;
+                // primary keys are numbered starting with 1, columns that aren't primary keys are marked with 0
+                tableColumn.isPrimary = dbColumn["pk"] > 0;
                 tableColumn.comment = ""; // todo later
                 tableColumn.isGenerated = autoIncrementColumnName === dbColumn["name"];
                 if (tableColumn.isGenerated) {
