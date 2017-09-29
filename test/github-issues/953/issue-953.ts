@@ -1,14 +1,15 @@
 import "reflect-metadata";
-import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
-import { expect } from "chai";
-import { User } from "./entity/user";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src/connection/Connection";
+import {expect} from "chai";
+import {User} from "./entity/user";
 
 describe("github issues > #953 MySQL 5.7 JSON column parse", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["mysql"],
         dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -24,8 +25,8 @@ describe("github issues > #953 MySQL 5.7 JSON column parse", () => {
         });
         await repo.save(user);
 
-        let user1 = await repo.findOne({ username: "admin" });
-        expect(user1).to.be.an("object");
+        let user1 = await repo.findOne({username: "admin"});
+        expect(user1).has.property("roles").with.is.an("array").and.contains("ADMIN");
     })));
 
 });
