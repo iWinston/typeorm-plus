@@ -280,14 +280,16 @@ export class EntityMetadataBuilder {
         entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (tableArgs.target as any).name; // todo: pass this to naming strategy to generate a name
 
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
-        entityMetadata.ownColumns = this.metadataArgsStorage.filterColumns(inheritanceTree).map(args => {
-            const column = new ColumnMetadata({ connection: this.connection, entityMetadata, args });
-            // console.log(column.propertyName);
-            // if single table inheritance used, we need to mark all inherit table columns as nullable
-            if (singleTableChildrenTargets && singleTableChildrenTargets.indexOf(args.target) !== -1)
-                column.isNullable = true;
-            return column;
-        });
+        entityMetadata.ownColumns = this.metadataArgsStorage
+            .filterColumns(inheritanceTree)
+            .map(args => {
+                const column = new ColumnMetadata({ connection: this.connection, entityMetadata, args });
+                // console.log(column.propertyName);
+                // if single table inheritance used, we need to mark all inherit table columns as nullable
+                if (singleTableChildrenTargets && singleTableChildrenTargets.indexOf(args.target) !== -1)
+                    column.isNullable = true;
+                return column;
+            });
 
         entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(inheritanceTree).map(args => {
             return new RelationMetadata({ entityMetadata, args });

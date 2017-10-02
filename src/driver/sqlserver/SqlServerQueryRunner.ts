@@ -607,6 +607,10 @@ export class SqlServerQueryRunner implements QueryRunner {
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
                     tableColumn.isGenerated = isGenerated;
+                    if (tableColumn.default === "(newsequentialid())") {
+                        tableColumn.isGenerated = true;
+                        tableColumn.default = undefined;                        
+                    }
                     tableColumn.isUnique = isUnique;
                     tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"];
