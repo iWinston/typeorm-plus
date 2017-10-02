@@ -1,8 +1,13 @@
 import "reflect-metadata";
+import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {
+    closeTestingConnections, createTestingConnections, reloadTestingDatabases, runDownQueries,
+    runUpQueries
+} from "../../../utils/test-utils";
+import {Post} from "./entity/Post";
 
-describe("database schema > migrations", () => {
+describe.only("database schema > migrations", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -16,8 +21,84 @@ describe("database schema > migrations", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly insert/update/delete entities on SqlServer driver", () => Promise.all(connections.map(async connection => {
+    it("should correctly drop table and revert drop", () => Promise.all(connections.map(async connection => {
 
+        const queryRunner = connection.createQueryRunner();
+        const entityManager = queryRunner.manager;
+
+        let table = await queryRunner.getTable("post");
+        table!.should.exist;
+
+        queryRunner.enableSqlMemory();
+        await queryRunner.dropTable("post");
+        const queries = queryRunner.getMemorySql();
+        queryRunner.disableSqlMemory();
+
+        await runUpQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        expect(table).to.be.undefined;
+
+        await runDownQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        table!.should.exist;
+
+        await queryRunner.release();
+    })));
+
+    it("should correctly remove column and revert remove", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        const entityManager = queryRunner.manager;
+
+        let table = await queryRunner.getTable("post");
+        table!.findColumnByName("text")!.should.be.exist;
+
+        const metadata = connection.getMetadata(Post);
+        metadata.removeColumnByName("text");
+        const queries = await connection.driver.createSchemaBuilder().log();
+        // console.log(queries);
+        await runUpQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        expect(table!.findColumnByName("text")).to.be.undefined;
+
+        await runDownQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("text")!.should.be.exist;
+
+        await queryRunner.release();
+    })));
+
+    it.only("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        const entityManager = queryRunner.manager;
+
+        const metadata = connection.getMetadata(Post);
+        let table = await queryRunner.getTable("post");
+        table!.findColumnByName("text")!.length!.should.be.equal("255");
+
+        // const column = metadata.ownColumns.find(c => c.propertyName === "text");
+       /* column!.length = "500";
+        let queries = await connection.driver.createSchemaBuilder().log();
+        await runUpQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("text")!.length!.should.be.equal("500");
+
+        await runDownQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("text")!.length!.should.be.equal("255");
+
+        column!.length = "255";*/
+        const idColumn = metadata.ownColumns.find(c => c.propertyName === "id");
+        idColumn!.isGenerated = true;
+        idColumn!.generationStrategy = "increment";
+        const queries = await connection.driver.createSchemaBuilder().log();
+        await runUpQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.true;
+        table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
+
+        await queryRunner.release();
     })));
 
 });

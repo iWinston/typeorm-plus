@@ -38,6 +38,11 @@ export class ForeignKeyMetadata {
     onDelete?: OnDeleteType;
 
     /**
+     * What to do with a relation on update of the row containing a foreign key.
+     */
+    onUpdate?: string; // TODO think about string literal type
+
+    /**
      * Gets the table name to which this foreign key is applied.
      */
     tableName: string;
@@ -72,13 +77,15 @@ export class ForeignKeyMetadata {
         namingStrategy?: NamingStrategyInterface,
         columns: ColumnMetadata[],
         referencedColumns: ColumnMetadata[],
-        onDelete?: OnDeleteType
+        onDelete?: OnDeleteType,
+        onUpdate?: string
     }) {
         this.entityMetadata = options.entityMetadata;
         this.referencedEntityMetadata = options.referencedEntityMetadata;
         this.columns = options.columns;
         this.referencedColumns = options.referencedColumns;
         this.onDelete = options.onDelete;
+        this.onUpdate = options.onUpdate;
         if (options.namingStrategy)
             this.build(options.namingStrategy);
     }

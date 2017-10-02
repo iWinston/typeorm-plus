@@ -14,6 +14,7 @@ import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {SqlInMemory} from "../SqlInMemory";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -80,7 +81,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: string[] = [];
+    protected sqlsInMemory: SqlInMemory[] = [];
 
     /**
      * Mode in which query runner executes.
@@ -736,7 +737,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): (string|{ up: string, down: string })[] {
+    getMemorySql(): SqlInMemory[] {
         return this.sqlsInMemory;
     }
 

@@ -185,8 +185,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () => Promise.all(connections.map(async connection => {
 
             const queryRunner = connection.createQueryRunner();
-            const questionTableSchema = await queryRunner.getTable("testDB.questions.question");
-            const answerTableSchema = await queryRunner.getTable("secondDB.answers.answer");
+            const questionTable = await queryRunner.getTable("testDB.questions.question");
+            const answerTable = await queryRunner.getTable("secondDB.answers.answer");
             await queryRunner.release();
 
             const question = new Question();
@@ -215,10 +215,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
             query.getSql().should.be.equal(`SELECT * FROM "testDB"."questions"."question" "question", "secondDB"."answers"."answer"` +
                 ` "answer" WHERE "question"."id" = @0 AND "answer"."questionId" = "question"."id"`);
 
-            questionTableSchema!.database!.should.be.equal("testDB");
-            answerTableSchema!.database!.should.be.equal("secondDB");
-            questionTableSchema!.schema!.should.be.equal("questions");
-            answerTableSchema!.schema!.should.be.equal("answers");
+            questionTable!.database!.should.be.equal("testDB");
+            answerTable!.database!.should.be.equal("secondDB");
+            questionTable!.schema!.should.be.equal("questions");
+            answerTable!.schema!.should.be.equal("answers");
         })));
     });
 

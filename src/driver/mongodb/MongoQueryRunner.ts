@@ -38,6 +38,7 @@ import {
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
+import {SqlInMemory} from "../SqlInMemory";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -631,7 +632,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql():  (string|{ up: string, down: string })[] {
+    getMemorySql():  SqlInMemory[] {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
 

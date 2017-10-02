@@ -15,6 +15,8 @@ import {EntityManager} from "../../entity-manager/EntityManager";
 import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {OrmUtils} from "../../util/OrmUtils";
+import {SqlInMemory} from "../SqlInMemory";
+import {PromiseUtils} from "../../util/PromiseUtils";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -84,7 +86,7 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: (string|{ up: string, down: string })[] = [];
+    protected sqlsInMemory: SqlInMemory[] = [];
 
     /**
      * Mode in which query runner executes.
@@ -405,8 +407,12 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                     tableColumn.name = dbColumn["column_name"];
                     tableColumn.type = dbColumn["data_type"].toLowerCase();
                     tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
-                    tableColumn.precision = dbColumn["numeric_precision"];
-                    tableColumn.scale = dbColumn["numeric_scale"];
+
+                    if (tableColumn.type !== "integer") {
+                        tableColumn.precision = dbColumn["numeric_precision"];
+                        tableColumn.scale = dbColumn["numeric_scale"];
+                    }
+
                     tableColumn.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     // tableColumn.isPrimary = dbColumn["column_key"].indexOf("PRI") !== -1;
@@ -510,29 +516,19 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: Table): Promise<void> {
-        const schema = table.schema || this.driver.options.schema;
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        let up = `CREATE TABLE ${this.escapeTablePath(table)} (${columnDefinitions}`;
-        up += table.columns
-            .filter(column => column.isUnique)
-            .map(column => {
-                return schema ? `, CONSTRAINT "uk_${schema}_${table.name}_${column.name}" UNIQUE ("${column.name}")`
-                              : `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`;
-            }).join(" ");
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
-        if (primaryKeyColumns.length > 0)
-            up += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
-        up += `)`;
-
-        const down = `DROP TABLE "${table.name}"`;
+        const up = this.createTableSql(table);
+        const down = this.dropTableSql(table);
         await this.schemaQuery(up, down);
     }
 
     /**
      * Drops the table.
      */
-    async dropTable(tablePath: string): Promise<void> {
-        await this.query(`DROP TABLE ${this.escapeTablePath(tablePath)}`);
+    async dropTable(tableOrPath: Table|string): Promise<void> {
+        const up = this.dropTableSql(tableOrPath);
+        const table = tableOrPath instanceof Table ? tableOrPath : await this.getTable(tableOrPath);
+        const down = this.createTableSql(table!);
+        await this.schemaQuery(up, down);
     }
 
     /**
@@ -863,26 +859,58 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): (string|{ up: string, down: string })[] {
+    getMemorySql(): SqlInMemory[] {
         return this.sqlsInMemory;
-    }
-
-  /**
-   * Executes sql used special for schema build.
-   */
-    protected async schemaQuery(upQuery: string, downQuery: string): Promise<void> {
-        // if sql-in-memory mode is enabled then simply store sql in memory and return
-        if (this.sqlMemoryMode === true) {
-          this.sqlsInMemory.push({up: upQuery, down: downQuery});
-          return Promise.resolve() as Promise<any>;
-        }
-
-        await this.query(upQuery);
     }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Builds create table sql.
+     */
+    protected createTableSql(table: Table): string {
+        const schema = table.schema || this.driver.options.schema;
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        let sql = `CREATE TABLE ${this.escapeTablePath(table)} (${columnDefinitions}`;
+        sql += table.columns
+            .filter(column => column.isUnique)
+            .map(column => {
+                return schema ? `, CONSTRAINT "uk_${schema}_${table.name}_${column.name}" UNIQUE ("${column.name}")`
+                    : `, CONSTRAINT "uk_${table.name}_${column.name}" UNIQUE ("${column.name}")`;
+            }).join(" ");
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
+        sql += `)`;
+
+        return sql;
+    }
+
+    /**
+     * Builds drop table sql.
+     */
+    protected dropTableSql(tableOrPath: Table|string): string {
+        return `DROP TABLE ${this.escapeTablePath(tableOrPath)}`;
+    }
+
+    /**
+     * Executes sql used special for schema build.
+     */
+    protected async schemaQuery(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
+        if (typeof upQueries === "string")
+            upQueries = [upQueries];
+        if (typeof downQueries === "string")
+            downQueries = [downQueries];
+        // if sql-in-memory mode is enabled then simply store sql in memory and return
+        if (this.sqlMemoryMode === true) {
+            this.sqlsInMemory.push({ upQueries: upQueries, downQueries: downQueries });
+            return Promise.resolve() as Promise<any>;
+        }
+
+        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
+    }
 
     /**
      * Extracts schema name from given Table object or tablePath string.

@@ -3,6 +3,9 @@ import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
+import {EntityManager} from "../../src/entity-manager/EntityManager";
+import {PromiseUtils} from "../../src/util/PromiseUtils";
+import {SqlInMemory} from "../../src/driver/SqlInMemory";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -241,4 +244,16 @@ export function sleep(ms: number): Promise<void> {
     return new Promise<void>(ok => {
         setTimeout(ok, ms);
     });
+}
+
+export async function runUpQueries(entityManager: EntityManager, sqlsInMemory: SqlInMemory[]): Promise<void> {
+    await Promise.all(sqlsInMemory.map(sqlInMemory => {
+        return PromiseUtils.runInSequence(sqlInMemory.upQueries, query => entityManager.query(query));
+    }));
+}
+
+export async function runDownQueries(entityManager: EntityManager, sqlsInMemory: SqlInMemory[]): Promise<void> {
+    await Promise.all(sqlsInMemory.map(sqlInMemory => {
+        return PromiseUtils.runInSequence(sqlInMemory.downQueries, query => entityManager.query(query));
+    }));
 }

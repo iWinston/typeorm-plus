@@ -7,6 +7,7 @@ import {ReadStream} from "../platform/PlatformTools";
 import {InsertResult} from "../driver/InsertResult";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {SqlInMemory} from "../driver/SqlInMemory";
 
 /**
  * Runs queries on a single database connection.
@@ -296,6 +297,6 @@ export interface QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): (string|{ up: string, down: string })[];
+    getMemorySql(): SqlInMemory[];
 
 }

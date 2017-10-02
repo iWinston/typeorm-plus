@@ -40,6 +40,12 @@ export class TableForeignKey {
      */
     onDelete?: string;
 
+    /**
+     * "ON UPDATE" of this foreign key, e.g. what action database should perform when
+     * referenced stuff is being updated.
+     */
+    onUpdate?: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -49,7 +55,8 @@ export class TableForeignKey {
                 referencedColumnNames: string[],
                 referencedTable: string,
                 referencedTablePath: string,
-                onDelete?: string) {
+                onDelete?: string,
+                onUpdate?: string) {
 
         this.name = name;
         this.columnNames = columnNames;
@@ -57,6 +64,7 @@ export class TableForeignKey {
         this.referencedTableName = referencedTable;
         this.referencedTablePath = referencedTablePath;
         this.onDelete = onDelete;
+        this.onUpdate = onUpdate;
     }
 
     // -------------------------------------------------------------------------
@@ -72,7 +80,9 @@ export class TableForeignKey {
             this.columnNames,
             this.referencedColumnNames,
             this.referencedTableName,
-            this.referencedTablePath
+            this.referencedTablePath,
+            this.onDelete,
+            this.onUpdate
         );
     }
 
@@ -90,7 +100,8 @@ export class TableForeignKey {
             metadata.referencedColumnNames,
             metadata.referencedTableName,
             metadata.referencedEntityMetadata.tablePath,
-            metadata.onDelete
+            metadata.onDelete,
+            metadata.onUpdate
         );
     }
 

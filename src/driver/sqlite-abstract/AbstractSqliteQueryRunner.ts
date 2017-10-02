@@ -14,6 +14,8 @@ import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {InsertResult} from "../InsertResult";
+import {SqlInMemory} from "../SqlInMemory";
+import {PromiseUtils} from "../../util/PromiseUtils";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -71,7 +73,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: string[] = [];
+    protected sqlsInMemory: SqlInMemory[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -385,22 +387,19 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Creates a new table from the given table metadata and column metadatas.
      */
     async createTable(table: Table): Promise<void> {
-        // skip columns with foreign keys, we will add them later
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
-        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
-        if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generates a wrong schema
-        sql += `)`;
-        await this.query(sql);
+        const up = this.createTableSql(table);
+        const down = this.dropTableSql(table.name);
+        await this.schemaQuery(up, down);
     }
 
     /**
      * Drops the table.
      */
     async dropTable(tableName: string): Promise<void> {
-        let sql = `DROP TABLE "${tableName}"`;
-        await this.query(sql);
+        const up = this.dropTableSql(tableName);
+        const table = await this.getTable(tableName);
+        const down = this.createTableSql(table!);
+        await this.schemaQuery(up, down);
     }
 
     /**
@@ -417,9 +416,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
-        const newTableSchema = table.clone();
-        newTableSchema.addColumns([column]);
-        await this.recreateTable(newTableSchema, table);
+        const newTable = table.clone();
+        newTable.addColumns([column]);
+        await this.recreateTable(newTable, table);
     }
 
     /**
@@ -427,9 +426,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
-        const newTableSchema = table.clone();
-        newTableSchema.addColumns(columns);
-        await this.recreateTable(newTableSchema, table);
+        const newTable = table.clone();
+        newTable.addColumns(columns);
+        await this.recreateTable(newTable, table);
     }
 
     /**
@@ -493,7 +492,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
 
         // todo: fix it. it should not depend on table
-        return this.recreateTable(table);
+        await this.recreateTable(table);
     }
 
     /**
@@ -502,7 +501,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         // todo: fix it. it should not depend on table
-        return this.recreateTable(table);
+        await this.recreateTable(table);
     }
 
     /**
@@ -516,16 +515,20 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      */
     async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const updatingTableSchema = table.clone();
-        updatingTableSchema.removeColumns(columns);
-        return this.recreateTable(updatingTableSchema);
+        const updatingTable = table.clone();
+        updatingTable.removeColumns(columns);
+        await this.recreateTable(updatingTable);
+
+        const newTable = table.clone();
+        newTable.addColumns(columns);
+        await this.recreateTable(newTable, table, false);
     }
 
     /**
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(dbTable: Table): Promise<void> {
-        return this.recreateTable(dbTable);
+        await this.recreateTable(dbTable);
     }
 
     /**
@@ -540,9 +543,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
-        const changedTableSchema = table.clone();
-        changedTableSchema.addForeignKeys(foreignKeys);
-        return this.recreateTable(changedTableSchema);
+        const changedTable = table.clone();
+        changedTable.addForeignKeys(foreignKeys);
+        await this.recreateTable(changedTable);
     }
 
     /**
@@ -557,9 +560,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
-        const changedTableSchema = table.clone();
-        changedTableSchema.removeForeignKeys(foreignKeys);
-        return this.recreateTable(changedTableSchema);
+        const changedTable = table.clone();
+        changedTable.removeForeignKeys(foreignKeys);
+        await this.recreateTable(changedTable);
     }
 
     /**
@@ -632,13 +635,52 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): (string|{ up: string, down: string })[] {
+    getMemorySql(): SqlInMemory[] {
         return this.sqlsInMemory;
     }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Builds create table sql.
+     */
+    protected createTableSql(table: Table): string {
+        // skip columns with foreign keys, we will add them later
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `${column.name}`).join(", ")})`; // for some reason column escaping here generates a wrong schema
+        sql += `)`;
+
+        return sql;
+    }
+
+    /**
+     * Builds drop table sql.
+     */
+    protected dropTableSql(tableName: string): string {
+        return `DROP TABLE "${tableName}"`;
+    }
+
+    /**
+     * Executes sql used special for schema build.
+     */
+    protected async schemaQuery(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
+        if (typeof upQueries === "string")
+            upQueries = [upQueries];
+        if (typeof downQueries === "string")
+            downQueries = [downQueries];
+        // if sql-in-memory mode is enabled then simply store sql in memory and return
+        if (this.sqlMemoryMode === true) {
+            this.sqlsInMemory.push({ upQueries: upQueries, downQueries: downQueries });
+            return Promise.resolve() as Promise<any>;
+        }
+
+        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
+    }
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
@@ -673,7 +715,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         return c;
     }
 
-    protected async recreateTable(table: Table, oldTableSchema?: Table, migrateData = true): Promise<void> {
+    protected async recreateTable(table: Table, oldTable?: Table, isUp = true, migrateData = true): Promise<void> {
         // const withoutForeignKeyColumns = columns.filter(column => column.foreignKeys.length === 0);
         // const createForeignKeys = options && options.createForeignKeys;
         const columnDefinitions = table.columns.map(dbColumn => this.buildCreateColumnSql(dbColumn)).join(", ");
@@ -700,7 +742,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         await this.query(sql1);
 
         // we need only select data from old columns
-        const oldColumnNames = oldTableSchema ? oldTableSchema.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
+        const oldColumnNames = oldTable ? oldTable.columns.map(column => `"${column.name}"`).join(", ") : columnNames;
 
         // migrate all data from the table into temporary table
         if (migrateData) {

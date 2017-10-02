@@ -15,6 +15,8 @@ import {EntityManager} from "../../entity-manager/EntityManager";
 import {OrmUtils} from "../../util/OrmUtils";
 import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {SqlInMemory} from "../SqlInMemory";
+import {PromiseUtils} from "../../util/PromiseUtils";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -79,7 +81,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: (string|{ up: string, down: string })[] = [];
+    protected sqlsInMemory: SqlInMemory[] = [];
 
     /**
      * Mode in which query runner executes.
@@ -320,8 +322,8 @@ export class MysqlQueryRunner implements QueryRunner {
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
     async getTables(tablePaths: string[]): Promise<Table[]> {
-        if (this.sqlMemoryMode)
-            throw new Error(`Loading table is not supported in sql memory mode`);
+        /*if (this.sqlMemoryMode)
+            throw new Error(`Loading table is not supported in sql memory mode`);*/
 
         // if no tables given then no need to proceed
         if (!tablePaths || !tablePaths.length)
@@ -505,23 +507,19 @@ export class MysqlQueryRunner implements QueryRunner {
      * Creates a new table from the given table and column inside it.
      */
     async createTable(table: Table): Promise<void> {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
-        let sql = `CREATE TABLE \`${this.escapeTablePath(table)}\` (${columnDefinitions}`;
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
-        if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
-        sql += `) ENGINE=${table.engine || "InnoDB"}`;
-
-        const revertSql = `DROP TABLE \`${this.escapeTablePath(table)}\``;
-        return this.schemaQuery(sql, revertSql);
+        const up = this.createTableSql(table);
+        const down = this.dropTableSql(table);
+        return this.schemaQuery(up, down);
     }
 
     /**
      * Drop the table.
      */
     async dropTable(tableOrPath: Table|string): Promise<void> {
-        const sql = `DROP TABLE \`${this.escapeTablePath(tableOrPath)}\``;
-        return this.query(sql);
+        const up = this.dropTableSql(tableOrPath);
+        const table = tableOrPath instanceof Table ? tableOrPath : await this.getTable(tableOrPath);
+        const down = this.createTableSql(table!);
+        return this.schemaQuery(up, down);
     }
 
     /**
@@ -605,7 +603,7 @@ export class MysqlQueryRunner implements QueryRunner {
 
         const sql = `ALTER TABLE \`${this.escapeTablePath(table)}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, oldColumn.isPrimary)}`;
         const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, oldColumn.isPrimary)}`;
-        return this.schemaQuery(sql, revertSql);
+        await this.schemaQuery(sql, revertSql);
     }
 
     /**
@@ -783,7 +781,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): (string|{ up: string, down: string })[] {
+    getMemorySql(): SqlInMemory[] {
         return this.sqlsInMemory;
     }
 
@@ -792,17 +790,41 @@ export class MysqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Builds create table sql
+     */
+    protected createTableSql(table: Table): string {
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
+        let sql = `CREATE TABLE \`${this.escapeTablePath(table)}\` (${columnDefinitions}`;
+        const primaryKeyColumns = table.columns.filter(column => column.isPrimary && !column.isGenerated);
+        if (primaryKeyColumns.length > 0)
+            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `\`${column.name}\``).join(", ")})`;
+        sql += `) ENGINE=${table.engine || "InnoDB"}`;
+
+        return sql;
+    }
+
+    /**
+     * Builds drop table sql
+     */
+    protected dropTableSql(tableOrPath: Table|string): string {
+        return `DROP TABLE \`${this.escapeTablePath(tableOrPath)}\``;
+    }
+
+    /**
      * Executes sql used special for schema build.
      */
-    protected async schemaQuery(upQuery: string, downQuery: string): Promise<void> {
-
+    protected async schemaQuery(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
+        if (typeof upQueries === "string")
+            upQueries = [upQueries];
+        if (typeof downQueries === "string")
+            downQueries = [downQueries];
         // if sql-in-memory mode is enabled then simply store sql in memory and return
         if (this.sqlMemoryMode === true) {
-            this.sqlsInMemory.push({ up: upQuery, down: downQuery });
+            this.sqlsInMemory.push({ upQueries: upQueries, downQueries: downQueries });
             return Promise.resolve() as Promise<any>;
         }
 
-        await this.query(upQuery);
+        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
     }
 
     protected parseTablePath(tableOrPath: Table|string) {

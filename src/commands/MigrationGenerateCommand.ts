@@ -61,24 +61,28 @@ export class MigrationGenerateCommand {
                 logging: false
             });
             connection = await createConnection(connectionOptions);
-            const sqlQueries = await connection.driver.createSchemaBuilder().log();
+            const sqlsInMemory = await connection.driver.createSchemaBuilder().log();
             const upSqls: string[] = [], downSqls: string[] = [];
 
             // mysql is exceptional here because it uses ` character in to escape names in queries, thats why for mysql
             // we are using simple quoted string instead of template string sytax
             if (connection.driver instanceof MysqlDriver) {
-                sqlQueries.forEach(query => {
-                    const queryString = typeof query === "string" ? query : query.up;
-                    upSqls.push("        await queryRunner.query(\"" + queryString.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
-                    if (typeof query !== "string" && query.down)
-                        downSqls.push("        await queryRunner.query(\"" + query.down.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlsInMemory.forEach(sqlInMemory => {
+                    sqlInMemory.upQueries.forEach(query => {
+                        upSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                    });
+                    sqlInMemory.downQueries.forEach(query => {
+                        downSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                    });
                 });
             } else {
-                sqlQueries.forEach(query => {
-                    const queryString = typeof query === "string" ? query : query.up;
-                    upSqls.push("        await queryRunner.query(`" + queryString.replace(new RegExp("`", "g"), "\\`") + "`);");
-                    if (typeof query !== "string" && query.down)
-                        downSqls.push("        await queryRunner.query(`" + query.down.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlsInMemory.forEach(sqlInMemory => {
+                    sqlInMemory.upQueries.forEach(query => {
+                        upSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                    });
+                    sqlInMemory.downQueries.forEach(query => {
+                        downSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                    });
                 });
             }
 

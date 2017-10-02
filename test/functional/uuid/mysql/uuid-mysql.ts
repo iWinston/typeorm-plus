@@ -24,15 +24,15 @@ describe("uuid-mysql", () => {
         const postRepository = connection.getRepository(Post);
         const questionRepository = connection.getRepository(Question);
         const queryRunner = connection.createQueryRunner();
-        const postTableSchema = await queryRunner.getTable("post");
-        const questionTableSchema = await queryRunner.getTable("question");
+        const postTable = await queryRunner.getTable("post");
+        const questionTable = await queryRunner.getTable("question");
         await queryRunner.release();
 
         const post = new Post();
         await postRepository.save(post);
         const loadedPost = await postRepository.findOneById(1);
         expect(loadedPost!.uuid).to.be.exist;
-        postTableSchema!.findColumnByName("uuid")!.type.should.be.equal("varchar");
+        postTable!.findColumnByName("uuid")!.type.should.be.equal("varchar");
 
         const post2 = new Post();
         post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895";
@@ -49,10 +49,10 @@ describe("uuid-mysql", () => {
         expect(loadedQuestion!.uuid2).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");
         expect(loadedQuestion!.uuid3).to.be.null;
         expect(loadedQuestion!.uuid4).to.be.exist;
-        questionTableSchema!.findColumnByName("id")!.type.should.be.equal("varchar");
-        questionTableSchema!.findColumnByName("uuid")!.type.should.be.equal("varchar");
-        questionTableSchema!.findColumnByName("uuid2")!.type.should.be.equal("varchar");
-        questionTableSchema!.findColumnByName("uuid3")!.type.should.be.equal("varchar");
+        questionTable!.findColumnByName("id")!.type.should.be.equal("varchar");
+        questionTable!.findColumnByName("uuid")!.type.should.be.equal("varchar");
+        questionTable!.findColumnByName("uuid2")!.type.should.be.equal("varchar");
+        questionTable!.findColumnByName("uuid3")!.type.should.be.equal("varchar");
 
         const question2 = new Question();
         question2.id = "1ecad7f6-23ee-453e-bb44-16eca26d5189";

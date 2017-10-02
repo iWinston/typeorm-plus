@@ -10,6 +10,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {SchemaBuilder} from "./SchemaBuilder";
+import {SqlInMemory} from "../driver/SqlInMemory";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -60,7 +61,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createNewDatabases();
         await this.queryRunner.startTransaction();
         try {
-            this.tables = await this.loadTableSchemas();
+            this.tables = await this.loadTables();
             await this.executeSchemaSyncOperationsInProperOrder();
 
             // if cache is enabled then perform cache-synchronization as well
@@ -84,11 +85,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Returns sql queries to be executed by schema builder.
      */
-    async log(): Promise<(string|{ up: string, down: string })[]> {
+    async log(): Promise<SqlInMemory[]> {
         this.queryRunner = await this.connection.createQueryRunner("master");
         try {
             await this.createNewDatabases();
-            this.tables = await this.loadTableSchemas();
+            this.tables = await this.loadTables();
             this.queryRunner.enableSqlMemory();
             await this.executeSchemaSyncOperationsInProperOrder();
 
@@ -114,7 +115,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Loads all tables from the database.
      */
-    protected loadTableSchemas(): Promise<Table[]> {
+    protected loadTables(): Promise<Table[]> {
         const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
         return this.queryRunner.getTables(tablePaths);
     }
@@ -200,7 +201,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createNewTables(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             // check if table does not exist yet
-            const existTableSchema = this.tables.find(table => {
+            const existTable = this.tables.find(table => {
                 if (table.name !== metadata.tableName)
                     return false;
 
@@ -212,7 +213,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
                 return true;
             });
-            if (existTableSchema)
+            if (existTable)
                 return;
 
             this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);

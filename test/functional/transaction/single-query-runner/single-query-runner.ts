@@ -57,6 +57,7 @@ describe("transaction > single query runner", () => {
 
         const loadedPost6 = await entityManager.findOne(Post, { title: "Hello World" });
         expect(loadedPost6).to.be.eql({ id: 1, title: "Hello World" });
+        await entityManager.queryRunner!.release();
     })));
 
 });

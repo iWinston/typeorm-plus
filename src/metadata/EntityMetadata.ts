@@ -676,6 +676,12 @@ export class EntityMetadata {
         this.propertiesMap = this.createPropertiesMap();
     }
 
+    removeColumnByName(columnName: string): void {
+        const columnMetadata = this.ownColumns.find(c => c.propertyName === columnName);
+        if (columnMetadata)
+            this.ownColumns.splice(this.ownColumns.indexOf(columnMetadata), 1);
+    }
+
     /**
      * Creates a special object - all columns and relations of the object (plus columns and relations from embeds)
      * in a special format - { propertyName: propertyName }.

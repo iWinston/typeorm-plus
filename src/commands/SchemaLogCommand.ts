@@ -52,10 +52,12 @@ export class SchemaLogCommand {
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
 
                 sqls.forEach(sql => {
-                    let sqlString = typeof sql === "string" ? sql : sql.up;
-                    sqlString = sqlString.trim();
-                    sqlString = sqlString.substr(-1) === ";" ? sqlString : sqlString + ";";
-                    console.log(highlight(sqlString));
+                    sql.upQueries.forEach(query => {
+                        let sqlString = query;
+                        sqlString = sqlString.trim();
+                        sqlString = sqlString.substr(-1) === ";" ? sqlString : sqlString + ";";
+                        console.log(highlight(sqlString));
+                    });
                 });
             }
             await connection.close();
