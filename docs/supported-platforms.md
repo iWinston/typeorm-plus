@@ -60,7 +60,7 @@ Don't forget to include reflect-metadata package in html:
 TypeORM is able to run on Cordova, PhoneGap, Ionic apps using 
 [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin
 You have the option to choose between module loaders just like in browser package. 
-For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example).
+For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example).
 
 ## NativeScript
 

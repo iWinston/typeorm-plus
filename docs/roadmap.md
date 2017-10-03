@@ -49,3 +49,4 @@ npm i typeorm@next
 - [ ] refactor persistence mechanizm
 - [ ] fix all issues with cascades and make stable functionality
 - [ ] implement API for manual migration creation
+- [ ] add sql.js driver
