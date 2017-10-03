@@ -8,7 +8,7 @@
 
 ## Enabling logging
 
-You can enable all queries logging by simply setting `logging: true` in your connection options:
+You can enable logging of all queries and errors by simply setting `logging: true` in your connection options:
 
 ```typescript
 {
@@ -24,8 +24,6 @@ You can enable all queries logging by simply setting `logging: true` in your con
 }
 ```
 
-This configuration will enable all executed queries logging and failed query errors.
-
 ## Logging options
 
 You can enable different types of logging in connection options:
@@ -38,7 +36,7 @@ You can enable different types of logging in connection options:
 }
 ```
 
-If you want to enable only logging of failed queries then only enable `error` in configuration:
+If you want to enable logging of failed queries only then only add `error`:
 
 ```typescript
 {
@@ -48,16 +46,16 @@ If you want to enable only logging of failed queries then only enable `error` in
 }
 ```
 
-There are few other options you can use:
+There are other options you can use:
 
-* `query` - enables all query logging
-* `error` - enables failed query error logging
-* `schema` - enables schema build process logging
-* `warn` - enables internal orm warning messages logging
-* `info` - enables internal orm informative messages logging
-* `log` - enables internal orm log messages logging
+* `query` - log all queries
+* `error` - log all failed queries and error
+* `schema` - log the schema build process
+* `warn` - log internal orm warnings
+* `info` - log internal orm informative messages
+* `log` - log internal orm log messages
 
-You can specify as many of logging options as needed. 
+You can specify as many options as needed. 
 If you want to enable all logging you can simply specify `logging: "all"`:
 
 ```typescript
@@ -70,8 +68,8 @@ If you want to enable all logging you can simply specify `logging: "all"`:
 
 ## Log long-running queries
 
-If you have performance issues you can log queries that execute too much time
-by setting `maxQueryExecutionTime` option in connection options:
+If you have performance issues you can log queries that take too much time to execute
+by setting `maxQueryExecutionTime` in connection options:
 
 ```typescript
 {
@@ -85,15 +83,15 @@ This code will log all queries which run more then `1 second`.
 
 ## Changing default logger
 
-There are several loggers TypeORM ships with 3 different types of loggers:
+TypeORM ships with 3 different types of logger:
 
-* `advanced-console` - this is default logger which logs all messages into console using color 
-and sql syntax highlighting (using [chalk](https://github.com/chalk/chalk) package)
-* `simple-console` - this is simple console logger which is exactly the same as advanced, but it does not use any color highlighting.
+* `advanced-console` - this is default which logs all messages onto the console using color 
+and sql syntax highlighting (using [chalk](https://github.com/chalk/chalk))
+* `simple-console` - this is a simple console logger which is exactly the same as the advanced logger, but it does not use any color highlighting.
 This logger can be used if you have problems / or don't like colorized logs
-* `file` - this logger writes all logs into `ormlogs.log` file in the root folder of your project (near `package.json` and `ormconfig.json`)
+* `file` - this logger writes all logs into `ormlogs.log` in the root folder of your project (near `package.json` and `ormconfig.json`)
 
-You can enable any of them in connection options this way:
+You can enable any of them in connection options:
 
 ```typescript
 {
@@ -106,8 +104,7 @@ You can enable any of them in connection options this way:
 
 ## Using custom logger
 
-You can create your own logger class by implementing `Logger` interface and 
-specifying your custom logger in connection options:
+You can create your own logger class by implementing the `Logger` interface:
 
 ```typescript
 import {Logger} from "typeorm";

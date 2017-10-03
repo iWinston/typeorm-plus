@@ -8,7 +8,7 @@
 
 ## Using multiple connections
 
-The simplest way to use multiple databases is to create different multiple connections:
+The simplest way to use multiple databases is to create different connections:
 
 ```typescript
 import {createConnections} from "typeorm";
@@ -39,8 +39,8 @@ const connections = await createConnections([{
 This approach allows you to connect to any number of databases you have 
 and each database will have its own configuration, own entities and overall ORM scope and settings.
 
-For each connection new `Connection` instance will be created.
-You must specify unique name for each connection you create.
+For each connection a new `Connection` instance will be created.
+You must specify a unique name for each connection you create.
 
 When working with connections you must specify a connection name to get a specific connection:
 
@@ -56,7 +56,7 @@ const db2Connection = getConnection("db2Connection");
 
 Benefit of using this approach is that you can configure multiple connections with different login credentials,
 host, port and even database type itself.
-Downside may be for you is that you'll need to manage and work with multiple connection instances. 
+Downside for might be that you'll need to manage and work with multiple connection instances. 
 
 ## Using multiple databases in a single connection
 
@@ -119,7 +119,7 @@ SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
-You can also specify a table path instead of entity:
+You can also specify a table path instead of the entity:
 
 ```typescript
 const users = await connection
@@ -192,7 +192,7 @@ SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo
     WHERE "photo"."userId" = "user"."id"
 ```
 
-You can also specify a table path instead of entity:
+You can also specify a table path instead of the entity:
 
 ```typescript
 const users = await connection
@@ -260,9 +260,9 @@ Example of replication connection settings:
 ```
 
 All schema update and write operations are performed using `master` server.
-All simple queries performed by using find methods or select query builder are using random `slave` instance. 
+All simple queries performed by find methods or select query builder are using a random `slave` instance. 
 
-If you want explicitly use master in SELECT created by query builder, you can use following code:
+If you want to explicitly use master in SELECT created by query builder, you can use following code:
 
 ```typescript
 const postsFromMaster = await connection.createQueryBuilder(Post, "post")

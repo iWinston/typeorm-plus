@@ -17,6 +17,6 @@ await getConnection()
     .execute();
 ```
 
-This is the most efficient in terms of performance way to insert things into your database.
-You can also perform bulky insertions this way.
+This is the most efficient way in terms of performance to insert rows into your database.
+You can also perform bulk insertions this way.
      

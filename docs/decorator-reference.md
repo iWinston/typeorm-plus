@@ -19,15 +19,15 @@
     * [`@JoinColumn`](#joincolumn)
     * [`@JoinTable`](#jointable)
     * [`@RelationId`](#relationid)
-* [Subscriber and listener decorators](#subscriber-and-listener-decorators)
-    * [`@AfterLoad`](#afterload)
-    * [`@BeforeInsert`](#beforeinsert)
-    * [`@AfterInsert`](#afterinsert)
-    * [`@BeforeUpdate`](#beforeupdate)
-    * [`@AfterUpdate`](#afterupdate)
-    * [`@BeforeRemove`](#beforeremove)
-    * [`@AfterRemove`](#afterremove)
-    * [`@EventSubscriber`](#eventsubscriber)
+* [Subscriber and listener decorators](./listeners-and-subscribers.md)
+    * [`@AfterLoad`](./listeners-and-subscribers.md#afterload)
+    * [`@BeforeInsert`](./listeners-and-subscribers.md#beforeinsert)
+    * [`@AfterInsert`](./listeners-and-subscribers.md#afterinsert)
+    * [`@BeforeUpdate`](./listeners-and-subscribers.md#beforeupdate)
+    * [`@AfterUpdate`](./listeners-and-subscribers.md#afterupdate)
+    * [`@BeforeRemove`](./listeners-and-subscribers.md#beforeremove)
+    * [`@AfterRemove`](./listeners-and-subscribers.md#afterremove)
+    * [`@EventSubscriber`](./listeners-and-subscribers.md#what-is-a-subscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
     * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
@@ -284,7 +284,7 @@ export class User {
 }
 ```
 
-Learn more about [one-to-one relations](./relations.md#one-to-one-relations).
+Learn more about [one-to-one relations](./one-to-one-relations.md).
 
 #### `@ManyToOne`
 
@@ -312,7 +312,7 @@ export class Photo {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-one / one-to-many relations](./many-to-one-one-to-many-relations.md).
 
 #### `@OneToMany`
 
@@ -340,7 +340,7 @@ export class User {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-one / one-to-many relations](./many-to-one-one-to-many-relations.md).
 
 #### `@ManyToMany`
 
@@ -372,7 +372,7 @@ export class Question {
 }
 ```
 
-Learn more about [many-to-many relations](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-many relations](./many-to-many-relations.md).
 
 #### `@JoinColumn`
 
@@ -462,189 +462,6 @@ export class Post {
 
 Relation id is used only for representation.
 The underlying relation is not added/removed/changed when chaning the value.
-
-## Subscriber and listener decorators
-
-#### `@AfterLoad`
-
-You can define a method with any name in entity and mark it with `@AfterLoad`
-and TypeORM will call it each time the entity 
-is loaded using `QueryBuilder` or repository/manager find methods.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @AfterLoad()
-    updateCounters() {
-        if (this.likesCount === undefined)
-            this.likesCount = 0;
-    }
-}
-```
-
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@BeforeInsert`
-
-You can define a method with any name in entity and mark it with `@BeforeInsert`
-and TypeORM will call it before the entity is inserted using repository/manager `save`.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @BeforeInsert()
-    updateDates() {
-        this.createdDate = new Date();
-    }
-}
-```
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@AfterInsert`
-
-You can define a method with any name in entity and mark it with `@AfterInsert`
-and TypeORM will call it after the entity is inserted using repository/manager `save`.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @AfterInsert()
-    resetCounters() {
-        this.counters = 0;
-    }
-}
-```
-
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@BeforeUpdate`
-
-You can define a method with any name in the entity and mark it with `@BeforeUpdate`
-and TypeORM will call it before an existing entity is updated using repository/manager `save`.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @BeforeUpdate()
-    updateDates() {
-        this.updatedDate = new Date();
-    }
-}
-```
-
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@AfterUpdate`
-
-You can define a method with any name in the entity and mark it with `@AfterUpdate`
-and TypeORM will call it after an existing entity is updated using repository/manager `save`.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @AfterUpdate()
-    updateCounters() {
-        this.counter = 0;
-    }
-}
-```
-
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@BeforeRemove`
-
-You can define a method with any name in the entity and mark it with `@BeforeRemove`
-and TypeORM will call it before a entity is removed using repository/manager `remove`.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @BeforeRemove()
-    updateStatus() {
-        this.status = "removed";
-    }
-}
-```
-
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@AfterRemove`
-
-You can define a method with any name in the entity and mark it with `@AfterRemove`
-and TypeORM will call it after the entity is removed using repository/manager `remove`.
-Example:
-
-```typescript
-@Entity()
-export class Post {
-    
-    @AfterRemove()
-    updateStatus() {
-        this.status = "removed";
-    }
-}
-```
-
-Learn more about [listeners](listeners-and-subscribers.md).
-
-#### `@EventSubscriber`
-
-Marks a class as an event subscriber which can listen to specific entity events or any entity events.
-Events are firing using `QueryBuilder` and repository/manager methods.
-Example:
-
-```typescript
-@EventSubscriber()
-export class PostSubscriber implements EntitySubscriberInterface<Post> {
-
-    
-    /**
-     * Indicates that this subscriber only listen to Post events.
-     */
-    listenTo() {
-        return Post;
-    }
-    
-    /**
-     * Called before post insertion.
-     */
-    beforeInsert(event: InsertEvent<Post>) {
-        console.log(`BEFORE POST INSERTED: `, event.entity);
-    }
-
-}
-```
-
-You can implement any method from `EntitySubscriberInterface`.
-To listen to any entity you just omit `listenTo` method and use `any`:
-
-```typescript
-@EventSubscriber()
-export class PostSubscriber implements EntitySubscriberInterface {
-    
-    /**
-     * Called before entity insertion.
-     */
-    beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
-    }
-
-}
-```
-
-Learn more about [subscribers](listeners-and-subscribers.md).
 
 ## Other decorators
 

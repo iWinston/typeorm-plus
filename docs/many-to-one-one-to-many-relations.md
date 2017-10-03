@@ -2,7 +2,7 @@
 
 Many-to-one / one-to-many is a relation where A contains multiple instances of B, but B contains only one instance of A.
 Let's take for example `User` and `Photo` entities.
-User can have multiple photos, but each photo is owned only by a single user.
+User can have multiple photos, but each photo is owned by only one single user.
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
@@ -42,11 +42,11 @@ export class User {
 }
 ```
 
-Here we added `@ManyToOne` decorator to the `photos` property and specified target relation type `Photo` to it.
-You can omit `@JoinColumn` decorator in case of `@ManyToOne` / `@OneToMany` relation.
-`@OneToMany` decorator cannot exist without `@ManyToOne` decorator.
-If you want to use `@OneToMany` decorator `@ManyToOne` is required.
-Where you set `@ManyToOne` decorator - its related entity will have "relation id" and foreign key.
+Here we added `@ManyToOne` to the `photos` property and specified the target relation type to be `Photo`.
+You can omit `@JoinColumn` in a `@ManyToOne` / `@OneToMany` relation.
+`@OneToMany` cannot exist without `@ManyToOne`.
+If you want to use `@OneToMany`, `@ManyToOne` is required.
+Where you set `@ManyToOne` - its related entity will have "relation id" and foreign key.
 
 This example will produce following tables:
 
@@ -102,7 +102,7 @@ await connection.manager.save(photo2);
 
 With cascades enabled you can save this relation with only one `save` call.
 
-To load user with photos inside you must specify relation in `FindOptions`:
+To load a user with photos inside you must specify the relation in `FindOptions`:
  
 ```typescript
 const userRepository = connection.getRepository(User);
@@ -132,4 +132,4 @@ const photos = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation you don't have to specify relation or join it - it will be loaded automatically ALWAYS.
+With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.

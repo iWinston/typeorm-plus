@@ -8,7 +8,7 @@
 
 ## Creating your own `NamingStrategy`
 
-If you defined your connection options in `ormconfig` file,
+If you defined your connection options in the `ormconfig` file,
 then you can simply use it and override it following way:
 
 ```typescript

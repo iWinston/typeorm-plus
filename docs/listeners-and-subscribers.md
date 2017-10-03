@@ -1,6 +1,6 @@
 # Entity Listeners and Subscribers
 
-* [What is Entity Listener](#what-is-entity-listener)
+* [What is an Entity Listener](#what-is-an-entity-listener)
     * [`@AfterLoad`](#afterload)
     * [`@BeforeInsert`](#beforeinsert)
     * [`@AfterInsert`](#afterinsert)
@@ -8,17 +8,17 @@
     * [`@AfterUpdate`](#afterupdate)
     * [`@BeforeRemove`](#beforeremove)
     * [`@AfterRemove`](#afterremove)
-* [What is Subscriber](#what-is-subscriber)
+* [What is a Subscriber](#what-is-a-subscriber)
 
-## What is Entity Listener
+## What is an Entity Listener
 
-Any your entity can have methods with custom logic that listen to specific entity events.
-You must mark those methods with special decorators depend on what event you want listen to.
+Any of your entities can have methods with custom logic that listen to specific entity events.
+You must mark those methods with special decorators depending on what event you want to listen to.
 
 ### `@AfterLoad`
 
-You can define method with any name in entity and mark it with `@AfterLoad` decorator
-and orm will call this method each time entity 
+You can define a method with any name in entity and mark it with `@AfterLoad`
+and TypeORM will call it each time the entity 
 is loaded using `QueryBuilder` or repository/manager find methods.
 Example:
 
@@ -36,8 +36,8 @@ export class Post {
 
 ### `@BeforeInsert`
 
-You can define method with any name in entity and mark it with `@BeforeInsert` decorator
-and orm will call this method before entity inserted into the database using repository/manager `save` method.
+You can define a method with any name in entity and mark it with `@BeforeInsert`
+and TypeORM will call it before the entity is inserted using repository/manager `save`.
 Example:
 
 ```typescript
@@ -53,8 +53,8 @@ export class Post {
 
 ### `@AfterInsert`
 
-You can define method with any name in entity and mark it with `@AfterInsert` decorator
-and orm will call this method after entity inserted into the database using repository/manager `save` method.
+You can define a method with any name in entity and mark it with `@AfterInsert`
+and TypeORM will call it after the entity is inserted using repository/manager `save`.
 Example:
 
 ```typescript
@@ -70,8 +70,8 @@ export class Post {
 
 ### `@BeforeUpdate`
 
-You can define method with any name in entity and mark it with `@BeforeUpdate` decorator
-and orm will call this method before exist entity is updated in the database using repository/manager `save` method.
+You can define a method with any name in the entity and mark it with `@BeforeUpdate`
+and TypeORM will call it before an existing entity is updated using repository/manager `save`.
 Example:
 
 ```typescript
@@ -87,8 +87,8 @@ export class Post {
 
 ### `@AfterUpdate`
 
-You can define method with any name in entity and mark it with `@AfterUpdate` decorator
-and orm will call this method after exist entity is updated in the database using repository/manager `save` method.
+You can define a method with any name in the entity and mark it with `@AfterUpdate`
+and TypeORM will call it after an existing entity is updated using repository/manager `save`.
 Example:
 
 ```typescript
@@ -104,8 +104,8 @@ export class Post {
 
 ### `@BeforeRemove`
 
-You can define method with any name in entity and mark it with `@BeforeRemove` decorator
-and orm will call this method before entity is removed from the database using repository/manager `remove` method.
+You can define a method with any name in the entity and mark it with `@BeforeRemove`
+and TypeORM will call it before a entity is removed using repository/manager `remove`.
 Example:
 
 ```typescript
@@ -121,8 +121,8 @@ export class Post {
 
 ### `@AfterRemove`
 
-You can define method with any name in entity and mark it with `@AfterRemove` decorator
-and orm will call this method after entity is removed from the database using repository/manager `remove` method.
+You can define a method with any name in the entity and mark it with `@AfterRemove`
+and TypeORM will call it after the entity is removed using repository/manager `remove`.
 Example:
 
 ```typescript
@@ -136,10 +136,10 @@ export class Post {
 }
 ```
 
-## What is Subscriber
+## What is a Subscriber
 
-You can create separate event subscriber classes which can listen to specific entity events or any entity events.
-Events are firing using `QueryBuilder` or repository/manager methods.
+Marks a class as an event subscriber which can listen to specific entity events or any entity events.
+Events are firing using `QueryBuilder` and repository/manager methods.
 Example:
 
 ```typescript
@@ -164,7 +164,7 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
 }
 ```
 
-You can implement any method from `EntitySubscriberInterface` interface.
+You can implement any method from `EntitySubscriberInterface`.
 To listen to any entity you just omit `listenTo` method and use `any`:
 
 ```typescript
