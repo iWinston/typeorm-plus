@@ -1,7 +1,7 @@
 # Caching queries
 
-You can cache results selected by a `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount`.
-To enable caching you need to explicitly enable it in connection options:
+You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount`.
+To enable caching you need to explicitly enable it in your connection options:
 
 ```typescript
 {
@@ -14,7 +14,7 @@ To enable caching you need to explicitly enable it in connection options:
 ```
 
 When you enable cache for the first time,
-you must synchronize your database schema (using cli, migrations or simply option in connection).
+you must synchronize your database schema (using CLI, migrations or the `synchronize` connection option).
 
 Then in `QueryBuilder` you can enable query cache for any query:
 
@@ -26,12 +26,12 @@ const users = await connection
     .getMany();
 ```
 
-This will execute query to fetch all admin users and cache its result.
-Next time when you execute same code it will get admin users from cache.
+This will execute a query to fetch all admin users and cache its result.
+Next time when you execute same code it will get admin users from the cache.
 Default cache time is equal to `1000 ms`, e.g. 1 second.
-It means cache will be invalid in 1 second after you first time call query builder code.
-In practice it means if users open user page 150 times within 3 seconds only three queries will be executed during this period.
-All other inserted users during 1 second of caching won't be returned to user.
+This means cache will be invalid 1 second after you called the query builder code.
+In practice, it means that if users open user page 150 times within 3 seconds only three queries will be executed during this period.
+All users instered during the 1 second of caching won't be returned to the user.
 
 You can change cache time manually:
 
@@ -57,7 +57,7 @@ Or globally in connection options:
 }
 ```
 
-Also you can set a "cache id":
+Also, you can set a "cache id":
 
 ```typescript
 const users = await connection
@@ -68,16 +68,16 @@ const users = await connection
 ```
 
 It will allow you to granular control your cache,
-for example clear cached results when you insert a new user:
+for example, clear cached results when you insert a new user:
 
 ```typescript
 await connection.queryResultCache.remove(["users_admins"]);
 ```
 
 
-By default, TypeORM uses separate table called `query-result-cache` and stores all queries and results there.
+By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
 If storing cache in a single database table is not effective for you, 
-you can change cache type to "redis" and TypeORM will store all cache records in redis instead.
+you can change the cache type to "redis" and TypeORM will store all cached records in redis instead.
 Example:
 
 ```typescript
@@ -98,4 +98,4 @@ Example:
 
 "options" are [redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties). 
 
-You can use `typeorm cache:clear` command to clear everything stored in cache.
+You can use `typeorm cache:clear` to clear everything stored in the cache.

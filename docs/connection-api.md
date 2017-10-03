@@ -47,7 +47,7 @@ const connection = await createConnections([{
 }]);
 ```
 
-* `getConnectionManager()` - Gets connection manager which stores all created (using `createConnection` method) connections.
+* `getConnectionManager()` - Gets connection manager which stores all created (using `createConnection()` or `createConnections()`) connections.
 
 ```typescript
 import {getConnectionManager} from "typeorm";
@@ -79,7 +79,7 @@ const secondaryManager = getEntityManager("secondary-connection");
 // you can use secondary connection manager methods
 ```
 
-* `getRepository()` - Gets some entity's `Repository` from connection. 
+* `getRepository()` - Gets `Repository` for given entity from connection. 
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
@@ -92,7 +92,7 @@ const blogRepository = getRepository(Blog, "secondary-connection");
 // you can use secondary connection repository methods
 ```
 
-* `getTreeRepository()` - Gets some entity's `TreeRepository` from connection. 
+* `getTreeRepository()` - Gets `TreeRepository` for given entity from connection. 
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
@@ -105,7 +105,7 @@ const blogRepository = getTreeRepository(Blog, "secondary-connection");
 // you can use secondary connection repository methods
 ```
 
-* `getMongoRepository()` - Gets some entity's `MongoRepository` from connection. 
+* `getMongoRepository()` - Gets `MongoRepository` for given entity from connection. 
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
@@ -120,7 +120,7 @@ const blogRepository = getMongoRepository(Blog, "secondary-connection");
 
 ## `Connection` API
 
-* `name` - Connection name. If you created nameless connection then its equal to "default".
+* `name` - Connection name. If you created nameless connection then it's equal to "default".
 You use this name when you work with multiple connections and call `getConnection(connectionName: string)`
 
 ```typescript
@@ -128,14 +128,15 @@ const connectionName: string = connection.name;
 ```
 
 * `options` - Connection options used to create this connection.
-For more information about connection options see [Connection Options](./connection-options.md) documentation.
+Learn more about [Connection Options](./connection-options.md).
 
 ```typescript
 const connectionOptions: ConnectionOptions = connection.options;
-// you can cast connectionOptions to MysqlConnectionOptions or any other xxxConnectionOptions depend on database driver you use
+// you can cast connectionOptions to MysqlConnectionOptions
+// or any other xxxConnectionOptions depending on the database driver you use
 ```
 
-* `isConnected` - Indicates if real connection to the database is established.
+* `isConnected` - Indicates if a real connection to the database is established.
 
 ```typescript
 const isConnected: boolean = connection.isConnected;
@@ -145,11 +146,12 @@ const isConnected: boolean = connection.isConnected;
 
 ```typescript
 const driver: Driver = connection.driver;
-// you can cast connectionOptions to MysqlDriver or any other xxxDriver depend on database driver you use
+// you can cast connectionOptions to MysqlDriver
+// or any other xxxDriver depending on the database driver you use
 ```
 
 * `manager` - `EntityManager` used to work with connection entities.
-For more information about EntityManager see [Entity Manager and Repository](working-with-entity-manager.md) documentation.
+Learn more about [Entity Manager and Repository](working-with-entity-manager.md).
 
 ```typescript
 const manager: EntityManager = connection.manager;
@@ -167,21 +169,21 @@ const user = await manager.findOneById(1);
 ```
 
 * `connect` - Performs connection to the database. 
-When you use `createConnection` method it automatically calls this method and you usually don't need to call it by yourself.
+When you use `createConnection` it automatically calls `connect` and you don't need to call it yourself.
 
 ```typescript
 await connection.connect();
 ```
 
 * `close` - Closes connection with the database. 
-Usually you call this method when your application is shutdown.
+Usually, you call this method when your application is shutting down.
 
 ```typescript
 await connection.close();
 ```
 
-* `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls exactly this method. 
-Usually you call this method when your application is shutdown.
+* `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
+Usually, you call this method when your application is shuting down.
 
 ```typescript
 await connection.synchronize();
@@ -208,7 +210,7 @@ await connection.undoLastMigration();
 ```
 
 * `hasMetadata` - Checks if metadata for a given entity is registered.
-Learn more about metadata in [Entity Metadata](./entity-metadata.md) documentation.
+Learn more about [Entity Metadata](./entity-metadata.md).
 
 ```typescript
 if (connection.hasMetadata(User))
@@ -217,7 +219,7 @@ if (connection.hasMetadata(User))
 
 * `getMetadata` - Gets `EntityMetadata` of the given entity.
 You can also specify a table name and if entity metadata with such table name is found it will be returned.
-Learn more about metadata in [Entity Metadata](./entity-metadata.md) documentation.
+Learn more about [Entity Metadata](./entity-metadata.md).
 
 ```typescript
 const userMetadata = connection.getMetadata(User);
@@ -226,7 +228,7 @@ const userMetadata = connection.getMetadata(User);
 
 * `getRepository` - Gets `Repository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about repositories in [Repository](working-with-entity-manager.md) documentation.
+Learn more about [Repositories](working-with-entity-manager.md).
 
 ```typescript
 const repository = connection.getRepository(User);
@@ -236,7 +238,7 @@ const users = await repository.findOneById(1);
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about repositories in [Repository](working-with-entity-manager.md) documentation.
+Learn more about [Repositories](working-with-entity-manager.md).
 
 ```typescript
 const repository = connection.getTreeRepository(Category);
@@ -244,9 +246,9 @@ const repository = connection.getTreeRepository(Category);
 const categories = await repository.findTrees();
 ```
 
-* `getMongoRepository` - Gets `getMongoRepository` of the given entity.
+* `getMongoRepository` - Gets `MongoRepository` of the given entity.
 This repository is used for entities in MongoDB connection.
-Learn more about mongodb support refer to [MongoDB documentation](./mongodb.md).
+Learn more about [MongoDB support](./mongodb.md).
 
 ```typescript
 const repository = connection.getMongoRepository(User);
@@ -257,7 +259,7 @@ const category2 = await categoryCursor.next();
 ```
 
 * `getCustomRepository` - Gets customly defined repository.
-Learn more about custom repositories in [Repository](working-with-entity-manager.md) documentation.
+Learn more about [custom repositories](working-with-entity-manager.md).
 
 ```typescript
 const userRepository = connection.getCustomRepository(UserRepository);
@@ -266,7 +268,7 @@ const crazyUsers = await userRepository.findCrazyUsers();
 ```
 
 * `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-Learn more about transactions in [Transactions](./transactions.md) documentation.
+Learn more about [Transactions](./transactions.md).
 
 ```typescript
 await connection.transaction(async manager => {
@@ -282,8 +284,8 @@ await connection.transaction(async manager => {
 const rawData = await connection.query(`SELECT * FROM USERS`);
 ```
 
-* `createQueryBuilder` - Creates a query builder use to build SQL queries.
-Learn more about query builder in [QueryBuilder](select-query-builder.md) documentation.
+* `createQueryBuilder` - Creates a query builder, which can be used to build queries.
+Learn more about [QueryBuilder](select-query-builder.md).
 
 ```typescript
 const users = await connection.createQueryBuilder()
@@ -293,13 +295,13 @@ const users = await connection.createQueryBuilder()
     .getMany();
 ```
 
-* `createQueryRunner` - Creates a query runner used to work with a single real database connection, manage it and work with it.
-Learn more about query runners in [QueryRunner](./query-runner.md) documentation. 
+* `createQueryRunner` - Creates a query runner used manage and work with a single real database connection.
+Learn more about [QueryRunner](./query-runner.md). 
 
 ```typescript
 const queryRunner = connection.createQueryRunner();
 
-// you can use it methods only after you call connect method
+// you can use its methods only after you call connect
 // which performs real database connection
 await queryRunner.connect();
 
@@ -331,7 +333,7 @@ const defaultConnection = connectionManager.get("default");
 const secondaryConnection = connectionManager.get("secondary");
 ```
 
-* `has` - Checks if connection is registered in the given connection manager.
+* `has` - Checks if a connection is registered in the given connection manager.
 
 ```typescript
 if (connectionManager.has("default")) {
