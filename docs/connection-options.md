@@ -4,24 +4,26 @@
 * [Common connection options](#common-connection-options)
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` connection options](#postgres-connection-options)
-* [`sqlite` / `websql` connection options](#sqlite--websql-connection-options)
+* [`sqlite` connection options](#sqlite-connection-options)
+* [`websql` connection options](#websql-connection-options)
+* [`cordova` connection options](#cordova-connection-options)
 * [`mssql` connection options](#mssql-connection-options)
 * [`mongodb` connection options](#mongodb-connection-options)
 * [Connection options example](#connection-options-example)
     
 ## What is `ConnectionOptions`
 
-Connection options is a connection configuration object you pass to `createConnection` method
+Connection options is a connection configuration object you pass to `createConnection`
  or create in `ormconfig` file. Different drivers have their own specific connection options.
 
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "mariadb", "sqlite", "oracle", "mssql", "websql", "mongodb". 
+ Possible values are "mysql", "postgres", "mariadb", "sqlite", "cordova", "oracle", "mssql", "websql", "mongodb". 
  This option is required.
 
 * `name` - Connection name. You'll use it to get connection you need using `getConnection(name: string)` 
-or `ConnectionManager.get(name: string)` methods. 
+or `ConnectionManager.get(name: string)`. 
 Connection names for different connections cannot be same - they all must be unique.
 If connection name is not given then it will be called "default".
 
@@ -29,59 +31,59 @@ If connection name is not given then it will be called "default".
 Use it if you want to pass extra settings to underlying database driver.
 
 * `entities` - Entities to be loaded and used for this connection.
-Accepts both entity classes and directories where from they must to be loaded.
+Accepts both entity classes and directories paths to load from.
 Directories support glob patterns.
 Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-For more information about entities refer to [Entities](./entities.md) documentation.
+Learn more about [Entities](./entities.md).
 
 * `subscribers` - Subscribers to be loaded and used for this connection.
-Accepts both entity classes and directories where from they must to be loaded.
+Accepts both entity classes and directories to load from.
 Directories support glob patterns.
 Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
-For more information about subscribers refer to [Subscribers](listeners-and-subscribers.md) documentation.
+Learn more about [Subscribers](listeners-and-subscribers.md).
 
 * `entitySchemas` - Entity schemas to be loaded and used for this connection.
-Accepts both entity schema classes and directories where from they must to be loaded.
+Accepts both entity schema classes and directories to load from.
 Directories support glob patterns.
 Example: `entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json", "modules/**/entity-schema/*.json"]`.
-For more information about subscribers refer to [Entity Schemas](./schema-in-files.md) documentation.
+Learn more about [Entity Schemas](./schema-in-files.md).
 
 * `migrations` - Migrations to be loaded and used for this connection.
-Accepts both migration classes and directories where from they must to be loaded.
+Accepts both migration classes and directories to load from.
 Directories support glob patterns.
 Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
-For more information about migrations refer to [Migrations](./migrations.md) documentation.
+Learn more about [Migrations](./migrations.md).
 
 * `logging` - Indicates if logging is enabled or not. 
 If set to `true` then query and error logging will be enabled.
 You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-For more information about logging refer to [Logging](./logging.md) documentation.
+Learn more about [Logging](./logging.md).
 
 * `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file". 
 Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-For more information about logging refer to [Logging](./logging.md) documentation.
+Learn more about [Logging](./logging.md).
 
 * `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
 then logger will log this query.
 
 * `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
-Refer to [Naming strategy](./naming-strategy.md) documentation for more information.
+Learn more about [Naming strategies](./naming-strategy.md).
 
 * `entityPrefix` - Prefixes with the given string all tables (or collections) on this database connection.
 
 * `dropSchema` - Drops the schema each time connection is being established.
-Be careful with this option and don't use this in production - otherwise you'll loose all production data.
+Be careful with this option and don't use this in production - otherwise you'll lose all production data.
 This option is useful during debug and development.
 
 * `synchronize` - Indicates if database schema should be auto created on every application launch.
  Be careful with this option and don't use this in production - otherwise you can loose production data.
  This option is useful during debug and development.
- Alternative to it, you can use CLI and run schema:sync command.
+ As an alternative to it, you can use CLI and run schema:sync command.
  Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
  Instead, it syncs just by creating indices.
 
 * `migrationsRun` - Indicates if migrations should be auto run on every application launch.
-Alternative to it, you can use CLI and run migrations:run command.
+As an alternative, you can use CLI and run migrations:run command.
 
 * `cli.entitiesDir` - Directory where entities should be created by default by CLI.
 
@@ -104,10 +106,9 @@ Alternative to it, you can use CLI and run migrations:run command.
 * `database` - Database name.
 
 * `charset` - The charset for the connection. This is called "collation" in the SQL-level of MySQL 
-(like utf8_general_ci). If a SQL-level charset is specified (like utf8mb4) then the default collation 
-for that charset is used. (Default: `UTF8_GENERAL_CI`).
+(like utf8_general_ci). If a SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used. (Default: `UTF8_GENERAL_CI`).
 
-* `timezone` - he timezone configured on the MySQL server. This is used to type cast server date/time 
+* `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time 
 values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form 
 `+HH:MM` or `-HH:MM`. (Default: `local`)
 
@@ -128,7 +129,7 @@ objects only when they cannot be accurately represented with
 (which happens when they exceed the `[-2^53, +2^53]` range), otherwise they will be returned as 
 Number objects. This option is ignored if `supportBigNumbers` is disabled.
 
-* `dateStrings` - Force date types (`TIMESTAMP`, `DATETIME`, `DATE`) to be returned as strings rather then 
+* `dateStrings` - Force date types (`TIMESTAMP`, `DATETIME`, `DATE`) to be returned as strings rather than 
 inflated into JavaScript Date objects. Can be true/false or an array of type names to keep as strings. 
 (Default: `false`)
 
@@ -144,7 +145,7 @@ of SQL injection attacks. (Default: `false`)
 * `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
  For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
  
-* `ssl` -  object with ssl parameters or a string containing name of ssl profile. 
+* `ssl` -  object with ssl parameters or a string containing the name of ssl profile. 
 See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## `postgres` connection options
@@ -165,9 +166,25 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
-## `sqlite` / `websql` connection options
+## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
+
+## `websql` connection options
+
+* `database` - Database name
+
+* `version` - Version number of the database
+
+* `description` - Database description
+
+* `size` - The size of the database
+
+## `cordova`connection options
+
+* `database` - Database name
+
+* `location` - Where to save the database. See [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage#opening-a-database) for options.
 
 ## `mssql` connection options
 
@@ -185,7 +202,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `schema` - Schema name. Default is "public".
 
-* `domain` - Once you set domain, driver will connect to SQL Server using domain login.
+* `domain` - Once you set domain, the driver will connect to SQL Server using domain login.
 
 * `connectionTimeout` - Connection timeout in ms (default: `15000`).
 
@@ -194,7 +211,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `stream` - Stream recordsets/rows instead of returning them all at once as an argument of callback (default: `false`).
  You can also enable streaming for each request independently (`request.stream = true`). Always set to `true` if you plan to
- work with large amount of rows.
+ work with a large amount of rows.
  
 * `pool.max` - The maximum number of connections there can be in the pool (default: `10`).
 
@@ -227,7 +244,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  Default `-1` (nothing can get evicted).
  
 * `pool.idleTimeoutMillis` -  the minimum amount of time that an object may sit idle in the pool before it is eligible for
- eviction due to idle time. Supercedes `softIdleTimeoutMillis`. Default: `30000`.
+ eviction due to idle time. Supersedes `softIdleTimeoutMillis`. Default: `30000`.
  
 * `options.fallbackToDefaultDb` - By default, if the database requestion by `options.database` cannot be accessed, the connection
  will fail with an error. However, if `options.fallbackToDefaultDb` is set to `true`, then the user's default database will
@@ -247,7 +264,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  error is encountered during the given transaction's execution. This sets the value for `SET XACT_ABORT` during the
  initial SQL phase of a connection ([documentation](http://msdn.microsoft.com/en-us/library/ms188792.aspx)).
 
-* `options.localAddress` - A string indicating which network interface (ip addres) to use when connecting to SQL Server.
+* `options.localAddress` - A string indicating which network interface (ip address) to use when connecting to SQL Server.
 
 * `options.useColumnNames` - A boolean determining whether to return rows as arrays or key-value collections. (default: `false`).
 
@@ -274,7 +291,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
    
    (default: `READ_COMMITTED`)
  
-* `options.readOnlyIntent` - A boolean, determining whether the connection will request read only access from a
+* `options.readOnlyIntent` - A boolean, determining whether the connection will request read-only access from a
  SQL Server Availability Group. For more information, see here. (default: `false`).
 
 * `options.encrypt` - A boolean determining whether or not the connection will be encrypted. Set to true if you're
@@ -288,14 +305,14 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  See done, [doneInProc](http://tediousjs.github.io/tedious/api-request.html#event_doneInProc)
  and [doneProc](http://tediousjs.github.io/tedious/api-request.html#event_doneProc). (default: `false`)
    
-   Caution: If many row are received, enabling this option could result in excessive memory usage.
+   Caution: If many rows are received, enabling this option could result in excessive memory usage.
 
 * `options.rowCollectionOnRequestCompletion` - A boolean, that when true will expose received rows
  in Requests' completion callback. See [new Request](http://tediousjs.github.io/tedious/api-request.html#function_newRequest). (default: `false`)
 
-   Caution: If many row are received, enabling this option could result in excessive memory usage.
+   Caution: If many rows are received, enabling this option could result in excessive memory usage.
 
-* `options.tdsVersion` - The version of TDS to use. If server doesn't support specified version, negotiated version
+* `options.tdsVersion` - The version of TDS to use. If the server doesn't support the specified version, a negotiated version
  is used instead. The versions are available from `require('tedious').TDS_VERSION`.
    * `7_1`
    * `7_2`
@@ -327,7 +344,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `database` - Database name.
 
-* `poolSize` - Set the maximum poolSize for each individual server or proxy connection.
+* `poolSize` - Set the maximum pool size for each individual server or proxy connection.
 
 * `ssl` - Use ssl connection (needs to have a mongod server with ssl support). Default: `false`.
 
@@ -428,7 +445,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## Connection options example
 
-Here is small example of connection options for mysql:
+Here is a small example of connection options for mysql:
 
 ```typescript
 {
