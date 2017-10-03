@@ -1,4 +1,4 @@
-## What is EntityManager
+# What is EntityManager
 
 Using `EntityManager` you can manage (insert, update, delete, load, etc.) any entity. 
 EntityManager is just like collection of all entity repositories in a single place.

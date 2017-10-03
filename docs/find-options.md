@@ -1,4 +1,4 @@
-## Find Options
+# Find Options
 
 All repository and manager `find` methods can accept special options you can use to query data you need without using `QueryBuilder`:
 

@@ -1,4 +1,4 @@
-## What is Repository
+# What is Repository
 
 `Repository` is just like `EntityManager` but its operations are limited to a concrete entity.
 
