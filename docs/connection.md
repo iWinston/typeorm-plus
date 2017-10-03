@@ -7,17 +7,17 @@
     
 ## What is `Connection`
 
-Connection setups a real connection with your database.
-Depend on database type it may also setup a connection pool. 
-Connection (or connection pool) setup is made when `connect` method is called.
-Disconnection (or closing all connections in the pool) is made when `close` method is called.
+Connection sets a real connection with your database up.
+Depending on the database type it may also setup a connection pool. 
+Connection (or connection pool) setup is made when `connect` is called.
+Disconnection (or closing all connections in the pool) is made when `close` is called.
 Generally, you must create connection only once in your application bootstrap,
-and close it after you completely finished working with database.
+and close it after you completely finished working with the database.
 
 ## Creating a new connection
 
-There are several ways how connection can be created. 
-The most simple and common way is to use `createConnection` and `createConnections` methods.
+There are several ways how a connection can be created. 
+The most simple and common way is to use `createConnection` and `createConnections`.
 
 * `createConnection` creates a single connection:
 
@@ -58,7 +58,7 @@ const connections: Connection[] = await createConnections([{
 }]);
 ```
 
-Both these methods automatically call `Connection#connect` method.
+Both these methods automatically call `Connection#connect`.
 
 Both these methods automatically load configuration from `ormconfig` file if connection options not specified.
 For example:
@@ -79,9 +79,9 @@ const connection: Connection = await createConnection();
 
 Different connections must have different names.
 By default, if connection name is not specified it's equal to `default`.
-Usually you use multiple connections when you have multiple databases or multiple connection configurations.
+Usually, you use multiple connections when you have multiple databases or multiple connection configurations.
 
-Once you create a connection you can obtain it anywhere from your app, using `getConnection` method:
+Once you created a connection you can obtain it anywhere from your app, using `getConnection`:
 
 ```typescript
 import {getConnection} from "typeorm";
@@ -94,7 +94,7 @@ const secondConnection = getConnection("test2-connection");
 ```
 
 Avoid creating extra classes / services to store and manager your connections.
-This functionality is already embed into TypeORM - 
+This functionality is already embedded into TypeORM - 
 you don't need to overengineer and create useless abstractions.
 
 ## Using `ConnectionManager`
@@ -116,9 +116,9 @@ const connection: Connection = connectionManager.create({
 await connection.connect(); // performs connection
 ```
 
-This is not general way of creating connection, but it may be useful for some users.
-For example users who want to create connection and store its instance, 
-but have a control when actual "connection" will be established.
+This is not the general way of creating a connection, but it may be useful for some users.
+For example, users who want to create connection and store its instance, 
+but have to control when the actual "connection" will be established.
 Also you can create and maintain your own `ConnectionManager`:
 
 ```typescript
@@ -136,15 +136,15 @@ const connection: Connection = connectionManager.create({
 await connection.connect(); // performs connection
 ```
 
-But note, this way you won't be able to use `getConnection()` method anymore - 
-you'll need to store your connection manager instance and use `connectionManager.get` method to get a connection you need.
+But note, this way you won't be able to use `getConnection()` anymore - 
+you'll need to store your connection manager instance and use `connectionManager.get` to get a connection you need.
 
 Generally avoid this method and avoid unnecessary complications in your application,
 use `ConnectionManager` only if you really think you need it.
 
 ## Working with connection
 
-Once you setup connection you can use it anywhere in your app using `getConnection` method.
+Once you set your connection up, you can use it anywhere in your app using `getConnection`.
 For example:
 
 ```typescript
@@ -161,16 +161,14 @@ export class UserController {
 }
 ```
 
-You can also use `ConnectionManager#get` method to get a connection,
-but using `getConnection()` method is enough in most cases.
+You can also use `ConnectionManager#get` to get a connection,
+but using `getConnection()` is enough in most cases.
 
 Using connection you work with your entities, particularly using `EntityManager` and `Repository`.
-For more information about them see [Entity Manager and Repository](working-with-entity-manager.md) documentation.
+For more information about them see [Entity Manager and Repository](working-with-entity-manager.md).
 
-But generally, you don't use `Connection` so much. 
-Most of the times you only create a connection.
-There are `getRepository()` and `getManager()` functions
-you can access your connection's manager and repositories without directly using connection object.
+But generally, you don't use `Connection` much. 
+Most of the time you only create a connection and use `getRepository()` and `getManager()` to access your connection's manager and repositories without directly using connection object.
 For example:
 
 ```typescript

@@ -14,4 +14,4 @@ await getConnection()
     .execute();
 ```
 
-This is the most efficient in terms of performance way to delete things from your database. 
+This is the most efficient way in terms of performance to delete entities from your database. 
