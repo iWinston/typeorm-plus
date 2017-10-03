@@ -354,6 +354,8 @@ export class MysqlQueryRunner implements QueryRunner {
         if (!dbTables.length)
             return [];
 
+        const isMariaDb = this.driver.options.type === "mariadb";
+
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table(dbTable["TABLE_NAME"]);
@@ -371,7 +373,15 @@ export class MysqlQueryRunner implements QueryRunner {
                     const endIndex = columnType.indexOf("(");
                     tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
 
-                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    if (dbColumn["COLUMN_DEFAULT"] === null || dbColumn["COLUMN_DEFAULT"] === undefined 
+                        || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
+
+                        tableColumn.default = undefined;
+                    
+                    } else {
+                        tableColumn.default = dbColumn["COLUMN_DEFAULT"];
+                    }
+
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
                     tableColumn.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
