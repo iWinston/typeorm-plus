@@ -1,4 +1,4 @@
-# FAQ and best practices
+# FAQ
 
 * [How do I change a column name in the database?](#how-do-i-change-a-column-name-in-the-database)
 * [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-value-of-default-some-function,-for-example-now)

@@ -30,7 +30,7 @@
     * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
-    * [`@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`](#transaction-transactionentitymanager-and-transactionrepository)
+    * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
     * [`@EntityRepository`](#entityrepository)
 
 ## Entity decorators
@@ -103,7 +103,7 @@ export class User {
 * `name: string` - Column name in the database table. 
 By default database table name is generated from the decorated with @Column property name.
 You can change it by specifying your own name
-* `length: number` - Column type's length. For example if you want to create `varchar(150)` type 
+* `length: string|number` - Column type's length. For example if you want to create `varchar(150)` type 
 you specify column type and length options.
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
@@ -692,10 +692,10 @@ export class User {
 
 For more information about indices see documentation [here](./indices.md).
 
-#### `@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`
+#### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
 This decorator is used on a method and wraps all its execution into a single database transaction.
-All database queries must be performed using provided by `@TransactionEntityManager` decorator entity manager 
+All database queries must be performed using provided by `@TransactionManager` decorator entity manager 
 or with transaction repositories injected with `@TransactionRepository` decorator.
 Examples:
 
@@ -705,7 +705,7 @@ export class UserController {
     
     @Transaction()
     @Post("/users")
-    save(@TransactionEntityManager() manager: EntityManager, @Body() user: User) {
+    save(@TransactionManager() manager: EntityManager, @Body() user: User) {
         return manager.save(user);
     }
     
@@ -768,7 +768,7 @@ export class UserRepository {
 You can obtain any custom created repository using `connection.getCustomRepository`
 or `entityManager.getCustomRepository` methods.
 
-For more information about custom entity repositories see documentation [here](./entity-manager-and-repository.md).
+For more information about custom entity repositories see documentation [here](what-is-entity-manager.md).
 
 ----
 

@@ -1,4 +1,4 @@
-# Validation
+# Using Validation
 
 To use validation use [class-validator](https://github.com/pleerock/class-validator) package. 
 Example how to use class-validator with TypeORM:
@@ -45,7 +45,7 @@ export class Post {
 Validation:
 
 ```typescript
-import {getConnection} from "typeorm";
+import {getManager} from "typeorm";
 import {validate} from "class-validator";
 
 let post = new Post();
@@ -59,6 +59,6 @@ const errors = await validate(post);
 if (errors.length > 0) {
     throw new Error(`Validation failed!`); 
 } else {
-    await getConnection().manager.save(post);
+    await getManager().save(post);
 }
 ```

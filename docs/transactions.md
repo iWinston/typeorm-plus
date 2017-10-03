@@ -48,10 +48,10 @@ All operations **MUST** be executed using provided transactional entity manager.
 ## Transaction decorators
 
 There are few decorators which can help you organize your transactions - 
-`@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`.
+`@Transaction`, `@TransactionManager` and `@TransactionRepository`.
 
 `@Transaction` wraps all its execution into a single database transaction,
-and `@TransactionEntityManager` provides transaction entity manager which must be used to execute queries inside this transaction.
+and `@TransactionManager` provides transaction entity manager which must be used to execute queries inside this transaction.
 Example how you can apply transactional decorators in your controllers:
 
 ```typescript
@@ -60,14 +60,14 @@ export class UserController {
     
     @Transaction()
     @Post("/users")
-    save(@TransactionEntityManager() manager: EntityManager, @Body() user: User) {
+    save(@TransactionManager() manager: EntityManager, @Body() user: User) {
         return manager.save(user);
     }
     
 }
 ```
 
-You **must** always use provided by `@TransactionEntityManager` decorator manager here as well.
+You **must** always use provided by `@TransactionManager` decorator manager here as well.
 
 However, you can also inject transaction repository (which use transaction entity manager under the hood), 
 using `@TransactionRepository` decorator:

@@ -4,7 +4,6 @@
 * [Entity columns](#entity-columns)
     * [Primary columns](#primary-columns)
     * [Special columns](#special-columns)
-    * [Embedded columns](#embedded-columns)
 * [Column types](#column-types)
     * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     * [Column types for `postgres`](#column-types-for-postgres)
@@ -13,10 +12,6 @@
     * [`simple-array` column type](#simple-array-column-type)
     * [Columns with generated values](#columns-with-generated-values)
 * [Column options](#column-options)
-* [Entity inheritance](#entity-inheritance)
-* [Tree entities](#tree-entities)
-    * [Adjacency list](#adjacency-list)
-    * [Closure table](#closure-table)
 
 ## What is Entity?
 
@@ -205,188 +200,6 @@ You don't need to write a value into this column - it will be automatically set.
 each time you call `save` method of entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
-### Embedded columns
-
-There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
-Embedded column is a column which accepts a class with its own columns and merges those classes into current entity's database table.
-Example:
-
-Let's say we have `User`, `Employee` and `Student` entities.
-All those entities have few things in common - `first name` and `last name` properties
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-
-@Entity()
-export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column()
-    nameFirst: string;
-    
-    @Column()
-    nameLast: string;
-    
-    @Column()
-    isActive: boolean;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-
-@Entity()
-export class Employee {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column()
-    nameFirst: string;
-    
-    @Column()
-    nameLast: string;
-    
-    @Column()
-    salary: string;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-
-@Entity()
-export class Student {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column()
-    nameFirst: string;
-    
-    @Column()
-    nameLast: string;
-    
-    @Column()
-    faculty: string;
-    
-}
-```
-
-What we can do is to reduce `firstName` and `lastName` duplication by creating a new class with those columns:
-
-```typescript
-import {Entity, Column} from "typeorm";
-
-export class Name {
-    
-    @Column()
-    first: string;
-    
-    @Column()
-    last: string;
-    
-}
-```
-
-Then you can "connect" those columns in your entities: 
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
-
-@Entity()
-export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
-    @Column()
-    isActive: boolean;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
-
-@Entity()
-export class Employee {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
-    @Column()
-    salary: number;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
-
-@Entity()
-export class Student {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
-    @Column()
-    faculty: string;
-    
-}
-```
-
-All columns defined in `Name` entity will be merged into `user`, `employee` and `student` tables:
-
-```shell
-+-------------+--------------+----------------------------+
-|                          user                           |
-+-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| nameFirst   | varchar(255) |                            |
-| nameLast    | varchar(255) |                            |
-| isActive    | boolean      |                            |
-+-------------+--------------+----------------------------+
-
-+-------------+--------------+----------------------------+
-|                        employee                         |
-+-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| nameFirst   | varchar(255) |                            |
-| nameLast    | varchar(255) |                            |
-| salary      | int(11)      |                            |
-+-------------+--------------+----------------------------+
-
-+-------------+--------------+----------------------------+
-|                         student                         |
-+-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| nameFirst   | varchar(255) |                            |
-| nameLast    | varchar(255) |                            |
-| faculty     | varchar(255) |                            |
-+-------------+--------------+----------------------------+
-```
-
-This way we reduced duplication in classes.
- You can use as many columns (or relations) in embedded classes as you need.
- You even can have nested embedded columns inside embedded classes.
- 
 ## Column types
 
 TypeORM supports all the most commonly used database-supported column types.

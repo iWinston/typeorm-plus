@@ -10,13 +10,13 @@ Lets create a simple application called "user" which stores users in the databas
 and allow to create, update, remove, get list of all users and a single user by id
 within web api.
 
-First, create a directory called "user".
+First, create a directory called "user":
 
 ```
 mkdir user
 ```
 
-Then switch to directory and create a new node application:
+Then switch to directory and create a new project:
 
 ```
 cd user
@@ -31,7 +31,7 @@ Now we need to install and setup a TypeScript compiler. Lets install it first:
 npm i typescript --save-dev
 ```
 
-Then let's create a `tsconfig.json` file which contain configuration required for application to 
+Then let's create a `tsconfig.json` file which contains configuration required for application to 
 compile and run. Create it using your favorite editor and put following configuration:
 
 ```json
@@ -47,7 +47,7 @@ compile and run. Create it using your favorite editor and put following configur
 }
 ``` 
 
-Now lets create main application endpoint - file inside `src` directory called `app.ts`:
+Now lets create main application endpoint - `app.ts` inside `src` directory:
 
 ```
 mkdir src
@@ -77,12 +77,12 @@ node src/app.js
 
 You should see "Application is up and running" message in console just right after you run the application.
 
-You must compile your files each time you make a change, 
-You can setup watcher or install [ts-node package](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
+You must compile your files each time you make a change.
+Alternatively you can setup watcher or install [ts-node package](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
 
 ## Adding Express to the application
 
-Let's add Express to our user application. First, let's install packages we need:
+Let's add Express to our application. First, let's install packages we need:
 
 ```
 npm i express body-parser @types/express @types/body-parser --save
@@ -231,7 +231,7 @@ createConnection().then(connection => {
 ```
 
 If you want to extract action callbacks into separate files and you need `connection` instance,
-you can simply use `getConnection` method from `typeorm`:
+you can simply use `getConnection`:
 
 ```typescript
 import {getConnection} from "typeorm";

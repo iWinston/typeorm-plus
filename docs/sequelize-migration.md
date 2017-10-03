@@ -5,7 +5,6 @@
 * [Creating a models](#creating-a-models)
 * [Other model settings](#other-model-settings)
 * [Working with models](#working-with-models)
-* [Setup associations (relations)](#setup-associations-relations)
 
 ## Setting up a connection
 
@@ -297,9 +296,3 @@ In TypeORM you do:
 export class User {
 }
 ```
-
-## Setup associations (relations)
-
-Associations in TypeORM are called "relations".
-
-[TBD]

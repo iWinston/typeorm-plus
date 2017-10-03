@@ -179,7 +179,7 @@ const userRepository = connection.getCustomRepository(UserRepository);
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-For more information about custom repositories refer [this documentation](./entity-manager-and-repository.md#custom-repositories).
+For more information about custom repositories refer [this documentation](what-is-entity-manager.md#custom-repositories).
 
 ## Which one should I choose?
 
