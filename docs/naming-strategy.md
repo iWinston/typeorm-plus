@@ -1,4 +1,4 @@
-# Naming strategy [TBD]
+# Naming strategy
 
 * Specify custom table name
 * Specify custom column name
@@ -24,3 +24,5 @@ getConnectionOptions().then(connectionOptions => {
     }))
 });
 ```
+
+TBD.

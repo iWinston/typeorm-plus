@@ -13,17 +13,9 @@
 ## What is Entity Listener
 
 Any your entity can have methods with custom logic that listen to specific entity events.
-You must mark those methods with special decorators depend on what event you want listen to:
+You must mark those methods with special decorators depend on what event you want listen to.
 
-* `@AfterLoad`
-* `@BeforeInsert`
-* `@AfterInsert`
-* `@BeforeUpdate`
-* `@AfterUpdate`
-* `@BeforeRemove`
-* `@AfterRemove`
-
-#### `@AfterLoad`
+### `@AfterLoad`
 
 You can define method with any name in entity and mark it with `@AfterLoad` decorator
 and orm will call this method each time entity 
@@ -42,7 +34,7 @@ export class Post {
 }
 ```
 
-#### `@BeforeInsert`
+### `@BeforeInsert`
 
 You can define method with any name in entity and mark it with `@BeforeInsert` decorator
 and orm will call this method before entity inserted into the database using repository/manager `save` method.
@@ -59,7 +51,7 @@ export class Post {
 }
 ```
 
-#### `@AfterInsert`
+### `@AfterInsert`
 
 You can define method with any name in entity and mark it with `@AfterInsert` decorator
 and orm will call this method after entity inserted into the database using repository/manager `save` method.
@@ -76,7 +68,7 @@ export class Post {
 }
 ```
 
-#### `@BeforeUpdate`
+### `@BeforeUpdate`
 
 You can define method with any name in entity and mark it with `@BeforeUpdate` decorator
 and orm will call this method before exist entity is updated in the database using repository/manager `save` method.
@@ -93,7 +85,7 @@ export class Post {
 }
 ```
 
-#### `@AfterUpdate`
+### `@AfterUpdate`
 
 You can define method with any name in entity and mark it with `@AfterUpdate` decorator
 and orm will call this method after exist entity is updated in the database using repository/manager `save` method.
@@ -110,7 +102,7 @@ export class Post {
 }
 ```
 
-#### `@BeforeRemove`
+### `@BeforeRemove`
 
 You can define method with any name in entity and mark it with `@BeforeRemove` decorator
 and orm will call this method before entity is removed from the database using repository/manager `remove` method.
@@ -127,7 +119,7 @@ export class Post {
 }
 ```
 
-#### `@AfterRemove`
+### `@AfterRemove`
 
 You can define method with any name in entity and mark it with `@AfterRemove` decorator
 and orm will call this method after entity is removed from the database using repository/manager `remove` method.

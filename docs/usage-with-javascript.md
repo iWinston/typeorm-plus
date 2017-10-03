@@ -9,19 +9,17 @@ Everything is the same, except you need to omit types and if your platform does 
 var typeorm = require("typeorm");
 
 typeorm.createConnection({
-    driver: {
-        type: "postgres",
-        host: "localhost",
-        port: 5432,
-        username: "test",
-        password: "admin",
-        database: "test"
-    },
+    type: "postgres",
+    host: "localhost",
+    port: 5432,
+    username: "test",
+    password: "admin",
+    database: "test",
+    synchronize: true,
     entitySchemas: [
         require("./entity/Post"),
         require("./entity/Category")
-    ],
-    synchronize: true
+    ]
 }).then(function (connection) {
 
     var category1 = {

@@ -30,24 +30,24 @@
     * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
-    * [`@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`](#transaction-transactionentitymanager-and-transactionrepository)
+    * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
     * [`@EntityRepository`](#entityrepository)
 
 ## Entity decorators
 
 #### `@Entity`
 
-Marks your model as an entity. Entity is a class which is transformer into database table.
-You can specify table name into the entity:
+Marks your model as an entity. Entity is a class which is transformed into a database table.
+You can specify the table name in the entity:
 
 ```typescript
 @Entity("users")
 export class User {
 ```
 
-This code will create database table named "users".
+This code will create a database table named "users".
 
-Also you can specify some additional entity options:
+You can also specify some additional entity options:
 
 * `name` - table name. If not specified then table name is generated from entity class name
 * `engine` - database engine to be set during table creation (works only in some databases)
@@ -69,7 +69,7 @@ Example:
 export class User {
 ```
 
-For more information about entities refer [this documentation](./entities.md).
+Learn more about [Entities](./entities.md).
 
 ## Column decorators
 
@@ -97,19 +97,19 @@ export class User {
 }
 ```
 
-`@Column` decorator accept several options you can use:
+`@Column` accept several options you can use:
 
-* `type: ColumnType` - Column type. One of the type listed [above](#column-types).
+* `type: ColumnType` - Column type. One of the [supported column types](./entities.md#column-types).
 * `name: string` - Column name in the database table. 
-By default database table name is generated from the decorated with @Column property name.
+By default the column name is generated from the name of the property.
 You can change it by specifying your own name
-* `length: number` - Column type's length. For example if you want to create `varchar(150)` type 
+* `length: string|number` - Column type's length. For example if you want to create `varchar(150)` type 
 you specify column type and length options.
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
 * `default: string` - Adds database-level column's `DEFAULT` value. 
-* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn` decorator.
-* `unique: boolean` - Marks column as unique column (creates index). Same if you use `@Index` decorator.
+* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
+* `unique: boolean` - Marks column as unique column (creates index). Same if you use `@Index`.
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
@@ -122,7 +122,7 @@ Used in some column types.
 You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 
-For more information about entity columns refer [this documentation](./entities.md#entity-columns).
+Learn more about [entity columns](./entities.md#entity-columns).
 
 #### `@PrimaryColumn`
 
@@ -140,7 +140,7 @@ export class User {
 }
 ```
 
-For more information about entity columns refer [this documentation](./entities.md#entity-columns).
+Learn more about [entity columns](./entities.md#entity-columns).
 
 #### `@PrimaryGeneratedColumn`
 
@@ -175,13 +175,13 @@ export class User {
 }
 ```
 
-For more information about entity columns refer [this documentation](./entities.md#entity-columns).
+Learn more about [entity columns](./entities.md#entity-columns).
 
 #### `@ObjectIdColumn`
 
 Marks a property in your entity as ObjectID.
-This decorator is used only in MongoDB.
-Every entity in MongoDB must have ObjectID column.
+This decorator is only used in MongoDB.
+Every entity in MongoDB must have a ObjectID column.
 Example:
 
 ```typescript
@@ -194,11 +194,11 @@ export class User {
 }
 ```
 
-For more information about mongodb refer [this documentation](./mongodb.md).
+Learn more about [MongoDB](./mongodb.md).
 
 #### `@CreateDateColumn`
 
-Special column that automatically sets entity insertion time.
+Special column that is automatically set to the entity's insertion time.
 You don't need to write a value into this column - it will be automatically set.
 Example:
 
@@ -214,8 +214,8 @@ export class User {
 
 #### `@UpdateDateColumn`
 
-Special column that automatically sets entity updating time 
-each time you call `save` method of entity manager or repository.
+Special column that is automatically set to the entity's update time 
+each time you call `save` of entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
 ```typescript
@@ -230,8 +230,8 @@ export class User {
 
 #### `@VersionColumn`
 
-Special column that automatically sets entity version (incremental number)  
-each time you call `save` method of entity manager or repository.
+Special column that is automatically set to the entity's version (incremental number)  
+each time you call `save` of entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
 ```typescript
@@ -259,7 +259,7 @@ export class User {
 }
 ```
 
-Value will be generated only once before inserting entity into the database.
+Value will be generated only once before inserting the entity into the database.
 
 ## Relation decorators
 
@@ -267,11 +267,11 @@ Value will be generated only once before inserting entity into the database.
 
 One-to-one is a relation where A contains only once instance of B, and B contains only one instance of A.
 Let's take for example `User` and `Profile` entities.
-User can have only a single profile, and single profile is owned only by a single user.
+User can have only a single profile, and a single profile is owned by only a single user.
 Example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
+import {Entity, OneToOne, JoinColumn} from "typeorm";
 import {Profile} from "./Profile";
 
 @Entity()
@@ -284,13 +284,13 @@ export class User {
 }
 ```
 
-For more information about one-to-one relation refer [this documentation](./relations.md#one-to-one-relations).
+Learn more about [one-to-one relations](./relations.md#one-to-one-relations).
 
 #### `@ManyToOne`
 
 Many-to-one / one-to-many is a relation where A contains multiple instances of B, but B contains only one instance of A.
 Let's take for example `User` and `Photo` entities.
-User can have multiple photos, but each photo is owned only by a single user.
+User can have multiple photos, but each photo is owned by only one single user.
 Example:
 
 ```typescript
@@ -312,13 +312,13 @@ export class Photo {
 }
 ```
 
-For more information about one-to-one relation refer [this documentation](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-one / one-to-many relations](./relations.md#many-to-one-one-to-many-relations).
 
 #### `@OneToMany`
 
 Many-to-one / one-to-many is a relation where A contains multiple instances of B, but B contains only one instance of A.
 Let's take for example `User` and `Photo` entities.
-User can have multiple photos, but each photo is owned only by a single user.
+User can have multiple photos, but each photo is owned by only a single user.
 Example:
 
 ```typescript
@@ -340,7 +340,7 @@ export class User {
 }
 ```
 
-For more information about one-to-one relation refer [this documentation](./relations.md#many-to-one-one-to-many-relations).
+Learn more about [many-to-one / one-to-many relations](./relations.md#many-to-one-one-to-many-relations).
 
 #### `@ManyToMany`
 
@@ -372,11 +372,11 @@ export class Question {
 }
 ```
 
-For more information about one-to-one relation refer [this documentation](./relations.md#many-to-many-relations).
+Learn more about [many-to-many relations](./relations.md#many-to-one-one-to-many-relations).
 
 #### `@JoinColumn`
 
-Defines which side of relation contain join column with foreign key and 
+Defines which side of the relation contains join column with foreign key and 
 allows to customize join column name and referenced column name. 
 Example:
 
@@ -397,9 +397,8 @@ export class Post {
 #### `@JoinTable`
 
 Used for `many-to-many` relations and describes join columns of the "junction" table.
-Junction table is a special separate table created automatically by ORM with columns referenced to related entities.
-You can change column names inside junction tables and their referenced columns as easy as with `@JoinColumn` decorator:
-Also you can change name of the generated "junction" table.
+Junction table is a special separate table created automatically by TypeORM with columns referenced to the related entities.
+You can change the column names inside the junction table and their referenced columns as easy as with `@JoinColumn` decorator. You can also change the name of the generated "junction" table.
 Example:
 
 ```typescript
@@ -423,14 +422,14 @@ export class Post {
 }
 ```
 
-If destination table has composite primary keys, 
+If the destination table has composite primary keys, 
 then array of properties must be send to `@JoinTable` decorator.
 
 #### `@RelationId`
 
 Loads id (or ids) of specific relation into property.
 For example if you have many-to-one `category` in your `Post` entity
-you can have category id by marking a new property with relation id decorator.
+you can have category id by marking a new property with `@RelationId`.
 Example:
 
 ```typescript
@@ -461,15 +460,15 @@ export class Post {
 }
 ```
 
-Relation id is used only for representation. 
-It does not add/remove/change relations anyhow if you change relation id value.
+Relation id is used only for representation.
+The underlying relation is not added/removed/changed when chaning the value.
 
 ## Subscriber and listener decorators
 
 #### `@AfterLoad`
 
-You can define method with any name in entity and mark it with `@AfterLoad` decorator
-and orm will call this method each time entity 
+You can define a method with any name in entity and mark it with `@AfterLoad`
+and TypeORM will call it each time the entity 
 is loaded using `QueryBuilder` or repository/manager find methods.
 Example:
 
@@ -485,12 +484,12 @@ export class Post {
 }
 ```
 
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@BeforeInsert`
 
-You can define method with any name in entity and mark it with `@BeforeInsert` decorator
-and orm will call this method before entity inserted into the database using repository/manager `save` method.
+You can define a method with any name in entity and mark it with `@BeforeInsert`
+and TypeORM will call it before the entity is inserted using repository/manager `save`.
 Example:
 
 ```typescript
@@ -503,13 +502,12 @@ export class Post {
     }
 }
 ```
-
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@AfterInsert`
 
-You can define method with any name in entity and mark it with `@AfterInsert` decorator
-and orm will call this method after entity inserted into the database using repository/manager `save` method.
+You can define a method with any name in entity and mark it with `@AfterInsert`
+and TypeORM will call it after the entity is inserted using repository/manager `save`.
 Example:
 
 ```typescript
@@ -523,12 +521,12 @@ export class Post {
 }
 ```
 
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@BeforeUpdate`
 
-You can define method with any name in entity and mark it with `@BeforeUpdate` decorator
-and orm will call this method before exist entity is updated in the database using repository/manager `save` method.
+You can define a method with any name in the entity and mark it with `@BeforeUpdate`
+and TypeORM will call it before an existing entity is updated using repository/manager `save`.
 Example:
 
 ```typescript
@@ -542,12 +540,12 @@ export class Post {
 }
 ```
 
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@AfterUpdate`
 
-You can define method with any name in entity and mark it with `@AfterUpdate` decorator
-and orm will call this method after exist entity is updated in the database using repository/manager `save` method.
+You can define a method with any name in the entity and mark it with `@AfterUpdate`
+and TypeORM will call it after an existing entity is updated using repository/manager `save`.
 Example:
 
 ```typescript
@@ -561,12 +559,12 @@ export class Post {
 }
 ```
 
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@BeforeRemove`
 
-You can define method with any name in entity and mark it with `@BeforeRemove` decorator
-and orm will call this method before entity is removed from the database using repository/manager `remove` method.
+You can define a method with any name in the entity and mark it with `@BeforeRemove`
+and TypeORM will call it before a entity is removed using repository/manager `remove`.
 Example:
 
 ```typescript
@@ -580,12 +578,12 @@ export class Post {
 }
 ```
 
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@AfterRemove`
 
-You can define method with any name in entity and mark it with `@AfterRemove` decorator
-and orm will call this method after entity is removed from the database using repository/manager `remove` method.
+You can define a method with any name in the entity and mark it with `@AfterRemove`
+and TypeORM will call it after the entity is removed using repository/manager `remove`.
 Example:
 
 ```typescript
@@ -599,11 +597,11 @@ export class Post {
 }
 ```
 
-For more information about listeners see documentation [here](listeners-and-subscribers.md).
+Learn more about [listeners](listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
-Marks class as event subscriber which can listen to specific entity events or any entity events.
+Marks a class as an event subscriber which can listen to specific entity events or any entity events.
 Events are firing using `QueryBuilder` and repository/manager methods.
 Example:
 
@@ -629,7 +627,7 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
 }
 ```
 
-You can implement any method from `EntitySubscriberInterface` interface.
+You can implement any method from `EntitySubscriberInterface`.
 To listen to any entity you just omit `listenTo` method and use `any`:
 
 ```typescript
@@ -646,7 +644,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-For more information about subscribers see documentation [here](listeners-and-subscribers.md).
+Learn more about [subscribers](listeners-and-subscribers.md).
 
 ## Other decorators
 
@@ -655,8 +653,8 @@ For more information about subscribers see documentation [here](listeners-and-su
 This decorator allows to create database index for a specific column or columns.
 It also allows to mark column or columns to be unique.
 Decorator can be applied to columns or entity itself.
-It is applied on column when index on a single column is needed.
-And it applies on entity when single index on multiple columns is required.
+Use it on a column when index on a single column is needed.
+And use it on the entity when a single index on multiple columns is required.
 Examples:
 
 ```typescript
@@ -690,66 +688,41 @@ export class User {
 }
 ```
 
-For more information about indices see documentation [here](./indices.md).
+Learn more about [indices](./indices.md).
 
-#### `@Transaction`, `@TransactionEntityManager` and `@TransactionRepository`
+#### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
-This decorator is used on a method and wraps all its execution into a single database transaction.
-All database queries must be performed using provided by `@TransactionEntityManager` decorator entity manager 
-or with transaction repositories injected with `@TransactionRepository` decorator.
+`@Transaction` is used on a method and wraps all its execution into a single database transaction.
+All database queries must be performed using the by `@TransactionManager` provided manager 
+or with the transaction repositories injected with `@TransactionRepository`.
 Examples:
 
 ```typescript
-@Controller()
-export class UserController {
-    
-    @Transaction()
-    @Post("/users")
-    save(@TransactionEntityManager() manager: EntityManager, @Body() user: User) {
-        return manager.save(user);
-    }
-    
-    
+
+@Transaction()
+save(@TransactionManager() manager: EntityManager, @Body() user: User) {
+    return manager.save(user);
 }
 ```
 
 ```typescript
-@Controller()
-export class UserController {
-    
-    @Transaction()
-    @Post("/users")
-    save(@Body() user: User, @TransactionRepository(User) userRepository: Repository<User>) {
-        return userRepository.save(user);
-    }
-    
+@Transaction()
+save(@Body() user: User, @TransactionRepository(User) userRepository: Repository<User>) {
+    return userRepository.save(user);
 }
-``` 
+```
 
 ```typescript
-@EntityRepository(User)
-export class UserRepository extends Repository<User> {
-    public findByName(name: string) {
-        return this.findOne({ name });
-    }
-}
-
-@Controller()
-export class UserController {
-    
-    @Transaction()
-    @Get("/user")
-    save(@QueryParam("name") name: string, @TransactionRepository() userRepository: UserRepository) {
-        return userRepository.findByName(name);
-    }
-    
+@Transaction()
+save(@QueryParam("name") name: string, @TransactionRepository() userRepository: UserRepository) {
+    return userRepository.findByName(name);
 }
 ``` 
 
-Note: all operations inside transaction MUST use ONLY provided instance of `EntityManager` or injected repositories.
+Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
 
-For more information about transactions see documentation [here](./transactions.md).
+Learn more about [transactions](./transactions.md).
 
 #### `@EntityRepository`
 
@@ -768,7 +741,7 @@ export class UserRepository {
 You can obtain any custom created repository using `connection.getCustomRepository`
 or `entityManager.getCustomRepository` methods.
 
-For more information about custom entity repositories see documentation [here](./entity-manager-and-repository.md).
+Learn more about [custom entity repositories](working-with-entity-manager.md).
 
 ----
 

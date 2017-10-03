@@ -133,7 +133,7 @@ createConnection({
     username: "test",
     password: "test",
     database: "test",
-    logger: MyCustomLogger()
+    logger: new MyCustomLogger()
 });
 ```
 

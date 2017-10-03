@@ -67,11 +67,14 @@ export class ConnectionOptionsReader {
         const foundFileFormat = ["env", "js", "json", "yml", "yaml", "xml"].find(format => {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
-
+        
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
             const dotenv = PlatformTools.load("dotenv");
             dotenv.config({ path: this.baseFilePath + ".env" });
+        } else if (PlatformTools.fileExist(".env")) {
+            const dotenv = PlatformTools.load("dotenv");
+            dotenv.config({ path: ".env" });
         }
 
         // try to find connection options from any of available sources of configuration

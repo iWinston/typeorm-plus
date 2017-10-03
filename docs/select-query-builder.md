@@ -1,34 +1,30 @@
-# Query Builder
+# Select using Query Builder
 
 * [What is `QueryBuilder`](#what-is-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Building `SELECT` queries](#building-select-queries)
-    * [Getting values using `QueryBuilder`](#getting-values-using-querybuilder)
-    * [What are aliases stand for?](#what-are-aliases-stand-for?)
-    * [Using parameters to escape data](#using-parameters-to-escape-data)
-    * [Adding `WHERE` expression](#adding-where-expression)
-    * [Adding `HAVING` expression](#adding-having-expression)
-    * [Adding `ORDER BY` expression](#adding-order-by-expression)
-    * [Adding `GROUP BY` expression](#adding-group-by-expression)
-    * [Adding `LIMIT` expression](#adding-limit-expression)
-    * [Adding `OFFSET` expression](#adding-offset-expression)
-    * [Joining relations](#joining-relations)
-    * [Inner and left joins](#inner-and-left-joins)
-    * [Join without selection](#join-without-selection)
-    * [Joining any entity or table](#joining-any-entity-or-table)
-    * [Joining and mapping functionality](#joining-and-mapping-functionality)
-    * [Getting result query](#getting-result-query)
-    * [Getting raw results](#getting-raw-results)
-    * [Streaming result data](#streaming-result-data)
-    * [Using pagination](#using-pagination)
-    * [Set locking](#set-locking)
-    * [Partial selection](#partial-selection)
-    * [Using subqueries](#using-subqueries)
-    * [Caching queries](#caching-queries)
-* [Building `INSERT` query](#building-insert-query)
-* [Building `UPDATE` query](#building-update-query)
-* [Building `DELETE` query](#building-delete-query)
-* [Using `RelationQueryBuilder`](#using-relationquerybuilder)
+* [Getting values using `QueryBuilder`](#getting-values-using-querybuilder)
+* [What are aliases stand for?](#what-are-aliases-stand-for?)
+* [Using parameters to escape data](#using-parameters-to-escape-data)
+* [Adding `WHERE` expression](#adding-where-expression)
+* [Adding `HAVING` expression](#adding-having-expression)
+* [Adding `ORDER BY` expression](#adding-order-by-expression)
+* [Adding `GROUP BY` expression](#adding-group-by-expression)
+* [Adding `LIMIT` expression](#adding-limit-expression)
+* [Adding `OFFSET` expression](#adding-offset-expression)
+* [Joining relations](#joining-relations)
+* [Inner and left joins](#inner-and-left-joins)
+* [Join without selection](#join-without-selection)
+* [Joining any entity or table](#joining-any-entity-or-table)
+* [Joining and mapping functionality](#joining-and-mapping-functionality)
+* [Getting result query](#getting-result-query)
+* [Getting raw results](#getting-raw-results)
+* [Streaming result data](#streaming-result-data)
+* [Using pagination](#using-pagination)
+* [Set locking](#set-locking)
+* [Partial selection](#partial-selection)
+* [Using subqueries](#using-subqueries)
+* [Caching queries](#caching-queries)
 
 ## What is `QueryBuilder`
 
@@ -46,7 +42,7 @@ const firstUser = await connection
     .getOne();
 ```
 
-It builds following SQL query:
+It builds following SQL query: 
 
 ```sql
 SELECT 
@@ -169,7 +165,7 @@ once you do it - you will get a new instance of query builder (unlike all other 
 
 ## Building `SELECT` queries
 
-### Getting values using `QueryBuilder`
+## Getting values using `QueryBuilder`
 
 To get a single result from the database, 
 for example to get user by id or name you must use `getOne` method:
@@ -217,7 +213,7 @@ const photosSums = await getRepository(User)
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
-### What are aliases stand for?
+## What are aliases stand for?
 
 We used `createQueryBuilder("user")` everywhere. But what is "user" there?
 Answer is: its just a regular SQL alias. 
@@ -262,7 +258,7 @@ you can select from multiple tables each with own alias,
 you can join multiple tables each with its own alias.
 You use those aliases to access tables are you selecting (or data you are selecting). 
 
-### Using parameters to escape data
+## Using parameters to escape data
 
 We used `where("user.name = :name", { name: "Timber" })` syntax everywhere.
 What `{ name: "Timber" }` stands for? Answer: its a parameter we used to prevent SQL injection.
@@ -282,7 +278,7 @@ is a shortcut for:
 .setParameter("name", "Timber")
 ```
 
-### Adding `WHERE` expression
+## Adding `WHERE` expression
 
 Adding SQL `WHERE` expression is easy as:
 
@@ -332,7 +328,7 @@ Note: be careful with `orWhere` method - if you use complex expressions with bot
 keep in mind that they are stacked without any pretences. 
 Sometimes you'll need to create a where string instead and avoid using `orWhere` method. 
 
-### Adding `HAVING` expression
+## Adding `HAVING` expression
 
 Adding SQL `HAVING` expression is easy as:
 
@@ -378,7 +374,7 @@ SELECT ... FROM users user HAVING user.firstName = 'Timber' OR user.lastName = '
 You can combine as many `AND` and `OR` expressions as you need.
 If you use `.having` method you'll override all previous set `HAVING` expressions.
 
-### Adding `ORDER BY` expression
+## Adding `ORDER BY` expression
 
 Adding SQL `ORDER BY` expression is easy as:
 
@@ -423,7 +419,7 @@ createQueryBuilder("user")
 
 If you use `.orderBy` method you'll override all previous set `ORDER BY` expressions.
 
-### Adding `LIMIT` expression
+## Adding `LIMIT` expression
 
 Adding SQL `GROUP BY` expression is easy as:
 
@@ -457,7 +453,7 @@ createQueryBuilder("user")
 
 If you use `.orderBy` method you'll override all previous set `ORDER BY` expressions.
 
-### Adding `LIMIT` expression
+## Adding `LIMIT` expression
 
 Adding SQL `LIMIT` expression is easy as:
 
@@ -476,7 +472,7 @@ Result SQL query depend of database type.
 Note LIMIT may not work as you may expect if you are using complex queries with joins or subqueries.
 If you are using pagination its recommended to use `take` method instead.
 
-### Adding `OFFSET` expression
+## Adding `OFFSET` expression
 
 Adding SQL `OFFSET` expression is easy as:
 
@@ -495,7 +491,7 @@ Result SQL query depend of database type.
 Note OFFSET may not work as you may expect if you are using complex queries with joins or subqueries.
 If you are using pagination its recommended to use `skip` method instead.
 
-### Joining relations
+## Joining relations
 
 Let's say you have following entities:
 
@@ -600,7 +596,7 @@ SELECT user.*, photo.* FROM users user
     WHERE user.name = 'Timber'
 ```
 
-### Inner and left joins
+## Inner and left joins
 
 If you want to use `INNER JOIN` instead of `JEFT JOIN` just use `innerJoinAndSelect` method instead:
 
@@ -623,7 +619,7 @@ Difference between `LEFT JOIN` and `INNER JOIN` is that `INNER JOIN` won't retur
 `LEFT JOIN` will return you timber even if he don't have photos.
 To learn more about different join types refer to SQL documentation.
 
-### Join without selection
+## Join without selection
 
 You can join data without its selection.
 To do that use `leftJoin` or `innerJoin` methods. Example:
@@ -645,7 +641,7 @@ SELECT user.* FROM users user
 
 This will select timber only he has photos, but won't return his photos in result. 
 
-### Joining any entity or table
+## Joining any entity or table
 
 You can join not only relations, but also other not related entities or tables.
 Examples:
@@ -662,7 +658,7 @@ const user = await createQueryBuilder("user")
     .getMany();
 ```
 
-### Joining and mapping functionality
+## Joining and mapping functionality
 
 Add `profilePhoto` property to `User` entity and you can map any data into that property using `QueryBuilder`:
 
@@ -685,7 +681,7 @@ This will load timber's profile photo and set it to `user.profilePhoto` property
 If you want to load and map a single entity use `leftJoinAndMapOne` method.
 If you want to load and map a multiple entities use `leftJoinAndMapMany` method.
 
-### Getting result query
+## Getting result query
 
 Sometimes you may want to get a SQL query `QueryBuilder` generates for you.
 To do it use `getSql` method:
@@ -709,7 +705,7 @@ const users = await createQueryBuilder("user")
 
 This query will return you users and print in the console sql it used to get those users.
 
-### Getting raw results
+## Getting raw results
 
 There are two types of results you can get using select query builder: **entities** and **raw results**.
 Most of times you need to select real entities from your database, for example users. 
@@ -738,7 +734,7 @@ const photosSums = await getRepository(User)
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
-### Streaming result data
+## Streaming result data
 
 You can use `stream` method which returns you stream.
 Streaming returns you raw data, you must handle entities transformation manually:
@@ -750,7 +746,7 @@ const stream = await getRepository(User)
     .stream();
 ```
 
-### Using pagination
+## Using pagination
 
 Most of times developing applications you need a pagination functionality.
 This is used if you have pagination, page slider, infinite scroll components in your application.
@@ -792,7 +788,7 @@ This will skip first 5 users and take 10 users after them.
 `limit` and `offset` may not work as you expect once you'll have more complicated queries with joins or subqueries.
 Using `take` and `skip` methods will prevent those issues.
 
-### Set locking
+## Set locking
 
 QueryBuilder supports both optimistic and pessimistic locking.
 To use pessimistic read locking use following method:
@@ -824,7 +820,7 @@ const users = await getRepository(User)
 
 Optimistic locking works in conjunction with `@Version` and `@UpdatedDate` decorators.
 
-### Partial selection
+## Partial selection
 
 If you want to select only some entity properties you can use following syntax:
 
@@ -840,7 +836,7 @@ const users = await getRepository(User)
 
 This will select only `id` and `name` properties of `User` entity.
 
-### Using subqueries
+## Using subqueries
 
 You can easily create subqueries. Subqueries are supported in `FROM`, `WHERE` and `JOIN` expressions.
 
@@ -933,291 +929,4 @@ const posts = await connection
     }, "name")
     .from(Post, "post")
     .getRawMany();
-```
-
-### Caching queries
-
-You can cache results of `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount` methods.
-To enable caching you need to explicitly enable it in connection options:
-
-```typescript
-{
-    type: "mysql",
-    host: "localhost",
-    username: "test",
-    ...
-    cache: true
-}
-```
-
-When you enable cache for the first time,
-you must synchronize your database schema (using cli, migrations or simply option in connection).
-
-Then in `QueryBuilder` you can enable query cache for any query:
-
-```typescript
-const users = await connection
-    .createQueryBuilder(User, "user")
-    .where("user.isAdmin = :isAdmin", { isAdmin: true })
-    .cache(true)
-    .getMany();
-```
-
-This will execute query to fetch all admin users and cache its result.
-Next time when you execute same code it will get admin users from cache.
-Default cache time is equal to `1000 ms`, e.g. 1 second.
-It means cache will be invalid in 1 second after you first time call query builder code.
-In practice it means if users open user page 150 times within 3 seconds only three queries will be executed during this period.
-All other inserted users during 1 second of caching won't be returned to user.
-
-You can change cache time manually:
-
-```typescript
-const users = await connection
-    .createQueryBuilder(User, "user")
-    .where("user.isAdmin = :isAdmin", { isAdmin: true })
-    .cache(60000) // 1 minute
-    .getMany();
-```
-
-Or globally in connection options:
-
-```typescript
-{
-    type: "mysql",
-    host: "localhost",
-    username: "test",
-    ...
-    cache: {
-        duration: 30000 // 30 seconds
-    }
-}
-```
-
-Also you can set a "cache id":
-
-```typescript
-const users = await connection
-    .createQueryBuilder(User, "user")
-    .where("user.isAdmin = :isAdmin", { isAdmin: true })
-    .cache("users_admins", 25000)
-    .getMany();
-```
-
-It will allow you to granular control your cache,
-for example clear cached results when you insert a new user:
-
-```typescript
-await connection.queryResultCache.remove(["users_admins"]);
-```
-
-
-By default, TypeORM uses separate table called `query-result-cache` and stores all queries and results there.
-If storing cache in a single database table is not effective for you, 
-you can change cache type to "redis" and TypeORM will store all cache records in redis instead.
-Example:
-
-```typescript
-{
-    type: "mysql",
-    host: "localhost",
-    username: "test",
-    ...
-    cache: {
-        type: "redis",
-        options: {
-            host: "localhost",
-            port: 6379
-        }
-    }
-}
-```
-
-"options" are [redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties). 
-
-You can use `typeorm cache:clear` command to clear everything stored in cache.
-
-## Building `INSERT` query
-
-You can create `INSERT` queries using `QueryBuilder`.
-Examples:
-
-```typescript
-import {getConnection} from "typeorm";
-
-await getConnection()
-    .createQueryBuilder()
-    .insert()
-    .into(User)
-    .values([
-        { firstName: "Timber", lastName: "Saw" }, 
-        { firstName: "Phantom", lastName: "Lancer" }
-     ])
-    .execute();
-```
-
-This is the most efficient in terms of performance way to insert things into your database.
-You can also perform bulky insertions this way.
-     
-## Building `UPDATE` query
-
-You can create `UPDATE` queries using `QueryBuilder`.
-Examples:
-             
-```typescript
-import {getConnection} from "typeorm";
-
-await getConnection()
-    .createQueryBuilder()
-    .update(User)
-    .set({ firstName: "Timber", lastName: "Saw" })
-    .where("id = :id", { id: 1 })
-    .execute();
-```
-
-This is the most efficient in terms of performance way to update things in your database.
-
-## Building `DELETE` query
-
-You can create `DELETE` queries using `QueryBuilder`.
-Examples:
-                                               
-```typescript
-import {getConnection} from "typeorm";
-
-await getConnection()
-    .createQueryBuilder()
-    .delete()
-    .from(User)
-    .where("id = :id", { id: 1 })
-    .execute();
-```
-
-This is the most efficient in terms of performance way to delete things from your database. 
-
-## Using `RelationQueryBuilder`
-
-`RelationQueryBuilder` is special type of `QueryBuilder` which allows you to work with your relations.
-Using it you can bind entities to each other in the database without need to load any entity.
-Or you can load related entities easily.
-Examples:
-
-For example we have a `Post` entity and it has many-to-many relation to `Category` entity called `categories`.
-Let's add a new category to this many-to-many relation:
-                       
-```typescript
-import {getConnection} from "typeorm";
-
-await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of(post)
-    .add(category);
-```
-
-This code is equivalent of doing this:
-       
-```typescript
-import {getManager} from "typeorm";
-
-const postRepository = getRepository(Post);
-const post = await postRepository.findOneById(1, { relations: ["categories"] });
-post.categories.push(category);
-await postRepository.save(post);
-```
-
-But more efficient because it does minimal number of operations and binds entities in the database,
-unlike calling bulky `save` method call.
-
-Also, benefit of such approach is that you don't need to load everything in entity relation before pushing into it.
-For example if you would had ten thousands categories inside a single post adding a new post into this list may become problematic for you, 
-because standard way of doing is to load post with all ten thousands categories, push a new category
-and save it. Result is very heavy performance and basically inapplicable in production results.
-However, using `RelationQueryBuilder` completely solves this problem.
-
-Also, there is no real need to use entities when you "bind" things, you can use entity ids instead.
-For example, lets add category with id = 3 into post with id = 1:
-
-```typescript
-import {getConnection} from "typeorm";
-
-await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of(1)
-    .add(3);
-```
-
-If you are using composite primary keys you have to pass them as id map, for example:
-
-```typescript
-import {getConnection} from "typeorm";
-
-await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of({ firstPostId: 1, secondPostId: 3 })
-    .add({ firstCategoryId: 2, secondCategoryId: 4 });
-```
-
-Same way you add new entities, you can remove them:    
-         
-```typescript
-import {getConnection} from "typeorm";
-
-// this code removes a category from a given post
-await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of(post) // you can use just post id as well
-    .remove(category); // you can use just category id as well
-```
-
-Adding and removing related entities works in `many-to-many` and `one-to-many` relations.
-For `one-to-one` and `many-to-one` relations use `set` method instead:
-
-```typescript
-import {getConnection} from "typeorm";
-
-// this code sets category of a given post
-await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of(post) // you can use just post id as well
-    .set(category); // you can use just category id as well
-```
-
-If you want to unset a relation (set it to null), simply pass `null` to a `set` method:
-
-```typescript
-import {getConnection} from "typeorm";
-
-// this code unsets category of a given post
-await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of(post) // you can use just post id as well
-    .set(null);
-```
-
-Besides updating relations relational query builder also allows you to load relational entities.
-For example, lets say we have inside a `Post` entity many-to-many `categories` relation and many-to-one `user` relation.
-To load those relations you can use following code:
-
-```typescript
-import {getConnection} from "typeorm";
-
-const post = await getConnection().manager.findOneById(Post, 1);
-
-post.categories = await getConnection()
-    .createQueryBuilder()
-    .relation(Post, "categories")
-    .of(post) // you can use just post id as well
-    .loadMany();
-
-post.author = await getConnection()
-    .createQueryBuilder()
-    .relation(User, "user")
-    .of(post) // you can use just post id as well
-    .loadOne();
 ```

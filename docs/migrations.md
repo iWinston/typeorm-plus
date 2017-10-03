@@ -4,7 +4,7 @@
 * [Creating a new migration](#creating-a-new-migration)
 * [Running and reverting migrations](#running-and-reverting-migrations)
 * [Generating migrations](#generating-migrations)
-* [Using migration API to write migrations](#using-migration-api-to-write-migrations) [TBD]
+* [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations are working
 
@@ -192,5 +192,6 @@ The rule of thumb of generated migrations is that you generate them after "each"
 
 ## Using migration API to write migrations
 
-`QueryRunner` interface is not completely stable yet. 
-This section is TBD in future versions of TypeORM.
+In order to use an API to change a database schema you can use `QueryRunner`.
+`QueryRunner` API is subject to change in the next TypeORM version. 
+Expect to see documentation soon.

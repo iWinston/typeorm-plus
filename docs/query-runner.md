@@ -2,4 +2,4 @@
 
 `QueryRunner` is used to perform database-related queries.
 
-[TBD]
+TBD.
