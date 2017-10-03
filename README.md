@@ -1307,6 +1307,7 @@ There are a few repositories which you can clone and start with:
 * [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 * [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
 * [Example how to use TypeORM with MongoDB](https://github.com/typeorm/typeorm-typescript-mongo-example)
+* [Example how to use TypeORM in Cordova/PhoneGap](https://github.com/typeorm/cordova-example)
 
 ## Extensions
 
