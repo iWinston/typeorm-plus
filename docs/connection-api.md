@@ -149,7 +149,7 @@ const driver: Driver = connection.driver;
 ```
 
 * `manager` - `EntityManager` used to work with connection entities.
-For more information about EntityManager see [Entity Manager and Repository](what-is-entity-manager.md) documentation.
+For more information about EntityManager see [Entity Manager and Repository](working-with-entity-manager.md) documentation.
 
 ```typescript
 const manager: EntityManager = connection.manager;
@@ -226,7 +226,7 @@ const userMetadata = connection.getMetadata(User);
 
 * `getRepository` - Gets `Repository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about repositories in [Repository](what-is-entity-manager.md) documentation.
+Learn more about repositories in [Repository](working-with-entity-manager.md) documentation.
 
 ```typescript
 const repository = connection.getRepository(User);
@@ -236,7 +236,7 @@ const users = await repository.findOneById(1);
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about repositories in [Repository](what-is-entity-manager.md) documentation.
+Learn more about repositories in [Repository](working-with-entity-manager.md) documentation.
 
 ```typescript
 const repository = connection.getTreeRepository(Category);
@@ -257,7 +257,7 @@ const category2 = await categoryCursor.next();
 ```
 
 * `getCustomRepository` - Gets customly defined repository.
-Learn more about custom repositories in [Repository](what-is-entity-manager.md) documentation.
+Learn more about custom repositories in [Repository](working-with-entity-manager.md) documentation.
 
 ```typescript
 const userRepository = connection.getCustomRepository(UserRepository);

@@ -165,7 +165,7 @@ You can also use `ConnectionManager#get` method to get a connection,
 but using `getConnection()` method is enough in most cases.
 
 Using connection you work with your entities, particularly using `EntityManager` and `Repository`.
-For more information about them see [Entity Manager and Repository](what-is-entity-manager.md) documentation.
+For more information about them see [Entity Manager and Repository](working-with-entity-manager.md) documentation.
 
 But generally, you don't use `Connection` so much. 
 Most of the times you only create a connection.

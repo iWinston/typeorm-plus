@@ -1,4 +1,4 @@
-# Example how to create a TypeORM application with Express
+# Example using TypeORM with Express
 
 * [Initial setup](#initial-setup)
 * [Adding Express to the application](#adding-express-to-the-application)

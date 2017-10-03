@@ -83,7 +83,8 @@ Features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft Sql Server / Oracle / WebSQL / MongoDB
+* supports MySQL / MariaDB / Postgres / SQLite / Microsoft Sql Server / Oracle / WebSQL
+* supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / Electron platforms
 * code can be written in TypeScript or JavaScript
 * produced code is performant, flexible, clean and maintainable
@@ -1307,7 +1308,7 @@ There are a few repositories which you can clone and start with:
 * [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 * [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
 * [Example how to use TypeORM with MongoDB](https://github.com/typeorm/typeorm-typescript-mongo-example)
-* [Example how to use TypeORM in Cordova/PhoneGap](https://github.com/typeorm/cordova-example)
+* [Example how to use TypeORM in Cordova/PhoneGap](https://github.com/typeorm/cordova-example) 
 
 ## Extensions
 
