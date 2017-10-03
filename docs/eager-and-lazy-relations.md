@@ -59,15 +59,15 @@ const questionRepository = connection.getRepository(Question);
 const questions = await questionRepository.find();
 ```
 
-Eager relations are working only when you use `find*` methods.
-If you use `QueryBuilder` eager relations are disabled and you control by yourself what you are going to load using `leftJoinAndSelect` methods.
-Eager relations can be used only on one side of relationship,
+Eager relations only work when you use `find*` methods.
+If you use `QueryBuilder` eager relations are disabled and have to use `leftJoinAndSelect` to load the relation.
+Eager relations can only be used on one side of the relationship,
 using `eager: true` on both sides of relationship is disallowed.
 
 ## Lazy relations
 
 Entities in lazy relations are loaded once you access them. 
-Such relations must be `Promise` type - you store your value in a promise,
+Such relations must have `Promise` as type - you store your value in a promise,
 and when you load them promise is returned as well. Example:
 
 ```typescript
@@ -137,7 +137,7 @@ const answers = await question.answers;
 // you'll have all question's answers inside "answers" variable now
 ```
 
-Note: if you came from other languages (Java, PHP, etc.) and used to use lazy relations everywhere - be careful.
-Those languages aren't asynchronous and lazy loading is achieved different way, that's why you don't handle with promises there.
+Note: if you came from other languages (Java, PHP, etc.) and are used to use lazy relations everywhere - be careful.
+Those languages aren't asynchronous and lazy loading is achieved different way, that's why you don't work with promises there.
 In JavaScript and Node.JS you have to use promises if you want to have lazy-loaded relations.
 This is non-standard technique and considered experimental in TypeORM. 

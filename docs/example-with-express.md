@@ -7,7 +7,7 @@
 ## Initial setup
 
 Lets create a simple application called "user" which stores users in the database
-and allow to create, update, remove, get list of all users and a single user by id
+and allow to create, update, remove, get a list of all users and a single user by id
 within web api.
 
 First, create a directory called "user":
@@ -16,14 +16,14 @@ First, create a directory called "user":
 mkdir user
 ```
 
-Then switch to directory and create a new project:
+Then switch to the directory and create a new project:
 
 ```
 cd user
 npm init
 ``` 
 
-Finish init process by filling all required applcation data.
+Finish the init process by filling in all required application information.
 
 Now we need to install and setup a TypeScript compiler. Lets install it first:
 
@@ -31,7 +31,7 @@ Now we need to install and setup a TypeScript compiler. Lets install it first:
 npm i typescript --save-dev
 ```
 
-Then let's create a `tsconfig.json` file which contains configuration required for application to 
+Then let's create a `tsconfig.json` file which contains the configuration required for the application to 
 compile and run. Create it using your favorite editor and put following configuration:
 
 ```json
@@ -75,20 +75,20 @@ You can run it:
 node src/app.js
 ```
 
-You should see "Application is up and running" message in console just right after you run the application.
+You should see "Application is up and running" message in your console just right after you run the application.
 
 You must compile your files each time you make a change.
-Alternatively you can setup watcher or install [ts-node package](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
+Alternatively you can setup watcher or install [ts-node](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
 
 ## Adding Express to the application
 
-Let's add Express to our application. First, let's install packages we need:
+Let's add Express to our application. First, let's install the packages we need:
 
 ```
 npm i express body-parser @types/express @types/body-parser --save
 ```
 
-* `express` is express engine itself. It allows us to create a web api
+* `express` is the express engine itself. It allows us to create a web api
 * `body-parser` is used to setup how express would handle body sent by a client
 * `@types/express` is used to have a type information when using express
 * `@types/body-parser` is used to have a type information when using body parser
@@ -131,7 +131,7 @@ app.listen(3000);
 ```
 
 Now you can compile and run your project.
-You should have express server running now with working routes.
+You should have a express server running now with working routes.
 However those routes do not return any content yet.
 
 ## Adding TypeORM to the application
@@ -140,18 +140,18 @@ Finally lets add TypeORM to the application.
 In this example we will use `mysql` driver.
 Setup process for other drivers is similar.
 
-Let's install required modules first:
+Let's install the required packages first:
 
 ```
 npm i typeorm mysql reflect-metadata --save
 ```
 
-* `typeorm` is typeorm package itself
-* `mysql` is underlying database driver. 
-If you are using other then mysql database you must install appropriate driver
-* `reflect-metadata` is required package used to make decorators to work properly
+* `typeorm` is the typeorm package itself
+* `mysql` is the underlying database driver. 
+If you are using a diffrent database system,  you must install the appropriate package
+* `reflect-metadata` is required to make decorators to work properly
 
-Now let's create `ormconfig.json` file with database connection configuration we will use.
+Now let's create `ormconfig.json` with the database connection configuration we will use.
 
 ```json
   {
@@ -166,10 +166,10 @@ Now let's create `ormconfig.json` file with database connection configuration we
   }
 ```
 
-Configure each option as you need. 
-For more information about connection options see [here](./connection-options.md).
+Configure each option as you need.
+Learn more about [connection options](./connection-options.md).
 
-Let's create a `User` entity inside `src/entity` directory:
+Let's create a `User` entity inside `src/entity`:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -189,7 +189,7 @@ export class User {
 }
 ```
 
-Let's change `src/app.ts` file:
+Let's change `src/app.ts`:
 
 ```typescript
 import * as express from "express";
@@ -230,7 +230,7 @@ createConnection().then(connection => {
 });
 ```
 
-If you want to extract action callbacks into separate files and you need `connection` instance,
+If you want to extract action callbacks into separate files and you need the `connection` instance,
 you can simply use `getConnection`:
 
 ```typescript

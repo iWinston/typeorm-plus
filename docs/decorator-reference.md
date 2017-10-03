@@ -99,7 +99,7 @@ export class User {
 
 `@Column` accept several options you can use:
 
-* `type: ColumnType` - Column type. One of the type listed [above](#column-types).
+* `type: ColumnType` - Column type. One of the [supported column types](./entities.md#column-types).
 * `name: string` - Column name in the database table. 
 By default the column name is generated from the name of the property.
 You can change it by specifying your own name

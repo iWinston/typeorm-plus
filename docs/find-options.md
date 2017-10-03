@@ -1,6 +1,6 @@
 # Find Options
 
-All repository and manager `find` methods can accept special options you can use to query data you need without using `QueryBuilder`:
+All repository and manager `find` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
 * `select` - indicates which properties of the main object must be selected
 
@@ -8,7 +8,7 @@ All repository and manager `find` methods can accept special options you can use
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
-* `relations` - relations needs to be loaded with main entity.
+* `relations` - relations needs to be loaded with the main entity.
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });
@@ -48,7 +48,7 @@ userRepository.find({
 
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
-* `skip` - offset (paginated) where from entities should be taken.
+* `skip` - offset (paginated) from where entities should be taken.
 
 ```typescript
 userRepository.find({ 
@@ -56,7 +56,7 @@ userRepository.find({
 });
 ```
 
-* `take` - limit (paginated) - max number of entities should be taken.
+* `take` - limit (paginated) - max number of entities that should be taken.
 
 ```typescript
 userRepository.find({ 
