@@ -1324,14 +1324,14 @@ This project exists thanks to all the people who contribute:
 <a href="graphs/contributors"><img src="https://opencollective.com/typeorm/contributors.svg?width=890" /></a>
 
 
-## Backers
+## Backers 🙏
 
-Thank you to all our backers! 🙏 If you want to support a project and become a backer [click here.](https://opencollective.com/typeorm#backer)
+Thank you to all our backers! If you want to support a project and become a backer [click here.](https://opencollective.com/typeorm#backer)
 
 <a href="https://opencollective.com/typeorm#backers" target="_blank"><img src="https://opencollective.com/typeorm/backers.svg?width=890"></a>
 
 
-## Sponsors
+## Sponsors 🤑
 
 Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [Become a sponsor](https://opencollective.com/typeorm#sponsor)
 
