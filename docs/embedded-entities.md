@@ -1,7 +1,7 @@
 # Embedded Entities
 
 There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
-Embedded column is a column which accepts a class with its own columns and merges those classes into current entity's database table.
+Embedded column is a column which accepts a class with its own columns and merges those columns into the current entity's database table.
 Example:
 
 Let's say we have `User`, `Employee` and `Student` entities.
@@ -17,10 +17,10 @@ export class User {
     id: string;
     
     @Column()
-    nameFirst: string;
+    firstName: string;
     
     @Column()
-    nameLast: string;
+    lastName: string;
     
     @Column()
     isActive: boolean;
@@ -38,10 +38,10 @@ export class Employee {
     id: string;
     
     @Column()
-    nameFirst: string;
+    firstName: string;
     
     @Column()
-    nameLast: string;
+    lastName: string;
     
     @Column()
     salary: string;
@@ -59,10 +59,10 @@ export class Student {
     id: string;
     
     @Column()
-    nameFirst: string;
+    firstName: string;
     
     @Column()
-    nameLast: string;
+    lastName: string;
     
     @Column()
     faculty: string;
@@ -145,7 +145,7 @@ export class Student {
 }
 ```
 
-All columns defined in `Name` entity will be merged into `user`, `employee` and `student` tables:
+All columns defined in the `Name` entity will be merged into `user`, `employee` and `student`:
 
 ```shell
 +-------------+--------------+----------------------------+
@@ -176,7 +176,7 @@ All columns defined in `Name` entity will be merged into `user`, `employee` and 
 +-------------+--------------+----------------------------+
 ```
 
-This way we reduced duplication in classes.
+This way code duplication in th entity classes is reduced.
  You can use as many columns (or relations) in embedded classes as you need.
  You even can have nested embedded columns inside embedded classes.
  

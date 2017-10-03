@@ -57,7 +57,7 @@ export class Post {
 }
 ```
 
-As you can see all those entities have some common columns: `id`, `title`, `description`.
+As you can see all those entities have common columns: `id`, `title`, `description`.
 To reduce duplication and produce a better abstraction we can create a base class called `Content` for them:
 
 

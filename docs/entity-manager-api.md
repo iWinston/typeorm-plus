@@ -1,24 +1,24 @@
 # `EntityManager` API
 
-* `connection` - Gets connection used by `EntityManager`.
+* `connection` - The connection used by `EntityManager`.
 
 ```typescript
 const connection = manager.connection;
 ```
 
-* `queryRunner` - Gets query runner used by `EntityManager`.
+* `queryRunner` - The query runner used by `EntityManager`.
 Used only in transactional instances of EntityManager.
 
 ```typescript
 const queryRunner = manager.queryRunner;
 ```
 
-* `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-Learn more about transactions in [Transactions](./transactions.md) documentation.
+* `transaction` - Provides a transaction where multiple database requests will be executed in a single database transaction.
+Learn more [Transactions](./transactions.md).
 
 ```typescript
 await manager.transaction(async manager => {
-    // NOTE: you must perform all database operations using given manager instance
+    // NOTE: you must perform all database operations using the given manager instance
     // its a special instance of EntityManager working with this transaction
     // and don't forget to await things here
 });
@@ -31,7 +31,7 @@ const rawData = await manager.query(`SELECT * FROM USERS`);
 ```
 
 * `createQueryBuilder` - Creates a query builder use to build SQL queries.
-Learn more about query builder in [QueryBuilder](select-query-builder.md) documentation.
+Learn more about [QueryBuilder](select-query-builder.md).
 
 ```typescript
 const users = await manager.createQueryBuilder()
@@ -41,7 +41,7 @@ const users = await manager.createQueryBuilder()
     .getMany();
 ```
 
-* `hasId` - Checks if given entity's has its primary column property values are defined.
+* `hasId` - Checks if given entity has its primary column property defined.
 
 ```typescript
  if (manager.hasId(user)) {
@@ -49,14 +49,14 @@ const users = await manager.createQueryBuilder()
  }
 ```
 
-* `getId` - Gets given entity's primary column property values. 
-If entity has composite primary keys then returned value will be an object with names and values of primary columns.
+* `getId` - Gets given entity's primary column property value. 
+If the entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
 const userId = manager.getId(user); // userId === 1
 ```
 
-* `create` - Creates a new instance of `User` object. Optionally accepts an object literal with user properties
+* `create` - Creates a new instance of `User`. Optionally accepts an object literal with user properties
 which will be written into newly created user object
 
 ```typescript
@@ -77,7 +77,7 @@ manager.merge(User, user, { firstName: "Timber" }, { lastName: "Saw" }); // same
 
 * `preload` - Creates a new entity from the given plan javascript object. If entity already exist in the database, then
 it loads it (and everything related to it), replaces all values with the new ones from the given object
-and returns this new entity. This new entity is actually a loaded from the db entity with all properties
+and returns the new entity. The new entity is actually loaded from the database entity with all properties
 replaced from the new object.
 
 ```typescript
@@ -94,9 +94,9 @@ const user = await manager.preload(User, partialUser);
 ```
 
 * `save` - Saves a given entity or array of entities.
-If entity already exist in the database then it updates it.
-If entity does not exist in the database yet it inserts it.
-It saves all given entities in a single transaction (in the case if entity manager is not transactional).
+If the entity already exist in the database then it's updated.
+If the entity does not exist in the database yet it's inserted.
+It saves all given entities in a single transaction (in the case of entity manager is not transactional).
 Also supports partial updating since all undefined properties are skipped.
 
 ```typescript
@@ -123,7 +123,7 @@ await manager.updateById(User, 1, { firstName: "Rizzrak" });
 ```
 
 * `remove` - Removes a given entity or array of entities.
-It removes all given entities in a single transaction (in the case if entity manager is not transactional).
+It removes all given entities in a single transaction (in the case of entity manager is not transactional).
 
 ```typescript
 await manager.remove(user);
@@ -192,28 +192,28 @@ await manager.clear(User);
 ```
 
 * `getRepository` - Gets `Repository` to perform operations on a specific entity.
- For more information see [Repositories](working-with-entity-manager.md) documentation.
+ Learn more about [Repositories](working-with-entity-manager.md).
 
 ```typescript
 const userRepository = manager.getRepository(User);
 ```
 
 * `getTreeRepository` - Gets `TreeRepository` to perform operations on a specific entity.
- For more information see [Repositories](working-with-entity-manager.md) documentation.
+ Learn more about [Repositories](working-with-entity-manager.md).
 
 ```typescript
 const categoryRepository = manager.getTreeRepository(Category);
 ```
 
 * `getMongoRepository` - Gets `MongoRepository` to perform operations on a specific entity.
- For more information see [MongoDB](./mongodb.md) documentation.
+ Learn more about [MongoDB](./mongodb.md) documentation.
 
 ```typescript
 const userRepository = manager.getMongoRepository(User);
 ```
 
 * `getCustomRepository` - Gets custom entity repository.
-For more information see [Custom repositories](working-with-entity-manager.md) documentation.
+ Learn more about [Custom repositories](working-with-entity-manager.md).
 
 ```typescript
 const myUserRepository = manager.getCustomRepository(UserRepository);
