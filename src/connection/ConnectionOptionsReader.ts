@@ -64,14 +64,16 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]> {
 
         // try to find any of following configuration formats
-        const foundFileFormat = ["env", "js", "json", "yml", "yaml", "xml"].find(format => {
+        const foundFileFormat = ["js", "json", "yml", "yaml", "xml"].find(format => {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
-
+        
+        const foundEnvFile = PlatformTools.fileExist(".env")
+        
         // if .env file found then load all its variables into process.env using dotenv package
-        if (foundFileFormat === "env") {
+        if (foundEnvFile) {
             const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath + ".env" });
+            dotenv.config({ path: ".env" });
         }
 
         // try to find connection options from any of available sources of configuration
