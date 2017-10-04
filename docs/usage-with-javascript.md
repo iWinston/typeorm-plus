@@ -1,7 +1,7 @@
 # Using with JavaScript
   
 TypeORM can be used not only with TypeScript, but also with JavaScript. 
-Everything is the same, except you need to omit types and if your platform does not support ES6 classes then you need to define an objects with all required metadata.
+Everything is the same, except you need to omit types and if your platform does not support ES6 classes then you need to define objects with all required metadata.
 
 ##### app.js
 
@@ -102,4 +102,4 @@ module.exports = {
 };
 ```
 
-Learn more about how to use TypeORM with JavaScript from [this repository](https://github.com/typeorm/javascript-example).
+You can checkout this example [typeorm/javascript-example](https://github.com/typeorm/javascript-example) to learn more.

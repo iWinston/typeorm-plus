@@ -2,9 +2,9 @@
 
 `Repository` is just like `EntityManager` but its operations are limited to a concrete entity.
 
-You can access repository via `getRepository(Entity)` function 
-or from `Connection#getRepository` or from `EntityManager#getRepository` methods.
-Example how to use it:
+You can access repository via `getRepository(Entity)` 
+or from `Connection#getRepository` or from `EntityManager#getRepository`.
+Example:
  
 ```typescript
 import {getRepository} from "typeorm";

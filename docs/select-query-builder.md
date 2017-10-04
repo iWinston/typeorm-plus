@@ -3,8 +3,7 @@
 * [What is `QueryBuilder`](#what-is-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Building `SELECT` queries](#building-select-queries)
-* [Getting values using `QueryBuilder`](#getting-values-using-querybuilder)
-* [What are aliases stand for?](#what-are-aliases-stand-for?)
+* [What are aliases for?](#what-are-aliases-for?)
 * [Using parameters to escape data](#using-parameters-to-escape-data)
 * [Adding `WHERE` expression](#adding-where-expression)
 * [Adding `HAVING` expression](#adding-having-expression)
@@ -17,7 +16,7 @@
 * [Join without selection](#join-without-selection)
 * [Joining any entity or table](#joining-any-entity-or-table)
 * [Joining and mapping functionality](#joining-and-mapping-functionality)
-* [Getting result query](#getting-result-query)
+* [Getting the generated query](#getting-the-generated-query)
 * [Getting raw results](#getting-raw-results)
 * [Streaming result data](#streaming-result-data)
 * [Using pagination](#using-pagination)
@@ -28,9 +27,9 @@
 
 ## What is `QueryBuilder`
 
-`QueryBuilder` one of the most power TypeORM feature - 
-it allows you to build SQL query using elegant and convenient syntax,
-execute it and get automatically transformed entities.
+`QueryBuilder` is one of the most powerful features of TypeORM - 
+it allows you to build SQL queries using elegant and convenient syntax,
+execute them and get automatically transformed entities.
 
 Simple example of `QueryBuilder`:
 
@@ -42,7 +41,7 @@ const firstUser = await connection
     .getOne();
 ```
 
-It builds following SQL query: 
+It builds the following SQL query: 
 
 ```sql
 SELECT 
@@ -65,7 +64,7 @@ User {
 
 ## How to create and use a `QueryBuilder`
 
-There are several ways how you can create query builder:
+There are several ways how you can create a `Query Builder`:
 
 * Using connection:
     
@@ -102,7 +101,7 @@ There are several ways how you can create query builder:
         .getOne();
     ```
 
-There are 5 types of `QueryBuilder` available:
+There are 5 diffrent `QueryBuilder`s available:
 
 * `SelectQueryBuilder` used to build and execute `SELECT` queries. Example:
 
@@ -163,12 +162,10 @@ There are 5 types of `QueryBuilder` available:
 You can switch between different types of query builder within any of them,
 once you do it - you will get a new instance of query builder (unlike all other methods).
 
-## Building `SELECT` queries
-
 ## Getting values using `QueryBuilder`
 
 To get a single result from the database, 
-for example to get user by id or name you must use `getOne` method:
+for example to get a user by id or name you must use `getOne`:
 
 ```typescript
 const timber = await getRepository(User)
@@ -177,8 +174,8 @@ const timber = await getRepository(User)
     .getOne();
 ``` 
 
-To get a multiple results from the database, 
-for example to get all users from the database use `getMany` method:
+To get multiple results from the database, 
+for example to get all users from the database use `getMany`:
 
 ```typescript
 const users = await getRepository(User)
@@ -187,11 +184,11 @@ const users = await getRepository(User)
 ```
 
 There are two types of results you can get using select query builder: **entities** or **raw results**.
-Most of times you need to select real entities from your database, for example users. 
-For this purpose you use `getOne` and `getMany` methods.
-But sometimes you need to select some specific data, let's say *sum of all user photos*. 
-Such data is not entity, its called raw data.
-To get raw data you use `getRawOne` and `getRawMany` methods.
+Most of the times you need to select real entities from your database, for example users. 
+For this purpose you use `getOne` and `getMany`.
+But sometimes you need to select some specific data, let's say the *sum of all user photos*. 
+This data is not an entity, its called raw data.
+To get raw data you use `getRawOne` and `getRawMany`.
 Examples:
 
 ```typescript
@@ -213,13 +210,13 @@ const photosSums = await getRepository(User)
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
-## What are aliases stand for?
+## What are aliases for?
 
-We used `createQueryBuilder("user")` everywhere. But what is "user" there?
-Answer is: its just a regular SQL alias. 
-We use that alias everywhere in expressions where we work with selected data.
+We used `createQueryBuilder("user")`. But what is "user"?
+It's just a regular SQL alias. 
+We use aliases everywhere in except when we work with selected data.
 
-`createQueryBuilder("user")` is equivalent for:
+`createQueryBuilder("user")` is equivalent to:
 
 ```typescript
 createQueryBuilder()
@@ -233,8 +230,8 @@ Which will result into following sql query:
 SELECT ... FROM users user
 ```
 
-In this SQL query `users` is a table name and `user` is an alias we assign to this table.
-Later we use this alias to access to this table:
+In this SQL query `users` is the table name and `user` is an alias we assign to this table.
+Later we use this alias to access the table:
 
 ```typescript
 createQueryBuilder()
@@ -249,23 +246,22 @@ Which produce following SQL query:
 SELECT ... FROM users user WHERE user.name = 'Timber'
 ```
 
-See, we access users table using `user` alias we assigned when we created a query builder.
+See, we used the users table using the `user` alias we assigned when we created a query builder.
 
-One query builder is not limited to one alias.
-There are multiple aliases.
-Each your select can have its own alias,
-you can select from multiple tables each with own alias, 
+One query builder is not limited to one alias, they can have are multiple aliases.
+Each select can have its own alias,
+you can select from multiple tables each with its own alias, 
 you can join multiple tables each with its own alias.
-You use those aliases to access tables are you selecting (or data you are selecting). 
+You can use those aliases to access tables are you selecting (or data you are selecting). 
 
 ## Using parameters to escape data
 
-We used `where("user.name = :name", { name: "Timber" })` syntax everywhere.
-What `{ name: "Timber" }` stands for? Answer: its a parameter we used to prevent SQL injection.
-We could do simply: `where("user.name = '" + name + "')`, 
-however this is not safe way and SQL injection can be easily executed there.
-Safe way is to use special syntax: `where("user.name = :name", { name: "Timber" })`,
-where `:name` is a parameter name. Parameter's value is specified in object: `{ name: "Timber" }`.
+We used `where("user.name = :name", { name: "Timber" })`.
+What does `{ name: "Timber" }` stands for? It's a parameter we used to prevent SQL injection.
+We could have written: `where("user.name = '" + name + "')`, 
+however this is not safe as it opens the code to SQL injections.
+The safe way is to use this special syntax: `where("user.name = :name", { name: "Timber" })`,
+where `:name` is a parameter name and the value is specified in an object: `{ name: "Timber" }`.
 
 ```typescript
 .where("user.name = :name", { name: "Timber" })
@@ -280,20 +276,20 @@ is a shortcut for:
 
 ## Adding `WHERE` expression
 
-Adding SQL `WHERE` expression is easy as:
+Adding a `WHERE` expression is as easy as:
 
 ```typescript
 createQueryBuilder("user")
     .where("user.name = :name", { name: "Timber" })
 ```
 
-Will produce following SQL query:
+Will produce:
 
 ```sql
 SELECT ... FROM users user WHERE user.name = 'Timber'
 ```
 
-You can add `AND` into exist `WHERE` expression this way:
+You can add `AND` into an exist `WHERE` expression:
 
 ```typescript
 createQueryBuilder("user")
@@ -301,13 +297,13 @@ createQueryBuilder("user")
     .andWhere("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Will produce following SQL query:
+Will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.firstName = 'Timber' AND user.lastName = 'Saw'
 ```
 
-You can add `OR` into exist `WHERE` expression this way:
+You can add `OR` into an exist `WHERE` expression:
 
 ```typescript
 createQueryBuilder("user")
@@ -315,22 +311,22 @@ createQueryBuilder("user")
     .orWhere("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Will produce following SQL query:
+Will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.firstName = 'Timber' OR user.lastName = 'Saw'
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
-If you use `.where` method you'll override all previous set `WHERE` expressions.
+If you use `.where` more than once you'll override all previous `WHERE` expressions.
 
-Note: be careful with `orWhere` method - if you use complex expressions with both `AND` and `OR` expressions
+Note: be careful with `orWhere` - if you use complex expressions with both `AND` and `OR` expressions
 keep in mind that they are stacked without any pretences. 
-Sometimes you'll need to create a where string instead and avoid using `orWhere` method. 
+Sometimes you'll need to create a where string instead and avoid using `orWhere`. 
 
 ## Adding `HAVING` expression
 
-Adding SQL `HAVING` expression is easy as:
+Adding a `HAVING` expression is easy as:
 
 ```typescript
 createQueryBuilder("user")
@@ -343,7 +339,7 @@ Will produce following SQL query:
 SELECT ... FROM users user HAVING user.name = 'Timber'
 ```
 
-You can add `AND` into exist `HAVING` expression this way:
+You can add `AND` into an exist `HAVING` expression:
 
 ```typescript
 createQueryBuilder("user")
@@ -351,13 +347,13 @@ createQueryBuilder("user")
     .andHaving("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Will produce following SQL query:
+Will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user HAVING user.firstName = 'Timber' AND user.lastName = 'Saw'
 ```
 
-You can add `OR` into exist `HAVING` expression this way:
+You can add `OR` into a exist `HAVING` expression:
 
 ```typescript
 createQueryBuilder("user")
@@ -365,31 +361,31 @@ createQueryBuilder("user")
     .orHaving("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Will produce following SQL query:
+Will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user HAVING user.firstName = 'Timber' OR user.lastName = 'Saw'
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
-If you use `.having` method you'll override all previous set `HAVING` expressions.
+If you use `.having` more than once you'll override all previous `HAVING` expressions.
 
 ## Adding `ORDER BY` expression
 
-Adding SQL `ORDER BY` expression is easy as:
+Adding a `ORDER BY` expression is easy as:
 
 ```typescript
 createQueryBuilder("user")
     .orderBy("user.id")
 ```
 
-Will produce following SQL query:
+Will produce:
 
 ```sql
 SELECT ... FROM users user ORDER BY user.id
 ```
 
-To change order direction from ascendant to descendant (or versa) use following syntax:
+You can change the order direction from ascendant to descendant (or versa):
 
 ```typescript
 createQueryBuilder("user")
@@ -407,7 +403,7 @@ createQueryBuilder("user")
     .addOrderBy("user.id");
 ```
 
-Also you can set a map of order-by fields:
+You can also usea map of order-by fields:
 
 ```typescript
 createQueryBuilder("user")
@@ -417,23 +413,23 @@ createQueryBuilder("user")
     });
 ```
 
-If you use `.orderBy` method you'll override all previous set `ORDER BY` expressions.
+If you use `.orderBy` more than once you'll override all previous `ORDER BY` expressions.
 
-## Adding `LIMIT` expression
+## Adding `GROUP BY` expression
 
-Adding SQL `GROUP BY` expression is easy as:
+Adding a `GROUP BY` expression is easy as:
 
 ```typescript
 createQueryBuilder("user")
     .groupBy("user.id")
 ```
 
-Will produce following SQL query:
+This Will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user GROUP BY user.id
 ```
-To add more group-by criteria use `addGroupBy` method:
+To add more group-by criteria use `addGroupBy`:
 
 ```typescript
 createQueryBuilder("user")
@@ -441,36 +437,26 @@ createQueryBuilder("user")
     .addGroupBy("user.id");
 ```
 
-Also you can set a map of order-by fields:
-
-```typescript
-createQueryBuilder("user")
-    .orderBy({
-        "user.name": "ASC",
-        "user.id": "DESC"
-    });
-```
-
-If you use `.orderBy` method you'll override all previous set `ORDER BY` expressions.
+If you use `.groupBy` more than once you'll override all previous `ORDER BY` expressions.
 
 ## Adding `LIMIT` expression
 
-Adding SQL `LIMIT` expression is easy as:
+Adding a `LIMIT` expression is easy as:
 
 ```typescript
 createQueryBuilder("user")
     .limit(10)
 ```
 
-Will produce following SQL query:
+Which will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user LIMIT 10
 ```
 
-Result SQL query depend of database type.
+The resulting SQL query depends of database type.
 Note LIMIT may not work as you may expect if you are using complex queries with joins or subqueries.
-If you are using pagination its recommended to use `take` method instead.
+If you are using pagination its recommended to use `take` instead.
 
 ## Adding `OFFSET` expression
 
@@ -481,19 +467,19 @@ createQueryBuilder("user")
     .offset(10)
 ```
 
-Will produce following SQL query:
+Will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user OFFSET 10
 ```
 
-Result SQL query depend of database type.
+The resulting SQL query depends of database type.
 Note OFFSET may not work as you may expect if you are using complex queries with joins or subqueries.
-If you are using pagination its recommended to use `skip` method instead.
+If you are using pagination its recommended to use `skip` instead.
 
 ## Joining relations
 
-Let's say you have following entities:
+Let's say you have the following entities:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
@@ -531,8 +517,7 @@ export class Photo {
 }
 ```
 
-Now let's say you want to load user "Timber" with all his photos.
-To do it you need to use following syntax:
+Now let's say you want to load user "Timber" with all his photos:
 
 ```typescript
 const user = await createQueryBuilder("user")
@@ -557,9 +542,8 @@ You'll get following result:
 }
 ```
 
-As you can see `leftJoinAndSelect` automatically loaded all timber's photos.
-First method argument is relation you want to load. 
-Second method argument is an alias you assign to this relation's data.
+As you can see `leftJoinAndSelect` automatically loaded all of timber's photos.
+The first argument is the relation you want to load and the second argument is an alias you assign to this relation's table.
 You can use this alias anywhere in query builder.
 For example, lets take all timber's photos which aren't removed.
 
@@ -576,10 +560,10 @@ This will generate following sql query:
 ```sql
 SELECT user.*, photo.* FROM users user 
     LEFT JOIN photos photo ON photo.user = user.id
-    WHERE user.name = 'Timber' AND photo.isRemoved = TRUE
+    WHERE user.name = 'Timber' AND photo.isRemoved = FALSE
 ```
 
-You can also add condition to join expression instead of using "where":
+You can also add conditions to the join expression instead of using "where":
 
 ```typescript
 const user = await createQueryBuilder("user")
@@ -592,13 +576,13 @@ This will generate following sql query:
 
 ```sql
 SELECT user.*, photo.* FROM users user 
-    LEFT JOIN photos photo ON photo.user = user.id AND photo.isRemoved = TRUE
+    LEFT JOIN photos photo ON photo.user = user.id AND photo.isRemoved = FALSE
     WHERE user.name = 'Timber'
 ```
 
 ## Inner and left joins
 
-If you want to use `INNER JOIN` instead of `JEFT JOIN` just use `innerJoinAndSelect` method instead:
+If you want to use `INNER JOIN` instead of `JEFT JOIN` just use `innerJoinAndSelect` instead:
 
 ```typescript
 const user = await createQueryBuilder("user")
@@ -607,22 +591,22 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate:
 
 ```sql
 SELECT user.*, photo.* FROM users user 
-    INNER JOIN photos photo ON photo.user = user.id AND photo.isRemoved = TRUE
+    INNER JOIN photos photo ON photo.user = user.id AND photo.isRemoved = FALSE
     WHERE user.name = 'Timber'
 ```
 
-Difference between `LEFT JOIN` and `INNER JOIN` is that `INNER JOIN` won't return you timber if he does not have any photos.
-`LEFT JOIN` will return you timber even if he don't have photos.
-To learn more about different join types refer to SQL documentation.
+Difference between `LEFT JOIN` and `INNER JOIN` is that `INNER JOIN` won't return a user if it does not have any photos.
+`LEFT JOIN` will return you the user even if it doesn't have photos.
+To learn more about different join types refer to the SQL documentation.
 
 ## Join without selection
 
 You can join data without its selection.
-To do that use `leftJoin` or `innerJoin` methods. Example:
+To do that use `leftJoin` or `innerJoin`:
 
 ```typescript
 const user = await createQueryBuilder("user")
@@ -631,7 +615,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate:
 
 ```sql
 SELECT user.* FROM users user 
@@ -639,11 +623,11 @@ SELECT user.* FROM users user
     WHERE user.name = 'Timber'
 ```
 
-This will select timber only he has photos, but won't return his photos in result. 
+This will select timber if he has photos, but won't return his photos. 
 
 ## Joining any entity or table
 
-You can join not only relations, but also other not related entities or tables.
+You can not only join relations, but also other not related entities or tables.
 Examples:
 
 ```typescript
@@ -660,7 +644,7 @@ const user = await createQueryBuilder("user")
 
 ## Joining and mapping functionality
 
-Add `profilePhoto` property to `User` entity and you can map any data into that property using `QueryBuilder`:
+Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
 
 ```typescript
 export class User {    
@@ -677,14 +661,14 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will load timber's profile photo and set it to `user.profilePhoto` property.
-If you want to load and map a single entity use `leftJoinAndMapOne` method.
-If you want to load and map a multiple entities use `leftJoinAndMapMany` method.
+This will load timber's profile photo and set it to `user.profilePhoto`.
+If you want to load and map a single entity use `leftJoinAndMapOne`.
+If you want to load and map multiple entities use `leftJoinAndMapMany`.
 
-## Getting result query
+## Getting the generated query
 
-Sometimes you may want to get a SQL query `QueryBuilder` generates for you.
-To do it use `getSql` method:
+Sometimes you may want to get the SQL query generated by `QueryBuilder`.
+To do it use `getSql`:
 
 ```typescript
 const sql = createQueryBuilder("user")
@@ -693,7 +677,7 @@ const sql = createQueryBuilder("user")
     .getSql();
 ```
 
-For debugging purposes you can use `printSql` method:
+For debugging purposes you can use `printSql`:
 
 ```typescript
 const users = await createQueryBuilder("user")
@@ -703,16 +687,16 @@ const users = await createQueryBuilder("user")
     .getMany();
 ```
 
-This query will return you users and print in the console sql it used to get those users.
+This query will return users and print the used sql statement to the console.
 
 ## Getting raw results
 
 There are two types of results you can get using select query builder: **entities** and **raw results**.
 Most of times you need to select real entities from your database, for example users. 
-For this purpose you use `getOne` and `getMany` methods.
-But sometimes you need to select some specific data, let's say *sum of all user photos*. 
-Such data is not entity, its called raw data.
-To get raw data you use `getRawOne` and `getRawMany` methods.
+For this purpose you use `getOne` and `getMany`.
+But sometimes you need to select specific data, let's say the *sum of all user photos*. 
+Such data is not a entity, its called raw data.
+To get raw data you use `getRawOne` and `getRawMany`.
 Examples:
 
 ```typescript
@@ -736,8 +720,8 @@ const photosSums = await getRepository(User)
 
 ## Streaming result data
 
-You can use `stream` method which returns you stream.
-Streaming returns you raw data, you must handle entities transformation manually:
+You can use `stream` which returns you stream.
+Streaming returns you raw data and you must handle entities transformation manually:
 
 ```typescript
 const stream = await getRepository(User)
@@ -748,8 +732,8 @@ const stream = await getRepository(User)
 
 ## Using pagination
 
-Most of times developing applications you need a pagination functionality.
-This is used if you have pagination, page slider, infinite scroll components in your application.
+Most of the times when you develope an application you need pagination functionality.
+This is used if you have pagination, page slider or infinite scroll components in your application.
 
 ```typescript
 const users = await getRepository(User)
@@ -759,7 +743,7 @@ const users = await getRepository(User)
     .getMany();
 ```
 
-This will give you first 10 users with their photos.
+This will give you the first 10 users with their photos.
 
 ```typescript
 const users = await getRepository(User)
@@ -781,12 +765,12 @@ const users = await getRepository(User)
     .getMany();
 ```
 
-This will skip first 5 users and take 10 users after them.
+This will skip the first 5 users and take 10 users after them.
 
 
-`take` and `skip` may look like we are using `limit` and `offset`, but its actually not.
-`limit` and `offset` may not work as you expect once you'll have more complicated queries with joins or subqueries.
-Using `take` and `skip` methods will prevent those issues.
+`take` and `skip` may look like we are using `limit` and `offset`, but they don't.
+`limit` and `offset` may not work as you expect once you have more complicated queries with joins or subqueries.
+Using `take` and `skip` will prevent those issues.
 
 ## Set locking
 
@@ -822,7 +806,7 @@ Optimistic locking works in conjunction with `@Version` and `@UpdatedDate` decor
 
 ## Partial selection
 
-If you want to select only some entity properties you can use following syntax:
+If you want to select only some entity properties you can use the following syntax:
 
 ````typescript
 const users = await getRepository(User)
@@ -834,13 +818,12 @@ const users = await getRepository(User)
     .getMany();
 ````
 
-This will select only `id` and `name` properties of `User` entity.
+This will only select `id` and `name` of `User`.
 
 ## Using subqueries
 
 You can easily create subqueries. Subqueries are supported in `FROM`, `WHERE` and `JOIN` expressions.
-
-Example how to use subquery in where expression:
+Example:
 
 ```typescript
 const qb = await getRepository(Post).createQueryBuilder("post");
@@ -850,7 +833,7 @@ const posts = qb
     .getMany();
 ```
 
-More elegant way to do same is:
+More elegant way to do the same:
 
 ```typescript
 const posts = await connection.getRepository(Post)
@@ -867,7 +850,7 @@ const posts = await connection.getRepository(Post)
     .getMany();
 ```
 
-Alternative, you can create a separate query builder and use its generated SQL:
+Alternatively, you can create a separate query builder and use its generated SQL:
 
 ```typescript
 const userQb = await connection.getRepository(User)
@@ -882,7 +865,7 @@ const posts = await connection.getRepository(Post)
     .getMany();
 ```
 
-You can do subquery in `FROM` expression this way:
+You can create subqueries in `FROM` like this:
 
 ```typescript
 const userQb = await connection.getRepository(User)
@@ -898,7 +881,7 @@ const posts = await connection
     .getRawMany();
 ```
 
-or using more elegant syntax:
+or using more a elegant syntax:
 
 ```typescript
 const posts = await connection
@@ -913,9 +896,9 @@ const posts = await connection
     .getRawMany();
 ```
 
-If you want to add subselect as "second from" use `addFrom` method.
+If you want to add a subselect as a "second from" use `addFrom`.
 
-You can use subselects in `SELECT` statements as well:
+You can use subselects in a `SELECT` statements as well:
 
 ```typescript
 const posts = await connection

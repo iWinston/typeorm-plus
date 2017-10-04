@@ -14,4 +14,4 @@ await getConnection()
     .execute();
 ```
 
-This is the most efficient in terms of performance way to update things in your database.
+This is the most efficient way in terms of performance to update entities in your database.

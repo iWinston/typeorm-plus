@@ -6,7 +6,7 @@
 
 ## Creating and using transactions
 
-Transactions are creating using `Connection` or `EntityManager` objects. 
+Transactions are creating using `Connection` or `EntityManager`. 
 Examples:
 
 ```typescript
@@ -27,7 +27,7 @@ await getManager().transaction(transactionalEntityManager => {
 });
 ```
 
-Everything you want to run in a transaction must be executed in a callback provided to a transaction:
+Everything you want to run in a transaction must be executed in a callback:
 
 ```typescript
 import {getManager} from "typeorm";
@@ -39,56 +39,43 @@ await getManager().transaction(async transactionalEntityManager => {
 });
 ```
 
-The most important restriction of using transaction is to **ALWAYS** use provided instance of entity manager - 
+The most important restriction when working in an transaction is, to **ALWAYS** use the provided instance of entity manager - 
 `transactionalEntityManager` in this example.
 If you'll use global manager (from `getManager` or manager from connection) you'll have problems.
 You also cannot use classes which use global manager or connection to execute their queries.
-All operations **MUST** be executed using provided transactional entity manager.
+All operations **MUST** be executed using the provided transactional entity manager.
 
 ## Transaction decorators
 
-There are few decorators which can help you organize your transactions - 
+There are a few decorators which can help you organize your transactions - 
 `@Transaction`, `@TransactionManager` and `@TransactionRepository`.
 
 `@Transaction` wraps all its execution into a single database transaction,
-and `@TransactionManager` provides transaction entity manager which must be used to execute queries inside this transaction.
-Example how you can apply transactional decorators in your controllers:
+and `@TransactionManager` provides a transaction entity manager which must be used to execute queries inside this transaction:
 
 ```typescript
-@Controller()
-export class UserController {
-    
-    @Transaction()
-    @Post("/users")
-    save(@TransactionManager() manager: EntityManager, @Body() user: User) {
-        return manager.save(user);
-    }
-    
+@Transaction()
+save(@TransactionManager() manager: EntityManager, user: User) {
+    return manager.save(user);
 }
 ```
 
-You **must** always use provided by `@TransactionManager` decorator manager here as well.
+You **must** always use the manager provided by `@TransactionManager`.
 
-However, you can also inject transaction repository (which use transaction entity manager under the hood), 
-using `@TransactionRepository` decorator:
+However, you can also inject transaction repository (which uses transaction entity manager under the hood), 
+using `@TransactionRepository`:
 
 ```typescript
-@Controller()
-export class UserController {
-    
-    @Transaction()
-    @Post("/users")
-    save(@Body() user: User, @TransactionRepository(User) userRepository: Repository<User>) {
-        return userRepository.save(user);
-    }
-    
+@Transaction()
+save(user: User, @TransactionRepository(User) userRepository: Repository<User>) {
+    return userRepository.save(user);    
 }
 ``` 
 
 You can inject both built-in TypeORM's repositories like `Repository`, `TreeRepository` and `MongoRepository` 
-(using `@TransactionRepository(Entity) entityRepository: Repository<Entity>` like syntax) 
-or custom repositories (classes extending built-in TypeORM's repositories classes and decorated with `@EntityRepository` decorator) 
-using the `@TransactionRepository() customRepository: CustomRepository` syntax.
+(using `@TransactionRepository(Entity) entityRepository: Repository<Entity>`) 
+or custom repositories (classes extending the built-in TypeORM's repositories classes and decorated with `@EntityRepository`) 
+using the `@TransactionRepository() customRepository: CustomRepository`.
 
 ## Using `QueryRunner` to create and control state of single database connection
 
@@ -138,8 +125,8 @@ try {
 There are 3 methods to control transactions in `QueryRunner`:
 
 
-* `startTransaction` - starts a new transaction inside this query runner instance
-* `commitTransaction` - commits all changes made using this query runner instance
-* `rollbackTransaction` - rollbacks all changes made using this query runner instance
+* `startTransaction` - starts a new transaction inside the query runner instance
+* `commitTransaction` - commits all changes made using the query runner instance
+* `rollbackTransaction` - rolls all changes made using the query runner instance back
 
-More information about query runners see [here](./query-runner.md).
+Learn more about [Query Runner](./query-runner.md).
