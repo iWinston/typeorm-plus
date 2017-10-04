@@ -162,7 +162,7 @@ flag: boolean;
 Following in sequelize:
 
 ```javascript
-flag: { type: Sequelize.BOOLEAN, defaultValue: true },
+flag: { type: Sequelize.DATE, defaultValue: Sequelize.NOW }
 ```
 
 Is written like this in TypeORM:

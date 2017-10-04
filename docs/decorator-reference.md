@@ -239,7 +239,7 @@ You don't need to write a value into this column - it will be automatically set.
 export class User {
     
     @VersionColumn()
-    updatedDate: Date;
+    version: number;
     
 }
 ```
