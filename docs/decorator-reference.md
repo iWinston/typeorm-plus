@@ -19,15 +19,15 @@
     * [`@JoinColumn`](#joincolumn)
     * [`@JoinTable`](#jointable)
     * [`@RelationId`](#relationid)
-* [Subscriber and listener decorators](./listeners-and-subscribers.md)
-    * [`@AfterLoad`](./listeners-and-subscribers.md#afterload)
-    * [`@BeforeInsert`](./listeners-and-subscribers.md#beforeinsert)
-    * [`@AfterInsert`](./listeners-and-subscribers.md#afterinsert)
-    * [`@BeforeUpdate`](./listeners-and-subscribers.md#beforeupdate)
-    * [`@AfterUpdate`](./listeners-and-subscribers.md#afterupdate)
-    * [`@BeforeRemove`](./listeners-and-subscribers.md#beforeremove)
-    * [`@AfterRemove`](./listeners-and-subscribers.md#afterremove)
-    * [`@EventSubscriber`](./listeners-and-subscribers.md#what-is-a-subscriber)
+* [Subscriber and listener decorators](#subscriber-and-listener-decorators)
+    * [`@AfterLoad`](#afterload)
+    * [`@BeforeInsert`](#beforeinsert)
+    * [`@AfterInsert`](#afterinsert)
+    * [`@BeforeUpdate`](#beforeupdate)
+    * [`@AfterUpdate`](#afterupdate)
+    * [`@BeforeRemove`](#beforeremove)
+    * [`@AfterRemove`](#afterremove)
+    * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
     * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
@@ -69,7 +69,7 @@ Example:
 export class User {
 ```
 
-Learn more about [Entities](./entities.md).
+Learn more about [Entities](#/entities).
 
 ## Column decorators
 
@@ -99,7 +99,7 @@ export class User {
 
 `@Column` accept several options you can use:
 
-* `type: ColumnType` - Column type. One of the [supported column types](./entities.md#column-types).
+* `type: ColumnType` - Column type. One of the [supported column types](#/entities/column-types).
 * `name: string` - Column name in the database table. 
 By default the column name is generated from the name of the property.
 You can change it by specifying your own name
@@ -122,7 +122,7 @@ Used in some column types.
 You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 
-Learn more about [entity columns](./entities.md#entity-columns).
+Learn more about [entity columns](#/entities/entity-columns).
 
 #### `@PrimaryColumn`
 
@@ -140,7 +140,7 @@ export class User {
 }
 ```
 
-Learn more about [entity columns](./entities.md#entity-columns).
+Learn more about [entity columns](#/entities/entity-columns).
 
 #### `@PrimaryGeneratedColumn`
 
@@ -175,7 +175,7 @@ export class User {
 }
 ```
 
-Learn more about [entity columns](./entities.md#entity-columns).
+Learn more about [entity columns](#/entities/entity-columns).
 
 #### `@ObjectIdColumn`
 
@@ -194,7 +194,7 @@ export class User {
 }
 ```
 
-Learn more about [MongoDB](./mongodb.md).
+Learn more about [MongoDB](#/mongodb).
 
 #### `@CreateDateColumn`
 
@@ -284,7 +284,7 @@ export class User {
 }
 ```
 
-Learn more about [one-to-one relations](./one-to-one-relations.md).
+Learn more about [one-to-one relations](#/one-to-one-relations).
 
 #### `@ManyToOne`
 
@@ -312,7 +312,7 @@ export class Photo {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](./many-to-one-one-to-many-relations.md).
+Learn more about [many-to-one / one-to-many relations](#/many-to-one-one-to-many-relations).
 
 #### `@OneToMany`
 
@@ -340,7 +340,7 @@ export class User {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](./many-to-one-one-to-many-relations.md).
+Learn more about [many-to-one / one-to-many relations](#/many-to-one-one-to-many-relations).
 
 #### `@ManyToMany`
 
@@ -372,7 +372,7 @@ export class Question {
 }
 ```
 
-Learn more about [many-to-many relations](./many-to-many-relations.md).
+Learn more about [many-to-many relations](#/many-to-many-relations).
 
 #### `@JoinColumn`
 
@@ -463,6 +463,189 @@ export class Post {
 Relation id is used only for representation.
 The underlying relation is not added/removed/changed when chaning the value.
 
+## Subscriber and listener decorators
+
+#### `@AfterLoad`
+
+You can define a method with any name in entity and mark it with `@AfterLoad`
+and TypeORM will call it each time the entity 
+is loaded using `QueryBuilder` or repository/manager find methods.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterLoad()
+    updateCounters() {
+        if (this.likesCount === undefined)
+            this.likesCount = 0;
+    }
+}
+```
+
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@BeforeInsert`
+
+You can define a method with any name in entity and mark it with `@BeforeInsert`
+and TypeORM will call it before the entity is inserted using repository/manager `save`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @BeforeInsert()
+    updateDates() {
+        this.createdDate = new Date();
+    }
+}
+```
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@AfterInsert`
+
+You can define a method with any name in entity and mark it with `@AfterInsert`
+and TypeORM will call it after the entity is inserted using repository/manager `save`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterInsert()
+    resetCounters() {
+        this.counters = 0;
+    }
+}
+```
+
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@BeforeUpdate`
+
+You can define a method with any name in the entity and mark it with `@BeforeUpdate`
+and TypeORM will call it before an existing entity is updated using repository/manager `save`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @BeforeUpdate()
+    updateDates() {
+        this.updatedDate = new Date();
+    }
+}
+```
+
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@AfterUpdate`
+
+You can define a method with any name in the entity and mark it with `@AfterUpdate`
+and TypeORM will call it after an existing entity is updated using repository/manager `save`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterUpdate()
+    updateCounters() {
+        this.counter = 0;
+    }
+}
+```
+
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@BeforeRemove`
+
+You can define a method with any name in the entity and mark it with `@BeforeRemove`
+and TypeORM will call it before a entity is removed using repository/manager `remove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @BeforeRemove()
+    updateStatus() {
+        this.status = "removed";
+    }
+}
+```
+
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@AfterRemove`
+
+You can define a method with any name in the entity and mark it with `@AfterRemove`
+and TypeORM will call it after the entity is removed using repository/manager `remove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    
+    @AfterRemove()
+    updateStatus() {
+        this.status = "removed";
+    }
+}
+```
+
+Learn more about [listeners](#/listeners-and-subscribers).
+
+#### `@EventSubscriber`
+
+Marks a class as an event subscriber which can listen to specific entity events or any entity events.
+Events are firing using `QueryBuilder` and repository/manager methods.
+Example:
+
+```typescript
+@EventSubscriber()
+export class PostSubscriber implements EntitySubscriberInterface<Post> {
+
+    
+    /**
+     * Indicates that this subscriber only listen to Post events.
+     */
+    listenTo() {
+        return Post;
+    }
+    
+    /**
+     * Called before post insertion.
+     */
+    beforeInsert(event: InsertEvent<Post>) {
+        console.log(`BEFORE POST INSERTED: `, event.entity);
+    }
+
+}
+```
+
+You can implement any method from `EntitySubscriberInterface`.
+To listen to any entity you just omit `listenTo` method and use `any`:
+
+```typescript
+@EventSubscriber()
+export class PostSubscriber implements EntitySubscriberInterface {
+    
+    /**
+     * Called before entity insertion.
+     */
+    beforeInsert(event: InsertEvent<any>) {
+        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
+    }
+
+}
+```
+
+Learn more about [subscribers](#/listeners-and-subscribers).
+
 ## Other decorators
 
 #### `@Index`
@@ -505,7 +688,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](./indices.md).
+Learn more about [indices](#/indices).
 
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
@@ -539,7 +722,7 @@ save(@QueryParam("name") name: string, @TransactionRepository() userRepository: 
 Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
 
-Learn more about [transactions](./transactions.md).
+Learn more about [transactions](#/transactions).
 
 #### `@EntityRepository`
 
@@ -558,7 +741,7 @@ export class UserRepository {
 You can obtain any custom created repository using `connection.getCustomRepository`
 or `entityManager.getCustomRepository` methods.
 
-Learn more about [custom entity repositories](working-with-entity-manager.md).
+Learn more about [custom entity repositories](#/working-with-entity-manager).
 
 ----
 
