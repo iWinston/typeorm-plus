@@ -174,7 +174,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `database` - Database name
 
-* `version` - Version number of the database
+* `version` - Version string of the database
 
 * `description` - Database description
 

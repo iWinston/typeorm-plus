@@ -18,7 +18,7 @@ export interface WebSqlConnectionOptions extends BaseConnectionOptions {
     /**
      * Database version.
      */
-    readonly version: number;
+    readonly version: string;
 
     /**
      * Database description.
