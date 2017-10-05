@@ -7,7 +7,7 @@
 
 ## How to create self referencing relation
 
-Self-referencing relations are relations which have relation to themself.
+Self-referencing relations are relations which have a relation to themself.
 This is useful when you are storing entities in a tree-like structures.
 Also "adjacency list" pattern is implemented used self-referenced relations.
 For example, you want to create categories tree in your application.
@@ -83,7 +83,7 @@ export class User {
 }
 ```
 
-When you load a user without `profile` joined you won't have in your user object any information about profile, 
+When you load a user without `profile` joined you won't have any information about profile in your user object, 
 even profile id:
 
 ```javascript
@@ -91,11 +91,11 @@ User {
   id: 1,
   name: "Umed"
 }
-````
+```
 
-But sometimes you want to get known what is "profile id" of this user without loading the whole profile for this user.
-To do this you just need to add another property into your entity with `@Column` decorator
-named exactly as column created by your relation. Example:
+But sometimes you want to know what is the "profile id" of this user without loading the whole profile for this user.
+To do this you just need to add another property to your entity with `@Column`
+named exactly as the column created by your relation. Example:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
@@ -120,7 +120,7 @@ export class User {
 }
 ```
 
-That's all. Next time you load profile object it will contain a profile id:
+That's all. Next time you load a user object it will contain a profile id:
 
 ```javascript
 User {
@@ -128,7 +128,7 @@ User {
   name: "Umed",
   profileId: 1
 }
-````
+```
 
 ## How to load relations in entities
 
@@ -151,10 +151,10 @@ const user = await connection
 ```
 
 Using `QueryBuilder` you can do `innerJoinAndSelect` instead of `leftJoinAndSelect` 
-(to get known difference between `LEFT JOIN` and `INNER JOIN` refer to SQL documentation),
+(to learn the difference between `LEFT JOIN` and `INNER JOIN` refer to your SQL documentation),
 you can join relation data by a condition, make ordering, etc.
 
-For more information how to use `QueryBuilder` refer this [documentation](select-query-builder.md).
+Learn more about [`QueryBuilder`](select-query-builder.md).
 
 ## Avoid relation property initializers
 
@@ -183,9 +183,9 @@ export class Question {
 }
 ```
 
-However in TypeORM entities it may cause you problems.
-To understand the problem, let's first try to load Question entity WITHOUT initializer set.
-When you load question it will return you object like this:
+However in TypeORM entities it may cause problems.
+To understand the problem, let's first try to load a Question entity WITHOUT the initializer set.
+When you load a question it will return an object like this:
 
 ```javascript
 Question {
@@ -196,7 +196,7 @@ Question {
 
 Now when you save this object `categories` inside it won't be touched - because it is unset.
 
-But if you have initializer loaded object will look like as follow:
+But if you have initializer, the loaded object will look like as follow:
 
 ```javascript
 Question {
@@ -206,11 +206,11 @@ Question {
 }
 ```
 
-When you save such object it will check if there any categories in the database bind to a question -
+When you save the object it will check if there are any categories in the database bind to the question -
 and it will detach all of them. Why? Because relation equal to `[]` or any items inside it will be considered
-like something was removed from it, there is no other way to check if object was removed from entity or not.
+like something was removed from it, there is no other way to check if an object was removed from entity or not.
  
-So, this saving such object will bring you problems - it will remove all previously set categories.
+Therefoe, saving an object like this will bring you problems - it will remove all previously set categories.
 
 How to avoid this behaviour? Simply don't initialize arrays in your entities.
 Same rule applies to a constructor - don't initialize it in a constructor as well.

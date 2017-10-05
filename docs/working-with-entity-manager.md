@@ -1,9 +1,9 @@
 # What is EntityManager
 
 Using `EntityManager` you can manage (insert, update, delete, load, etc.) any entity. 
-EntityManager is just like collection of all entity repositories in a single place.
+EntityManager is just like a collection of all entity repositories in a single place.
  
-You can access entity manager via `getManager()` function or from `Connection` object.
+You can access the entity manager via `getManager()` or from `Connection`.
 Example how to use it:
  
 ```typescript
@@ -19,9 +19,9 @@ await entityManager.save(user);
 
 `Repository` is just like `EntityManager` but its operations are limited to a concrete entity.
 
-You can access repository via `getRepository(Entity)` function 
-or from `Connection#getRepository` or from `EntityManager#getRepository` methods.
-Example how to use it:
+You can access a repository via `getRepository(Entity)` 
+or from `Connection#getRepository` or from `EntityManager#getRepository`.
+Example:
  
 ```typescript
 import {getRepository} from "typeorm";

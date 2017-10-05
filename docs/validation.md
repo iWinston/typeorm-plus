@@ -1,6 +1,6 @@
 # Using Validation
 
-To use validation use [class-validator](https://github.com/pleerock/class-validator) package. 
+To use validation use [class-validator](https://github.com/pleerock/class-validator). 
 Example how to use class-validator with TypeORM:
 
 ```typescript

@@ -11,9 +11,9 @@
 
 Most of the times you want to store your connection options in a separate configuration file.
 It makes it convenient and easy to manage. 
-TypeORM supports multiple configuration sources for this purpose.
-You'll only need to create `ormconfig.[format]` file in root directory of your application (near `package.json`),
-put your configuration there and in app call `createConnection()` without any configuration passed:
+TypeORM supports multiple configuration sources.
+You only need to create a `ormconfig.[format]` file in the root directory of your application (near `package.json`),
+put your configuration there and in your app call `createConnection()` without any configuration passed:
 
 ```typescript
 import {createConnection, Connection} from "typeorm";
@@ -24,7 +24,7 @@ const connection: Connection = await createConnection();
  
 ## Loading from `ormconfig.json`
 
-Create `ormconfig.json` file in project root (near `package.json`). It should have following content:
+Create `ormconfig.json` in the project root (near `package.json`). It should have the following content:
 
 ```json
 {
@@ -38,7 +38,7 @@ Create `ormconfig.json` file in project root (near `package.json`). It should ha
 ```
 
 You can specify any other options from `ConnectionOptions`.
-For more information about connection options see [ConnectionOptions](./connection-options.md) documentation.
+Learn more about [ConnectionOptions](./connection-options.md).
 
 If you want to create multiple connections then simply create multiple connections in a single array:
 
@@ -64,7 +64,7 @@ If you want to create multiple connections then simply create multiple connectio
 
 ## Loading from `ormconfig.js`
 
-Create `ormconfig.js` file in project root (near `package.json`). It should have following content:
+Create `ormconfig.js` in the project root (near `package.json`). It should have following content:
 
 ```javascript
 module.exports = {
@@ -82,7 +82,7 @@ If you want to create multiple connections then simply create multiple connectio
 
 ## Loading from `ormconfig.env` or from environment variables
 
-Create `ormconfig.env` file in project root (near `package.json`). It should have following content:
+Create `ormconfig.env` in the project root (near `package.json`). It should have the following content:
 
 ```ini
 TYPEORM_CONNECTION = mysql
@@ -123,12 +123,12 @@ List of available env variables you can set:
 `ormconfig.env` should be used only during development.
 On production you can set all these values in real ENVIRONMENT VARIABLES.
 
-You cannot define multiple connections using `env` file or environment variables.
+You cannot define multiple connections using an `env` file or environment variables.
 If your app has multiple connections then use alternative configuration storage format.
 
 ## Loading from `ormconfig.yml`
 
-Create `ormconfig.yml` file in project root (near `package.json`). It should have following content:
+Create `ormconfig.yml` in the project root (near `package.json`). It should have the following content:
 
 ```yaml
 default: # default connection
@@ -150,7 +150,7 @@ You can use any connection options available.
 
 ## Loading from `ormconfig.xml`
 
-Create `ormconfig.xml` file in project root (near `package.json`). It should have following content:
+Create `ormconfig.xml` in the project root (near `package.json`). It should have the following content:
 
 ```xml
 <connections>

@@ -239,7 +239,7 @@ You don't need to write a value into this column - it will be automatically set.
 export class User {
     
     @VersionColumn()
-    updatedDate: Date;
+    version: number;
     
 }
 ```
@@ -700,14 +700,14 @@ Examples:
 ```typescript
 
 @Transaction()
-save(@TransactionManager() manager: EntityManager, @Body() user: User) {
+save(@TransactionManager() manager: EntityManager, user: User) {
     return manager.save(user);
 }
 ```
 
 ```typescript
 @Transaction()
-save(@Body() user: User, @TransactionRepository(User) userRepository: Repository<User>) {
+save(user: User, @TransactionRepository(User) userRepository: Repository<User>) {
     return userRepository.save(user);
 }
 ```

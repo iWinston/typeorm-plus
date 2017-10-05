@@ -6,27 +6,27 @@
 
 ## `Repository` API
 
-* `manager` - Gets `EntityManager` used by this repository.
+* `manager` - The `EntityManager` used by this repository.
 
 ```typescript
 const manager = repository.manager;
 ```
 
-* `metadata` - Gets `EntityMetadata` of the entity managed by this repository.
-Learn more about transactions in [Entity Metadata](./entity-metadata.md) documentation.
+* `metadata` - The `EntityMetadata` of the entity managed by this repository.
+Learn more about [transactions in Entity Metadata](./entity-metadata.md).
 
 ```typescript
 const metadata = repository.metadata;
 ```
 
-* `queryRunner` - Gets query runner used by `EntityManager`.
+* `queryRunner` - The query runner used by `EntityManager`.
 Used only in transactional instances of EntityManager.
 
 ```typescript
 const queryRunner = repository.queryRunner;
 ```
 
-* `target` - Gets target class of the entity managed by this repository.
+* `target` - The target entity class managed by this repository.
 Used only in transactional instances of EntityManager.
 
 ```typescript
@@ -34,7 +34,7 @@ const target = repository.target;
 ```
 
 * `createQueryBuilder` - Creates a query builder use to build SQL queries.
-Learn more about query builder in [QueryBuilder](select-query-builder.md) documentation.
+Learn more about [QueryBuilder](select-query-builder.md).
 
 ```typescript
 const users = await repository
@@ -43,7 +43,7 @@ const users = await repository
     .getMany();
 ```
 
-* `hasId` - Checks if given entity's has its primary column property values are defined.
+* `hasId` - Checks if the given entity's primary column property is defined.
 
 ```typescript
  if (repository.hasId(user)) {
@@ -51,14 +51,14 @@ const users = await repository
  }
 ```
 
-* `getId` - Gets given entity's primary column property values. 
-If entity has composite primary keys then returned value will be an object with names and values of primary columns.
+* `getId` - Gets the primary column property values of the given entity. 
+If entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
 const userId = repository.getId(user); // userId === 1
 ```
 
-* `create` - Creates a new instance of `User` object. Optionally accepts an object literal with user properties
+* `create` - Creates a new instance of `User`. Optionally accepts an object literal with user properties
 which will be written into newly created user object
 
 ```typescript
@@ -77,9 +77,9 @@ const user = new User();
 repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }); // same as user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `preload` - Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+* `preload` - Creates a new entity from the given plain javascript object. If the entity already exist in the database, then
 it loads it (and everything related to it), replaces all values with the new ones from the given object
-and returns this new entity. This new entity is actually a loaded from the db entity with all properties
+and returns the new entity. The new entity is actually an entity loaded from the db with all properties
 replaced from the new object.
 
 ```typescript
@@ -96,9 +96,9 @@ const user = await repository.preload(partialUser);
 ```
 
 * `save` - Saves a given entity or array of entities.
-If entity already exist in the database then it updates it.
-If entity does not exist in the database yet it inserts it.
-It saves all given entities in a single transaction (in the case if entity manager is not transactional).
+If the entity already exist in the database, it is updated.
+If the entity does not exist in the database, it is inserted.
+It saves all given entities in a single transaction (in the case of entity manager is not transactional).
 Also supports partial updating since all undefined properties are skipped.
 
 ```typescript
@@ -125,7 +125,7 @@ await repository.updateById(1, { firstName: "Rizzrak" });
 ```
 
 * `remove` - Removes a given entity or array of entities.
-It removes all given entities in a single transaction (in the case if entity manager is not transactional).
+It removes all given entities in a single transaction (in the case of entity manager is not transactional).
 
 ```typescript
 await repository.remove(user);
@@ -163,7 +163,7 @@ const timbers = await repository.find({ firstName: "Timber" });
 
 * `findAndCount` - Finds entities that match given find options.
 Also counts all entities that match given conditions,
-but ignores pagination settings (from and take options).
+but ignores pagination settings (`from` and `take` options).
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timber" });
@@ -201,7 +201,7 @@ await repository.clear();
 
 ## `TreeRepository` API
 
-* `findTrees` - Gets complete trees for all roots in the table.
+* `findTrees` - Gets complete tree for all roots in the table.
 
 ```typescript
 const treeCategories = await repository.findTrees();
@@ -268,7 +268,7 @@ const parents = await repository
     .getMany();
 ```
 
-* `countAncestors` - Gets number of ancestors of the entity.
+* `countAncestors` - Gets the number of ancestors of the entity.
 
 ```typescript
 const parentsCount = await repository.countAncestors(childCategory);
@@ -276,4 +276,4 @@ const parentsCount = await repository.countAncestors(childCategory);
 
 ## `MongoRepository` API
 
-For `MongoRepository` API refer [this documentation](./mongodb.md).
+For `MongoRepository` API refer to [the MongoDB documentation](./mongodb.md).

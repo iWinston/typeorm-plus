@@ -49,7 +49,7 @@ createConnection({
 
 **Don't forget to include reflect-metadata**
     
-Don't forget to include reflect-metadata package in html:
+Don't forget to include reflect-metadata in your html:
 
 ```html
 <script src="./node_modules/reflect-metadata/Reflect.js"></script>
@@ -57,7 +57,7 @@ Don't forget to include reflect-metadata package in html:
 
 ## Cordova / PhoneGap / Ionic apps
 
-TypeORM is able to run on Cordova, PhoneGap, Ionic apps using 
+TypeORM is able to run on Cordova, PhoneGap, Ionic apps using the
 [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin
 You have the option to choose between module loaders just like in browser package. 
 For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example).

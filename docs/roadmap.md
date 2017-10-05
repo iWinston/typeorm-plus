@@ -1,6 +1,6 @@
 # Roadmap
 
-See what amazing new features we are expecting to land in next TypeORM versions.
+See what amazing new features we are expecting to land in the next TypeORM versions.
 
 ## Note on 1.0.0 release
 

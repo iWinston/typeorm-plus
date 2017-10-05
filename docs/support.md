@@ -10,10 +10,10 @@ If you have a question you can ask it on [StackOverflow](https://stackoverflow.c
 
 ### Want a community support?
 
-If you want a community support or simply want to chat with friendly TypeORM lovers and users you can do it in [gitter](https://gitter.im/typeorm/typeorm).
+If you want a community support or simply want to chat with friendly TypeORM enthusiasts and users you can do it in [gitter](https://gitter.im/typeorm/typeorm).
 
 ### Want a professional commercial support?
 
-TypeORM core team always ready to provide a professional commercial support.
+The TypeORM core team is always ready to provide professional commercial support.
 We are ready to work with any team in any part of the world.
-Please contact us via [email](mailto:support@typeorm.io).
+[Please contact us](mailto:support@typeorm.io).

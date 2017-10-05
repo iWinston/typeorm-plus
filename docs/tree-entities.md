@@ -1,6 +1,6 @@
 # Tree Entities
 
-TypeORM supports Adjacency list and Closure table patterns of storing tree structures.
+TypeORM supports the Adjacency list and Closure table patterns for storing tree structures.
 
 * [Adjacency list](#adjacency-list)
 * [Closure table](#closure-table)
@@ -8,8 +8,8 @@ TypeORM supports Adjacency list and Closure table patterns of storing tree struc
 ### Adjacency list
 
 Adjacency list is a simple model with self-referencing. 
-Benefit of this approach is simplicity, 
-drawback is you can't load big tree in once because of joins limitation.
+The benefit of this approach is simplicity, 
+drawback is that you can't load big tree in once because of join limitations.
 Example:
 
 ```typescript
