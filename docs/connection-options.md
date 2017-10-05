@@ -180,7 +180,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `size` - The size of the database
 
-## `cordova`connection options
+## `cordova` connection options
 
 * `database` - Database name
 

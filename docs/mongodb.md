@@ -13,9 +13,9 @@ this page contains all MongoDB-specific functionality documentation.
 
 ## Defining entities and columns
 
-Defining entities and columns almost same as in relational databases, 
-the main difference is that you must use `@ObjectIdColumn` decorator 
-instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn` decorators.
+Defining entities and columns is almost the same as in relational databases, 
+the main difference is that you must use `@ObjectIdColumn` 
+instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
 
 Simple entity example:
 
@@ -53,7 +53,7 @@ const connection: Connection = await createConnection({
 ## Defining subdocuments (embed documents)
 
 Since MongoDB stores objects and objects inside objects (or documents inside documents)
-you can do same in TypeORM this way:
+you can do the same in TypeORM:
 
 ```typescript
 import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
@@ -168,7 +168,7 @@ Following document will be saved in the database:
 
 ## Using `MongoEntityManager` and `MongoRepository`
 
-You can use most of `EntityManager` methods (except for RDBMS-specific, like `query` and `transaction`).
+You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).
 For example:
 
 ```typescript
@@ -178,7 +178,7 @@ const manager = getManager(); // or connection.manager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
 ```
 
-For MongoDB there is also separate `MongoEntityManager` which extends `EntityManager` functionality.
+For MongoDB there is also a separate `MongoEntityManager` which extends `EntityManager`.
 
 ```typescript
 import {getMongoManager} from "typeorm";
@@ -187,7 +187,7 @@ const manager = getMongoManager(); // or connection.mongoManager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
 ```
 
-Just like separate `MongoEntityManager` there is `MongoRepository` with extended `Repository` functionality:
+Just like separate like `MongoEntityManager` there is a `MongoRepository` with extended `Repository`:
 
 ```typescript
 import {getMongoManager} from "typeorm";
@@ -206,7 +206,7 @@ Creates a cursor for a query that can be used to iterate over results from Mongo
 #### `createEntityCursor`
 
 Creates a cursor for a query that can be used to iterate over results from MongoDB.
-This returns modified version of cursor that transforms each result into Entity model.
+This returns a modified version of the cursor that transforms each result into Entity models.
 
 #### `aggregate`
 
@@ -227,7 +227,7 @@ Creates an index on the db and collection.
 
 #### `createCollectionIndexes`
 
-Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
+Creates multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher.
 
 #### `deleteMany`
 

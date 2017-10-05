@@ -2,7 +2,7 @@
 
 One-to-one is a relation where A contains only once instance of B, and B contains only one instance of A.
 Let's take for example `User` and `Profile` entities.
-User can have only a single profile, and single profile is owned only by a single user.
+User can have only a single profile, and a single profile is owned by only a single user.
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -42,9 +42,9 @@ export class User {
 }
 ```
 
-Here we added `@OneToOne` decorator to the `profile` property and specified target relation type `Profile` to it.
-We also added `@JoinColumn` decorator which is required and must be set only on one side of relation.
-On which side you set `@JoinColumn` that side's table will contain "relation id" and foreign keys to target entity table.
+Here we added `@OneToOne` to the `profile` and specify the target relation type to be `Profile`.
+We also added `@JoinColumn` which is required and must be set only on one side of the relation.
+The side you set `@JoinColumn` on, that side's table will contain a "relation id" and foreign keys to target entity table.
 
 This example will produce following tables:
 
@@ -66,9 +66,9 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 ```
 
-Again, `@JoinColumn` must be set only on one side of relation - which side must have foreign key in the database table.
+Again, `@JoinColumn` must be set only on one side of relation - the side that must have the foreign key in the database table.
 
-Example how to save such relation:
+Example how to save such a relation:
 
 ```typescript
 const profile = new Profile();
@@ -100,10 +100,10 @@ const users = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation you don't have to specify relation or join it - it will be loaded automatically ALWAYS.
+With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
 
 Relations can be uni-directional and bi-directional. 
-Uni-directional are relations with relation decorator only on one side.
+Uni-directional are relations with a relation decorator only on one side.
 Bi-directional are relations with decorators on both sides of a relation.
 
 We just created a uni-directional relation. Let's make it bi-directional:
@@ -150,8 +150,8 @@ export class User {
 }
 ```
 
-We just made our relation bi-directional. Note, inverse relation does not have a `@JoinColumn` decorator.
-`@JoinColumn` must be only on one side of the relation - which table will own a foreign key.
+We just made our relation bi-directional. Note, inverse relation does not have a `@JoinColumn`.
+`@JoinColumn` must only be on one side of the relation -  on the table that will own the foreign key.
 
 Bi-directional relations allow you to join relations from both sides using `QueryBuilder`: 
 

@@ -42,8 +42,8 @@ export class Question {
 }
 ```
 
-`@JoinTable()` decorator is required for `@ManyToMany` relations.
-You must put `@JoinTable` decorator only from one (owning) side of relation.
+`@JoinTable()` is required for `@ManyToMany` relations.
+You must put `@JoinTable` on one (owning) side of relation.
 
 This example will produce following tables:
 
@@ -105,10 +105,10 @@ const questions = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation you don't have to specify relation or join it - it will be loaded automatically ALWAYS.
+With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
 
 Relations can be uni-directional and bi-directional. 
-Uni-directional are relations with relation decorator only on one side.
+Uni-directional are relations with a relation decorator only on one side.
 Bi-directional are relations with decorators on both sides of a relation.
 
 We just created a uni-directional relation. Let's make it bi-directional:
@@ -155,8 +155,8 @@ export class Question {
 }
 ```
 
-We just made our relation bi-directional. Note, inverse relation does not have a `@JoinTable` decorator.
-`@JoinTable` must be only on one side of the relation - which table will own a foreign key.
+We just made our relation bi-directional. Note, the inverse relation does not have a `@JoinTable`.
+`@JoinTable` must be only on one side of the relation.
 
 Bi-directional relations allow you to join relations from both sides using `QueryBuilder`: 
 
