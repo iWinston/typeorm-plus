@@ -1,8 +1,6 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/schema/Table";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OrmUtils} from "../../util/OrmUtils";
@@ -345,31 +343,5 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
             // await this.query(`PRAGMA foreign_keys = ON;`);
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Builds a query for create column.
-     */
-    protected buildCreateColumnSql(column: TableColumn): string {
-        let c = "\"" + column.name + "\"";
-        if (column instanceof ColumnMetadata) {
-            c += " " + this.driver.normalizeType(column);
-        } else {
-            c += " " + this.connection.driver.createFullType(column);
-        }
-        if (column.isNullable !== true)
-            c += " NOT NULL";
-        if (column.isUnique === true)
-            c += " UNIQUE";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " PRIMARY KEY AUTOINCREMENT";
-        if (column.default !== undefined && column.default !== null) // todo: same code in all drivers. make it DRY
-            c += ` DEFAULT ${column.default}`;
-
-        return c;
     }
 }
