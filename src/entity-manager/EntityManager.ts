@@ -27,6 +27,7 @@ import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {EntityManagerFactory} from "./EntityManagerFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -357,63 +358,6 @@ export class EntityManager {
     }
 
     /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: Function, entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: string, entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: Function, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) a given entity in the database.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
-        return this.save(targetOrEntity as any, maybeEntity as any, options);
-    }
-
-    /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
     async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
@@ -617,6 +561,7 @@ export class EntityManager {
     find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -642,6 +587,7 @@ export class EntityManager {
     findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -673,6 +619,7 @@ export class EntityManager {
             return id;
         });
         qb.whereInIds(ids);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return qb.getMany();
     }
 
@@ -692,6 +639,7 @@ export class EntityManager {
     findOne<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
     }
 
@@ -723,6 +671,8 @@ export class EntityManager {
         if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
             id = metadata.createEntityIdMap([id]);
         }
+
+        this.joinEagerRelations(qb, qb.alias, metadata);
         qb.whereInIds([id]);
         FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         return qb.getOne();
@@ -738,7 +688,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         try {
-            return await queryRunner.truncate(metadata.tableName); // await is needed here because we are using finally
+            return await queryRunner.truncate(metadata.tablePath); // await is needed here because we are using finally
 
         } finally {
             if (!this.queryRunner)
@@ -847,6 +797,21 @@ export class EntityManager {
             throw new NoNeedToReleaseEntityManagerError();
 
         return this.queryRunner.release();
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Joins all eager relations recursively.
+     */
+    protected joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
+        metadata.eagerRelations.forEach(relation => {
+            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
+        });
     }
 
 }

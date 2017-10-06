@@ -6,6 +6,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
+import {ValueTransformer} from "../decorator/options/ValueTransformer";
 
 /**
  * This metadata contains all information about entity's column.
@@ -54,7 +55,7 @@ export class ColumnMetadata {
     /**
      * Type's length in the database.
      */
-    length?: number;
+    length: string = "";
 
     /**
      * Defines column character set.
@@ -205,6 +206,12 @@ export class ColumnMetadata {
      */
     referencedColumn: ColumnMetadata|undefined;
 
+    /**
+     * Specifies a value transformer that is to be used to (un)marshal
+     * this column when reading or writing to the database.
+     */
+    transformer?: ValueTransformer;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -228,7 +235,7 @@ export class ColumnMetadata {
         if (options.args.options.type)
             this.type = options.args.options.type;
         if (options.args.options.length)
-            this.length = typeof options.args.options.length === "string" ? parseInt(options.args.options.length) : options.args.options.length;
+            this.length = options.args.options.length ? options.args.options.length.toString() : "";
         if (options.args.options.charset)
             this.charset = options.args.options.charset;
         if (options.args.options.collation)
@@ -275,6 +282,8 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
+        if (options.args.options.transformer)
+            this.transformer = options.args.options.transformer;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {

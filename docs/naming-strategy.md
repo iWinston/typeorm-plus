@@ -1,4 +1,4 @@
-# Naming strategy [TBD]
+# Naming strategy
 
 * Specify custom table name
 * Specify custom column name
@@ -6,10 +6,9 @@
 * Specify custom many-to-many junction table name
 * Creating your own `NamingStrategy`
 
-
 ## Creating your own `NamingStrategy`
 
-If you defined your connection options in `ormconfig` file,
+If you defined your connection options in the `ormconfig` file,
 then you can simply use it and override it following way:
 
 ```typescript
@@ -25,3 +24,5 @@ getConnectionOptions().then(connectionOptions => {
     }))
 });
 ```
+
+TBD.

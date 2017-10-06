@@ -27,6 +27,9 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {LoggerFactory} from "../logger/LoggerFactory";
 import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -157,15 +160,15 @@ export class Connection {
             await this.driver.afterConnect();
 
             // if option is set - drop schema once connection is done
-            if (this.options.dropSchema || this.options.dropSchemaOnConnection)
+            if (this.options.dropSchema)
                 await this.dropDatabase();
 
             // if option is set - automatically synchronize a schema
-            if (this.options.synchronize || this.options.autoSchemaSync)
+            if (this.options.synchronize)
                 await this.synchronize();
 
             // if option is set - automatically synchronize a schema
-            if (this.options.migrationsRun || this.options.autoMigrationsRun)
+            if (this.options.migrationsRun)
                 await this.runMigrations();
 
         } catch (error) {
@@ -221,7 +224,20 @@ export class Connection {
      */
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        await queryRunner.clearDatabase();
+        const schemas = this.entityMetadatas
+            .filter(metadata => metadata.schema)
+            .map(metadata => metadata.schema!);
+
+        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+            const databases = this.entityMetadatas
+                .filter(metadata => metadata.database)
+                .map(metadata => metadata.database!);
+            if (this.driver.database && !databases.find(database => database === this.driver.database))
+                databases.push(this.driver.database);
+            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(schemas, database));
+        } else {
+            await queryRunner.clearDatabase(schemas);
+        }
         await queryRunner.release();
     }
 
@@ -377,48 +393,17 @@ export class Connection {
     }
 
     /**
-     * Creates a new entity manager with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with entity manager, don't forget to release it (to release database connection back to pool).
+     * Gets entity metadata of the junction table (many-to-many table).
      */
-    /*createIsolatedManager(): EntityManager {
-        if (this.driver instanceof MongoDriver)
-            throw new Error(`You can use createIsolatedManager only for non MongoDB connections.`);
+    getManyToManyMetadata(entityTarget: Function|string, relationPropertyPath: string) {
+        const relationMetadata = this.getMetadata(entityTarget).findRelationWithPropertyPath(relationPropertyPath);
+        if (!relationMetadata)
+            throw new Error(`Relation "${relationPropertyPath}" was not found in ${entityTarget} entity.`);
+        if (!relationMetadata.isManyToMany)
+            throw new Error(`Relation "${entityTarget}#${relationPropertyPath}" does not have a many-to-many relationship.` +
+                `You can use this method only on many-to-many relations.`);
 
-        // sqlite has a single query runner and does not support isolated managers
-        if (this.driver instanceof SqliteDriver)
-            return this.manager;
-
-        return new EntityManagerFactory().create(this, this.driver.createQueryRunner());
-    }*/
-
-    /**
-     * Creates a new repository with a single opened connection to the database.
-     * This may be useful if you want to perform all db queries within one connection.
-     * After finishing with repository, don't forget to release its query runner (to release database connection back to pool).
-     */
-    /*createIsolatedRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): Repository<Entity> {
-        if (this.driver instanceof MongoDriver)
-            throw new Error(`You can use createIsolatedRepository only for non MongoDB connections.`);
-
-        // sqlite has a single query runner and does not support isolated repositories
-        if (this.driver instanceof SqliteDriver)
-            return this.manager.getRepository(entityClassOrName);
-
-        return this.createIsolatedManager().getRepository(entityClassOrName);
-    }*/
-
-    // -------------------------------------------------------------------------
-    // Deprecated Public Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Gets entity manager that allows to perform repository operations with any entity in this connection.
-     *
-     * @deprecated use manager instead.
-     */
-    get entityManager(): EntityManager {
-        return this.manager;
+        return relationMetadata.junctionEntityMetadata;
     }
 
     // -------------------------------------------------------------------------
@@ -432,8 +417,13 @@ export class Connection {
         return this.entityMetadatas.find(metadata => {
             if (metadata.target === target)
                 return true;
-            if (typeof target === "string")
-                return metadata.name === target || metadata.tableName === target;
+            if (typeof target === "string") {
+                if (target.indexOf(".") !== -1) {
+                    return metadata.tablePath === target;
+                } else {
+                    return metadata.name === target || metadata.tableName === target;
+                }
+            }
 
             return false;
         });

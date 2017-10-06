@@ -2,7 +2,6 @@ import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpression} from "./WhereExpression";
@@ -48,7 +47,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Values needs to be updated.
      */
-    set(values: QueryPartialEntity<Entity>): this {
+    set(values: ObjectLiteral): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
@@ -88,7 +87,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    whereInIds(ids: any[]): this {
+    whereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.where(whereExpression, parameters);
         return this;
@@ -97,7 +97,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    andWhereInIds(ids: any[]): this {
+    andWhereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.andWhere(whereExpression, parameters);
         return this;
@@ -106,7 +107,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new OR WHERE with conditions for the given ids.
      */
-    orWhereInIds(ids: any[]): this {
+    orWhereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.orWhere(whereExpression, parameters);
         return this;
@@ -154,18 +156,17 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         });
 
         // get a table name and all column database names
-        const tableName = this.escape(this.getMainTableName());
         const whereExpression = this.createWhereExpression();
 
         // generate and return sql update query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${this.expressionMap.returning}`;
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${this.expressionMap.returning}`;
 
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
 
         } else {
-            return `UPDATE ${tableName} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
     }
 

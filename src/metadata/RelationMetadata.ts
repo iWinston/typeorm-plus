@@ -95,6 +95,11 @@ export class RelationMetadata {
     isLazy: boolean = false;
 
     /**
+     * Indicates if this relation is eagerly loaded.
+     */
+    isEager: boolean = false;
+
+    /**
      * If set to true then related objects are allowed to be inserted to the database.
      */
     isCascadeInsert: boolean = false;
@@ -252,6 +257,7 @@ export class RelationMetadata {
         this.isNullable = args.options.nullable !== false;
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;
+        this.isEager = args.options.eager || false;
         this.isTreeParent = args.isTreeParent || false;
         this.isTreeChildren = args.isTreeChildren || false;
         this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;

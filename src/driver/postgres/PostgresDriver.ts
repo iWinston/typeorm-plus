@@ -14,7 +14,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 
 /**
@@ -125,6 +125,18 @@ export class PostgresDriver implements Driver {
         "xml",
         "json",
         "jsonb"
+    ];
+
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [
+        "character varying",
+        "varchar",
+        "character",
+        "char",
+        "bit",
+        "bit varying"
     ];
 
     /**
@@ -258,6 +270,9 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.to(value);
+
         if (value === null || value === undefined)
             return value;
 
@@ -291,6 +306,9 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
+
         if (value === null || value === undefined)
             return value;
 
@@ -356,7 +374,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";
@@ -449,9 +467,31 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique;
+    }
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
+
+        return "";
+    }
+
+    /**
      * Normalizes "default" value of the column.
      */
-    createFullType(column: ColumnSchema): string {
+    createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {
@@ -463,7 +503,7 @@ export class PostgresDriver implements Driver {
         } else if (column.scale) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.type === "time without time zone") {
@@ -571,12 +611,7 @@ export class PostgresDriver implements Driver {
             pool.connect((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
                 release();
-
-                const schemaName = this.options.schema || this.options.schemaName || "public";
-                connection.query(`SET search_path TO '${schemaName}', 'public';`, (err: any) => {
-                    if (err) return fail(err);
-                    ok(pool);
-                });
+                ok(pool);
             });
         });
     }

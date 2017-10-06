@@ -1,21 +1,20 @@
 # Active Record vs Data Mapper
 
-* [What is Active Record?](#what-is-active-record)
-* [What is Data Mapper?](#what-is-data-mapper)
+* [What is the Active Record pattern?](#what-is-the-active-record-pattern)
+* [What is the Data Mapper pattern?](#what-is-the-data-mapper-pattern)
 * [Which one should I choose?](#which-one-should-i-choose)
 
-## What is Active Record?
+## What is the Active Record pattern?
 
-In TypeORM you can use both Active Record and Data Mapper patterns.
+In TypeORM you can use both, the Active Record and the Data Mapper patterns.
 
-Using Active Record approach you define all your query methods inside model itself, 
- and you save, remove, load objects using model methods. 
+Using the Active Record approach, you define all your query methods inside the model itself, and you save, remove and load objects using model methods. 
 
-Simply said active record is an approach to access your database within your models. 
-You can read more about active record on [wikipedia](https://en.wikipedia.org/wiki/Active_record_pattern).
+Simply said the Active Record pattern is an approach to access your database within your models. 
+You can read more about the Active Record pattern on [Wikipedia](https://en.wikipedia.org/wiki/Active_record_pattern).
 
 Example:
- 
+
 ```typescript
 import {BaseEntity, Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
@@ -37,7 +36,7 @@ export class User extends BaseEntity {
 }
 ```
 
-All active-record entities must extend `BaseEntity` class which provides methods to work with entity.
+All active-record entities must extend the `BaseEntity` class which provides methods to work with the entity.
 Example how to work with such entity:
 
 ```typescript
@@ -59,9 +58,9 @@ const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
 `BaseEntity` has most of methods standard `Repository` has.
-Most of times you don't need to use `Repository` or `EntityManager` with active record entities.
+Most of the times you don't need to use `Repository` or `EntityManager` with active record entities.
 
-Now lets say we want to create a function that returns users by first and last names. 
+Now let's say we want to create a function that returns users by first and last names. 
 We can create such function as a static method in a `User` class:
 
 ```typescript
@@ -98,19 +97,19 @@ And use it just like other methods:
 const timber = await User.findByName("Timber", "Saw");
 ```
 
-## What is Data Mapper?
+## What is the Data Mapper pattern?
 
 In TypeORM you can use both Active Record and Data Mapper patterns.
 
-Using Data Mapper approach you define all your query methods separate classes called "repositories", 
+Using the Data Mapper, approach you define all your query methods separate classes called "repositories", 
 and you save, remove, load objects using repositories. 
 In data mapper your entities are very dumb - they just define their properties and may have some "dummy" methods.  
 
 Simply said data mapper is an approach to access your database within repositories instead of models. 
-You can read more about data mapper on [wikipedia](https://en.wikipedia.org/wiki/Data_mapper_pattern).
+You can read more about data mapper on [Wikipedia](https://en.wikipedia.org/wiki/Data_mapper_pattern).
 
 Example:
- 
+
 ```typescript
 import {BaseEntity, Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
@@ -152,7 +151,7 @@ const newUsers = await userRepository.find({ isActive: true });
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
-Now lets say we want to create a function that returns users by first and last names. 
+Now let's say we want to create a function that returns users by first and last names. 
 We can create such function in a "custom repository".
 
 ```typescript
@@ -179,15 +178,14 @@ const userRepository = connection.getCustomRepository(UserRepository);
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-For more information about custom repositories refer [this documentation](./entity-manager-and-repository.md#custom-repositories).
+Learn more about [custom repositories](working-with-entity-manager.md#custom-repositories).
 
 ## Which one should I choose?
 
-Decision is up to you.
-Both strategies have its own cons and pros.
+The decision is up to you.
+Both strategies have their own cons and pros.
 
-One thing we should always keep in mind in software development is how we gonna maintain it.
-`Data Mapper` approach helps you to keep maintainability of your software in a bigger apps more effective.
-`Active record` approach helps you to keep things simple which work good in a small apps.
+One thing we should always keep in mind in software development is how we are going to maintain it.
+The `Data Mapper` approach helps you to keep maintainability of your software which is more effective in bigger apps.
+The `Active record` approach helps you to keep things simple which work good in a small apps.
  And simplicity is always a key to better maintainability.
- Always try to keep things simple when you can.

@@ -1,7 +1,7 @@
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
-import {TableSchema} from "../schema-builder/schema/TableSchema";
-import {ForeignKeySchema} from "../schema-builder/schema/ForeignKeySchema";
-import {IndexSchema} from "../schema-builder/schema/IndexSchema";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {Table} from "../schema-builder/schema/Table";
+import {TableForeignKey} from "../schema-builder/schema/TableForeignKey";
+import {TableIndex} from "../schema-builder/schema/TableIndex";
 import {Connection} from "../connection/Connection";
 import {ReadStream} from "../platform/PlatformTools";
 import {InsertResult} from "../driver/InsertResult";
@@ -12,6 +12,9 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  * Runs queries on a single database connection.
  *
  * todo: extract schema build operations out of query runner.
+ *
+ * todo: add following methods:
+ * - renameTable
  */
 export interface QueryRunner {
 
@@ -59,7 +62,7 @@ export interface QueryRunner {
      * Be careful with using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    clearDatabase(): Promise<void>;
+    clearDatabase(tables?: string[], database?: string): Promise<void>;
 
     /**
      * Starts transaction.
@@ -92,59 +95,71 @@ export interface QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    insert(tableName: string, valuesMap: Object): Promise<InsertResult>;
+    insert(tablePath: string, valuesMap: Object): Promise<InsertResult>;
 
     /**
      * Updates rows that match given simple conditions in the given table.
      */
-    update(tableName: string, valuesMap: Object, conditions: Object): Promise<void>;
+    update(tablePath: string, valuesMap: Object, conditions: Object): Promise<void>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
-    delete(tableName: string, condition: string, parameters?: any[]): Promise<void>;
+    delete(tablePath: string, condition: string, parameters?: any[]): Promise<void>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
-    delete(tableName: string, conditions: Object): Promise<void>;
+    delete(tablePath: string, conditions: Object): Promise<void>;
 
     /**
      * Inserts new values into closure table.
      */
-    insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
+    insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads a table by a given given name from the database and creates a Table from them.
      */
-    loadTableSchema(tableName: string): Promise<TableSchema|undefined>;
+    getTable(tablePath: string): Promise<Table|undefined>;
 
     /**
-     * Loads all tables (with given names) from the database and creates a TableSchema from them.
+     * Loads all tables (with given names) from the database and creates a Table from them.
+     *
+     * todo: make tableNames optional
      */
-    loadTableSchemas(tableNames: string[]): Promise<TableSchema[]>;
+    getTables(tablePaths: string[]): Promise<Table[]>;
+
+    /**
+     * Checks if database with the given name exist.
+     */
+    hasDatabase(database: string): Promise<boolean>;
 
     /**
      * Checks if table with the given name exist in the database.
      */
-    hasTable(tableName: string): Promise<boolean>;
+    hasTable(tablePath: string): Promise<boolean>;
+
+    /**
+     * Creates a database if it's not created.
+     */
+    createDatabase(database: string): Promise<void[]>;
 
     /**
      * Creates a schema if it's not created.
      */
-    createSchema(): Promise<void>;
+    createSchema(schemas: string[]): Promise<void[]>;
 
     /**
      * Creates a new table from the given table metadata and column metadatas.
      */
-    createTable(table: TableSchema): Promise<void>;
+    createTable(table: Table): Promise<void>;
 
     // todo: create createTableIfNotExist method
 
     /**
      * Drops the table.
      */
-    dropTable(tableName: string): Promise<void>;
+    dropTable(tablePath: string): Promise<void>;
 
     /**
      * Checks if column with the given name exist in the given table.
@@ -154,27 +169,27 @@ export interface QueryRunner {
     /**
      * Adds a new column in the table.
      */
-    addColumn(tableName: string, column: ColumnSchema): Promise<void>;
+    addColumn(tableName: string, column: TableColumn): Promise<void>;
 
     /**
      * Adds a new column in the table.
      */
-    addColumn(table: TableSchema, column: ColumnSchema): Promise<void>;
+    addColumn(table: Table, column: TableColumn): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
-    addColumns(tableSchema: string, columns: ColumnSchema[]): Promise<void>;
+    addColumns(table: string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
-    addColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void>;
+    addColumns(table: Table, columns: TableColumn[]): Promise<void>;
 
     /**
      * Renames column in the given table.
      */
-    renameColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+    renameColumn(table: Table, oldColumn: TableColumn, newColumn: TableColumn): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -184,77 +199,77 @@ export interface QueryRunner {
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: TableSchema, oldColumn: ColumnSchema, newColumn: ColumnSchema): Promise<void>;
+    changeColumn(table: Table, oldColumn: TableColumn, newColumn: TableColumn): Promise<void>;
 
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: string, oldColumn: string, newColumn: ColumnSchema): Promise<void>;
+    changeColumn(table: string, oldColumn: string, newColumn: TableColumn): Promise<void>;
 
     /**
      * Changes a columns in the table.
      */
-    changeColumns(table: TableSchema, changedColumns: { oldColumn: ColumnSchema, newColumn: ColumnSchema }[]): Promise<void>;
+    changeColumns(table: Table, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
     /**
      * Drops the column in the table.
      */
-    dropColumn(table: TableSchema, column: ColumnSchema): Promise<void>;
+    dropColumn(table: Table, column: TableColumn): Promise<void>;
 
     /**
      * Drops the columns in the table.
      */
-    dropColumns(table: TableSchema, columns: ColumnSchema[]): Promise<void>;
+    dropColumns(table: Table, columns: TableColumn[]): Promise<void>;
 
     /**
      * Updates primary keys in the table.
      */
-    updatePrimaryKeys(table: TableSchema): Promise<void>;
+    updatePrimaryKeys(table: Table): Promise<void>;
 
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(tableName: string, foreignKey: ForeignKeySchema): Promise<void>;
+    createForeignKey(tableName: string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(tableSchema: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+    createForeignKey(table: Table, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Creates a new foreign keys.
      */
-    createForeignKeys(table: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    createForeignKeys(table: Table, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKey(table: string, foreignKey: ForeignKeySchema): Promise<void>;
+    dropForeignKey(table: string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKey(table: TableSchema, foreignKey: ForeignKeySchema): Promise<void>;
+    dropForeignKey(table: Table, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKeys(table: string, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    dropForeignKeys(table: string, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Drops a foreign keys from the table.
      */
-    dropForeignKeys(table: TableSchema, foreignKeys: ForeignKeySchema[]): Promise<void>;
+    dropForeignKeys(table: Table, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Creates a new index.
      */
-    createIndex(tableName: string, index: IndexSchema): Promise<void>;
+    createIndex(tableName: string, index: TableIndex): Promise<void>;
 
     /**
      * Drops an index from the table.
      */
-    dropIndex(table: TableSchema|string, index: IndexSchema|string): Promise<void>;
+    dropIndex(tableSchemeOrPath: Table|string, index: TableIndex|string): Promise<void>;
 
     /**
      * Truncates table.

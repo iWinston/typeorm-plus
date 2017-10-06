@@ -5,8 +5,8 @@
     "type": "mysql",
     "host": "localhost",
     "port": 3306,
-    "username": "test",
-    "password": "test",
+    "username": "root",
+    "password": "admin",
     "database": "test"
   },
   {
@@ -36,7 +36,7 @@
     "database": "test"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",

@@ -13,7 +13,7 @@ import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 
@@ -103,6 +103,21 @@ export class MysqlDriver implements Driver {
         "longtext",
         "enum",
         "json"
+    ];
+
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [
+        "int",
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "bigint",
+        "char",
+        "varchar",
+        "blob",
+        "text"
     ];
 
     /**
@@ -268,6 +283,9 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.to(value);
+
         if (value === null || value === undefined)
             return value;
 
@@ -300,6 +318,9 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
+
         if (value === null || value === undefined)
             return value;
             
@@ -313,7 +334,7 @@ export class MysqlDriver implements Driver {
             return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "json") {
-            return JSON.parse(value);
+            return typeof value === "string" ? JSON.parse(value) : value;
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
@@ -328,7 +349,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         if (column.type === Number || column.type === "integer") {
             return "int";
 
@@ -376,7 +397,30 @@ export class MysqlDriver implements Driver {
         }
     }
 
-    createFullType(column: ColumnSchema): string {
+    /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique || 
+            !!column.entityMetadata.indices.find(index => index.isUnique && index.columns.length === 1 && index.columns[0] === column);
+    }
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
+
+        return "";
+    }    
+    
+    createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {
@@ -388,7 +432,7 @@ export class MysqlDriver implements Driver {
         } else if (column.scale) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)

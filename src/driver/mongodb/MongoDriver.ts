@@ -11,7 +11,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 
 /**
@@ -57,6 +57,11 @@ export class MongoDriver implements Driver {
      * Mongodb does not need to have column types because they are not used in schema sync.
      */
     supportedDataTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [];
 
     /**
      * Mongodb does not need to have a strong defined mapped column types because they are not used in schema sync.
@@ -217,6 +222,8 @@ export class MongoDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.to(value);
         return value;
     }
 
@@ -224,13 +231,15 @@ export class MongoDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
         return value;
     }
 
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
@@ -242,9 +251,23 @@ export class MongoDriver implements Driver {
     }
 
     /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+    
+    /**
      * Normalizes "default" value of the column.
      */
-    createFullType(column: ColumnSchema): string {
+    createFullType(column: TableColumn): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

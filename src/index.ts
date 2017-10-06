@@ -55,10 +55,8 @@ export * from "./decorator/relations/OneToOne";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/RelationId";
 export * from "./decorator/entity/Entity";
-export * from "./decorator/entity/AbstractEntity";
 export * from "./decorator/entity/ClassEntityChild";
 export * from "./decorator/entity/ClosureEntity";
-export * from "./decorator/entity/EmbeddableEntity";
 export * from "./decorator/entity/SingleEntityChild";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
@@ -68,7 +66,6 @@ export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
 export * from "./decorator/Generated";
-export * from "./decorator/Embedded";
 export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";
 export * from "./find-options/FindOneOptions";
@@ -85,11 +82,11 @@ export * from "./repository/TreeRepository";
 export * from "./repository/MongoRepository";
 export * from "./repository/RemoveOptions";
 export * from "./repository/SaveOptions";
-export * from "./schema-builder/schema/ColumnSchema";
-export * from "./schema-builder/schema/ForeignKeySchema";
-export * from "./schema-builder/schema/IndexSchema";
-export * from "./schema-builder/schema/PrimaryKeySchema";
-export * from "./schema-builder/schema/TableSchema";
+export * from "./schema-builder/schema/TableColumn";
+export * from "./schema-builder/schema/TableForeignKey";
+export * from "./schema-builder/schema/TableIndex";
+export * from "./schema-builder/schema/TablePrimaryKey";
+export * from "./schema-builder/schema/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/sqlserver/MssqlParameter";
 
@@ -104,6 +101,8 @@ export {DeleteQueryBuilder} from "./query-builder/DeleteQueryBuilder";
 export {InsertQueryBuilder} from "./query-builder/InsertQueryBuilder";
 export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
 export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
+export {Brackets} from "./query-builder/Brackets";
+export {WhereExpression} from "./query-builder/WhereExpression";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
@@ -120,6 +119,12 @@ export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
 export {BaseEntity} from "./repository/BaseEntity";
+export {EntitySchema} from "./entity-schema/EntitySchema";
+export {EntitySchemaTable} from "./entity-schema/EntitySchemaTable";
+export {EntitySchemaColumn} from "./entity-schema/EntitySchemaColumn";
+export {EntitySchemaIndex} from "./entity-schema/EntitySchemaIndex";
+export {EntitySchemaRelation} from "./entity-schema/EntitySchemaRelation";
+export {ColumnType} from "./driver/types/ColumnTypes";
 
 // -------------------------------------------------------------------------
 // Deprecated
@@ -240,14 +245,4 @@ export function getCustomRepository<T>(customRepository: ObjectType<T>, connecti
  */
 export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
-}
-
-/**
- * Gets entity manager from the connection.
- * If connection name wasn't specified, then "default" connection will be retrieved.
- *
- * @deprecated use getManager instead
- */
-export function getEntityManager(connectionName: string = "default"): EntityManager {
-    return getManager(connectionName);
 }

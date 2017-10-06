@@ -10,6 +10,12 @@ import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
+import {QueryPartialEntity} from "./QueryPartialEntity";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -167,22 +173,22 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
-    update(updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update(updateSet: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<T>(entity: ObjectType<T>, updateSet: ObjectLiteral): UpdateQueryBuilder<T>;
+    update<T>(entity: ObjectType<T>, updateSet?: QueryPartialEntity<T>): UpdateQueryBuilder<T>;
 
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update(entity: string, updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update(entity: Function|string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
      */
-    update(tableName: string, updateSet: ObjectLiteral): UpdateQueryBuilder<Entity>;
+    update(tableName: string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query and applies given update values.
@@ -223,11 +229,27 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets entity's relation with which this query builder gonna work.
      */
-    relation(entityTarget: Function|string, propertyPath: string): RelationQueryBuilder<Entity> {
+    relation(propertyPath: string): RelationQueryBuilder<Entity>;
+
+    /**
+     * Sets entity's relation with which this query builder gonna work.
+     */
+    relation<T>(entityTarget: ObjectType<T>|string, propertyPath: string): RelationQueryBuilder<T>;
+
+    /**
+     * Sets entity's relation with which this query builder gonna work.
+     */
+    relation(entityTargetOrPropertyPath: Function|string, maybePropertyPath?: string): RelationQueryBuilder<Entity> {
+        const entityTarget = arguments.length === 2 ? entityTargetOrPropertyPath : undefined;
+        const propertyPath = arguments.length === 2 ? maybePropertyPath as string : entityTargetOrPropertyPath as string;
+
         this.expressionMap.queryType = "relation";
-        // qb.expressionMap.propertyPath = propertyPath;
-        const mainAlias = this.createFromAlias(entityTarget);
-        this.expressionMap.setMainAlias(mainAlias);
+        this.expressionMap.relationPropertyPath = propertyPath;
+
+        if (entityTarget) {
+            const mainAlias = this.createFromAlias(entityTarget);
+            this.expressionMap.setMainAlias(mainAlias);
+        }
 
         // loading it dynamically because of circular issue
         const RelationQueryBuilderCls = require("./RelationQueryBuilder").RelationQueryBuilder;
@@ -235,6 +257,31 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new RelationQueryBuilderCls(this);
+    }
+
+
+    /**
+     * Checks if given relation exists in the entity.
+     * Returns true if relation exists, false otherwise.
+     */
+    hasRelation<T>(target: ObjectType<T>|string, relation: string): boolean;
+
+    /**
+     * Checks if given relations exist in the entity.
+     * Returns true if relation exists, false otherwise.
+     */
+    hasRelation<T>(target: ObjectType<T>|string, relation: string[]): boolean;
+
+    /**
+     * Checks if given relation or relations exist in the entity.
+     * Returns true if relation exists, false otherwise.
+     */
+    hasRelation<T>(target: ObjectType<T>|string, relation: string|string[]): boolean {
+        const entityMetadata = this.connection.getMetadata(target);
+        const relations = relation instanceof Array ? relation : [relation];
+        return relations.every(relation => {
+            return !!entityMetadata.findRelationWithPropertyPath(relation);
+        });
     }
 
     /**
@@ -249,6 +296,11 @@ export abstract class QueryBuilder<Entity> {
      * Adds all parameters from the given object.
      */
     setParameters(parameters: ObjectLiteral): this {
+
+        // set parent query builder parameters as well in sub-query mode
+        if (this.expressionMap.parentQueryBuilder)
+            this.expressionMap.parentQueryBuilder.setParameters(parameters);
+
         Object.keys(parameters).forEach(key => {
             this.expressionMap.parameters[key] = parameters[key];
         });
@@ -317,9 +369,10 @@ export abstract class QueryBuilder<Entity> {
 
     /**
      * Creates a completely new query builder.
+     * Uses same query runner as current QueryBuilder.
      */
     createQueryBuilder(): this {
-        return new (this.constructor as any)(this.connection);
+        return new (this.constructor as any)(this.connection, this.queryRunner);
     }
 
     /**
@@ -361,6 +414,45 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Gets escaped table name with schema name if SqlServer driver used with custom
+     * schema name, otherwise returns escaped table name.
+     */
+    protected getTableName(tableName: string): string {
+        let tablePath = tableName;
+        const driver = this.connection.driver;
+        const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
+        const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
+
+        if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
+            if (metadata) {
+                if (metadata.schema) {
+                    tablePath = `${metadata.schema}.${tableName}`;
+                } else if (schema) {
+                    tablePath = `${schema}.${tableName}`;
+                }
+
+                if (metadata.database && !(driver instanceof PostgresDriver)) {
+                    if (!schema && !metadata.schema && driver instanceof SqlServerDriver) {
+                        tablePath = `${metadata.database}..${tablePath}`;
+                    } else {
+                        tablePath = `${metadata.database}.${tablePath}`;
+                    }
+                }
+
+            } else if (schema) {
+                tablePath = `${schema!}.${tableName}`;
+            }
+        }
+        return tablePath.split(".")
+            .map(i => {
+                // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+                if (i === "")
+                    return i;
+                return this.escape(i);
+            }).join(".");
+    }
+
+    /**
      * Gets name of the table where insert should be performed.
      */
     protected getMainTableName(): string {
@@ -385,6 +477,7 @@ export abstract class QueryBuilder<Entity> {
             const metadata = this.connection.getMetadata(entityTarget);
 
             return this.expressionMap.createAlias({
+                type: "from",
                 name: aliasName,
                 metadata: this.connection.getMetadata(entityTarget),
                 tableName: metadata.tableName
@@ -402,6 +495,7 @@ export abstract class QueryBuilder<Entity> {
             }
             const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
             return this.expressionMap.createAlias({
+                type: "from",
                 name: aliasName,
                 tableName: isSubQuery === false ? entityTarget as string : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,
@@ -512,7 +606,6 @@ export abstract class QueryBuilder<Entity> {
 
         if (where instanceof Brackets) {
             const whereQueryBuilder = this.createQueryBuilder();
-            whereQueryBuilder.queryRunner = this.queryRunner;
             where.whereFactory(whereQueryBuilder as any);
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
