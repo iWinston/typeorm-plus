@@ -24,8 +24,9 @@ TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
 that can run in NodeJS, Browser, Cordova, PhoneGap and Ionic platforms 
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7).
 Its goal to always support latest JavaScript features and provide features
-that help you to develop any kind of applications that use database - from
-small applications with a few tables to large scale enterprise applications.
+that help you to develop any kind of applications that use databases - from
+small applications with a few tables to large scale enterprise applications
+with multiple databases.
 
 TypeORM supports both Active Record and Data Mapper patterns, 
 unlike all other JavaScript ORMs currently exist, 
@@ -37,7 +38,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 Some of TypeORM features:
 
-* both DataMapper and ActiveRecord (your choice)
+* supports both DataMapper and ActiveRecord (your choice)
 * entities and columns
 * database-specific column types
 * entity manager
@@ -50,8 +51,7 @@ Some of TypeORM features:
 * cascades
 * indices
 * transactions
-* migrations
-* automatic migrations generation
+* migrations and automatic migrations generation
 * connection pooling
 * replication
 * using multiple database connections
@@ -59,6 +59,7 @@ Some of TypeORM features:
 * cross-database and cross-schema queries
 * elegant-syntax, flexible and powerful QueryBuilder
 * left and inner joins
+* proper pagination for queries using joins
 * query caching
 * streaming raw results
 * logging
@@ -66,7 +67,7 @@ Some of TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft Sql Server / Oracle / WebSQL
+* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / Electron platforms
 * TypeScript and JavaScript support
@@ -202,7 +203,7 @@ await timber.remove();
     Oracle support is experimental at the moment and isn't bug-free.
     Expect to see more stable Oracle support in a near future.
 
-#### TypeScript configuration
+##### TypeScript configuration
 
 Also make sure you are using TypeScript compiler version **2.3** or greater, 
 and you have enabled the following settings in `tsconfig.json`:
