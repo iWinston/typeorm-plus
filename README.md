@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://typeorm.github.io/">
+  <a href="https://typeorm.io/">
     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
   </a>
   <br>
@@ -20,39 +20,22 @@
   <br>
 </div>
 
-TypeORM is an [Object Relational Mapper](https://en.wikipedia.org/wiki/Object-relational_mapping) (ORM) 
-for NodeJS written in
-TypeScript that can be used with TypeScript or JavaScript (ES5, ES6, ES7).
+TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
+that can run in NodeJS, Browser, Cordova, PhoneGap and Ionic platforms 
+and can be used with TypeScript and JavaScript (ES5, ES6, ES7).
 Its goal to always support latest JavaScript features and provide features
 that help you to develop any kind of applications that use database - from
 small applications with a few tables to large scale enterprise applications.
-TypeORM helps you to:
 
-* automatically create in the database tables based on your models
-* ability to transparently insert / update / delete to the database
-your objects
-* map your selections from tables to javascript objects and map table columns
-to javascript object's properties
-* create one-to-one, many-to-one, one-to-many, many-to-many relations between tables
-* and much more...
-
-TypeORM uses the Data Mapper pattern, unlike all other JavaScript ORMs that
-currently exist, which means you can write loosely coupled, scalable,
-maintainable applications with fewer problems.
-
-The benefit of using TypeORM for the programmer is the ability to focus on
-the business logic and worry about persistence only as a secondary problem.
+TypeORM supports both Active Record and Data Mapper patterns, 
+unlike all other JavaScript ORMs currently exist, 
+which means you can write high quality, loosely coupled, scalable,
+maintainable applications the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
  [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
-
-## Features
-
-TypeORM is one of the most powerful and future-rich ORM, 
-using it you can produce a high quality, declarative, maintainable, scalable and simply beautiful 
-software the most productive way. 
-Features:
+Some of TypeORM features:
 
 * both DataMapper and ActiveRecord (your choice)
 * entities and columns
@@ -86,14 +69,14 @@ Features:
 * supports MySQL / MariaDB / Postgres / SQLite / Microsoft Sql Server / Oracle / WebSQL
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / Electron platforms
-* code can be written in TypeScript or JavaScript
+* TypeScript and JavaScript support
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
 * CLI
 
 And more...
 
-With TypeORM your models will look like this:
+With TypeORM your models look like this:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -116,7 +99,7 @@ export class User {
 }
 ```
 
-And your domain logic will look like this:
+And your domain logic looks like this:
 
 ```typescript
 const user = new User();
@@ -155,7 +138,7 @@ export class User extends BaseEntity {
 }
 ```
 
-And your domain logic will look like this:
+And your domain logic will look this way:
 
 ```typescript
 const user = new User();
@@ -216,12 +199,12 @@ await timber.remove();
     
     To make the Oracle driver work, you need to follow the installation instructions from 
     [their](https://github.com/oracle/node-oracledb) site.
-    Oracle support is experimental at the moment and is not bug-free.
+    Oracle support is experimental at the moment and isn't bug-free.
     Expect to see more stable Oracle support in a near future.
 
 #### TypeScript configuration
 
-Also make sure you are using version **2.3** or greater of the TypeScript compiler, 
+Also make sure you are using TypeScript compiler version **2.3** or greater, 
 and you have enabled the following settings in `tsconfig.json`:
 
 ```json
@@ -233,7 +216,7 @@ You may also need to enable `es6` in the `lib` section of compiler options, or i
 
 ## Quick Start
 
-The quickest way to get started with TypeORM is to use its CLI commands to generate you a starter TypeORM project.
+The quickest way to get started with TypeORM is to use its CLI commands to generate a starter TypeORM project.
 Quick start works only if you are using TypeORM in NodeJS. 
 If you are using other platforms, proceed to [step-by-step guide](#step-by-step-guide).
 
@@ -1275,25 +1258,6 @@ The photos' albums will be left-joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot. 
 Learn more about QueryBuilder [here](./query-builder.md).
-
-## Learn more
-
-* [Connection and connection options](https://typeorm.github.io/connection.html)
-* [Connection Manager](https://typeorm.github.io/connection-manager.html)
-* [Databases and drivers](https://typeorm.github.io/databases-and-drivers.html)
-* [Updating database schema](https://typeorm.github.io/updating-database-schema.html)
-* [Tables and columns](https://typeorm.github.io/tables-and-columns.html)
-* [Relations](https://typeorm.github.io/relations.html)
-* [Indices](https://typeorm.github.io/indices.html)
-* [Repository](https://typeorm.github.io/repository.html)
-* [Query Builder](https://typeorm.github.io/query-builder.html)
-* [Entity Manager](https://typeorm.github.io/entity-manager.html)
-* [Subscribers and entity listeners](https://typeorm.github.io/subscribers-and-entity-listeners.html)
-* [Migrations](https://typeorm.github.io/migrations.html)
-* [Using service container](https://typeorm.github.io/using-service-container.html)
-* [Decorators Reference](https://typeorm.github.io/decorators-reference.html)
-* [Usage in the browser](https://typeorm.github.io/usage-in-browser.html)
-* [Using with JavaScript](https://typeorm.github.io/usage-with-javascript.html)
 
 ## Samples
 
