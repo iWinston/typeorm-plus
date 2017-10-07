@@ -573,7 +573,7 @@ aren't removed from output directory and still are loaded by TypeORM because the
 
 ### Running the application
 
-Now if you run your `app.ts`, a connection with database will be initialized and a database table for your photos will be created.
+Now if you run your `index.ts`, a connection with database will be initialized and a database table for your photos will be created.
 
 
 ```shell
@@ -663,6 +663,8 @@ createConnection(/*...*/).then(async connection => {
    
 `savedPhotos` will be an array of Photo objects with the data loaded from the database.
 
+Learn more about EntityManager [here](./docs/working-with-entity-manager.md).
+
 ### Using Repositories
 
 Now let's refactor our code and use `Repository` instead of `EntityManager`.
@@ -693,6 +695,8 @@ createConnection(/*...*/).then(async connection => {
 
 }).catch(error => console.log(error));
 ```
+
+Learn more about Repository [here](./docs/working-with-repository.md).
  
 ### Loading from the database
 
@@ -810,8 +814,8 @@ The type variable itself does not contain anything.
 
 We also add a `@JoinColumn` decorator, which indicates that this side of the relationship will own the relationship.
 Relations can be unidirectional or bidirectional. 
-Only one side of relational can be owner. 
-Using this decorator is required on the owner side of the relationship.
+Only one side of relational can be owning. 
+Using `@JoinColumn` decorator is required on the owner side of the relationship.
 
 If you run the app, you'll see a newly generated table, and it will contain a column with a foreign key for the photo relation:
 
@@ -840,14 +844,14 @@ import {PhotoMetadata} from "./entity/PhotoMetadata";
 
 createConnection(/*...*/).then(async connection => {
 
-    // Create a photo
+    // create a photo
     let photo = new Photo();
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
     photo.filename = "photo-with-bears.jpg";
     photo.isPublished = true;
 
-    // Create a photo metadata
+    // create a photo metadata
     let metadata = new PhotoMetadata();
     metadata.height = 640;
     metadata.width = 480;
@@ -856,17 +860,17 @@ createConnection(/*...*/).then(async connection => {
     metadata.orientation = "portait";
     metadata.photo = photo; // this way we connect them
 
-    // Get entity repositories
+    // get entity repositories
     let photoRepository = connection.getRepository(Photo);
     let metadataRepository = connection.getRepository(PhotoMetadata);
 
-    // First we should persist a photo
+    // first we should persist a photo
     await photoRepository.save(photo);
 
-    // Photo is saved. Now we need to persist a photo metadata
+    // photo is saved. Now we need to persist a photo metadata
     await metadataRepository.save(metadata);
 
-    // Done
+    // done
     console.log("Metadata is saved, and relation between metadata and photo is created in the database too");
 
 }).catch(error => console.log(error));
@@ -877,8 +881,8 @@ createConnection(/*...*/).then(async connection => {
 Relations can be unidirectional or bidirectional. 
 Currently, our relation between PhotoMetadata and Photo is unidirectional.
 The owner of the relation is PhotoMetadata, and Photo doesn't know anything about PhotoMetadata. 
-This makes it complicated to access photo metadata from the photo objects. 
-To fix it we should add an inverse relation, and make relations between PhotoMetadata and Photo bidirectional. 
+This makes it complicated to access PhotoMetadata from the Photo side. 
+To fix this issue we should add an inverse relation, and make relations between PhotoMetadata and Photo bidirectional. 
 Let's modify our entities:
 
 ```typescript
@@ -937,12 +941,11 @@ createConnection(/*...*/).then(async connection => {
     let photoRepository = connection.getRepository(Photo);
     let photos = await photoRepository.find({ relations: ["metadata"] });
 
-
 }).catch(error => console.log(error));
 ```
         
 Here photos will contain an array of photos from the database, and each photo will contain its photo metadata.
-Using find options is good and dead simple, but if you need more complex query you should use `QueryBuilder`.
+Using find options is good and dead simple, but if you need more complex query you should use `QueryBuilder` instead.
 `QueryBuilder` allows to use more complex queries in an elegant way:
 
 ```typescript
@@ -953,8 +956,9 @@ import {PhotoMetadata} from "./entity/PhotoMetadata";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoRepository = connection.getRepository(Photo);
-    let photos = await photoRepository.createQueryBuilder("photo")
+    let photos = await connection
+            .getRepository(Photo)
+            .createQueryBuilder("photo")
             .innerJoinAndSelect("photo.metadata", "metadata")
             .getMany();
 
@@ -963,7 +967,7 @@ createConnection(/*...*/).then(async connection => {
 ```
 
 `QueryBuilder` allows to create and execute SQL query of almost any complexity.
-When you work with `QueryBuilder` think like you are creating SQL query.
+When you work with `QueryBuilder` think like you are creating an SQL query.
 In this example "photo" and "metadata" are aliases applied to selected photos.
 You use aliases to access columns and properties of the selected data.
 
@@ -996,14 +1000,14 @@ Now we can simply persist a photo object, and the metadata object will persist a
 ```typescript
 createConnection(options).then(async connection => {
 
-    // Create photo object
+    // create photo object
     let photo = new Photo();
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
     photo.filename = "photo-with-bears.jpg"
     photo.isPublished = true;
 
-    // Create photo metadata object
+    // create photo metadata object
     let metadata = new PhotoMetadata();
     metadata.height = 640;
     metadata.width = 480;
@@ -1013,16 +1017,16 @@ createConnection(options).then(async connection => {
     
     photo.metadata = metadata; // this way we connect them
 
-    // Get repository
+    // get repository
     let photoRepository = connection.getRepository(Photo);
 
-    // Persisting a photo also persist the metadata
+    // persisting a photo also persist the metadata
     await photoRepository.save(photo);
 
     console.log("Photo is saved, photo metadata is saved too.")
 
 }).catch(error => console.log(error));
-```     
+```
 
 ### Creating a many-to-one / one-to-many relation
 
