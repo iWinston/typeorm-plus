@@ -217,8 +217,8 @@ You may also need to enable `es6` in the `lib` section of compiler options, or i
 
 ## Quick Start
 
-The quickest way to get started with TypeORM is to use its CLI commands to generate a starter TypeORM project.
-Quick start works only if you are using TypeORM in NodeJS. 
+The quickest way to get started with TypeORM is to use its CLI commands to generate a starter project.
+Quick start works only if you are using TypeORM in NodeJS application. 
 If you are using other platforms, proceed to [step-by-step guide](#step-by-step-guide).
 
 First, install TypeORM globally:
@@ -234,7 +234,7 @@ typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-`database` can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`,
+It can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`,
 `websql`, `mongodb`.
 
 This command will generate you a new project in `MyProject` directory with following files:
@@ -242,14 +242,14 @@ This command will generate you a new project in `MyProject` directory with follo
 ```
 MyProject
 ├── src              // place of your TypeScript code
-│   ├── entity       // place where your entities (database models) will be stored
+│   ├── entity       // place where your entities (database models) are stored
 │   │   └── User.ts  // sample entity
-│   ├── migration    // place where your migrations will be stored
+│   ├── migration    // place where your migrations are stored
 │   └── index.ts     // start point of your application
 ├── .gitignore       // standard gitignore file
-├── ormconfig.json   // your database and ORM configuration
-├── package.json     // your node module dependencies
-├── README.md        // simple readme file of your project
+├── ormconfig.json   // ORM and database connection configuration
+├── package.json     // node module dependencies
+├── README.md        // simple readme file
 └── tsconfig.json    // TypeScript compiler options
 ```
 
@@ -257,7 +257,7 @@ MyProject
 
 Next step is to install new project dependencies:
 
-```typescript
+```
 cd MyProject
 npm install
 ```
@@ -304,13 +304,13 @@ creating more entities.
 
 ## Step-by-Step Guide
 
-What are you expecting from ORM when you are using it?
+What are you expecting from ORM?
 First of all you are expecting it will create a database tables for you
-and find / insert / update / delete your data without 
+and find / insert / update / delete your data without pain and  
 having to write lot of hardly maintainable SQL queries.
 This guide will show you how to setup TypeORM from scratch and make it to do what you are expecting from ORM.
 
-## Create a model
+### Create a model
 
 Working with database starts from creating a tables. 
 How do you tell TypeORM to create a database table?
@@ -327,7 +327,7 @@ export class Photo {
     filename: string;
     views: number;
 }
-````
+```
 
 And you want to store photos in your database.
 To store things in the database first you need a database table.
@@ -337,11 +337,11 @@ Not all models, but only those you defined as *entities*.
 ### Create an entity
 
 *Entity* is your model decorated by `@Entity` decorator.
-Database tables will be created for those models.
+Database table will be created for such model.
 You work with entities everywhere with TypeORM.
 You can load/insert/update/remove and perform other operations with them.
 
-Let's make our `Photo` model as entity:
+Let's make our `Photo` model as an entity:
 
 ```typescript
 import {Entity} from "typeorm";
@@ -433,43 +433,10 @@ export class Photo {
 }
 ```
    
-### Creating an auto-increment / generated / sequence / identity column
+### Creating an auto generated column
 
 Now, let's say you want your id column to be auto-generated (this is known as auto-increment / sequence / serial / generated identity column).
-To do that you need to change your column's type to integer and set a `{ generated: true }` in your primary column's options:
-
-```typescript
-import {Entity, Column, PrimaryColumn} from "typeorm";
-
-@Entity()
-export class Photo {
-
-    @PrimaryColumn("int", { generated: true })
-    id: number;
-
-    @Column()
-    name: string;
-
-    @Column()
-    description: string;
-
-    @Column()
-    filename: string;
-
-    @Column()
-    views: number;
-
-    @Column()
-    isPublished: boolean;
-}
-```
-
-### Using the `@PrimaryGeneratedColumn` decorator
-
-Now your photo's id will always be a generated, auto-increment value. 
-Since creating a generated auto-incrementing primary column is a common task, 
-there is a special decorator called `@PrimaryGeneratedColumn` to do the same. 
-Let's use it instead:
+To do that you need to change `@PrimaryColumn` decorator to `@PrimaryGeneratedColumn` decorator:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -534,6 +501,7 @@ export class Photo {
 
 Column types are database-specific.
 You can set any column type your database support.
+More information on supported column types you can find [here](./docs/entities.md#column-types).
 
 ### Creating a connection to the database
 
