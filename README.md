@@ -525,7 +525,7 @@ createConnection({
     synchronize: true,
     logging: false
 }).then(connection => {
-    // Here you can start to work with your entities
+    // here you can start to work with your entities
 }).catch(error => console.log(error));
 ```
 
@@ -560,7 +560,7 @@ createConnection({
     ],
     synchronize: true,
 }).then(connection => {
-    // Here you can start to work with your entities
+    // here you can start to work with your entities
 }).catch(error => console.log(error));
 ```
 
@@ -1047,7 +1047,7 @@ export class Author {
     @Column()
     name: string;
 
-    @OneToMany(type => Photo, photo => photo.author) // Note: we will create author property in the Photo class below
+    @OneToMany(type => Photo, photo => photo.author) // note: we will create author property in the Photo class below
     photos: Photo[];
 }
 ```
@@ -1120,9 +1120,9 @@ export class Album {
     @Column()
     name: string;
 
-    @ManyToMany(type => Photo, photo => photo.albums, {  // Note: we will create "albums" property in the Photo class below
-        cascadeInsert: true, // Allow to insert a new photo on album save
-        cascadeUpdate: true // Allow to update a photo on album save
+    @ManyToMany(type => Photo, photo => photo.albums, {  // note: we will create "albums" property in the Photo class below
+        cascadeInsert: true, // allow to insert a new photo on album save
+        cascadeUpdate: true // allow to update a photo on album save
     })
     @JoinTable()
     photos: Photo[];
@@ -1138,8 +1138,8 @@ export class Photo {
     /// ... other columns
 
     @ManyToMany(type => Album, album => album.photos, {
-        cascadeInsert: true, // Allow to insert a new album on photo save
-        cascadeUpdate: true // Allow to update an album on photo save
+        cascadeInsert: true, // allow to insert a new album on photo save
+        cascadeUpdate: true // allow to update an album on photo save
     })
     albums: Album[];
 }
@@ -1170,14 +1170,14 @@ Now let's insert albums and photos to our database:
 ```typescript
 let connection = await createConnection(options);
 
-// Create a few albums
+// create a few albums
 let album1 = new Album();
 album1.name = "Bears";
 
 let album2 = new Album();
 album2.name = "Me";
 
-// Create a few photos
+// create a few photos
 let photo1 = new Photo();
 photo1.name = "Me and Bears";
 photo1.description = "I am near polar bears";
@@ -1190,15 +1190,15 @@ photo2.description = "I am near polar bears";
 photo2.filename = "photo-with-bears.jpg";
 photo2.albums = [album1];
 
-// Get entity repository
+// get entity repository
 let photoRepository = connection.getRepository(Photo);
 
-// First save a first photo
-// We only save the photos, albums are persisted
+// first save a first photo
+// we only save the photos, albums are persisted
 // automatically because of cascade options
 await photoRepository.save(photo1);
 
-// Second save a first photo
+// second save a first photo
 await photoRepository.save(photo2);
 
 console.log("Both photos have been saved");
@@ -1214,8 +1214,8 @@ let photos = await connection
     .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
     .innerJoinAndSelect("photo.metadata", "metadata")
     .leftJoinAndSelect("photo.albums", "album")
-    .where("photo.isPublished=true")
-    .andWhere("(photo.name=:photoName OR photo.name=:bearName)")
+    .where("photo.isPublished = true")
+    .andWhere("(photo.name = :photoName OR photo.name = :bearName)")
     .orderBy("photo.id", "DESC")
     .skip(5)
     .take(10)
@@ -1223,18 +1223,18 @@ let photos = await connection
     .getMany();
 ```
 
-This query builder will select all photos that are published and whose name is "My" or "Mishka".
+This query selects all published photos with "My" or "Mishka" names.
 It will select results from position 5 (pagination offset), 
 and will select only 10 results (pagination limit). 
 The selection result will be ordered by id in descending order. 
-The photos' albums will be left-joined and their metadata will be inner joined.
+The photo's albums will be left-joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot. 
-Learn more about QueryBuilder [here](./query-builder.md).
+Learn more about QueryBuilder [here](./select-query-builder.md).
 
 ## Samples
 
-Take a look at the samples in [./sample](sample) for examples of usage.
+Take a look at the samples in [https://github.com/typeorm/typeorm/tree/master/sample](sample) for examples of usage.
 
 There are a few repositories which you can clone and start with:
 
@@ -1255,7 +1255,7 @@ There are several extensions that simplify TypeORM integration with other module
 * [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 
-## Contributing 
+## Contributing 😰
 
 Learn about contribution [here](CONTRIBUTING.md) and how to setup your development environment [here](DEVELOPER.md).
 
