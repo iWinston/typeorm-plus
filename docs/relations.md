@@ -3,12 +3,8 @@
 * [What are relations](#what-are-relations)
 * [Relation options](#relation-options)
 * [Cascades](#cascades)
-* [Self referencing](#self-referencing)
-* [`@JoinColumn` options](#join-column-options)
-* [`@JoinTable` options](#join-table-options)
-* [Having both relation and relation column](#having-both-relation-and-relation-column)
-* [How to load relations in entities](#how-to-load-relations-in-entities)
-* [Avoid relation property initializers](#avoid-relation-property-initializers)
+* [`@JoinColumn` options](#joincolumn-options)
+* [`@JoinTable` options](#jointable-options)
 
 ## What are relations
 

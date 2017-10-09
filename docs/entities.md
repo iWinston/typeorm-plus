@@ -7,7 +7,7 @@
 * [Column types](#column-types)
     * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     * [Column types for `postgres`](#column-types-for-postgres)
-    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql)
+    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
     * [Columns with generated values](#columns-with-generated-values)
