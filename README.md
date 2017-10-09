@@ -1257,7 +1257,7 @@ There are several extensions that simplify TypeORM integration with other module
 
 ## Contributing 😰
 
-Learn about contribution [here](CONTRIBUTING.md) and how to setup your development environment [here](DEVELOPER.md).
+Learn about contribution [here](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md) and how to setup your development environment [here](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md).
 
 This project exists thanks to all the people who contribute:
 
