@@ -1,5 +1,4 @@
-import {Table} from "../schema-builder/schema/Table";
-import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {Table} from "../schema-builder/table/Table";
 import {Connection} from "../connection/Connection";
 import {Migration} from "./Migration";
 import {ObjectLiteral} from "../common/ObjectLiteral";
@@ -184,19 +183,24 @@ export class MigrationExecutor {
     protected async createMigrationsTableIfNotExist(): Promise<void> {
         const tableExist = await this.queryRunner.hasTable("migrations"); // todo: table name should be configurable
         if (!tableExist) {
-            await this.queryRunner.createTable(new Table("migrations", [
-                new TableColumn({
-                    name: "timestamp",
-                    type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }),
-                    isPrimary: true,
-                    isNullable: false
-                }),
-                new TableColumn({
-                    name: "name",
-                    type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }),
-                    isNullable: false
-                }),
-            ]));
+            await this.queryRunner.createTable(new Table(
+                {
+                    name: "migrations",
+                    columns: [
+                        {
+                            name: "timestamp",
+                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationTimestamp}),
+                            isPrimary: true,
+                            isNullable: false
+                        },
+                        {
+                            name: "name",
+                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationName}),
+                            isNullable: false
+                        },
+                    ]
+                },
+            ));
         }
     }
 

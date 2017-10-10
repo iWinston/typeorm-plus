@@ -669,11 +669,12 @@ export class EntityMetadata {
      */
     registerColumn(column: ColumnMetadata) {
         this.ownColumns.push(column);
-        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
-        this.parentIdColumns = this.columns.filter(column => column.isParentId);
-        this.primaryColumns = this.columns.filter(column => column.isPrimary);
-        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
-        this.propertiesMap = this.createPropertiesMap();
+        this.recomputeColumnDependencies(this.ownColumns);
+    }
+
+    removeColumn(columnMetadata: ColumnMetadata): void {
+        this.ownColumns.splice(this.ownColumns.indexOf(columnMetadata), 1);
+        this.recomputeColumnDependencies(this.ownColumns);
     }
 
     removeColumnByName(columnName: string): void {
@@ -700,6 +701,17 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
+
+    /**
+     * Recomputes all column dependencies
+     */
+    protected recomputeColumnDependencies(ownColumns: ColumnMetadata[]): void {
+        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), ownColumns);
+        this.parentIdColumns = this.columns.filter(column => column.isParentId);
+        this.primaryColumns = this.columns.filter(column => column.isPrimary);
+        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
+        this.propertiesMap = this.createPropertiesMap();
+    }
 
     /**
      * Builds table path using database name and schema name and table name.

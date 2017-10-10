@@ -1,4 +1,5 @@
 import {IndexMetadata} from "../../metadata/IndexMetadata";
+import {Table} from "./Table";
 
 /**
  * Database's table index stored in this class.
@@ -10,9 +11,9 @@ export class TableIndex {
     // -------------------------------------------------------------------------
 
     /**
-     * Table name that contains this unique index.
+     * Table that contains this unique index.
      */
-    tableName: string;
+    table: Table;
 
     /**
      * Index name.
@@ -33,8 +34,8 @@ export class TableIndex {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(tableName: string, name: string, columnNames: string[], isUnique: boolean) {
-        this.tableName = tableName;
+    constructor(table: Table, name: string, columnNames: string[], isUnique: boolean) {
+        this.table = table;
         this.name = name;
         this.columnNames = columnNames;
         this.isUnique = isUnique;
@@ -48,7 +49,7 @@ export class TableIndex {
      * Creates a new copy of this index with exactly same properties.
      */
     clone() {
-        return new TableIndex(this.tableName, this.name, this.columnNames.map(name => name), this.isUnique);
+        return new TableIndex(this.table, this.name, this.columnNames.map(name => name), this.isUnique);
     }
 
     // -------------------------------------------------------------------------
@@ -58,9 +59,9 @@ export class TableIndex {
     /**
      * Creates index from the index metadata object.
      */
-    static create(indexMetadata: IndexMetadata): TableIndex {
+    static create(indexMetadata: IndexMetadata, table: Table): TableIndex {
         return new TableIndex(
-            indexMetadata.entityMetadata.tableName,
+            table,
             indexMetadata.name,
             indexMetadata.columns.map(column => column.databaseName),
             indexMetadata.isUnique

@@ -2,12 +2,12 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
+import {Table} from "../../schema-builder/table/Table";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OracleDriver} from "./OracleDriver";
 import {Connection} from "../../connection/Connection";
@@ -388,13 +388,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                 });
 
             // create primary key schema
-            table.primaryKeys = constraints
-                .filter(constraint =>
-                    constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "P"
-                )
-                .map(constraint =>
-                    new TablePrimaryKey(constraint["CONSTRAINT_NAME"], constraint["COLUMN_NAME"])
-                );
+            const primaryKeyConstraints = constraints.filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "P");
+            if (primaryKeyConstraints.length > 0) {
+                const pkColumns = constraints.map(constraint => {
+                    return table.columns.find(column => column.name === constraint["COLUMN_NAME"])!;
+                });
+                table.primaryKey = new TablePrimaryKey(constraints[0]["CONSTRAINT_NAME"], pkColumns);
+            }
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = constraints
@@ -406,7 +406,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                 .filter(dbIndex => {
                     return  dbIndex["TABLE_NAME"] === table.name &&
                         (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
+                        (!table.primaryKey === dbIndex["INDEX_NAME"]);
                 })
                 .map(dbIndex => {
                     return new TableIndex(dbTable["TABLE_NAME"], dbIndex["INDEX_NAME"], dbIndex["COLUMN_NAMES"], !!(dbIndex["COLUMN_NAMES"] === "UNIQUE"));
@@ -557,9 +557,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
 
             if (newColumn.isGenerated) {
-                if (table.primaryKeys.length > 0 && oldColumn.isPrimary) {
+                if (table.primaryKey && oldColumn.isPrimary) {
                     // console.log(table.primaryKeys);
-                    const dropPrimarySql = `ALTER TABLE "${table.name}" DROP CONSTRAINT "${table.primaryKeys[0].name}"`;
+                    const dropPrimarySql = `ALTER TABLE "${table.name}" DROP CONSTRAINT "${table.primaryKey.name}"`;
                     await this.query(dropPrimarySql);
                 }
 
@@ -616,10 +616,11 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(dbTable: Table): Promise<void> {
-        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
-        // console.log(dbTable.primaryKeys);
-        if (dbTable.primaryKeys.length > 0 && dbTable.primaryKeys[0].name)
-            await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKeys[0].name}"`);
+        if (!dbTable.primaryKey)
+            return Promise.resolve();
+
+        await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKey.name}"`);
+        const primaryColumnNames = dbTable.primaryKey.columns.map(column => "\"" + column.name + "\"");
         if (primaryColumnNames.length > 0)
             await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
@@ -629,7 +630,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
+        const columnNames = foreignKey.columns.map(column => "\"" + column.name + "\"").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "\"" + column + "\"").join(",");
         let sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY (${columnNames}) ` +
@@ -666,9 +667,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table instanceof Table ? table.name : table}"(${columns})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table instanceof Table ? table.name : table.name}"(${columns})`;
         await this.query(sql);
     }
 

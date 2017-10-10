@@ -12,7 +12,7 @@ import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
 import {DriverUtils} from "../DriverUtils";
 

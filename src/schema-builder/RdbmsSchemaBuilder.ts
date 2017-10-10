@@ -1,16 +1,18 @@
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {Table} from "./schema/Table";
-import {TableColumn} from "./schema/TableColumn";
-import {TableForeignKey} from "./schema/TableForeignKey";
-import {TableIndex} from "./schema/TableIndex";
+import {Table} from "./table/Table";
+import {TableColumn} from "./table/TableColumn";
+import {TableForeignKey} from "./table/TableForeignKey";
+import {TableIndex} from "./table/TableIndex";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {TablePrimaryKey} from "./schema/TablePrimaryKey";
+import {TablePrimaryKey} from "./table/TablePrimaryKey";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {SchemaBuilder} from "./SchemaBuilder";
 import {SqlInMemory} from "../driver/SqlInMemory";
+import {TableUtils} from "./util/TableUtils";
+import {TableColumnOptions} from "./options/TableColumnOptions";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -219,7 +221,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
 
             // create a new table and sync it in the database
-            const table = new Table(metadata.tableName, this.metadataColumnsToTableColumns(metadata.columns), true, metadata.engine, metadata.database, metadata.schema);
+            const table = new Table({
+                name: metadata.tableName,
+                columns: this.metadataColumnsToTableColumnOptions(metadata.columns)
+            });
             this.tables.push(table);
             await this.queryRunner.createTable(table);
         });
@@ -255,7 +260,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // remove columns from the table and primary keys of it if its used in the primary keys
             table.removeColumns(droppedTableColumns);
-            table.removePrimaryKeysOfColumns(droppedTableColumns);
+            table.removePrimaryKeyOfColumns(droppedTableColumns);
 
             // drop columns from the database
             await this.queryRunner.dropColumns(table, droppedTableColumns);
@@ -282,7 +287,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
 
             // create columns in the database
-            const newTableColumns = this.metadataColumnsToTableColumns(newColumnMetadatas);
+            const newTableColumnOptions = this.metadataColumnsToTableColumnOptions(newColumnMetadatas);
+            const newTableColumns = newTableColumnOptions.map(option => new TableColumn(option));
             await this.queryRunner.addColumns(table, newTableColumns);
             table.addColumns(newTableColumns);
         });
@@ -304,6 +310,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`columns changed in ${table.name}. updating: ` + updatedTableColumns.map(column => column.name).join(", "));
 
+            /*const dropPrimaryKeyConstrains = updatedTableColumns
+                .filter(changedTableColumn => {
+                    const isColumnExistInMetadata = !!metadata.columns.find(columnMetadata => columnMetadata.databaseName === changedTableColumn.name);
+                    return isColumnExistInMetadata && changedTableColumn.isPrimary;
+                })
+                .map(changedTableColumn => this.dropPrimaryKeyConstraints(metadata.tableName, changedTableColumn.name));*/
+
             // drop all foreign keys that point to this column
             const dropRelatedForeignKeysPromises = updatedTableColumns
                 .filter(changedTableColumn => !!metadata.columns.find(columnMetadata => columnMetadata.databaseName === changedTableColumn.name))
@@ -323,10 +336,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // generate a map of new/old columns
             const newAndOldTableColumns = updatedTableColumns.map(changedTableColumn => {
                 const columnMetadata = metadata.columns.find(column => column.databaseName === changedTableColumn.name);
-                const newTableColumn = TableColumn.create(columnMetadata!, 
-                    this.connection.driver.normalizeType(columnMetadata!), 
+                const newTableColumnOptions = TableUtils.createTableColumnOptions(columnMetadata!,
+                    this.connection.driver.normalizeType(columnMetadata!),
                     this.connection.driver.normalizeDefault(columnMetadata!),
                     this.connection.driver.getColumnLength(columnMetadata!));
+                const newTableColumn = new TableColumn(newTableColumnOptions);
                 table.replaceColumn(changedTableColumn, newTableColumn);
 
                 return {
@@ -349,22 +363,29 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return;
 
             const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary && !column.isGenerated);
-            const addedKeys = metadataPrimaryColumns
-                .filter(primaryKey => {
-                    return !table.primaryKeysWithoutGenerated.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.databaseName);
-                })
-                .map(primaryKey => new TablePrimaryKey("", primaryKey.databaseName));
-
-            const droppedKeys = table.primaryKeysWithoutGenerated.filter(primaryKeySchema => {
-                return !metadataPrimaryColumns.find(primaryKeyMetadata => primaryKeyMetadata.databaseName === primaryKeySchema.columnName);
+            const addedPrimaryColumns = metadataPrimaryColumns.filter(metadataPrimaryColumn => {
+                return !table.primaryKeyWithoutGenerated || !table.primaryKeyWithoutGenerated.columns.find(column => column.name === metadataPrimaryColumn.databaseName);
             });
 
-            if (addedKeys.length === 0 && droppedKeys.length === 0)
+            const isPrimaryKeyDropped = !metadataPrimaryColumns.find(primaryKeyMetadata => {
+                return !!table.primaryKeyWithoutGenerated && !!table.primaryKeyWithoutGenerated.columns.find(column => column.name === primaryKeyMetadata.databaseName);
+            });
+            const droppedKey = isPrimaryKeyDropped ? table.primaryKeyWithoutGenerated : undefined;
+            if (droppedKey)
+                table.primaryKey = undefined;
+
+            if (addedPrimaryColumns.length === 0 && !droppedKey)
                 return;
 
-            this.connection.logger.logSchemaBuild(`primary keys of ${table.name} has changed: dropped - ${droppedKeys.map(key => key.columnName).join(", ") || "nothing"}; added - ${addedKeys.map(key => key.columnName).join(", ") || "nothing"}`);
-            table.addPrimaryKeys(addedKeys);
-            table.removePrimaryKeys(droppedKeys);
+            if (addedPrimaryColumns.length > 0) {
+                // TODO: i think this does not work, because Table does not have new columns
+                const tableColumns = table.columns.filter(column => {
+                   return addedPrimaryColumns.find(addedPrimaryColumn => addedPrimaryColumn.databaseName === column.name);
+                });
+                table.primaryKey = new TablePrimaryKey("", tableColumns);
+            }
+
+            this.connection.logger.logSchemaBuild(`primary keys of ${table.name} has changed: dropped - ${droppedKey ? droppedKey.columns.map(column => column.name).join(", ") : "nothing"}; added - ${addedPrimaryColumns.map(column => column.databaseName).join(", ") || "nothing"}`);
             await this.queryRunner.updatePrimaryKeys(table);
         });
     }
@@ -384,7 +405,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newKeys.length === 0)
                 return;
 
-            const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata));
+            const dbForeignKeys = newKeys.map(foreignKeyMetadata => {
+                const referencedTable = this.tables.find(table => table.name === foreignKeyMetadata.referencedTableName)!;
+                return TableForeignKey.create(foreignKeyMetadata, table, referencedTable);
+            });
             this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
             table.addForeignKeys(dbForeignKeys);
@@ -396,7 +420,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * but does not exist in the metadata anymore.
      */
     protected createIndices() {
-        // return Promise.all(this.connection.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
         return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.tables.find(table => table.name === metadata.tableName);
             if (!table)
@@ -414,7 +437,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         return true;
                     if (metadataIndex.columns.findIndex((col, i) => col.databaseName !== tableIndex.columnNames[i]) !== -1)
                         return true;
-                    
+
                     return false;
                 })
                 .map(async tableIndex => {
@@ -429,7 +452,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const addQueries = metadata.indices
                 .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name))
                 .map(async indexMetadata => {
-                    const tableIndex = TableIndex.create(indexMetadata);
+                    const tableIndex = TableIndex.create(indexMetadata, table);
                     table.indices.push(tableIndex);
                     this.connection.logger.logSchemaBuild(`adding new index: ${tableIndex.name}`);
                     await this.queryRunner.createIndex(table, tableIndex);
@@ -450,7 +473,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         // find depend indices to drop them
         const dependIndicesInTable = table.indices.filter(tableIndex => {
-            return tableIndex.tableName === tableName && !!tableIndex.columnNames.find(columnDatabaseName => columnDatabaseName === columnName);
+            return tableIndex.table.name === tableName && !!tableIndex.columnNames.find(columnDatabaseName => columnDatabaseName === columnName);
         });
         if (dependIndicesInTable.length === 0)
             return;
@@ -480,13 +503,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return;
 
         // find depend foreign keys to drop them
-        const dependForeignKeys = allForeignKeyMetadatas.filter(foreignKey => {
-            if (foreignKey.tableName === tableName) {
-                return !!foreignKey.columns.find(fkColumn => {
+        const dependForeignKeys = allForeignKeyMetadatas.filter(foreignKeyMetadata => {
+            if (foreignKeyMetadata.tableName === tableName) {
+                return !!foreignKeyMetadata.columns.find(fkColumn => {
                     return fkColumn.databaseName === columnName;
                 });
-            } else if (foreignKey.referencedTableName === tableName) {
-                return !!foreignKey.referencedColumns.find(fkColumn => {
+            } else if (foreignKeyMetadata.referencedTableName === tableName) {
+                return !!foreignKeyMetadata.referencedColumns.find(fkColumn => {
                     return fkColumn.databaseName === columnName;
                 });
             }
@@ -502,7 +525,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return;
 
         this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
-        const tableForeignKeys = dependForeignKeyInTable.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata));
+        const tableForeignKeys = dependForeignKeyInTable.map(foreignKeyMetadata => {
+            const referencedTable = this.tables.find(table => table.name === foreignKeyMetadata.referencedTableName)!;
+            return TableForeignKey.create(foreignKeyMetadata, table, referencedTable);
+        });
         table.removeForeignKeys(tableForeignKeys);
         await this.queryRunner.dropForeignKeys(table, tableForeignKeys);
     }
@@ -510,9 +536,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates new columns from the given column metadatas.
      */
-    protected metadataColumnsToTableColumns(columns: ColumnMetadata[]): TableColumn[] {
+    protected metadataColumnsToTableColumnOptions(columns: ColumnMetadata[]): TableColumnOptions[] {
         return columns.map(columnMetadata => {
-            return TableColumn.create(
+            return TableUtils.createTableColumnOptions(
                 columnMetadata,
                 this.connection.driver.normalizeType(columnMetadata),
                 this.connection.driver.normalizeDefault(columnMetadata),

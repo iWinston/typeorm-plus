@@ -2,12 +2,12 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
+import {Table} from "../../schema-builder/table/Table";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {Connection} from "../../connection/Connection";
@@ -306,9 +306,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 .map(async index => {
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
                     const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
+                    table.primaryKey = new TablePrimaryKey(index["name"], indexColumns);
                     indexColumns.forEach(indexColumn => {
-                        table.primaryKeys.push(new TablePrimaryKey(index["name"], indexColumn));
                     });
+
+                    // TODO
                 }));
 
             // create index schemas from the loaded indices
@@ -316,7 +318,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 .filter(dbIndex => {
                     return dbIndex["origin"] !== "pk" &&
                         (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
-                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["name"]));
+                        (table.primaryKey && !table.primaryKey.name === dbIndex["name"]);
                 })
                 .map(dbIndex => dbIndex["name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -568,9 +570,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table, index: TableIndex): Promise<void> {
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table instanceof Table ? table.name : table}"(${columnNames})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table instanceof Table ? table.name : table.name}"(${columnNames})`;
         await this.query(sql);
     }
 
@@ -724,7 +726,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         let sql1 = `CREATE TABLE "temporary_${table.name}" (${columnDefinitions}`;
         // if (options && options.createForeignKeys) {
         table.foreignKeys.forEach(foreignKey => {
-            const columnNames = foreignKey.columnNames.map(name => `"${name}"`).join(", ");
+            const columnNames = foreignKey.columns.map(column => `"${column.name}"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql1 += " ON DELETE " + foreignKey.onDelete;
@@ -759,7 +761,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         await this.query(sql4);
 
         // also re-create indices
-        const indexPromises = table.indices.map(index => this.createIndex(table.name, index));
+        const indexPromises = table.indices.map(index => this.createIndex(table, index));
         // const uniquePromises = table.uniqueKeys.map(key => this.createIndex(key));
         await Promise.all(indexPromises/*.concat(uniquePromises)*/);
     }

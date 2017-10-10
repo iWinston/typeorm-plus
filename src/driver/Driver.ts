@@ -6,7 +6,7 @@ import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
-import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {TableColumn} from "../schema-builder/table/TableColumn";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.

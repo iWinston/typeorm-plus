@@ -2,11 +2,11 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {Table} from "../../schema-builder/table/Table";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {PostgresDriver} from "./PostgresDriver";
 import {Connection} from "../../connection/Connection";
@@ -373,7 +373,7 @@ AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNames
 JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
 JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
 where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString})`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, dbPrimaryKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(indicesSql),
@@ -437,9 +437,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                 });
 
             // create primary key schema
-            table.primaryKeys = primaryKeys
-                .filter(primaryKey => primaryKey["table_name"] === table.name)
-                .map(primaryKey => new TablePrimaryKey(primaryKey["constraint_name"], primaryKey["column_name"]));
+            const primaryKeys = dbPrimaryKeys.filter(primaryKey => primaryKey["table_name"] === table.name);
+            if (primaryKeys.length > 0) {
+                const pkColumns = primaryKeys.map(primaryKey => {
+                    return table.columns.find(column => column.name === primaryKey["column_name"])!;
+                });
+                table.primaryKey = new TablePrimaryKey(primaryKeys[0]["constraint_name"], pkColumns);
+            }
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
@@ -458,7 +462,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                 .filter(dbIndex => {
                     return dbIndex["table_name"] === table.name &&
                         (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["index_name"])) &&
+                        (table.primaryKey && !table.primaryKey.name === dbIndex["index_name"]) &&
                         (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"]));
                 })
                 .map(dbIndex => dbIndex["index_name"])
@@ -732,7 +736,9 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(table: Table): Promise<void> {
-        const primaryColumnNames = table.primaryKeys.map(primaryKey => `"${primaryKey.columnName}"`);
+        if (!table.primaryKey)
+            return Promise.resolve();
+        const primaryColumnNames = table.primaryKey.columns.map(column => `"${column.name}"`);
 
         const up = `ALTER TABLE ${this.escapeTablePath(table)} DROP CONSTRAINT IF EXISTS "${table.name}_pkey"`;
         const down = `-- TODO: revert ${up}`;
@@ -784,7 +790,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table, index: TableIndex): Promise<void> {
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
 
         const up = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTablePath(table)}(${columnNames})`;
@@ -924,9 +930,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     }
 
     protected foreignKeySql(tableOrPath: Table|string, foreignKey: TableForeignKey): { add: string, drop: string } {
+        const columnNames = foreignKey.columns.map(column => "\"" + column.name + "\"").join(", ");
         let add = `ALTER TABLE ${this.escapeTablePath(tableOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
-            `FOREIGN KEY ("${foreignKey.columnNames.join("\", \"")}") ` +
-            `REFERENCES ${this.escapeTablePath(foreignKey.referencedTablePath)}("${foreignKey.referencedColumnNames.join("\", \"")}")`;
+            `FOREIGN KEY ("${columnNames}") ` +
+            `REFERENCES ${this.escapeTablePath(foreignKey.referencedTable)}("${foreignKey.referencedColumnNames.join("\", \"")}")`;
 
         if (foreignKey.onDelete) add += " ON DELETE " + foreignKey.onDelete;
         const drop = `ALTER TABLE ${this.escapeTablePath(tableOrPath)} DROP CONSTRAINT "${foreignKey.name}"`;

@@ -1,6 +1,8 @@
 /**
  * Primary key from the database stored in this class.
  */
+import {TableColumn} from "./TableColumn";
+
 export class TablePrimaryKey {
 
     // -------------------------------------------------------------------------
@@ -13,17 +15,17 @@ export class TablePrimaryKey {
     name: string;
 
     /**
-     * Column to which this primary key is bind.
+     * Columns to which this primary key is bind.
      */
-    columnName: string;
+    columns: TableColumn[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columnName: string) {
+    constructor(name: string, columns: TableColumn[]) {
         this.name = name;
-        this.columnName = columnName;
+        this.columns = columns;
     }
 
     // -------------------------------------------------------------------------
@@ -34,7 +36,7 @@ export class TablePrimaryKey {
      * Creates a new copy of this primary key with exactly same properties.
      */
     clone() {
-        return new TablePrimaryKey(this.name, this.columnName);
+        return new TablePrimaryKey(this.name, this.columns);
     }
 
 }

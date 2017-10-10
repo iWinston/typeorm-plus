@@ -1,7 +1,7 @@
-import {TableColumn} from "../schema-builder/schema/TableColumn";
-import {Table} from "../schema-builder/schema/Table";
-import {TableForeignKey} from "../schema-builder/schema/TableForeignKey";
-import {TableIndex} from "../schema-builder/schema/TableIndex";
+import {TableColumn} from "../schema-builder/table/TableColumn";
+import {Table} from "../schema-builder/table/Table";
+import {TableForeignKey} from "../schema-builder/table/TableForeignKey";
+import {TableIndex} from "../schema-builder/table/TableIndex";
 import {Connection} from "../connection/Connection";
 import {ReadStream} from "../platform/PlatformTools";
 import {InsertResult} from "../driver/InsertResult";
@@ -265,7 +265,7 @@ export interface QueryRunner {
     /**
      * Creates a new index.
      */
-    createIndex(tableName: Table|string, index: TableIndex): Promise<void>;
+    createIndex(table: Table, index: TableIndex): Promise<void>;
 
     /**
      * Drops an index from the table.

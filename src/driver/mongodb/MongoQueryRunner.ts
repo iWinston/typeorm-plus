@@ -1,9 +1,9 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {Table} from "../../schema-builder/table/Table";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
@@ -591,7 +591,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(collectionName: string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table, index: TableIndex): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

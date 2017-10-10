@@ -3,10 +3,9 @@ import {TableIndex} from "./TableIndex";
 import {TableForeignKey} from "./TableForeignKey";
 import {TablePrimaryKey} from "./TablePrimaryKey";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
+import {TableOptions} from "../options/TableOptions";
 
 /**
  * Table in the database represented in this class.
@@ -38,9 +37,9 @@ export class Table {
     foreignKeys: TableForeignKey[] = [];
 
     /**
-     * Table primary keys.
+     * Table primary key.
      */
-    primaryKeys: TablePrimaryKey[] = [];
+    primaryKey?: TablePrimaryKey;
 
     /**
      * Indicates if table was just created.
@@ -64,28 +63,27 @@ export class Table {
      */
     schema?: string;
 
+    /**
+     * Entity table path. Contains database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    tablePath: string;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: TableColumn[]|ObjectLiteral[], justCreated?: boolean, engine?: string, database?: string, schema?: string) {
-        this.name = name;
-        if (columns) {
-            this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
-                if (column instanceof TableColumn) {
-                    return column;
-                } else {
-                    return new TableColumn(column);
-                }
-            });
-        }
+    constructor(options: TableOptions) {
+        this.name = options.name;
+        if (options.columns)
+            this.columns = options.columns.map(column => new TableColumn(column));
 
-        if (justCreated !== undefined)
-            this.justCreated = justCreated;
+        if (options.justCreated !== undefined)
+            this.justCreated = options.justCreated;
 
-        this.engine = engine;
-        this.database = database;
-        this.schema = schema;
+        this.engine = options.engine;
+        this.database = options.database;
+        this.schema = options.schema;
     }
 
     // -------------------------------------------------------------------------
@@ -93,16 +91,11 @@ export class Table {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets only those primary keys that does not
+     * Gets only those primary keys that does not generated.
      */
-    get primaryKeysWithoutGenerated(): TablePrimaryKey[] {
-        const generatedColumn = this.columns.find(column => column.isGenerated);
-        if (!generatedColumn)
-            return this.primaryKeys;
-
-        return this.primaryKeys.filter(primaryKey => {
-            return primaryKey.columnName !== generatedColumn.name;
-        });
+    get primaryKeyWithoutGenerated(): TablePrimaryKey|undefined {
+        const hasGeneratedColumnsInPrimaryKey = this.primaryKey && this.primaryKey.columns.find(column => column.isGenerated);
+        return hasGeneratedColumnsInPrimaryKey ? undefined : this.primaryKey;
     }
 
     get hasGeneratedColumn(): boolean {
@@ -117,15 +110,16 @@ export class Table {
      * Clones this table to a new table with all properties cloned.
      */
     clone(): Table {
-        const cloned = new Table(this.name);
-        cloned.columns = this.columns.map(column => column.clone());
-        cloned.indices = this.indices.map(index => index.clone());
-        cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
-        cloned.primaryKeys = this.primaryKeys.map(key => key.clone());
-        cloned.engine = this.engine;
-        cloned.database = this.database;
-        cloned.schema = this.schema;
-        return cloned;
+        return new Table({
+            name: this.name,
+            columns: this.columns.map(column => column.clone()),
+            indices: this.indices.map(index => index.clone()),
+            foreignKeys: this.foreignKeys.map(key => key.clone()),
+            primaryKey: this.primaryKey,
+            engine: this.engine,
+            database: this.database,
+            schema: this.schema
+        });
     }
 
     /**
@@ -159,38 +153,12 @@ export class Table {
     }
 
     /**
-     * Adds all given primary keys.
-     */
-    addPrimaryKeys(addedKeys: TablePrimaryKey[]) {
-        addedKeys.forEach(key => {
-            this.primaryKeys.push(key);
-            const index = this.columns.findIndex(column => column.name === key.columnName);
-            if (index !== -1) {
-                this.columns[index].isPrimary = true;
-            }
-        });
-    }
-
-    /**
-     * Removes all given primary keys.
-     */
-    removePrimaryKeys(droppedKeys: TablePrimaryKey[]) {
-        droppedKeys.forEach(key => {
-            this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
-            const index = this.columns.findIndex(column => column.name === key.columnName);
-            if (index !== -1) {
-                this.columns[index].isPrimary = false;
-            }
-        });
-    }
-
-    /**
      * Removes primary keys of the given columns.
      */
-    removePrimaryKeysOfColumns(columns: TableColumn[]) {
-        this.primaryKeys = this.primaryKeys.filter(primaryKey => {
-            return !columns.find(column => column.name === primaryKey.columnName);
-        });
+    removePrimaryKeyOfColumns(columns: TableColumn[]) {
+        const hasPrimaryKey = !!columns.find(column => !!column.primaryKey && !!this.primaryKey && column.primaryKey.name === this.primaryKey.name);
+        if (hasPrimaryKey)
+            this.primaryKey = undefined;
     }
 
     /**
@@ -281,7 +249,7 @@ export class Table {
 
         return true;
 
-    }    
+    }
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
@@ -317,31 +285,6 @@ export class Table {
         // console.log("columnMetadataValue", columnMetadataValue);
         // console.log("databaseValue", databaseValue);
         return columnMetadataValue === databaseValue;
-    }
-
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Creates table from a given entity metadata.
-     *
-     * todo: need deeper implementation
-     */
-    static create(entityMetadata: EntityMetadata, driver: Driver) {
-        const table = new Table(entityMetadata.tableName);
-        table.engine = entityMetadata.engine;
-        table.database = entityMetadata.database;
-        table.schema = entityMetadata.schema;
-        entityMetadata.columns.forEach(column => {
-            const tableColumn = TableColumn.create(column, 
-                driver.normalizeType(column), 
-                driver.normalizeDefault(column),
-                driver.getColumnLength(column)); 
-            table.columns.push(tableColumn);
-        });
-
-        return table;
     }
 
 }

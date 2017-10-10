@@ -1,4 +1,6 @@
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {TablePrimaryKey} from "./TablePrimaryKey";
+import {Table} from "./Table";
+import {TableColumnOptions} from "../options/TableColumnOptions";
 
 /**
  * Table's columns in the database represented in this class.
@@ -22,7 +24,7 @@ export class TableColumn {
     /**
      * Column's default value.
      */
-    default: any;
+    default?: any;
 
     /**
      * Indicates if column is NULL, or is NOT NULL in the database.
@@ -92,27 +94,21 @@ export class TableColumn {
      */
     enum?: any[];
 
+    /**
+     * Primary key of column, if column marked as primary
+     */
+    primaryKey?: TablePrimaryKey;
+
+    /**
+     * Table which column belongs to
+     */
+    table: Table;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options?: {
-        name?: string,
-        type?: string,
-        length?: string,
-        charset?: string,
-        collation?: string,
-        precision?: number,
-        scale?: number,
-        default?: any,
-        isNullable?: boolean,
-        isGenerated?: boolean,
-        generationStrategy?: "uuid"|"increment",
-        isPrimary?: boolean,
-        isUnique?: boolean,
-        comment?: string,
-        enum?: any[]
-    }) {
+    constructor(options?: TableColumnOptions) {
         if (options) {
             this.name = options.name || "";
             this.type = options.type || "";
@@ -158,34 +154,6 @@ export class TableColumn {
         newTableColumn.isArray = this.isArray;
         newTableColumn.comment = this.comment;
         return newTableColumn;
-    }
-
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Creates a new column based on the given column metadata.
-     */
-    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string, normalizedLength: string): TableColumn {
-        const tableColumn = new TableColumn();
-        tableColumn.name = columnMetadata.databaseName;
-        tableColumn.length = normalizedLength;
-        tableColumn.charset = columnMetadata.charset;
-        tableColumn.collation = columnMetadata.collation;
-        tableColumn.precision = columnMetadata.precision;
-        tableColumn.scale = columnMetadata.scale;
-        tableColumn.default = normalizedDefault;
-        tableColumn.comment = columnMetadata.comment;
-        tableColumn.isGenerated = columnMetadata.isGenerated;
-        tableColumn.generationStrategy = columnMetadata.generationStrategy;
-        tableColumn.isNullable = columnMetadata.isNullable;
-        tableColumn.type = normalizedType;
-        tableColumn.isPrimary = columnMetadata.isPrimary;
-        tableColumn.isUnique = columnMetadata.isUnique;
-        tableColumn.isArray = columnMetadata.isArray || false;
-        tableColumn.enum = columnMetadata.enum;
-        return tableColumn;
     }
 
 }

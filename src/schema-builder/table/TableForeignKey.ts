@@ -1,4 +1,6 @@
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
+import {TableColumn} from "./TableColumn";
+import {Table} from "./Table";
 
 /**
  * Foreign key from the database stored in this class.
@@ -15,6 +17,16 @@ export class TableForeignKey {
     name: string;
 
     /**
+     * Table which contain this foreign key.
+     */
+    table: Table;
+
+    /**
+     * Columns which included by this foreign key.
+     */
+    columns: TableColumn[] = [];
+
+    /**
      * Column names which included by this foreign key.
      */
     columnNames: string[];
@@ -22,12 +34,17 @@ export class TableForeignKey {
     /**
      * Table referenced in the foreign key.
      */
+    referencedTable: Table;
+
+    /**
+     * Table referenced in the foreign key.
+     */
     referencedTableName: string;
 
     /**
-     * Table path referenced in the foreign key.
+     * Columns which included by this foreign key.
      */
-    referencedTablePath: string;
+    referencedColumns: TableColumn[] = [];
 
     /**
      * Column names which included by this foreign key.
@@ -54,7 +71,6 @@ export class TableForeignKey {
                 columnNames: string[],
                 referencedColumnNames: string[],
                 referencedTable: string,
-                referencedTablePath: string,
                 onDelete?: string,
                 onUpdate?: string) {
 
@@ -62,7 +78,6 @@ export class TableForeignKey {
         this.columnNames = columnNames;
         this.referencedColumnNames = referencedColumnNames;
         this.referencedTableName = referencedTable;
-        this.referencedTablePath = referencedTablePath;
         this.onDelete = onDelete;
         this.onUpdate = onUpdate;
     }
@@ -80,7 +95,6 @@ export class TableForeignKey {
             this.columnNames,
             this.referencedColumnNames,
             this.referencedTableName,
-            this.referencedTablePath,
             this.onDelete,
             this.onUpdate
         );
@@ -93,16 +107,25 @@ export class TableForeignKey {
     /**
      * Creates a new foreign schema from the given foreign key metadata.
      */
-    static create(metadata: ForeignKeyMetadata) {
-        return new TableForeignKey(
+    static create(metadata: ForeignKeyMetadata, table: Table, referencedTable: Table): TableForeignKey {
+        const tableForeignKey = new TableForeignKey(
             metadata.name,
             metadata.columnNames,
             metadata.referencedColumnNames,
             metadata.referencedTableName,
-            metadata.referencedEntityMetadata.tablePath,
             metadata.onDelete,
             metadata.onUpdate
         );
+
+        tableForeignKey.table = table;
+        tableForeignKey.referencedTable = referencedTable;
+        tableForeignKey.columns = table.columns.filter(column => {
+            return !!metadata.columnNames.find(columnName => columnName === column.name);
+        });
+        tableForeignKey.referencedColumns = referencedTable.columns.filter(column => {
+            return !!metadata.referencedColumnNames.find(columnName => columnName === column.name);
+        });
+        return tableForeignKey;
     }
 
 }

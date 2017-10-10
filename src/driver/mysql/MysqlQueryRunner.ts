@@ -2,11 +2,11 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {Table} from "../../schema-builder/table/Table";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
@@ -375,9 +375,9 @@ export class MysqlQueryRunner implements QueryRunner {
                     const endIndex = columnType.indexOf("(");
                     tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
 
-                    if (dbColumn["COLUMN_DEFAULT"] === null || dbColumn["COLUMN_DEFAULT"] === undefined 
+                    if (dbColumn["COLUMN_DEFAULT"] === null
+                        || dbColumn["COLUMN_DEFAULT"] === undefined
                         || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
-
                         tableColumn.default = undefined;
                     
                     } else {
@@ -420,10 +420,13 @@ export class MysqlQueryRunner implements QueryRunner {
                     return tableColumn;
                 });
 
-            // create primary keys
-            table.primaryKeys = primaryKeys.map(primaryKey => {
-                return new TablePrimaryKey(primaryKey["Key_name"], primaryKey["Column_name"]);
-            });
+            // create primary key
+            if (primaryKeys.length > 0) {
+                const pkColumns = primaryKeys.map(primaryKey => {
+                    return table.columns.find(column => column.name === primaryKey["Column_name"])!;
+                });
+                table.primaryKey = new TablePrimaryKey(primaryKeys[0]["Key_name"], pkColumns);
+            }
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
@@ -435,7 +438,7 @@ export class MysqlQueryRunner implements QueryRunner {
                 .filter(dbIndex => {
                     return dbIndex["TABLE_NAME"] === table.name &&
                         (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
+                        (table.primaryKey && !table.primaryKey.name === dbIndex["INDEX_NAME"]);
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -655,7 +658,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrPath: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
+        const columnNames = foreignKey.columns.map(column => "`" + column.name + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
         let sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${columnNames}) ` +
@@ -679,7 +682,7 @@ export class MysqlQueryRunner implements QueryRunner {
     async dropForeignKey(tableOrPath: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP FOREIGN KEY \`${foreignKey.name}\``;
 
-        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
+        const columnNames = foreignKey.columns.map(column => "`" + column.name + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
         let revertSql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${columnNames}) ` +
@@ -700,7 +703,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(table)}\`(${columns})`;
         const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` DROP INDEX \`${index.name}\``;

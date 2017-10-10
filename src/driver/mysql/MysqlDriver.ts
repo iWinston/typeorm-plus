@@ -13,7 +13,7 @@ import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 

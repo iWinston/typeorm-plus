@@ -2,12 +2,15 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {
-    closeTestingConnections, createTestingConnections, reloadTestingDatabases, runDownQueries,
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+    runDownQueries,
     runUpQueries
 } from "../../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe.only("database schema > migrations", () => {
+describe("database schema > migrations", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -54,9 +57,10 @@ describe.only("database schema > migrations", () => {
         table!.findColumnByName("text")!.should.be.exist;
 
         const metadata = connection.getMetadata(Post);
-        metadata.removeColumnByName("text");
+        const columnMetadata = metadata.ownColumns.find(c => c.propertyName === "text")!;
+        metadata.removeColumn(columnMetadata);
         const queries = await connection.driver.createSchemaBuilder().log();
-        // console.log(queries);
+
         await runUpQueries(entityManager, queries);
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("text")).to.be.undefined;
@@ -65,16 +69,18 @@ describe.only("database schema > migrations", () => {
         table = await queryRunner.getTable("post");
         table!.findColumnByName("text")!.should.be.exist;
 
+        metadata.registerColumn(columnMetadata);
         await queryRunner.release();
     })));
 
-    it.only("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
+    it("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
         const entityManager = queryRunner.manager;
 
         const metadata = connection.getMetadata(Post);
         let table = await queryRunner.getTable("post");
+        console.log(table!.findColumnByName("text"));
         table!.findColumnByName("text")!.length!.should.be.equal("255");
 
         // const column = metadata.ownColumns.find(c => c.propertyName === "text");
@@ -97,6 +103,11 @@ describe.only("database schema > migrations", () => {
         table = await queryRunner.getTable("post");
         table!.findColumnByName("id")!.isGenerated.should.be.true;
         table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
+
+        await runDownQueries(entityManager, queries);
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.false;
+        expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
 
         await queryRunner.release();
     })));

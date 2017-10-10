@@ -11,7 +11,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 
 /**
