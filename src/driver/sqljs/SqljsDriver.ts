@@ -118,7 +118,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         if (PlatformTools.type === "node") {
             try {
-                PlatformTools.writeFileSync(path, this.databaseConnection.export());
+                const content = new Buffer(this.databaseConnection.export());
+                PlatformTools.writeFileSync(path, content);
             }
             catch (e) {
                 throw new Error(`Could not save database, error: ${e}`);
@@ -159,6 +160,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
         else {
             this.databaseConnection = new this.sqlite.Database();
         }
+
         this.startTimer();
         return Promise.resolve(this.databaseConnection);
     }

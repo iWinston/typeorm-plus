@@ -30,6 +30,7 @@ import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
+import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -106,7 +107,7 @@ export class Connection {
         this.options = options;
         this.logger = new LoggerFactory().create(this.options.logger, this.options.logging);
         this.driver = new DriverFactory().create(this);
-        this.manager = new EntityManagerFactory().create(this);
+        this.manager = this.createEntityManager(this);
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
     }
@@ -126,6 +127,13 @@ export class Connection {
             throw new Error(`MongoEntityManager is only available for MongoDB databases.`);
 
         return this.manager as MongoEntityManager;
+    }
+
+    get sqljsManager(): SqljsEntityManager {
+        if (!(this.manager instanceof SqljsEntityManager))
+            throw new Error(`SqljsEntityManager is only available for Sqljs databases.`);
+
+        return this.manager as SqljsEntityManager;
     }
 
     // -------------------------------------------------------------------------
@@ -387,7 +395,7 @@ export class Connection {
      */
     createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode);
-        const manager = new EntityManagerFactory().create(this, queryRunner);
+        const manager = this.createEntityManager(this, queryRunner);
         Object.assign(queryRunner, { manager: manager });
         return queryRunner;
     }
@@ -404,6 +412,13 @@ export class Connection {
                 `You can use this method only on many-to-many relations.`);
 
         return relationMetadata.junctionEntityMetadata;
+    }
+
+    /**
+     * creates an Entity Manager with the help of the EntityManagerFactory
+     */
+    createEntityManager(connection: Connection, queryRunner?: QueryRunner): EntityManager {
+        return new EntityManagerFactory().create(connection, queryRunner);
     }
 
     // -------------------------------------------------------------------------

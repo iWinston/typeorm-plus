@@ -69,6 +69,7 @@
     "sinon": "^2.4.1",
     "sinon-chai": "^2.13.0",
     "sqlite3": "^3.1.10",
+    "sql.js": "^0.4.0",
     "ts-node": "^3.3.0",
     "tslint": "^5.6.0",
     "tslint-stylish": "^2.1.0",

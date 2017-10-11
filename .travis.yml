@@ -12,7 +12,6 @@ services:
   - docker
 
 before_script:
-  - npm install sql.js
   - sudo service mysql stop
   - sudo service postgresql stop
   - docker-compose up -d
