@@ -74,7 +74,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * loads a database from a given file, local storage key or array
      */
-    load(fileNameOrLocalStorageOrData: string | Uint8Array) {
+    load(fileNameOrLocalStorageOrData: string | Uint8Array): Promise<any> {
         if (typeof fileNameOrLocalStorageOrData === "string") {
             // content has to be loaded
             if (PlatformTools.type === "node") {
@@ -82,7 +82,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 // fileNameOrLocalStorageOrData should be a path to the file
                 if (PlatformTools.fileExist(fileNameOrLocalStorageOrData)) {
                     const database = PlatformTools.readFileSync(fileNameOrLocalStorageOrData);
-                    this.createDatabaseConnectionWithImport(database);
+                    return this.createDatabaseConnectionWithImport(database);
                 }
                 else {
                     throw new Error(`File ${fileNameOrLocalStorageOrData} does not exist`);
@@ -92,18 +92,18 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 // browser
                 // fileNameOrLocalStorageOrData should be a local storage key
                 const localStorageContent = PlatformTools.getGlobalVariable().localStorage.getItem(fileNameOrLocalStorageOrData);
-                this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
+                return this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
             }
         }
         else {
-            this.createDatabaseConnectionWithImport(fileNameOrLocalStorageOrData);
+            return this.createDatabaseConnectionWithImport(fileNameOrLocalStorageOrData);
         }
     }
 
     /**
      * saved the current database to the given file (node.js) or local storage key (browser)
      */
-    async save(location?: string) {
+    save(location?: string) {
         if (!location && !this.options.location) {
             throw new Error(`No location is set, specify a location parameter or add the location option to your configuration`);
         }
@@ -118,7 +118,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         if (PlatformTools.type === "node") {
             try {
-                await PlatformTools.writeFile(path, this.databaseConnection.export());
+                PlatformTools.writeFileSync(path, this.databaseConnection.export());
             }
             catch (e) {
                 throw new Error(`Could not save database, error: ${e}`);
@@ -144,26 +144,23 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
+    protected createDatabaseConnection(): Promise<any> {
         if (this.options.location) {
-            this.load(this.options.location);
+            return this.load(this.options.location);
         }
-        else {
-            this.createDatabaseConnectionWithImport(this.options.database);
-        }
+
+        return this.createDatabaseConnectionWithImport(this.options.database);
     }
 
-    protected createDatabaseConnectionWithImport(database?: Uint8Array) {
-        return new Promise<void>((ok, fail) => {
-            if (database && database.length > 0) {
-                this.databaseConnection = new this.sqlite.Database(database);
-            }
-            else {
-                this.databaseConnection = new this.sqlite.Database();
-            }
-            this.startTimer();
-            ok(this.databaseConnection);
-        });
+    protected createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
+        if (database && database.length > 0) {
+            this.databaseConnection = new this.sqlite.Database(database);
+        }
+        else {
+            this.databaseConnection = new this.sqlite.Database();
+        }
+        this.startTimer();
+        return Promise.resolve(this.databaseConnection);
     }
 
     /**
@@ -183,6 +180,13 @@ export class SqljsDriver extends AbstractSqliteDriver {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Starts a new interval timer, that calls save every options.autoSaveInterval milliseconds
+     */
     private startTimer() {
         if (this.options.autoSave && this.options.autoSaveInterval) {
             this.stopTimer();
@@ -190,6 +194,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
         }
     }
 
+    /**
+     * Stops the internal timer if it was started
+     */
     private stopTimer() {
         if (this.timer) {
             clearInterval(this.timer);

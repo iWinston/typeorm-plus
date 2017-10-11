@@ -28,6 +28,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         this.connection = driver.connection;
     }
 
+    // -------------------------------------------------------------------------
+    // Public methods
+    // -------------------------------------------------------------------------
+
     /**
      * Executes a given SQL query.
      */
@@ -55,6 +59,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 result.push(statement.getAsObject());
             }
             
+            statement.free();
             ok(result);
         });
     }
@@ -77,7 +82,6 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             const statement = databaseConnection.prepare(sql);
             statement.bind(parameters);
             statement.step();
-            console.log(statement.getAsObject());
             
             const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
                 let value = keyValues[generatedColumn.databaseName];
