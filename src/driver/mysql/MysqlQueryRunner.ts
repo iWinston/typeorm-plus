@@ -17,6 +17,9 @@ import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
+import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -58,6 +61,11 @@ export class MysqlQueryRunner implements QueryRunner {
      * Useful for sharing data with subscribers.
      */
     data = {};
+
+    /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -360,8 +368,9 @@ export class MysqlQueryRunner implements QueryRunner {
 
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table(dbTable["TABLE_NAME"]);
-            table.database = dbTable["TABLE_SCHEMA"];
+            const table = new Table();
+            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
+
             const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_SCHEMA"]}\`.\`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
 
             // create columns from the loaded columns
@@ -379,7 +388,7 @@ export class MysqlQueryRunner implements QueryRunner {
                         || dbColumn["COLUMN_DEFAULT"] === undefined
                         || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
                         tableColumn.default = undefined;
-                    
+
                     } else {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"];
                     }
@@ -425,13 +434,25 @@ export class MysqlQueryRunner implements QueryRunner {
                 const pkColumns = primaryKeys.map(primaryKey => {
                     return table.columns.find(column => column.name === primaryKey["Column_name"])!;
                 });
-                table.primaryKey = new TablePrimaryKey(primaryKeys[0]["Key_name"], pkColumns);
+                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
+                    table: table,
+                    name: primaryKeys[0]["Key_name"],
+                    columns: pkColumns
+                });
             }
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === table.name)
-                .map(dbForeignKey => new TableForeignKey(dbForeignKey["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+                .map(dbForeignKey => {
+                    return new TableForeignKey(<TableForeignKeyOptions>{
+                        table: table,
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: [],
+                        referencedTableName: "",
+                        referencedColumnNames: []
+                    });
+                }); // todo: fix missing params
 
             // create index schemas from the loaded indices
             table.indices = dbIndices
@@ -455,7 +476,12 @@ export class MysqlQueryRunner implements QueryRunner {
                         }
                     }
 
-                    return new TableIndex(dbTable["TABLE_NAME"], dbIndexName, columnNames, currentDbIndices[0]["NON_UNIQUE"] === 0);
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndexName,
+                        columnNames: columnNames,
+                        isUnique: currentDbIndices[0]["NON_UNIQUE"] === 0
+                    });
                 })
                 .filter(index => !!index) as TableIndex[]; // remove empty returns
 
@@ -658,7 +684,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrPath: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        const columnNames = foreignKey.columns.map(column => "`" + column.name + "`").join(", ");
+        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
         let sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${columnNames}) ` +
@@ -682,7 +708,7 @@ export class MysqlQueryRunner implements QueryRunner {
     async dropForeignKey(tableOrPath: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const sql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP FOREIGN KEY \`${foreignKey.name}\``;
 
-        const columnNames = foreignKey.columns.map(column => "`" + column.name + "`").join(", ");
+        const columnNames = foreignKey.columnNames.map(column => "`" + column + "`").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "`" + column + "`").join(",");
         let revertSql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` ADD CONSTRAINT \`${foreignKey.name}\` ` +
             `FOREIGN KEY (${columnNames}) ` +
@@ -739,7 +765,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    async clearDatabase(tables?: string[], database?: string): Promise<void> {
+    async clearDatabase(schemas?: string[], database?: string): Promise<void> {
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
@@ -788,6 +814,24 @@ export class MysqlQueryRunner implements QueryRunner {
         return this.sqlsInMemory;
     }
 
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -830,25 +874,17 @@ export class MysqlQueryRunner implements QueryRunner {
         await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
     }
 
-    protected parseTablePath(tableOrPath: Table|string) {
-        if (tableOrPath instanceof Table) {
-            return {
-                database: tableOrPath.database || this.driver.database,
-                tableName: tableOrPath.name
-            };
-        } else {
-            return {
-                database: tableOrPath.indexOf(".") !== -1 ? tableOrPath.split(".")[0] : this.driver.database,
-                tableName: tableOrPath.indexOf(".") !== -1 ? tableOrPath.split(".")[1] : tableOrPath
-            };
-        }
+    protected parseTablePath(target: Table|string) {
+        const tableName = target instanceof Table ? target.name : target;
+        return {
+            database: tableName.indexOf(".") !== -1 ? tableName.split(".")[0] : this.driver.database,
+            tableName: tableName.indexOf(".") !== -1 ? tableName.split(".")[1] : tableName
+        };
     }
 
-    protected escapeTablePath(tableOrPath: Table|string): string {
-        if (tableOrPath instanceof Table)
-            return tableOrPath.database ? `${tableOrPath.database}\`.\`${tableOrPath.name}` : `${tableOrPath.name}`;
-
-        return tableOrPath.split(".").map(i => `${i}`).join("\`.\`");
+    protected escapeTablePath(target: Table|string): string {
+        const tableName = target instanceof Table ? target.name : target;
+        return tableName.split(".").map(i => `${i}`).join("\`.\`");
     }
 
     /**

@@ -79,6 +79,11 @@ export class MongoQueryRunner implements QueryRunner {
     data = {};
 
     /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
+
+    /**
      * Real database connection from a connection pool used to perform queries.
      */
     databaseConnection: Db;
@@ -493,7 +498,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops the table.
      */
-    async dropTable(tableName: string): Promise<void> {
+    async dropTable(tableName: Table|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -633,6 +638,20 @@ export class MongoQueryRunner implements QueryRunner {
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
     getMemorySql():  SqlInMemory[] {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
 

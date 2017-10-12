@@ -15,6 +15,10 @@ import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {SqlInMemory} from "../SqlInMemory";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
+import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
+import {PromiseUtils} from "../../util/PromiseUtils";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -58,6 +62,11 @@ export class OracleQueryRunner implements QueryRunner {
      * Useful for sharing data with subscribers.
      */
     data = {};
+
+    /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -352,7 +361,8 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
 
         // create tables for loaded tables
         return dbTables.map(dbTable => {
-            const table = new Table(dbTable["TABLE_NAME"]);
+            const table = new Table();
+            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
 
             // create columns from the loaded columns
             table.columns = dbColumns
@@ -393,13 +403,25 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                 const pkColumns = constraints.map(constraint => {
                     return table.columns.find(column => column.name === constraint["COLUMN_NAME"])!;
                 });
-                table.primaryKey = new TablePrimaryKey(constraints[0]["CONSTRAINT_NAME"], pkColumns);
+                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
+                    table: table,
+                    name: constraints[0]["CONSTRAINT_NAME"],
+                    columns: pkColumns
+                });
             }
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = constraints
                 .filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "R")
-                .map(constraint => new TableForeignKey(constraint["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+                .map(dbForeignKey => {
+                    return new TableForeignKey(<TableForeignKeyOptions>{
+                        table: table,
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: [],
+                        referencedTableName: "",
+                        referencedColumnNames: []
+                    });
+                }); // todo: fix missing params
 
             // create index schemas from the loaded indices
             table.indices = dbIndices
@@ -409,7 +431,12 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                         (!table.primaryKey === dbIndex["INDEX_NAME"]);
                 })
                 .map(dbIndex => {
-                    return new TableIndex(dbTable["TABLE_NAME"], dbIndex["INDEX_NAME"], dbIndex["COLUMN_NAMES"], !!(dbIndex["COLUMN_NAMES"] === "UNIQUE"));
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndex["INDEX_NAME"],
+                        columnNames: dbIndex["COLUMN_NAMES"],
+                        isUnique: (dbIndex["COLUMN_NAMES"] === "UNIQUE")
+                    });
                 });
 
             return table;
@@ -462,7 +489,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops the table.
      */
-    async dropTable(tableName: string): Promise<void> {
+    async dropTable(tableName: Table|string): Promise<void> {
         let sql = `DROP TABLE "${tableName}"`;
         await this.query(sql);
     }
@@ -630,7 +657,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const columnNames = foreignKey.columns.map(column => "\"" + column.name + "\"").join(", ");
+        const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "\"" + column + "\"").join(",");
         let sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY (${columnNames}) ` +
@@ -740,6 +767,24 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      */
     getMemorySql(): SqlInMemory[] {
         return this.sqlsInMemory;
+    }
+
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
+        }));
     }
 
     // -------------------------------------------------------------------------

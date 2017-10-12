@@ -259,6 +259,15 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     * TODO implement later
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return tableName;
+    }
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {

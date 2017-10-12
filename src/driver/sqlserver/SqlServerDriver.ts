@@ -269,6 +269,25 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        let fullName = tableName;
+        if (schema)
+            fullName = schema + "." + tableName;
+        if (database) {
+            if (!schema) {
+                fullName = database + ".." + tableName;
+            } else {
+                fullName = database + "." + fullName;
+            }
+        }
+
+        return fullName;
+    }
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {

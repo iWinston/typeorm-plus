@@ -1,5 +1,6 @@
 import {IndexMetadata} from "../../metadata/IndexMetadata";
 import {Table} from "./Table";
+import {TableIndexOptions} from "../options/TableIndexOptions";
 
 /**
  * Database's table index stored in this class.
@@ -34,11 +35,11 @@ export class TableIndex {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(table: Table, name: string, columnNames: string[], isUnique: boolean) {
-        this.table = table;
-        this.name = name;
-        this.columnNames = columnNames;
-        this.isUnique = isUnique;
+    constructor(options: TableIndexOptions) {
+        this.table = options.table;
+        this.name = options.name;
+        this.columnNames = options.columnNames;
+        this.isUnique = options.isUnique;
     }
 
     // -------------------------------------------------------------------------
@@ -48,8 +49,13 @@ export class TableIndex {
     /**
      * Creates a new copy of this index with exactly same properties.
      */
-    clone() {
-        return new TableIndex(this.table, this.name, this.columnNames.map(name => name), this.isUnique);
+    clone(): TableIndex {
+        return new TableIndex(<TableIndexOptions>{
+            table: this.table,
+            name: this.name,
+            columnNames: this.columnNames,
+            isUnique: this.isUnique
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -60,12 +66,12 @@ export class TableIndex {
      * Creates index from the index metadata object.
      */
     static create(indexMetadata: IndexMetadata, table: Table): TableIndex {
-        return new TableIndex(
-            table,
-            indexMetadata.name,
-            indexMetadata.columns.map(column => column.databaseName),
-            indexMetadata.isUnique
-        );
+        return new TableIndex(<TableIndexOptions>{
+            table: table,
+            name: indexMetadata.name,
+            columnNames: indexMetadata.columns.map(column => column.databaseName),
+            isUnique: indexMetadata.isUnique
+        });
     }
 
 }

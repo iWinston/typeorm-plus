@@ -300,6 +300,16 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     *
+     * Returns only simple table name because all inherited drivers does not supports schema and database.
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return tableName;
+    }
+
+    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {

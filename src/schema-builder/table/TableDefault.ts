@@ -1,39 +1,44 @@
-import {TableColumn} from "./TableColumn";
-import {TablePrimaryKeyOptions} from "../options/TablePrimaryKeyOptions";
 import {Table} from "./Table";
+import {TableDefaultOptions} from "../options/TableDefaultOptions";
 
 /**
- * Primary key from the database stored in this class.
+ * Database's table default constraint stored in this class.
  */
-export class TablePrimaryKey {
+export class TableDefault {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Table that contains this primary key.
+     * Table that contains this constraint.
      */
     table: Table;
 
     /**
-     * Key name.
+     * Constraint name.
      */
     name: string;
 
     /**
-     * Columns to which this primary key is bind.
+     * Column that contains this constraint.
      */
-    columns: TableColumn[] = [];
+    columnName: string;
+
+    /**
+     * Column default value.
+     */
+    definition: string;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: TablePrimaryKeyOptions) {
+    constructor(options: TableDefaultOptions) {
         this.table = options.table;
         this.name = options.name;
-        this.columns = options.columns;
+        this.columnName = options.columnName;
+        this.definition = options.definition;
     }
 
     // -------------------------------------------------------------------------
@@ -41,13 +46,14 @@ export class TablePrimaryKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new copy of this primary key with exactly same properties.
+     * Creates a new copy of this default constraint with exactly same properties.
      */
-    clone(): TablePrimaryKey {
-        return new TablePrimaryKey(<TablePrimaryKeyOptions>{
+    clone(): TableDefault {
+        return new TableDefault(<TableDefaultOptions>{
             table: this.table,
             name: this.name,
-            columns: this.columns
+            columnName: this.columnName,
+            definition: this.definition
         });
     }
 

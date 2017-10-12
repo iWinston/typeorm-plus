@@ -6,6 +6,11 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
 import {TableOptions} from "../options/TableOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {TableUtils} from "../util/TableUtils";
+import {TableDefault} from "./TableDefault";
+import {TableUnique} from "./TableUnique";
+import {TableCheck} from "./TableCheck";
 
 /**
  * Table in the database represented in this class.
@@ -17,7 +22,8 @@ export class Table {
     // -------------------------------------------------------------------------
 
     /**
-     * Table name.
+     * Contains database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
      */
     name: string;
 
@@ -37,6 +43,21 @@ export class Table {
     foreignKeys: TableForeignKey[] = [];
 
     /**
+     * Table unique constraints.
+     */
+    uniques: TableUnique[] = [];
+
+    /**
+     * Table check constraints.
+     */
+    checks: TableCheck[] = [];
+
+    /**
+     * Table default constraints.
+     */
+    defaults: TableDefault[] = [];
+
+    /**
      * Table primary key.
      */
     primaryKey?: TablePrimaryKey;
@@ -53,37 +74,21 @@ export class Table {
      */
     engine?: string;
 
-    /**
-     * Database name.
-     */
-    database?: string;
-
-    /**
-     * Schema name. Used in Postgres and Sql Server.
-     */
-    schema?: string;
-
-    /**
-     * Entity table path. Contains database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
-     */
-    tablePath: string;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: TableOptions) {
-        this.name = options.name;
-        if (options.columns)
-            this.columns = options.columns.map(column => new TableColumn(column));
+    constructor(options?: TableOptions) {
+        if (options) {
+            this.name = options.name;
+            if (options.columns)
+                this.columns = options.columns.map(column => new TableColumn(column));
 
-        if (options.justCreated !== undefined)
-            this.justCreated = options.justCreated;
+            if (options.justCreated !== undefined)
+                this.justCreated = options.justCreated;
 
-        this.engine = options.engine;
-        this.database = options.database;
-        this.schema = options.schema;
+            this.engine = options.engine;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -110,15 +115,13 @@ export class Table {
      * Clones this table to a new table with all properties cloned.
      */
     clone(): Table {
-        return new Table({
+        return new Table(<TableOptions>{
             name: this.name,
             columns: this.columns.map(column => column.clone()),
             indices: this.indices.map(index => index.clone()),
             foreignKeys: this.foreignKeys.map(key => key.clone()),
             primaryKey: this.primaryKey,
             engine: this.engine,
-            database: this.database,
-            schema: this.schema
         });
     }
 
@@ -150,15 +153,6 @@ export class Table {
      */
     removeColumns(columns: TableColumn[]) {
         columns.forEach(column => this.removeColumn(column));
-    }
-
-    /**
-     * Removes primary keys of the given columns.
-     */
-    removePrimaryKeyOfColumns(columns: TableColumn[]) {
-        const hasPrimaryKey = !!columns.find(column => !!column.primaryKey && !!this.primaryKey && column.primaryKey.name === this.primaryKey.name);
-        if (hasPrimaryKey)
-            this.primaryKey = undefined;
     }
 
     /**
@@ -285,6 +279,31 @@ export class Table {
         // console.log("columnMetadataValue", columnMetadataValue);
         // console.log("databaseValue", databaseValue);
         return columnMetadataValue === databaseValue;
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates table from a given entity metadata.
+     */
+    static create(entityMetadata: EntityMetadata, driver: Driver) {
+        const options: TableOptions = {
+            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            engine: entityMetadata.engine,
+            columns: entityMetadata.columns
+                .filter(column => column)
+                .map(column => {
+                    return TableUtils.createTableColumnOptions(
+                        column,
+                        driver.normalizeType(column),
+                        driver.normalizeDefault(column),
+                        driver.getColumnLength(column));
+                })
+        };
+
+        return new Table(options);
     }
 
 }

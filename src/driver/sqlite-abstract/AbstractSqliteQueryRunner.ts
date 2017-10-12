@@ -16,6 +16,8 @@ import {EntityManager} from "../../entity-manager/EntityManager";
 import {InsertResult} from "../InsertResult";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -60,6 +62,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Useful for sharing data with subscribers.
      */
     data = {};
+
+    /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -232,7 +239,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table(dbTable["name"]);
+            const table = new Table({name: dbTable["name"]});
 
             // load columns and indices
             const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -294,7 +301,14 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         // todo: figure out solution here, name should be same as naming strategy generates!
                         const key = `${dbTable["name"]}_${[foreignKey["from"]].join("_")}_${foreignKey["table"]}_${[foreignKey["to"]].join("_")}`;
                         const keyName = "fk_" + RandomGenerator.sha1(key).substr(0, 27);
-                        return new TableForeignKey(keyName, [foreignKey["from"]], [foreignKey["to"]], foreignKey["table"], foreignKey["on_delete"]); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
+                        return new TableForeignKey({
+                            table: table,
+                            name: keyName,
+                            columnNames: [foreignKey["from"]],
+                            referencedTableName: foreignKey["table"],
+                            referencedColumnNames: [foreignKey["to"]],
+                            onDelete: foreignKey["on_delete"]
+                        }); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
                     });
                 table.addForeignKeys(columnForeignKeys);
                 return tableColumn;
@@ -306,7 +320,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 .map(async index => {
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
                     const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
-                    table.primaryKey = new TablePrimaryKey(index["name"], indexColumns);
+                    table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
+                        table: table,
+                        name: index["name"],
+                        columns: indexColumns
+                    });
                     indexColumns.forEach(indexColumn => {
                     });
 
@@ -344,7 +362,12 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
 
                     } else {
                         const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
-                        return new TableIndex(dbTable["name"], dbIndex!["name"], indexColumns, isUnique);
+                        return new TableIndex(<TableIndexOptions>{
+                            table: table,
+                            name: dbIndex!["name"],
+                            columnNames: indexColumns,
+                            isUnique: isUnique
+                        });
                     }
                 });
 
@@ -397,9 +420,9 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Drops the table.
      */
-    async dropTable(tableName: string): Promise<void> {
-        const up = this.dropTableSql(tableName);
-        const table = await this.getTable(tableName);
+    async dropTable(tableName: Table|string): Promise<void> {
+        const up = this.dropTableSql(tableName as string);
+        const table = await this.getTable(tableName as string);
         const down = this.createTableSql(table!);
         await this.schemaQuery(up, down);
     }
@@ -641,6 +664,24 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         return this.sqlsInMemory;
     }
 
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -726,7 +767,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         let sql1 = `CREATE TABLE "temporary_${table.name}" (${columnDefinitions}`;
         // if (options && options.createForeignKeys) {
         table.foreignKeys.forEach(foreignKey => {
-            const columnNames = foreignKey.columns.map(column => `"${column.name}"`).join(", ");
+            const columnNames = foreignKey.columnNames.map(column => `"${column}"`).join(", ");
             const referencedColumnNames = foreignKey.referencedColumnNames.map(name => `"${name}"`).join(", ");
             sql1 += `, FOREIGN KEY(${columnNames}) REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
             if (foreignKey.onDelete) sql1 += " ON DELETE " + foreignKey.onDelete;

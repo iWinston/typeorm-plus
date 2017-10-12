@@ -1,5 +1,5 @@
 /**
- * Table's columns in the database represented in this class.
+ * Table's column options.
  */
 export interface TableColumnOptions {
 

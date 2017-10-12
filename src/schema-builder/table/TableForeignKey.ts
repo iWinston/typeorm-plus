@@ -1,6 +1,6 @@
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
-import {TableColumn} from "./TableColumn";
 import {Table} from "./Table";
+import {TableForeignKeyOptions} from "../options/TableForeignKeyOptions";
 
 /**
  * Foreign key from the database stored in this class.
@@ -12,19 +12,14 @@ export class TableForeignKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Name of the table which contains this foreign key.
-     */
-    name: string;
-
-    /**
      * Table which contain this foreign key.
      */
     table: Table;
 
     /**
-     * Columns which included by this foreign key.
+     * Name of the table which contains this foreign key.
      */
-    columns: TableColumn[] = [];
+    name: string;
 
     /**
      * Column names which included by this foreign key.
@@ -34,17 +29,7 @@ export class TableForeignKey {
     /**
      * Table referenced in the foreign key.
      */
-    referencedTable: Table;
-
-    /**
-     * Table referenced in the foreign key.
-     */
     referencedTableName: string;
-
-    /**
-     * Columns which included by this foreign key.
-     */
-    referencedColumns: TableColumn[] = [];
 
     /**
      * Column names which included by this foreign key.
@@ -67,19 +52,14 @@ export class TableForeignKey {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string,
-                columnNames: string[],
-                referencedColumnNames: string[],
-                referencedTable: string,
-                onDelete?: string,
-                onUpdate?: string) {
-
-        this.name = name;
-        this.columnNames = columnNames;
-        this.referencedColumnNames = referencedColumnNames;
-        this.referencedTableName = referencedTable;
-        this.onDelete = onDelete;
-        this.onUpdate = onUpdate;
+    constructor(options: TableForeignKeyOptions) {
+        this.table = options.table;
+        this.name = options.name;
+        this.columnNames = options.columnNames;
+        this.referencedColumnNames = options.referencedColumnNames;
+        this.referencedTableName = options.referencedTableName;
+        this.onDelete = options.onDelete;
+        this.onUpdate = options.onUpdate;
     }
 
     // -------------------------------------------------------------------------
@@ -89,15 +69,16 @@ export class TableForeignKey {
     /**
      * Creates a new copy of this foreign key with exactly same properties.
      */
-    clone() {
-        return new TableForeignKey(
-            this.name,
-            this.columnNames,
-            this.referencedColumnNames,
-            this.referencedTableName,
-            this.onDelete,
-            this.onUpdate
-        );
+    clone(): TableForeignKey {
+        return new TableForeignKey(<TableForeignKeyOptions>{
+            table: this.table,
+            name: this.name,
+            columnNames: this.columnNames,
+            referencedColumnNames: this.referencedColumnNames,
+            referencedTableName: this.referencedTableName,
+            onDelete: this.onDelete,
+            onUpdate: this.onUpdate
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -105,27 +86,18 @@ export class TableForeignKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new foreign schema from the given foreign key metadata.
+     * Creates a new table foreign key from the given foreign key metadata.
      */
-    static create(metadata: ForeignKeyMetadata, table: Table, referencedTable: Table): TableForeignKey {
-        const tableForeignKey = new TableForeignKey(
-            metadata.name,
-            metadata.columnNames,
-            metadata.referencedColumnNames,
-            metadata.referencedTableName,
-            metadata.onDelete,
-            metadata.onUpdate
-        );
-
-        tableForeignKey.table = table;
-        tableForeignKey.referencedTable = referencedTable;
-        tableForeignKey.columns = table.columns.filter(column => {
-            return !!metadata.columnNames.find(columnName => columnName === column.name);
+    static create(metadata: ForeignKeyMetadata, table: Table): TableForeignKey {
+        return new TableForeignKey(<TableForeignKeyOptions>{
+            table: table,
+            name: metadata.name,
+            columnNames: metadata.columnNames,
+            referencedColumnNames: metadata.referencedColumnNames,
+            referencedTableName: metadata.referencedTableName,
+            onDelete: metadata.onDelete,
+            onUpdate: metadata.onUpdate
         });
-        tableForeignKey.referencedColumns = referencedTable.columns.filter(column => {
-            return !!metadata.referencedColumnNames.find(columnName => columnName === column.name);
-        });
-        return tableForeignKey;
     }
 
 }

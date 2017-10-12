@@ -10,7 +10,7 @@ import {
 } from "../../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe("database schema > migrations", () => {
+describe.only("database schema > migrations", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -73,38 +73,42 @@ describe("database schema > migrations", () => {
         await queryRunner.release();
     })));
 
-    it("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
+    it.only("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const entityManager = queryRunner.manager;
+        // const entityManager = queryRunner.manager;
 
-        const metadata = connection.getMetadata(Post);
+        // const metadata = connection.getMetadata(Post);
         let table = await queryRunner.getTable("post");
-        console.log(table!.findColumnByName("text"));
         table!.findColumnByName("text")!.length!.should.be.equal("255");
 
-        // const column = metadata.ownColumns.find(c => c.propertyName === "text");
-       /* column!.length = "500";
-        let queries = await connection.driver.createSchemaBuilder().log();
-        await runUpQueries(entityManager, queries);
+
+        const textColumn = table!.findColumnByName("text")!;
+        const changedTextColumn = textColumn.clone();
+        changedTextColumn.length = "500";
+        await queryRunner.changeColumn(table!, textColumn, changedTextColumn);
+
         table = await queryRunner.getTable("post");
         table!.findColumnByName("text")!.length!.should.be.equal("500");
 
-        await runDownQueries(entityManager, queries);
+        await queryRunner.executeMemoryDownSql();
+
         table = await queryRunner.getTable("post");
         table!.findColumnByName("text")!.length!.should.be.equal("255");
 
-        column!.length = "255";*/
-        const idColumn = metadata.ownColumns.find(c => c.propertyName === "id");
-        idColumn!.isGenerated = true;
-        idColumn!.generationStrategy = "increment";
-        const queries = await connection.driver.createSchemaBuilder().log();
-        await runUpQueries(entityManager, queries);
+        const idColumn = table!.findColumnByName("id")!;
+        const changedIdColumnColumn = idColumn.clone();
+        changedIdColumnColumn!.isGenerated = true;
+        changedIdColumnColumn!.generationStrategy = "increment";
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumnColumn);
+
         table = await queryRunner.getTable("post");
         table!.findColumnByName("id")!.isGenerated.should.be.true;
         table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
 
-        await runDownQueries(entityManager, queries);
+        console.log(queryRunner.getMemorySql());
+        await queryRunner.executeMemoryDownSql();
+
         table = await queryRunner.getTable("post");
         table!.findColumnByName("id")!.isGenerated.should.be.false;
         expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;

@@ -225,7 +225,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table(dbTable["name"]);
+            const table = new Table({name: dbTable["name"]});
 
             // load columns and indices
             /*const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([

@@ -1,10 +1,13 @@
-import {TableIndex} from "../table/TableIndex";
-import {TableForeignKey} from "../table/TableForeignKey";
-import {TablePrimaryKey} from "../table/TablePrimaryKey";
 import {TableColumnOptions} from "./TableColumnOptions";
+import {TableIndexOptions} from "./TableIndexOptions";
+import {TableForeignKeyOptions} from "./TableForeignKeyOptions";
+import {TablePrimaryKeyOptions} from "./TablePrimaryKeyOptions";
+import {TableUniqueOptions} from "./TableUniqueOptions";
+import {TableCheckOptions} from "./TableCheckOptions";
+import {TableDefaultOptions} from "./TableDefaultOptions";
 
 /**
- * Table in the database represented in this class.
+ * Table options.
  */
 export interface TableOptions {
 
@@ -25,17 +28,32 @@ export interface TableOptions {
     /**
      * Table indices.
      */
-    indices?: TableIndex[];
+    indices?: TableIndexOptions[];
 
     /**
      * Table foreign keys.
      */
-    foreignKeys?: TableForeignKey[];
+    foreignKeys?: TableForeignKeyOptions[];
 
     /**
      * Table primary key.
      */
-    primaryKey?: TablePrimaryKey;
+    primaryKey?: TablePrimaryKeyOptions;
+
+    /**
+     * Table unique constraints.
+     */
+    uniques?: TableUniqueOptions[];
+
+    /**
+     * Table check constraints.
+     */
+    checks?: TableCheckOptions[];
+
+    /**
+     * Table default constraints.
+     */
+    defaults?: TableDefaultOptions[];
 
     /**
      * Indicates if table was just created.

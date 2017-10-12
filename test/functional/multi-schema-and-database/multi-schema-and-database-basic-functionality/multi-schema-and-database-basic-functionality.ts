@@ -47,7 +47,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
             if (connection.driver instanceof SqlServerDriver)
                 sql.should.be.equal(`SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = @0`);
 
-            table!.schema!.should.be.equal("custom");
+            table!.name.should.be.equal("custom.post");
         })));
 
         it("should correctly create tables when custom table schema used in Entity decorator", () => Promise.all(connections.map(async connection => {
@@ -70,7 +70,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
             if (connection.driver instanceof SqlServerDriver)
                 sql.should.be.equal(`SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = @0`);
 
-            table!.schema!.should.be.equal("userSchema");
+            table!.name.should.be.equal("userSchema.user");
         })));
 
         it("should correctly work with cross-schema queries", () => Promise.all(connections.map(async connection => {
@@ -112,7 +112,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                     ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
                     ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = @0`);
 
-            table!.schema!.should.be.equal("guest");
+            table!.name.should.be.equal("guest.category");
         })));
 
         it("should correctly work with QueryBuilder", () => Promise.all(connections.map(async connection => {
@@ -178,8 +178,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .getSql();
 
             sql.should.be.equal(`SELECT "question"."id" AS "question_id", "question"."name" AS "question_name" FROM "testDB"."questions"."question" "question" WHERE "question"."id" = @0`);
-            table!.database!.should.be.equal("testDB");
-            table!.schema!.should.be.equal("questions");
+            table!.name.should.be.equal("testDB.questions.question");
         })));
 
         it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () => Promise.all(connections.map(async connection => {
@@ -215,10 +214,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
             query.getSql().should.be.equal(`SELECT * FROM "testDB"."questions"."question" "question", "secondDB"."answers"."answer"` +
                 ` "answer" WHERE "question"."id" = @0 AND "answer"."questionId" = "question"."id"`);
 
-            questionTable!.database!.should.be.equal("testDB");
-            answerTable!.database!.should.be.equal("secondDB");
-            questionTable!.schema!.should.be.equal("questions");
-            answerTable!.schema!.should.be.equal("answers");
+            questionTable!.name.should.be.equal("testDB.questions.question");
+            answerTable!.name.should.be.equal("secondDB.answers.answer");
         })));
     });
 
@@ -256,7 +253,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
             if (connection.driver instanceof MysqlDriver)
                 sql.should.be.equal("SELECT `person`.`id` AS `person_id`, `person`.`name` AS `person_name` FROM `secondDB`.`person` `person` WHERE `person`.`id` = ?");
 
-            table!.database!.should.be.equal("secondDB");
+            table!.name.should.be.equal(tablePath);
         })));
 
     });

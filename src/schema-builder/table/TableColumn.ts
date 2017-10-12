@@ -1,4 +1,3 @@
-import {TablePrimaryKey} from "./TablePrimaryKey";
 import {Table} from "./Table";
 import {TableColumnOptions} from "../options/TableColumnOptions";
 
@@ -95,11 +94,6 @@ export class TableColumn {
     enum?: any[];
 
     /**
-     * Primary key of column, if column marked as primary
-     */
-    primaryKey?: TablePrimaryKey;
-
-    /**
      * Table which column belongs to
      */
     table: Table;
@@ -136,24 +130,24 @@ export class TableColumn {
      * Clones this column to a new column with exact same properties as this column has.
      */
     clone(): TableColumn {
-        const newTableColumn = new TableColumn();
-        newTableColumn.name = this.name;
-        newTableColumn.type = this.type;
-        newTableColumn.length = this.length;
-        newTableColumn.charset = this.charset;
-        newTableColumn.collation = this.collation;
-        newTableColumn.precision = this.precision;
-        newTableColumn.scale = this.scale;
-        newTableColumn.enum = this.enum;
-        newTableColumn.default = this.default;
-        newTableColumn.isNullable = this.isNullable;
-        newTableColumn.isGenerated = this.isGenerated;
-        newTableColumn.generationStrategy = this.generationStrategy;
-        newTableColumn.isPrimary = this.isPrimary;
-        newTableColumn.isUnique = this.isUnique;
-        newTableColumn.isArray = this.isArray;
-        newTableColumn.comment = this.comment;
-        return newTableColumn;
+        return new TableColumn(<TableColumnOptions>{
+            name: this.name,
+            type: this.type,
+            length: this.length,
+            charset: this.charset,
+            collation: this.collation,
+            precision: this.precision,
+            scale: this.scale,
+            enum: this.enum,
+            default: this.default,
+            isNullable: this.isNullable,
+            isGenerated: this.isGenerated,
+            generationStrategy: this.generationStrategy,
+            isPrimary: this.isPrimary,
+            isUnique: this.isUnique,
+            isArray: this.isArray,
+            comment: this.comment
+        });
     }
 
 }

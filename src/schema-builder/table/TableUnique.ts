@@ -1,39 +1,38 @@
-import {TableColumn} from "./TableColumn";
-import {TablePrimaryKeyOptions} from "../options/TablePrimaryKeyOptions";
 import {Table} from "./Table";
+import {TableUniqueOptions} from "../options/TableUniqueOptions";
 
 /**
- * Primary key from the database stored in this class.
+ * Database's table unique constraint stored in this class.
  */
-export class TablePrimaryKey {
+export class TableUnique {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Table that contains this primary key.
+     * Table that contains this constraint.
      */
     table: Table;
 
     /**
-     * Key name.
+     * Constraint name.
      */
     name: string;
 
     /**
-     * Columns to which this primary key is bind.
+     * Columns that contains this constraint.
      */
-    columns: TableColumn[] = [];
+    columnNames: string[];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: TablePrimaryKeyOptions) {
+    constructor(options: TableUniqueOptions) {
         this.table = options.table;
         this.name = options.name;
-        this.columns = options.columns;
+        this.columnNames = options.columnNames;
     }
 
     // -------------------------------------------------------------------------
@@ -41,13 +40,13 @@ export class TablePrimaryKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new copy of this primary key with exactly same properties.
+     * Creates a new copy of this constraint with exactly same properties.
      */
-    clone(): TablePrimaryKey {
-        return new TablePrimaryKey(<TablePrimaryKeyOptions>{
+    clone(): TableUnique {
+        return new TableUnique(<TableUniqueOptions>{
             table: this.table,
             name: this.name,
-            columns: this.columns
+            columnNames: this.columnNames,
         });
     }
 

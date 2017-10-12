@@ -389,6 +389,7 @@ export class EntityMetadata {
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
+        // todo: store connection inside a public property
         const namingStrategy = options.connection.namingStrategy;
         const entityPrefix = options.connection.options.entityPrefix;
         this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
@@ -714,7 +715,7 @@ export class EntityMetadata {
     }
 
     /**
-     * Builds table path using database name and schema name and table name.
+     * Builds table path using database, schema name and table name.
      */
     protected buildTablePath(driver: Driver): string {
         let tablePath = this.tableName;

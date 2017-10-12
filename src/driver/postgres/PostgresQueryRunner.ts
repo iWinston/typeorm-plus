@@ -17,6 +17,9 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {OrmUtils} from "../../util/OrmUtils";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
+import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -58,6 +61,11 @@ export class PostgresQueryRunner implements QueryRunner {
      * Useful for sharing data with subscribers.
      */
     data = {};
+
+    /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -388,18 +396,16 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
 
         // create tables for loaded tables
         return dbTables.map(dbTable => {
-            const table = new Table(dbTable["table_name"]);
-
-            table.database = dbTable["table_catalog"];
-            table.schema = dbTable["table_schema"];
+            const table = new Table();
+            table.name = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"], dbTable["table_catalog"]);
 
             // create columns from the loaded columns
             table.columns = dbColumns
                 .filter(dbColumn => dbColumn["table_name"] === table.name)
                 .map(dbColumn => {
-                    const seqName = table.schema === currentSchema
+                    const seqName = this.extractSchema(table) === currentSchema
                         ? `${dbColumn["table_name"]}_${dbColumn["column_name"]}_seq`
-                        : `${table.schema}.${dbColumn["table_name"]}_${dbColumn["column_name"]}_seq`;
+                        : `${this.extractSchema(table)}.${dbColumn["table_name"]}_${dbColumn["column_name"]}_seq`;
 
                     const isGenerated = !!dbColumn["column_default"]
                         && (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${seqName}'::regclass)` || /^uuid\_generate\_v\d\(\)/.test(dbColumn["column_default"]));
@@ -442,13 +448,25 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                 const pkColumns = primaryKeys.map(primaryKey => {
                     return table.columns.find(column => column.name === primaryKey["column_name"])!;
                 });
-                table.primaryKey = new TablePrimaryKey(primaryKeys[0]["constraint_name"], pkColumns);
+                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
+                    table: table,
+                    name: primaryKeys[0]["constraint_name"],
+                    columns: pkColumns
+                });
             }
 
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["table_name"] === table.name)
-                .map(dbForeignKey => new TableForeignKey(dbForeignKey["constraint_name"], [], [], "", "")); // todo: fix missing params
+                .map(dbForeignKey => {
+                    return new TableForeignKey(<TableForeignKeyOptions>{
+                        table: table,
+                        name: dbForeignKey["constraint_name"],
+                        columnNames: [],
+                        referencedTableName: "",
+                        referencedColumnNames: []
+                    });
+                }); // todo: fix missing params
 
             // create unique key schemas from the loaded indices
             /*table.uniqueKeys = dbUniqueKeys
@@ -475,7 +493,12 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                     const columnNames = columnPositions
                         .map((pos: number) => dbIndicesInfos.find(idx => idx.attnum === pos)!["column_name"]);
 
-                    return new TableIndex(dbTable["table_name"], dbIndexName, columnNames, dbIndicesInfos[0]["is_unique"]);
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndexName,
+                        columnNames: columnNames,
+                        isUnique: dbIndicesInfos[0]["is_unique"]
+                    });
                 });
 
             return table;
@@ -651,7 +674,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
 
         // update sequence generation
         if (oldColumn.isGenerated !== newColumn.isGenerated) {
-            const schema = table.schema || this.driver.options.schema;
+            const schema = this.extractSchema(table);
             if (!oldColumn.isGenerated && newColumn.type !== "uuid") {
                 const up = schema
                     ? `CREATE SEQUENCE "${schema}"."${table.name}_${oldColumn.name}_seq" OWNED BY ${this.escapeTablePath(table)}."${oldColumn.name}"`
@@ -869,6 +892,24 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
         return this.sqlsInMemory;
     }
 
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
+            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
+        }));
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -877,7 +918,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
      * Builds create table sql.
      */
     protected createTableSql(table: Table): string {
-        const schema = table.schema || this.driver.options.schema;
+        const schema = this.extractSchema(table);
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTablePath(table)} (${columnDefinitions}`;
         sql += table.columns
@@ -921,19 +962,16 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Extracts schema name from given Table object or tablePath string.
      */
-    protected extractSchema(tableOrPath: Table|string): string|undefined {
-        if (tableOrPath instanceof Table) {
-            return tableOrPath.schema || this.driver.options.schema;
-        } else {
-            return tableOrPath.indexOf(".") === -1 ? this.driver.options.schema : tableOrPath.split(".")[0];
-        }
+    protected extractSchema(target: Table|string): string|undefined {
+        const tableName = target instanceof Table ? target.name : target;
+        return tableName.indexOf(".") === -1 ? this.driver.options.schema : tableName.split(".")[0];
     }
 
     protected foreignKeySql(tableOrPath: Table|string, foreignKey: TableForeignKey): { add: string, drop: string } {
-        const columnNames = foreignKey.columns.map(column => "\"" + column.name + "\"").join(", ");
+        const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
         let add = `ALTER TABLE ${this.escapeTablePath(tableOrPath)} ADD CONSTRAINT "${foreignKey.name}" ` +
             `FOREIGN KEY ("${columnNames}") ` +
-            `REFERENCES ${this.escapeTablePath(foreignKey.referencedTable)}("${foreignKey.referencedColumnNames.join("\", \"")}")`;
+            `REFERENCES ${this.escapeTablePath(foreignKey.referencedTableName)}("${foreignKey.referencedColumnNames.join("\", \"")}")`;
 
         if (foreignKey.onDelete) add += " ON DELETE " + foreignKey.onDelete;
         const drop = `ALTER TABLE ${this.escapeTablePath(tableOrPath)} DROP CONSTRAINT "${foreignKey.name}"`;
@@ -944,19 +982,11 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Escapes given table path.
      */
-    protected escapeTablePath(tableOrPath: Table|string, disableEscape?: boolean): string {
-        if (tableOrPath instanceof Table) {
-            const schema = tableOrPath.schema || this.driver.options.schema;
-            if (schema) {
-                tableOrPath = `${schema}.${tableOrPath.name}`;
-            } else {
-                tableOrPath = tableOrPath.name;
-            }
-        } else {
-            tableOrPath = tableOrPath.indexOf(".") === -1 && this.driver.options.schema ? this.driver.options.schema + "." + tableOrPath : tableOrPath;
-        }
+    protected escapeTablePath(target: Table|string, disableEscape?: boolean): string {
+        let tableName = target instanceof Table ? target.name : target;
+        tableName = tableName.indexOf(".") === -1 && this.driver.options.schema ? `${this.driver.options.schema}.${tableName}` : tableName;
 
-        return tableOrPath.split(".").map(i => {
+        return tableName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
         }).join(".");
     }

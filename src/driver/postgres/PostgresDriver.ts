@@ -378,6 +378,14 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return schema ? `${schema}.${tableName}` : tableName;
+    }
+
+    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
