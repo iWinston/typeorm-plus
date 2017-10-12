@@ -111,7 +111,7 @@ export class RelationIdLoader {
                 const junctionAlias = relationIdAttr.junctionAlias;
                 const inverseSideTableName = relationIdAttr.joinInverseSideMetadata.tableName;
                 const inverseSideTableAlias = relationIdAttr.alias || inverseSideTableName;
-                const junctionTableName = relation.isOwning ? relation.junctionEntityMetadata!.tableName : relation.inverseRelation.junctionEntityMetadata!.tableName;
+                const junctionTableName = relation.isOwning ? relation.junctionEntityMetadata!.tableName : relation.inverseRelation!.junctionEntityMetadata!.tableName;
 
 
                 const mappedColumns = rawEntities.map(rawEntity => {
