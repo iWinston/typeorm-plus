@@ -111,7 +111,21 @@ export class FindOptionsUtils {
 
         if (options.order)
             Object.keys(options.order).forEach(key => {
-                qb.addOrderBy(qb.alias + "." + key, (options as FindOneOptions<T>).order![key as any]);
+                const order = (options as FindOneOptions<T>).order![key as any];
+                switch (order) {
+                    case 1:
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case -1:
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                    case "ASC":
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case "DESC":
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                }
             });
 
         if (options.relations)

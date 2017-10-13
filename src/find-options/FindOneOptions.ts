@@ -28,6 +28,6 @@ export interface FindOneOptions<Entity> {
     /**
      * Order, in which entities should be ordered.
      */
-    order?: { [P in keyof Entity]?: "ASC"|"DESC" };
+    order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
 
 }
