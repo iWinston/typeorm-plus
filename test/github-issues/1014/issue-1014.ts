@@ -9,8 +9,7 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql"]
+        entities: [__dirname + "/entity/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
