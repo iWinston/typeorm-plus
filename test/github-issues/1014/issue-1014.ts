@@ -5,7 +5,7 @@ import {TestEntity} from "./entity/TestEntity";
 import {expect} from "chai";
 import {PromiseUtils} from "../../../src/util/PromiseUtils";
 
-describe.only("github issues > #1014 Transaction doesn't rollback", () => {
+describe("github issues > #1014 Transaction doesn't rollback", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
