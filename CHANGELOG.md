@@ -9,6 +9,7 @@ feel free to ask us and community.
 
 * added support for `pg-native` for postgres (#975). To use it you just need to install `npm i pg-native` and it will be picked up automatically.
 * now Find Options support -1 and 1 for DESC and ASC values. This is better user experience for MongoDB users. 
+* now inheritances in embeddeds are supported (#966) 
 
 ## 0.1.0
 
