@@ -1254,10 +1254,11 @@ There are a few repositories which you can clone and start with:
 
 ## Extensions
 
-There are several extensions that simplify TypeORM integration with other modules:
+There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
 * [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
+* Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 
 ## Contributing 😰
 
