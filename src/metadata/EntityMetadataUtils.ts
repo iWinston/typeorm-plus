@@ -11,7 +11,6 @@ export class EntityMetadataUtils {
     static createPropertyPath(entity: ObjectLiteral, prefix: string = "") {
         const paths: string[] = [];
         Object.keys(entity).forEach(key => {
-            if (!entity[key]) return;
 
             // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
             // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
