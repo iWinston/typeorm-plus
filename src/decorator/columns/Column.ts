@@ -74,11 +74,10 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         type = typeOrOptions.type;
     }
     return function (object: Object, propertyName: string) {
+        const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
+        const isArray = reflectMetadataType === Array || (options && (options.isArray === true || options.array === true)) ? true : false;
 
         if (typeOrOptions instanceof Function) {
-
-            const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-            const isArray = reflectMetadataType === Array || (options && (options.isArray === true || options.array === true)) ? true : false;
 
             const args: EmbeddedMetadataArgs = {
                 target: object.constructor,
@@ -91,11 +90,8 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
 
         } else {
             // if type is not given implicitly then try to guess it
-            if (!type) {
-                const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-                if (reflectMetadataType)
-                    type = reflectMetadataType; // todo: need to determine later on driver level
-            }
+            if (!type && reflectMetadataType)
+                type = reflectMetadataType; // todo: need to determine later on driver level
 
             // if column options are not given then create a new empty options
             if (!options) options = {} as ColumnOptions;
@@ -103,6 +99,9 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             // check if there is no type in column options then set type from first function argument, or guessed one
             if (!options.type && type)
                 options = Object.assign({ type: type } as ColumnOptions, options);
+
+            if (isArray === true)
+                options.array = true;
 
             // create and register a new column metadata
             const args: ColumnMetadataArgs = {
