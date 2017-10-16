@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe("repository > removeById and removeByIds methods", function() {
+describe("repository > deleteById methods", function() {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -23,7 +23,7 @@ describe("repository > removeById and removeByIds methods", function() {
     // Specifications
     // -------------------------------------------------------------------------
 
-    it("remove using removeById method should delete successfully", () => Promise.all(connections.map(async connection => {
+    it("remove using deleteById method should delete successfully", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
 
         // save a new posts

@@ -722,7 +722,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    whereInIds(ids: any[]): this {
+    whereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.where(whereExpression, parameters);
         return this;
