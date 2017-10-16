@@ -11,7 +11,7 @@ export class User {
     @Column()
     name: string;
 
-    @Column("varchar")
+    @Column("varchar", { array: true })
     roles: string[];
 
 }
