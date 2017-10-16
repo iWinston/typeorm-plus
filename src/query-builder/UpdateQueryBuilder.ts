@@ -6,6 +6,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
+import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -58,9 +59,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: string|((qb: this) => string)|Brackets, parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres = [{ type: "simple", condition: this.computeWhereParameter(where) }];
-        if (parameters) this.setParameters(parameters);
+    where(where: string|((qb: this) => string)|Brackets|ObjectLiteral, parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
+        const condition = this.computeWhereParameter(where);
+        if (condition)
+            this.expressionMap.wheres = [{ type: "simple", condition: condition }];
+        if (parameters)
+            this.setParameters(parameters);
         return this;
     }
 
@@ -132,26 +137,28 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates UPDATE express used to perform insert query.
      */
     protected createUpdateExpression() {
-        const valuesSet = this.getValueSets();
+        const valuesSet = this.getValueSet();
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
-        Object.keys(valuesSet).forEach(columnProperty => {
-            const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
-            if (column) {
-                const paramName = "_updated_" + column.databaseName;
-                const value = valuesSet[column.propertyName];
+        EntityMetadataUtils.createPropertyPath(valuesSet).forEach(propertyPath => {
+            const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(propertyPath);
 
-                if (value instanceof Function) { // support for SQL expressions in update query
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
+            // we update an entity and entity can contain property which aren't columns, so we just skip them
+            if (!column) return;
+
+            const paramName = "_updated_" + column.databaseName;
+            const value = column.getEntityValue(valuesSet);
+
+            if (value instanceof Function) { // support for SQL expressions in update query
+                updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
+            } else {
+                if (this.connection.driver instanceof SqlServerDriver) {
+                    this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
                 } else {
-                    if (this.connection.driver instanceof SqlServerDriver) {
-                        this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
-                    } else {
-                        this.setParameter(paramName, value);
-                    }
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
+                    this.setParameter(paramName, value);
                 }
+                updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
             }
         });
 
@@ -173,7 +180,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Gets array of values need to be inserted into the target table.
      */
-    protected getValueSets(): ObjectLiteral {
+    protected getValueSet(): ObjectLiteral {
         if (this.expressionMap.valuesSet instanceof Object)
             return this.expressionMap.valuesSet;
 

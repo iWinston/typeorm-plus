@@ -16,6 +16,7 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {WhereExpression} from "./WhereExpression";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -600,7 +601,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral) {
         if (typeof where === "string")
             return where;
 
@@ -610,9 +611,24 @@ export abstract class QueryBuilder<Entity> {
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
             return whereString ? "(" + whereString + ")" : "";
+
+        } else if (where instanceof Function) {
+            return where(this);
+
+        } else if (where instanceof Object) {
+            Object.keys(where).forEach((key, index) => {
+                if ((where as ObjectLiteral)[key] === null) {
+                    ((this as any) as WhereExpression).andWhere(`${this.alias}.${key} IS NULL`);
+
+                } else {
+                    const parameterName = "where_" + index;
+                    ((this as any) as WhereExpression).andWhere(`${this.alias}.${key}=:${parameterName}`);
+                    this.setParameter(parameterName, (where as ObjectLiteral)[key]);
+                }
+            });
         }
 
-        return where(this);
+        return "";
     }
 
     /**

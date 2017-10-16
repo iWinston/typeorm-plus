@@ -71,10 +71,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
         const valueSets = this.getValueSets();
 
+        valueSets.forEach(valueSet => {
+
+        });
+
         // get columns that participate in insertion query
         const insertColumns: ColumnMetadata[] = [];
         Object.keys(valueSets[0]).forEach(columnProperty => {
-            const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyName(columnProperty);
+            const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(columnProperty);
             if (column) insertColumns.push(column);
         });
 

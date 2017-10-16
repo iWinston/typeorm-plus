@@ -490,6 +490,13 @@ export class EntityMetadata {
     }
 
     /**
+     * Finds column with a given property path.
+     */
+    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
+        return this.columns.find(column => column.propertyPath === propertyPath);
+    }
+
+    /**
      * Finds column with a given database name.
      */
     findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {

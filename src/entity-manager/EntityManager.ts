@@ -251,7 +251,7 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(targetOrEntity: Function|string, entity: Entity, options?: SaveOptions): Promise<Entity>;
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves all given entities in the database.
@@ -263,15 +263,15 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(targetOrEntity: Function|string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entities: T[], options?: SaveOptions): Promise<T[]>;
 
     /**
      * Saves a given entity in the database.
      */
-    save<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntityOrOptions?: Entity|Entity[], maybeOptions?: SaveOptions): Promise<Entity|Entity[]> {
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
 
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
-        const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+        const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
@@ -388,12 +388,14 @@ export class EntityManager {
         // todo: in the future create UpdateResult with query result information
         // todo: think if subscribers and listeners can be executed here as well
 
-        const queryBuilder = this.createQueryBuilder()
-            .update(target)
-            .set(partialEntity);
+        console.log("partialEntity", partialEntity);
+        console.log("conditions", conditions);
 
-        FindOptionsUtils.applyConditions(queryBuilder, conditions); // todo: move condition-like syntax into .where method of query builder?
-        await queryBuilder.execute();
+        await this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .where(conditions)
+            .execute();
     }
 
     /**
@@ -531,12 +533,11 @@ export class EntityManager {
         // todo: in the future create DeleteResult with query result information
         // todo: think if subscribers and listeners can be executed here as well
 
-        const queryBuilder = this.createQueryBuilder()
+        await this.createQueryBuilder()
             .delete()
-            .from(targetOrEntity);
-
-        FindOptionsUtils.applyConditions(queryBuilder, conditions); // todo: move condition-like syntax into .where method of query builder?
-        await queryBuilder.execute();
+            .from(targetOrEntity)
+            .where(conditions)
+            .execute();
     }
 
     /**
