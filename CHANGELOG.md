@@ -14,8 +14,10 @@ feel free to ask us and community.
 * deprecated `removeById` method, now use `deleteById` method instead.
 * added `insert` and `delete` methods into repository and entity manager.
 * fixed multiple issues with `update`, `updateById` and `removeById` methods in repository and entity manager. Now they do not use `save` and `remove` methods anymore - instead they are using QueryBuilder to build and execute their queries.
-* removed opencollective dependency
-* multiple small bugfixes
+* removed opencollective dependency.
+* fixed issues with bulk entity insertions.
+* find* methods now can find by embed conditions.
+* multiple small bugfixes.
 
 ## 0.1.0
 

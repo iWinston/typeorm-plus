@@ -4,8 +4,9 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
+import {Photo} from "./entity/Photo";
 
-describe("query builder > insert", () => {
+describe.only("query builder > insert", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -76,6 +77,49 @@ describe("query builder > insert", () => {
         const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
         expect(loadedUser1).to.exist;
         loadedUser1!.name.should.be.equal("Dima");
+
+    })));
+
+    it("should be able to insert entities with different properties set even inside embeds", () => Promise.all(connections.map(async connection => {
+
+        await connection.createQueryBuilder()
+            .insert()
+            .into(Photo)
+            .values([{
+                url: "1.jpg",
+                counters: {
+                    likes: 1,
+                    favorites: 1,
+                    comments: 1,
+                }
+            }, {
+                url: "2.jpg"
+            }])
+            .execute();
+
+        const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        expect(loadedPhoto1).to.exist;
+        loadedPhoto1!.should.be.eql({
+            id: 1,
+            url: "1.jpg",
+            counters: {
+                likes: 1,
+                favorites: 1,
+                comments: 1,
+            }
+        });
+
+        const loadedPhoto2 = await connection.getRepository(Photo).findOne({ url: "2.jpg" });
+        expect(loadedPhoto2).to.exist;
+        loadedPhoto2!.should.be.eql({
+            id: 2,
+            url: "2.jpg",
+            counters: {
+                likes: 1,
+                favorites: null,
+                comments: 0,
+            }
+        });
 
     })));
 

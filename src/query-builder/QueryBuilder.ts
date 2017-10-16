@@ -17,6 +17,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {WhereExpression} from "./WhereExpression";
+import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -616,14 +617,17 @@ export abstract class QueryBuilder<Entity> {
             return where(this);
 
         } else if (where instanceof Object) {
-            Object.keys(where).forEach((key, index) => {
-                if ((where as ObjectLiteral)[key] === null) {
-                    ((this as any) as WhereExpression).andWhere(`${this.alias}.${key} IS NULL`);
+            const propertyPaths = EntityMetadataUtils.createPropertyPath(where);
+            propertyPaths.forEach((propertyPath, index) => {
+                const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
+                const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
+                if (parameterValue === null) {
+                    ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
 
                 } else {
                     const parameterName = "where_" + index;
-                    ((this as any) as WhereExpression).andWhere(`${this.alias}.${key}=:${parameterName}`);
-                    this.setParameter(parameterName, (where as ObjectLiteral)[key]);
+                    ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                    this.setParameter(parameterName, parameterValue);
                 }
             });
         }

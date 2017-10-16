@@ -1,8 +1,6 @@
 import {FindManyOptions} from "./FindManyOptions";
 import {FindOneOptions} from "./FindOneOptions";
-import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
-import {WhereExpression} from "../query-builder/WhereExpression";
 
 /**
  * Utilities to work with FindOptions.
@@ -69,7 +67,7 @@ export class FindOptionsUtils {
             return this.applyOptionsToQueryBuilder(qb, options);
 
         if (options)
-            return this.applyConditions(qb, options);
+            return qb.where(options);
 
         return qb;
     }
@@ -82,7 +80,7 @@ export class FindOptionsUtils {
             return this.applyOptionsToQueryBuilder(qb, options);
 
         if (options)
-            return this.applyConditions(qb, options);
+            return qb.where(options);
 
         return qb;
     }
@@ -102,7 +100,7 @@ export class FindOptionsUtils {
         }
 
         if (options.where)
-            this.applyConditions(qb, options.where);
+            qb.where(options.where);
 
         if ((options as FindManyOptions<T>).skip)
             qb.skip((options as FindManyOptions<T>).skip!);
@@ -155,24 +153,6 @@ export class FindOptionsUtils {
                     qb.innerJoinAndSelect(options.join!.innerJoinAndSelect![key], key);
                 });
         }
-
-        return qb;
-    }
-
-    /**
-     * Applies given simple conditions set to a given query builder.
-     */
-    static applyConditions<QB extends WhereExpression & { alias: string, setParameter(name: string, value: any): QB }>(qb: QB, conditions: ObjectLiteral): QB {
-        Object.keys(conditions).forEach((key, index) => {
-            if (conditions![key] === null) {
-                qb.andWhere(`${qb.alias}.${key} IS NULL`);
-
-            } else {
-                const parameterName = "where_" + index;
-                qb.andWhere(`${qb.alias}.${key}=:${parameterName}`)
-                    .setParameter(parameterName, conditions![key]);
-            }
-        });
 
         return qb;
     }

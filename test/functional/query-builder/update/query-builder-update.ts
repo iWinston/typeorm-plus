@@ -4,8 +4,9 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
+import {Photo} from "./entity/Photo";
 
-describe("query builder > update", () => {
+describe.only("query builder > update", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -84,6 +85,68 @@ describe("query builder > update", () => {
         const loadedUser1 = await connection.getRepository(User).findOne({ likesCount: 2 });
         expect(loadedUser1).to.exist;
         loadedUser1!.name.should.be.equal("Dima");
+
+    })));
+
+    it("should update properties inside embeds as well", () => Promise.all(connections.map(async connection => {
+
+        // save few photos
+        await connection.manager.save(Photo, {
+            url: "1.jpg",
+            counters: {
+                likes: 2,
+                favorites: 1,
+                comments: 1,
+            }
+        });
+        await connection.manager.save(Photo, {
+            url: "2.jpg",
+            counters: {
+                likes: 0,
+                favorites: 1,
+                comments: 1,
+            }
+        });
+
+        // update photo now
+        await connection.getRepository(Photo)
+            .createQueryBuilder("photo")
+            .update()
+            .set({
+                counters: {
+                    likes: 3
+                }
+            })
+            .where({
+                counters: {
+                    likes: 2
+                }
+            })
+            .execute();
+
+        const loadedPhoto1 = await connection.getRepository(Photo).findOne({ url: "1.jpg" });
+        expect(loadedPhoto1).to.exist;
+        loadedPhoto1!.should.be.eql({
+            id: 1,
+            url: "1.jpg",
+            counters: {
+                likes: 3,
+                favorites: 1,
+                comments: 1,
+            }
+        });
+
+        const loadedPhoto2 = await connection.getRepository(Photo).findOne({ url: "2.jpg" });
+        expect(loadedPhoto2).to.exist;
+        loadedPhoto2!.should.be.eql({
+            id: 2,
+            url: "2.jpg",
+            counters: {
+                likes: 0,
+                favorites: 1,
+                comments: 1,
+            }
+        });
 
     })));
 

@@ -1,6 +1,5 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
@@ -71,25 +70,17 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
         const valueSets = this.getValueSets();
 
-        valueSets.forEach(valueSet => {
-
-        });
-
-        // get columns that participate in insertion query
-        const insertColumns: ColumnMetadata[] = [];
-        Object.keys(valueSets[0]).forEach(columnProperty => {
-            const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(columnProperty);
-            if (column) insertColumns.push(column);
-        });
-
         // get values needs to be inserted
         const values = valueSets.map((valueSet, key) => {
-            const columnNames = insertColumns.map(column => {
+            const columnNames = this.expressionMap.mainAlias!.metadata.columns.map(column => {
                 const paramName = "_inserted_" + key + "_" + column.databaseName;
                 const value = column.getEntityValue(valueSet);
 
                 if (value instanceof Function) { // support for SQL expressions in update query
                     return value();
+
+                } else if (value === undefined) {
+                    return "DEFAULT";
 
                 } else {
                     if (this.connection.driver instanceof SqlServerDriver) {
@@ -104,7 +95,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }).join(", ");
 
         // get a table name and all column database names
-        const columnNames = insertColumns.map(column => this.escape(column.databaseName)).join(", ");
+        const columnNames = this.expressionMap.mainAlias!.metadata.columns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {

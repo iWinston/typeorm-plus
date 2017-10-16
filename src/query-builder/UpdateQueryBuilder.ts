@@ -141,7 +141,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
+        console.log("valuesSet", valuesSet);
+        console.log("createPropertyPath", EntityMetadataUtils.createPropertyPath(valuesSet));
         EntityMetadataUtils.createPropertyPath(valuesSet).forEach(propertyPath => {
+            console.log("propertyPath", propertyPath);
             const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(propertyPath);
 
             // we update an entity and entity can contain property which aren't columns, so we just skip them
@@ -149,6 +152,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const paramName = "_updated_" + column.databaseName;
             const value = column.getEntityValue(valuesSet);
+            console.log("value", value);
 
             if (value instanceof Function) { // support for SQL expressions in update query
                 updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
