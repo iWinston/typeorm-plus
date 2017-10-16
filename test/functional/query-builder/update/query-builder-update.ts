@@ -6,7 +6,7 @@ import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {Photo} from "./entity/Photo";
 
-describe.only("query builder > update", () => {
+describe("query builder > update", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

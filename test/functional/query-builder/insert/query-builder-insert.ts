@@ -5,8 +5,9 @@ import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {Photo} from "./entity/Photo";
+import {SqliteDriver} from "../../../../src/driver/sqlite/SqliteDriver";
 
-describe.only("query builder > insert", () => {
+describe("query builder > insert", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -81,8 +82,11 @@ describe.only("query builder > insert", () => {
     })));
 
     it("should be able to insert entities with different properties set even inside embeds", () => Promise.all(connections.map(async connection => {
+        if (connection.driver instanceof SqliteDriver) // this test is skipped for sqlite because it does not support DEFAULT values in insertions
+            return;
 
-        await connection.createQueryBuilder()
+        await connection
+            .createQueryBuilder()
             .insert()
             .into(Photo)
             .values([{

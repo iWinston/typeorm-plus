@@ -388,9 +388,6 @@ export class EntityManager {
         // todo: in the future create UpdateResult with query result information
         // todo: think if subscribers and listeners can be executed here as well
 
-        console.log("partialEntity", partialEntity);
-        console.log("conditions", conditions);
-
         await this.createQueryBuilder()
             .update(target)
             .set(partialEntity)

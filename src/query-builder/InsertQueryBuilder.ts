@@ -4,6 +4,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -69,10 +70,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
         const valueSets = this.getValueSets();
+        const columns = this.expressionMap.mainAlias!.metadata.columns.filter(column => !column.isGenerated);
 
         // get values needs to be inserted
         const values = valueSets.map((valueSet, key) => {
-            const columnNames = this.expressionMap.mainAlias!.metadata.columns.map(column => {
+            const columnNames = columns.map(column => {
                 const paramName = "_inserted_" + key + "_" + column.databaseName;
                 const value = column.getEntityValue(valueSet);
 
@@ -80,7 +82,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     return value();
 
                 } else if (value === undefined) {
-                    return "DEFAULT";
+                    if (this.connection.driver instanceof SqliteDriver) {
+                        return "NULL";
+
+                    } else {
+                        return "DEFAULT";
+                    }
 
                 } else {
                     if (this.connection.driver instanceof SqlServerDriver) {
@@ -95,7 +102,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }).join(", ");
 
         // get a table name and all column database names
-        const columnNames = this.expressionMap.mainAlias!.metadata.columns.map(column => this.escape(column.databaseName)).join(", ");
+        const columnNames = columns.map(column => this.escape(column.databaseName)).join(", ");
 
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
