@@ -75,7 +75,7 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
     }
     return function (object: Object, propertyName: string) {
         const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-        const isArray = reflectMetadataType === Array || (options && (options.isArray === true || options.array === true)) ? true : false;
+        const isArray = (reflectMetadataType === Array && type !== "json" && type !== "jsonb" && type !== "simple-array") || (options && (options.isArray === true || options.array === true)) ? true : false;
 
         if (typeOrOptions instanceof Function) {
 
