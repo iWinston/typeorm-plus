@@ -88,6 +88,7 @@ export * from "./schema-builder/schema/TableIndex";
 export * from "./schema-builder/schema/TablePrimaryKey";
 export * from "./schema-builder/schema/Table";
 export * from "./driver/mongodb/typings";
+export * from "./driver/types/DatabaseType";
 export * from "./driver/sqlserver/MssqlParameter";
 
 export {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
