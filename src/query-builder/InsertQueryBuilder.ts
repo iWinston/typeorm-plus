@@ -46,17 +46,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be inserted into table.
      */
-    values(values: QueryPartialEntity<Entity>): this;
-
-    /**
-     * Values needs to be inserted into table.
-     */
-    values(values: QueryPartialEntity<Entity>[]): this;
-
-    /**
-     * Values needs to be inserted into table.
-     */
-    values(values: ObjectLiteral|ObjectLiteral[]): this {
+    values(values: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[]): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
@@ -92,7 +82,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const values = valueSets.map((valueSet, key) => {
             const columnNames = insertColumns.map(column => {
                 const paramName = "_inserted_" + key + "_" + column.databaseName;
-                const value = valueSet[column.propertyName];
+                const value = column.getEntityValue(valueSet);
 
                 if (value instanceof Function) { // support for SQL expressions in update query
                     return value();

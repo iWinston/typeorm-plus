@@ -44,7 +44,7 @@ describe("repository > removeById and removeByIds methods", function() {
         ]);
 
         // remove one
-        await postRepository.removeById(1);
+        await postRepository.deleteById(1);
 
         // load to check
         const loadedPosts = await postRepository.find();

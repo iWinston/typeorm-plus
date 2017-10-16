@@ -2,6 +2,7 @@ import {FindManyOptions} from "./FindManyOptions";
 import {FindOneOptions} from "./FindOneOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {WhereExpression} from "../query-builder/WhereExpression";
 
 /**
  * Utilities to work with FindOptions.
@@ -161,7 +162,7 @@ export class FindOptionsUtils {
     /**
      * Applies given simple conditions set to a given query builder.
      */
-    static applyConditions<T>(qb: SelectQueryBuilder<T>, conditions: ObjectLiteral): SelectQueryBuilder<T> {
+    static applyConditions<QB extends WhereExpression & { alias: string, setParameter(name: string, value: any): QB }>(qb: QB, conditions: ObjectLiteral): QB {
         Object.keys(conditions).forEach((key, index) => {
             if (conditions![key] === null) {
                 qb.andWhere(`${qb.alias}.${key} IS NULL`);

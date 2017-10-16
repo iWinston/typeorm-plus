@@ -191,7 +191,7 @@ export class BaseEntity {
      * Removes entity by a given entity id.
      */
     static removeById<T extends BaseEntity>(this: ObjectType<T>, id: any, options?: RemoveOptions): Promise<void> {
-        return (this as any).getRepository().removeById(id, options);
+        return (this as any).getRepository().deleteById(id, options);
     }
 
     /**

@@ -28,6 +28,7 @@ import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {EntityManagerFactory} from "./EntityManagerFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -358,37 +359,59 @@ export class EntityManager {
     }
 
     /**
-     * Updates entity partially. Entity can be found by a given conditions.
+     * Inserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient INSERT query.
+     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     * You can execute bulk inserts using this method.
      */
-    async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
+    async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<void> {
+        // todo: in the future create InsertResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
+
+        await this.createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(entity)
+            .execute();
+    }
 
     /**
-     * Updates entity partially. Entity can be found by a given find options.
-     */
-    async update<Entity>(target: ObjectType<Entity>|string, findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
-
-    /**
      * Updates entity partially. Entity can be found by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
      */
-    async update<Entity>(target: ObjectType<Entity>|string, conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        const entity = await this.findOne(target, conditionsOrFindOptions as any); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to update by a given criteria`);
+    async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+        // todo: in the future create UpdateResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-        Object.assign(entity, partialEntity);
-        await this.save(entity, options);
+        const queryBuilder = this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity);
+
+        FindOptionsUtils.applyConditions(queryBuilder, conditions); // todo: move condition-like syntax into .where method of query builder?
+        await queryBuilder.execute();
     }
 
     /**
      * Updates entity partially. Entity will be found by a given id.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
      */
-    async updateById<Entity>(target: ObjectType<Entity>|string, id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        const entity = await this.findOneById(target, id as any); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to update by a id`);
+    async updateById<Entity>(target: ObjectType<Entity>|string, id: any|any[], partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+        // todo: in the future create UpdateResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-        Object.assign(entity, partialEntity);
-        await this.save(entity, options);
+        await this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .whereInIds(id)
+            .execute();
     }
 
     /**
@@ -498,29 +521,58 @@ export class EntityManager {
     }
 
     /**
-     * Removes entity by a given entity id.
+     * Deletes entities by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
      */
-    async removeById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any, options?: RemoveOptions): Promise<void> {
-        const entity = await this.findOneById<any>(targetOrEntity, id); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to remove by a given id`);
+    async delete<Entity>(targetOrEntity: ObjectType<Entity>|string, conditions: Partial<Entity>, options?: RemoveOptions): Promise<void> {
+        // todo: in the future create DeleteResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-        await this.remove(entity, options);
+        const queryBuilder = this.createQueryBuilder()
+            .delete()
+            .from(targetOrEntity);
+
+        FindOptionsUtils.applyConditions(queryBuilder, conditions); // todo: move condition-like syntax into .where method of query builder?
+        await queryBuilder.execute();
     }
 
     /**
-     * Removes entity by a given entity ids.
+     * Deletes entities by a given entity id or ids.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    async deleteById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any|any[], options?: RemoveOptions): Promise<void> {
+        // todo: in the future create DeleteResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
+
+        await this.createQueryBuilder()
+            .delete()
+            .from(targetOrEntity)
+            .whereInIds(id)
+            .execute();
+    }
+
+    /**
+     * Deletes entity by a given entity id.
+     *
+     * @deprecated use deleteById method instead.
+     */
+    async removeById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any, options?: RemoveOptions): Promise<void> {
+        return this.deleteById(targetOrEntity, id, options);
+    }
+
+    /**
+     * Deletes entity by a given entity ids.
+     *
+     * @deprecated use deleteById method instead.
      */
     async removeByIds<Entity>(targetOrEntity: ObjectType<Entity>|string, ids: any[], options?: RemoveOptions): Promise<void> {
-        const promises = ids.map(async id => {
-            const entity = await this.findOneById<any>(targetOrEntity, id); // this is temporary, in the future can be refactored to perform better
-            if (!entity)
-                throw new Error(`Cannot find entity to remove by a given id`);
-
-            await this.remove(entity, options);
-        });
-
-        await Promise.all(promises);
+        return this.deleteById(targetOrEntity, ids, options);
     }
 
     /**
