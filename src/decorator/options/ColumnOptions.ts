@@ -93,8 +93,17 @@ export interface ColumnOptions {
      * Indicates if this column is an array.
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
+     *
+     * @deprecated use array: true instead. Will be removed in 0.2.0
      */
-    isArray?: boolean; // todo: rename to array?: boolean
+    isArray?: boolean;
+
+    /**
+     * Indicates if this column is an array.
+     * Can be simply set to true or array length can be specified.
+     * Supported only by postgres.
+     */
+    array?: boolean;
 
     /**
      * Specifies a value transformer that is to be used to (un)marshal
