@@ -567,7 +567,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async createIndex(table: Table|string, index: TableIndex): Promise<void> {
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table}"(${columnNames})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table instanceof Table ? table.name : table}"(${columnNames})`;
         await this.query(sql);
     }
 

@@ -667,7 +667,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      */
     async createIndex(table: Table|string, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table}"(${columns})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table instanceof Table ? table.name : table}"(${columns})`;
         await this.query(sql);
     }
 
