@@ -43,8 +43,8 @@ export class JunctionEntityMetadataBuilder {
                 target: "",
                 name: joinTableName,
                 type: "junction",
-                database: joinTable.database,
-                schema: joinTable.schema,
+                database: joinTable.database || relation.entityMetadata.database,
+                schema: joinTable.schema || relation.entityMetadata.schema,
             }
         });
 

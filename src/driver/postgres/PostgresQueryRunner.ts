@@ -353,7 +353,11 @@ export class PostgresQueryRunner implements QueryRunner {
         const tableNamesString = tableNames.map(name => `'${name}'`).join(", ");
         const schemaNamesString = schemaNames.map(name => `'${name}'`).join(", ");
         const tablesCondition = tablePaths.map(tablePath => {
-            const [schemaName, tableName] = tablePath.split(".");
+            let [schemaName, tableName] = tablePath.split(".");
+            if (!tableName) {
+                tableName = schemaName;
+                schemaName = this.driver.options.schema || currentSchema;
+            }
             return `table_schema = '${schemaName}' AND table_name = '${tableName}'`;
         }).join(" OR ");
         const tablesSql      = `SELECT * FROM information_schema.tables WHERE ` + tablesCondition;
