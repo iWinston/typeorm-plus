@@ -723,9 +723,8 @@ export class EntityManager {
         }
 
         this.joinEagerRelations(qb, qb.alias, metadata);
-        qb.whereInIds([id]);
         FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        return qb.getOne();
+        return qb.andWhereInIds([id]).getOne();
     }
 
     /**
