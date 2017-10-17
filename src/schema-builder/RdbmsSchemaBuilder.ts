@@ -130,9 +130,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates new databases if they are not exists.
      */
     protected async createNewDatabases(): Promise<void> {
-        const databases = this.connection.entityMetadatas
-            .filter(metadata => !!metadata.database)
-            .map(metadata => metadata.database);
+        const databases: string[] = [];
+        this.connection.entityMetadatas.forEach(metadata => {
+            if (metadata.database && databases.indexOf(metadata.database) === -1)
+                databases.push(metadata.database);
+        });
+
         await Promise.all(databases.map(database => this.queryRunner.createDatabase(database!)));
     }
 
@@ -428,7 +431,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     const tableIndex = TableIndex.create(indexMetadata);
                     table.indices.push(tableIndex);
                     this.connection.logger.logSchemaBuild(`adding new index: ${tableIndex.name}`);
-                    await this.queryRunner.createIndex(tableIndex.tableName, tableIndex);
+                    await this.queryRunner.createIndex(table, tableIndex);
                 });
 
             await Promise.all(addQueries);

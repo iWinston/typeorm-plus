@@ -352,7 +352,11 @@ export class PostgresQueryRunner implements QueryRunner {
         // load tables, columns, indices and foreign keys
         const tableNamesString = tableNames.map(name => `'${name}'`).join(", ");
         const schemaNamesString = schemaNames.map(name => `'${name}'`).join(", ");
-        const tablesSql      = `SELECT * FROM information_schema.tables WHERE table_schema IN (${schemaNamesString}) AND table_name IN (${tableNamesString})`;
+        const tablesCondition = tablePaths.map(tablePath => {
+            const [schemaName, tableName] = tablePath.split(".");
+            return `table_schema = '${schemaName}' AND table_name = '${tableName}'`;
+        }).join(" OR ");
+        const tablesSql      = `SELECT * FROM information_schema.tables WHERE ` + tablesCondition;
         const columnsSql     = `SELECT * FROM information_schema.columns WHERE table_schema IN (${schemaNamesString})`;
         const indicesSql     = `SELECT t.relname AS table_name, i.relname AS index_name, a.attname AS column_name, ix.indisunique AS is_unique, a.attnum, ix.indkey FROM pg_class t, pg_class i, pg_index ix, pg_attribute a, pg_namespace ns
 WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
@@ -780,10 +784,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Creates a new index.
      */
-    async createIndex(tablePath: string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
 
-        const up = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTablePath(tablePath)}(${columnNames})`;
+        const up = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTablePath(table)}(${columnNames})`;
         const down = `-- TODO: revert ${up}`;
         await this.schemaQuery(up, down); // TODO: Add revert logic
     }

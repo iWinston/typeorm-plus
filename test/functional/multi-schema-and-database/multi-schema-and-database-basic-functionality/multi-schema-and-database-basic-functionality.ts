@@ -11,7 +11,7 @@ import {Question} from "./entity/Question";
 import {Answer} from "./entity/Answer";
 import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
 
-describe("database schema > custom-table-schema-and-database", () => {
+describe("multi-schema-and-database > basic-functionality", () => {
 
     describe("custom-table-schema", () => {
 

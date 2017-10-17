@@ -229,11 +229,12 @@ export class Connection {
             .map(metadata => metadata.schema!);
 
         if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
-            const databases = this.entityMetadatas
-                .filter(metadata => metadata.database)
-                .map(metadata => metadata.database!);
-            if (this.driver.database && !databases.find(database => database === this.driver.database))
-                databases.push(this.driver.database);
+            const databases: string[] = this.driver.database ? [this.driver.database] : [];
+            this.entityMetadatas.forEach(metadata => {
+                if (metadata.database && databases.indexOf(metadata.database) === -1)
+                    databases.push(metadata.database);
+            });
+
             await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(schemas, database));
         } else {
             await queryRunner.clearDatabase(schemas);
