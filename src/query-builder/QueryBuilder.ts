@@ -11,6 +11,13 @@ import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
 import {QueryPartialEntity} from "./QueryPartialEntity";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {WhereExpression} from "./WhereExpression";
+import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -291,6 +298,11 @@ export abstract class QueryBuilder<Entity> {
      * Adds all parameters from the given object.
      */
     setParameters(parameters: ObjectLiteral): this {
+
+        // set parent query builder parameters as well in sub-query mode
+        if (this.expressionMap.parentQueryBuilder)
+            this.expressionMap.parentQueryBuilder.setParameters(parameters);
+
         Object.keys(parameters).forEach(key => {
             this.expressionMap.parameters[key] = parameters[key];
         });
@@ -359,9 +371,10 @@ export abstract class QueryBuilder<Entity> {
 
     /**
      * Creates a completely new query builder.
+     * Uses same query runner as current QueryBuilder.
      */
     createQueryBuilder(): this {
-        return new (this.constructor as any)(this.connection);
+        return new (this.constructor as any)(this.connection, this.queryRunner);
     }
 
     /**
@@ -403,6 +416,45 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Gets escaped table name with schema name if SqlServer driver used with custom
+     * schema name, otherwise returns escaped table name.
+     */
+    protected getTableName(tableName: string): string {
+        let tablePath = tableName;
+        const driver = this.connection.driver;
+        const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
+        const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
+
+        if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
+            if (metadata) {
+                if (metadata.schema) {
+                    tablePath = `${metadata.schema}.${tableName}`;
+                } else if (schema) {
+                    tablePath = `${schema}.${tableName}`;
+                }
+
+                if (metadata.database && !(driver instanceof PostgresDriver)) {
+                    if (!schema && !metadata.schema && driver instanceof SqlServerDriver) {
+                        tablePath = `${metadata.database}..${tablePath}`;
+                    } else {
+                        tablePath = `${metadata.database}.${tablePath}`;
+                    }
+                }
+
+            } else if (schema) {
+                tablePath = `${schema!}.${tableName}`;
+            }
+        }
+        return tablePath.split(".")
+            .map(i => {
+                // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
+                if (i === "")
+                    return i;
+                return this.escape(i);
+            }).join(".");
+    }
+
+    /**
      * Gets name of the table where insert should be performed.
      */
     protected getMainTableName(): string {
@@ -427,6 +479,7 @@ export abstract class QueryBuilder<Entity> {
             const metadata = this.connection.getMetadata(entityTarget);
 
             return this.expressionMap.createAlias({
+                type: "from",
                 name: aliasName,
                 metadata: this.connection.getMetadata(entityTarget),
                 tableName: metadata.tableName
@@ -444,6 +497,7 @@ export abstract class QueryBuilder<Entity> {
             }
             const isSubQuery = entityTarget instanceof Function || entityTarget.substr(0, 1) === "(" && entityTarget.substr(-1) === ")";
             return this.expressionMap.createAlias({
+                type: "from",
                 name: aliasName,
                 tableName: isSubQuery === false ? entityTarget as string : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,
@@ -548,20 +602,37 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral) {
         if (typeof where === "string")
             return where;
 
         if (where instanceof Brackets) {
             const whereQueryBuilder = this.createQueryBuilder();
-            whereQueryBuilder.queryRunner = this.queryRunner;
             where.whereFactory(whereQueryBuilder as any);
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
             return whereString ? "(" + whereString + ")" : "";
+
+        } else if (where instanceof Function) {
+            return where(this);
+
+        } else if (where instanceof Object) {
+            const propertyPaths = EntityMetadataUtils.createPropertyPath(where);
+            propertyPaths.forEach((propertyPath, index) => {
+                const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
+                const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
+                if (parameterValue === null) {
+                    ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+
+                } else {
+                    const parameterName = "where_" + index;
+                    ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                    this.setParameter(parameterName, parameterValue);
+                }
+            });
         }
 
-        return where(this);
+        return "";
     }
 
     /**

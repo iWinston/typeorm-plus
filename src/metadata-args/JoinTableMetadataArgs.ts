@@ -31,4 +31,16 @@ export interface JoinTableMetadataArgs {
      */
     readonly inverseJoinColumns?: JoinColumnMetadataArgs[];
 
+    /**
+     * Database where join table will be created.
+     * Works only in some databases (like mysql and mssql).
+     */
+    readonly database?: string;
+
+    /**
+     * Schema where join table will be created.
+     * Works only in some databases (like postgres and mssql).
+     */
+    readonly schema?: string;
+
 }

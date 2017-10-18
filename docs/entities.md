@@ -4,24 +4,19 @@
 * [Entity columns](#entity-columns)
     * [Primary columns](#primary-columns)
     * [Special columns](#special-columns)
-    * [Embedded columns](#embedded-columns)
 * [Column types](#column-types)
     * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     * [Column types for `postgres`](#column-types-for-postgres)
-    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql)
+    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
     * [Columns with generated values](#columns-with-generated-values)
 * [Column options](#column-options)
-* [Entity inheritance](#entity-inheritance)
-* [Tree entities](#tree-entities)
-    * [Adjacency list](#adjacency-list)
-    * [Closure table](#closure-table)
 
 ## What is Entity?
 
-Entity is a class that maps into database table (or collection for MongoDB database).
-You can create entity by defining a new class and mark with special orm decorator:
+Entity is a class that maps to a database table (or collection when using MongoDB).
+You can create a entity by defining a new class and mark it with `@Entity()`:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -57,10 +52,10 @@ This will create following database table:
 +-------------+--------------+----------------------------+
 ```
 
-Basic entity consist of columns and relations. 
+Basic entities consist of columns and relations. 
 Each entity **MUST** have a primary column (or ObjectId column if are using MongoDB).
 
-Each entity must be registered in your connection options this way:
+Each entity must be registered in your connection options:
 
 ```typescript
 import {createConnection, Connection} from "typeorm";
@@ -93,13 +88,13 @@ const connection: Connection = await createConnection({
 });
 ```
 
-If you want to use alternative table name for `User` entity you can specify it in `@Entity` decorator: `@Entity("my_users")`.
-If you want to set base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
+If you want to use an alternative table name for the `User` entity you can specify it in `@Entity`: `@Entity("my_users")`.
+If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
 
 ## Entity columns
 
 Since database table consist of columns your entities must consist of columns too. 
-Each entity class properties you marked with `@Column` decorator will be mapped to database table columns.
+Each entity class property you marked with `@Column` will be mapped to a database table column.
 
 ### Primary columns
 
@@ -107,8 +102,8 @@ Each entity must have at least one primary column.
 There are several types of primary columns:
 
 * `@PrimaryColumn()` creates a primary column which take any value of any type.
-You can specify column type. If you don't specify a column type it will be inferred from property type.
-Example below will create id with `int` type which you must manually assign before save.
+You can specify the column type. If you don't specify a column type it will be inferred from the property type.
+Example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
 import {Entity, PrimaryColumn} from "typeorm";
@@ -123,7 +118,7 @@ export class User {
 }
 ```
 
-* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with auto-increment value.
+* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value.
 It will create `int` column with `auto-increment`/`serial`/`sequence` (depend on the database).
 You don't have to manually assign its value before save - value will be automatically generated.
 
@@ -174,11 +169,11 @@ export class User {
 }
 ```
 
-When you save entities using `save` method it always tries to find entity in the database by given entity id (or ids).
-If id/ids are found then it will update this row in database. 
-If there is no row with such id / ids new row will be inserted.
+When you save entities using `save` it always tries to find a entity in the database with the given entity id (or ids).
+If id/ids are found then it will update this row in the database. 
+If there is no row with the id/ids, a new row will be inserted.
  
-To find entity by id you can use `manager.findOneById` or `repository.findOneById` methods. Example:
+To find a entity by id you can use `manager.findOneById` or `repository.findOneById`. Example:
 
 ```typescript
 // find one by id with single primary key
@@ -194,206 +189,24 @@ const user = await connection.getRepository(User).findOneById({ firstName: "Umed
 
 There are several special column types with additional functionality available:
 
-* `@CreateDateColumn` is a special column that automatically sets entity insertion time.
-You don't need to write a value into this column - it will be automatically set.
+* `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
+You don't need set this column - it will be automatically set.
 
-* `@UpdateDateColumn` is a special column that automatically sets entity updating time 
-each time you call `save` method of entity manager or repository.
-You don't need to write a value into this column - it will be automatically set.
+* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time 
+each time you call `save` of entity manager or repository.
+You don't need set this column - it will be automatically set.
 
-* `@VersionColumn` is a special column that automatically sets entity version (incremental number)  
-each time you call `save` method of entity manager or repository.
-You don't need to write a value into this column - it will be automatically set.
+* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
+each time you call `save` of entity manager or repository.
+You don't need set this column - it will be automatically set.
 
-### Embedded columns
-
-There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
-Embedded column is a column which accepts a class with its own columns and merges those classes into current entity's database table.
-Example:
-
-Let's say we have `User`, `Employee` and `Student` entities.
-All those entities have few things in common - `first name` and `last name` properties
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-
-@Entity()
-export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column()
-    nameFirst: string;
-    
-    @Column()
-    nameLast: string;
-    
-    @Column()
-    isActive: boolean;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-
-@Entity()
-export class Employee {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column()
-    nameFirst: string;
-    
-    @Column()
-    nameLast: string;
-    
-    @Column()
-    salary: string;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-
-@Entity()
-export class Student {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column()
-    nameFirst: string;
-    
-    @Column()
-    nameLast: string;
-    
-    @Column()
-    faculty: string;
-    
-}
-```
-
-What we can do is to reduce `firstName` and `lastName` duplication by creating a new class with those columns:
-
-```typescript
-import {Entity, Column} from "typeorm";
-
-export class Name {
-    
-    @Column()
-    first: string;
-    
-    @Column()
-    last: string;
-    
-}
-```
-
-Then you can "connect" those columns in your entities: 
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
-
-@Entity()
-export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
-    @Column()
-    isActive: boolean;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
-
-@Entity()
-export class Employee {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
-    @Column()
-    salary: number;
-    
-}
-```
-
-```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
-
-@Entity()
-export class Student {
-    
-    @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
-    @Column()
-    faculty: string;
-    
-}
-```
-
-All columns defined in `Name` entity will be merged into `user`, `employee` and `student` tables:
-
-```shell
-+-------------+--------------+----------------------------+
-|                          user                           |
-+-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| nameFirst   | varchar(255) |                            |
-| nameLast    | varchar(255) |                            |
-| isActive    | boolean      |                            |
-+-------------+--------------+----------------------------+
-
-+-------------+--------------+----------------------------+
-|                        employee                         |
-+-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| nameFirst   | varchar(255) |                            |
-| nameLast    | varchar(255) |                            |
-| salary      | int(11)      |                            |
-+-------------+--------------+----------------------------+
-
-+-------------+--------------+----------------------------+
-|                         student                         |
-+-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| nameFirst   | varchar(255) |                            |
-| nameLast    | varchar(255) |                            |
-| faculty     | varchar(255) |                            |
-+-------------+--------------+----------------------------+
-```
-
-This way we reduced duplication in classes.
- You can use as many columns (or relations) in embedded classes as you need.
- You even can have nested embedded columns inside embedded classes.
- 
 ## Column types
 
-TypeORM supports all the most commonly used database-supported column types.
+TypeORM supports all of the most commonly used database-supported column types.
 Column types are database-type specific - this provides more flexibility on how your database schema will look like.
  
-You can specify column type as first parameter of `@Column` decorator
-or in column options of `@Column` decorator, for example:
+You can specify column type as first parameter of `@Column`
+or in the column options of `@Column`, for example:
 
 ```typescript
 @Column("int")
@@ -436,7 +249,7 @@ or
 `circle`, `path`, `polygon`, `enum`, `cidr`, `inet`, `macaddr`, `bit`, `bit varying`,
  `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
 
-### Column types for `sqlite` / `websql`
+### Column types for `sqlite` / `websql` / `cordova`
 
 `int`, `int2`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `decimal`, `numeric`, `real`, `double precision`, `datetime`, 
@@ -480,10 +293,10 @@ user.names = [
 ```
 
 Will be stored in a single database column as `Alexander,Alex,Sasha,Shurik` value.
-When you'll load data from the database names will be returned as an array of names, 
+When you'll load data from the database, the names will be returned as an array of names, 
 just like you stored them.
 
-Note you MUST NOT have any comma in values you write.
+Note you **MUST NOT** have any comma in values you write.
 
 ### Columns with generated values
 
@@ -512,7 +325,7 @@ or some of them require increment to be a primary key).
 ## Column options
 
 Column options defines additional options for your entity columns.
-You can specify column options into `@Column` decorator:
+You can specify column options on `@Column`:
 
 ```typescript
 @Column({
@@ -528,15 +341,15 @@ List of available options in `ColumnOptions`:
 
 * `type: ColumnType` - Column type. One of the type listed [above](#column-types).
 * `name: string` - Column name in the database table. 
-By default database table name is generated from the decorated with @Column property name.
+By default the column name is generated from the name of the property.
 You can change it by specifying your own name
 * `length: number` - Column type's length. For example if you want to create `varchar(150)` type 
 you specify column type and length options.
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
 * `default: string` - Adds database-level column's `DEFAULT` value. 
-* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn` decorator.
-* `unique: boolean` - Marks column as unique column (creates index). Same if you use `@Index` decorator.
+* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
+* `unique: boolean` - Marks column as unique column (creates unique constraint).
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
@@ -612,7 +425,7 @@ export class Post {
 }
 ```
 
-As you can see all those entities have some common columns: `id`, `title`, `description`.
+As you can see all those entities have common columns: `id`, `title`, `description`.
 To reduce duplication and produce a better abstraction we can create a base class called `Content` for them:
 
 
@@ -659,13 +472,13 @@ will be inherited and created in final entities.
 
 ## Tree entities
 
-TypeORM supports Adjacency list and Closure table patterns of storing tree structures.
+TypeORM supports the Adjacency list and Closure table patterns of storing tree structures.
 
 ### Adjacency list
 
 Adjacency list is a simple model with self-referencing. 
 Benefit of this approach is simplicity, 
-drawback is you can't load big tree in once because of joins limitation.
+drawback is you can't load a big tree at once because of join limitations.
 Example:
 
 ```typescript
@@ -695,7 +508,7 @@ export class Category {
 ### Closure table
 
 
-Closure table stores relations between parent and child in a separate table in a special way. 
+A closure table stores relations between parent and child in a separate table in a special way. 
 Its efficient in both reads and writes. 
 To learn more about closure table take a look at this awesome presentation by Bill Karwin. 
 Example:

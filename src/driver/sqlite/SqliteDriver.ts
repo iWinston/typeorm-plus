@@ -68,7 +68,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
         return this.queryRunner;
     }
 
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
         if ((column.type as any) === Buffer) {
             return "blob";
         }

@@ -12,7 +12,7 @@ import {OracleConnectionOptions} from "./OracleConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {ColumnSchema} from "../../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
 import {DriverUtils} from "../DriverUtils";
 
@@ -109,6 +109,16 @@ export class OracleDriver implements Driver {
         "urowid"
     ];
 
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[] = [
+        "char",
+        "nchar",
+        "nvarchar2",
+        "varchar2"
+    ];
+    
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -315,7 +325,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
         let type = "";
         if (column.type === Number) {
             type += "integer";
@@ -367,7 +377,22 @@ export class OracleDriver implements Driver {
         return column.isUnique;
     }
 
-    createFullType(column: ColumnSchema): string {
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
+
+        return "";
+    }
+
+    createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {
@@ -379,7 +404,7 @@ export class OracleDriver implements Driver {
         } else if (column.scale) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length + ")";
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)

@@ -42,7 +42,9 @@ export class JunctionEntityMetadataBuilder {
             args: {
                 target: "",
                 name: joinTableName,
-                type: "junction"
+                type: "junction",
+                database: joinTable.database || relation.entityMetadata.database,
+                schema: joinTable.schema || relation.entityMetadata.schema,
             }
         });
 
@@ -100,6 +102,8 @@ export class JunctionEntityMetadataBuilder {
             });
         });
 
+        this.changeDuplicatedColumnNames(junctionColumns, inverseJunctionColumns);
+
         // set junction table columns
         entityMetadata.ownerColumns = junctionColumns;
         entityMetadata.inverseColumns = inverseJunctionColumns;
@@ -154,7 +158,7 @@ export class JunctionEntityMetadataBuilder {
     /**
      * Collects referenced columns from the given join column args.
      */
-    protected collectReferencedColumns(relation: RelationMetadata, joinTable: JoinTableMetadataArgs) {
+    protected collectReferencedColumns(relation: RelationMetadata, joinTable: JoinTableMetadataArgs): ColumnMetadata[] {
         const hasAnyReferencedColumnName = joinTable.joinColumns ? joinTable.joinColumns.find(joinColumn => !!joinColumn.referencedColumnName) : false;
         if (!joinTable.joinColumns || (joinTable.joinColumns && !hasAnyReferencedColumnName)) {
             return relation.entityMetadata.columns.filter(column => column.isPrimary);
@@ -172,7 +176,7 @@ export class JunctionEntityMetadataBuilder {
     /**
      * Collects inverse referenced columns from the given join column args.
      */
-    protected collectInverseReferencedColumns(relation: RelationMetadata, joinTable: JoinTableMetadataArgs) {
+    protected collectInverseReferencedColumns(relation: RelationMetadata, joinTable: JoinTableMetadataArgs): ColumnMetadata[] {
         const hasInverseJoinColumns = !!joinTable.inverseJoinColumns;
         const hasAnyInverseReferencedColumnName = hasInverseJoinColumns ? joinTable.inverseJoinColumns!.find(joinColumn => !!joinColumn.referencedColumnName) : false;
         if (!hasInverseJoinColumns || (hasInverseJoinColumns && !hasAnyInverseReferencedColumnName)) {
@@ -186,6 +190,22 @@ export class JunctionEntityMetadataBuilder {
                 return referencedColumn;
             });
         }
+    }
+
+    protected changeDuplicatedColumnNames(junctionColumns: ColumnMetadata[], inverseJunctionColumns: ColumnMetadata[]) {
+        junctionColumns.forEach(junctionColumn => {
+            inverseJunctionColumns.forEach(inverseJunctionColumn => {
+                if (junctionColumn.givenDatabaseName === inverseJunctionColumn.givenDatabaseName) {
+                    const junctionColumnName = this.connection.namingStrategy.joinTableColumnDuplicationPrefix(junctionColumn.propertyName, 1);
+                    junctionColumn.propertyName = junctionColumnName;
+                    junctionColumn.givenDatabaseName = junctionColumnName;
+
+                    const inverseJunctionColumnName = this.connection.namingStrategy.joinTableColumnDuplicationPrefix(inverseJunctionColumn.propertyName, 2);
+                    inverseJunctionColumn.propertyName = inverseJunctionColumnName;
+                    inverseJunctionColumn.givenDatabaseName = inverseJunctionColumnName;
+                }
+            });
+        });
     }
 
 }

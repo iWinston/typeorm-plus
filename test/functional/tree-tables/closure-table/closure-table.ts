@@ -101,16 +101,17 @@ describe("closure-table", () => {
         const c12 = new Category();
         c12.name = "c12";
 
-        c1.childCategories = [c11];
-
         await categoryRepository.save(a1);
         await categoryRepository.save(b1);
         await categoryRepository.save(c1);
 
+        c1.childCategories = [c11];
+        await categoryRepository.save(c1);
+
         c1.childCategories.push(c12);
         await categoryRepository.save(c1);
-        // await categoryRepository.persist(c11);
-        // await categoryRepository.persist(c12);
+        // await categoryRepository.save(c11);
+        // await categoryRepository.save(c12);
 
         const roots = await categoryRepository.findRoots();
         roots.should.be.eql([
@@ -170,10 +171,11 @@ describe("closure-table", () => {
         const c12 = new Category();
         c12.name = "c12";
 
-        c1.childCategories = [c11];
-
         await categoryRepository.save(a1);
         await categoryRepository.save(b1);
+        await categoryRepository.save(c1);
+
+        c1.childCategories = [c11];
         await categoryRepository.save(c1);
 
         c1.childCategories.push(c12);

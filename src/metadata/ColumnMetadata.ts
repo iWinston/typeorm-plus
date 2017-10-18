@@ -55,7 +55,7 @@ export class ColumnMetadata {
     /**
      * Type's length in the database.
      */
-    length?: number;
+    length: string = "";
 
     /**
      * Defines column character set.
@@ -235,7 +235,7 @@ export class ColumnMetadata {
         if (options.args.options.type)
             this.type = options.args.options.type;
         if (options.args.options.length)
-            this.length = typeof options.args.options.length === "string" ? parseInt(options.args.options.length) : options.args.options.length;
+            this.length = options.args.options.length ? options.args.options.length.toString() : "";
         if (options.args.options.charset)
             this.charset = options.args.options.charset;
         if (options.args.options.collation)
@@ -272,6 +272,8 @@ export class ColumnMetadata {
         }
         if (options.args.options.isArray)
             this.isArray = options.args.options.isArray;
+        if (options.args.options.array)
+            this.isArray = options.args.options.array;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
             this.isParentId = options.args.mode === "parentId";

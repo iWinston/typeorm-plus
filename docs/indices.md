@@ -6,7 +6,7 @@
 
 ## Column indices
 
-You can create a database index for a specific column by using `@Index` decorator on a column you want to make an index.
+You can create a database index for a specific column by using `@Index` on a column you want to make an index.
 You can create indices for any columns of your entity.
 Example:
 
@@ -29,7 +29,7 @@ export class User {
 }
 ```
 
-You can also specify index name:
+You can also specify an index name:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
@@ -52,7 +52,7 @@ export class User {
 
 ## Unique indices
 
-To create unique index you need to specify `{ unique: true }` in index options:
+To create an unique index you need to specify `{ unique: true }` in the index options:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
@@ -75,7 +75,7 @@ export class User {
 
 ## Indices with multiple columns
 
-To create index with multiple columns you need to put `@Index` decorator on entity itself
+To create an index with multiple columns you need to put `@Index` on the entity itself
 and specify all column property names which should be included in the index.
 Example:
 

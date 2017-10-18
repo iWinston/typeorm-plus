@@ -5,11 +5,10 @@
 * [Creating a models](#creating-a-models)
 * [Other model settings](#other-model-settings)
 * [Working with models](#working-with-models)
-* [Setup associations (relations)](#setup-associations-relations)
 
 ## Setting up a connection
 
-In sequelize you create connection this way:
+In sequelize you create a connection this way:
 
 ```javascript
 const sequelize = new Sequelize("database", "username", "password", {
@@ -27,7 +26,7 @@ sequelize
   });
 ```
 
-In TypeORM you create connection following way:
+In TypeORM you create a connection like this:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -45,7 +44,7 @@ createConnection({
 });
 ```
 
-Then you can get your connection instance from anywhere in your app using `getConnection` function.
+Then you can get your connection instance from anywhere in your app using `getConnection`.
 
 ## Schema synchronization
 
@@ -70,7 +69,7 @@ createConnection({
 
 ## Creating a models
 
-This is how define models in sequelize:
+This is how models are defined in sequelize:
 
 ```javascript
 module.exports = function(sequelize, DataTypes) {
@@ -98,7 +97,7 @@ module.exports = function(sequelize, DataTypes) {
 };
 ```
 
-In TypeORM such models are called entities and you can define them this way:
+In TypeORM these models are called entities and you can define them like this:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -143,17 +142,17 @@ Its highly recommended to define one entity class per file.
 TypeORM allows you to use your classes as database models
 and provides you a declarative way to define what part of your model 
 will become part of your database table.
-Power of TypeScript gives you type hinting and other useful features that you can use in classes.
+The power of TypeScript gives you type hinting and other useful features that you can use in classes.
 
 ## Other model settings
 
-Following in sequelize:
+The following in sequelize:
 
 ```javascript
 flag: { type: Sequelize.BOOLEAN, allowNull: true, defaultValue: true },
 ```
 
-Can be achieved this way in TypeORM:
+Can be achieved in TypeORM like this:
 
 ```typescript
 @Column({ nullable: true, default: true })
@@ -163,10 +162,10 @@ flag: boolean;
 Following in sequelize:
 
 ```javascript
-flag: { type: Sequelize.BOOLEAN, defaultValue: true },
+flag: { type: Sequelize.DATE, defaultValue: Sequelize.NOW }
 ```
 
-Can be achieved this way in TypeORM:
+Is written like this in TypeORM:
 
 ```typescript
 @Column({ default: () => "NOW()" })
@@ -192,7 +191,7 @@ Following in sequelize:
 fieldWithUnderscores: { type: Sequelize.STRING, field: 'field_with_underscores' },
 ```
 
-Can be achieved this way in TypeORM:
+Translates to this in TypeORM:
 
 ```typescript
 @Column({ name: "field_with_underscores" })
@@ -226,7 +225,7 @@ Can be achieved this way in TypeORM:
 identifier: string;
 ```
 
-To create `createDate` and `updateDate`-like columns you need to defined two columns (named it as you want) in your entity:
+To create `createDate` and `updateDate`-like columns you need to defined two columns (name it what you want) in your entity:
 
 ```typescript
 @CreateDateColumn();
@@ -238,7 +237,7 @@ updateDate: Date;
 
 ### Working with models
 
-To create a new model in sequelize you do following:
+To create a new model in sequelize you write:
 
 ```javascript
 const employee = await Employee.create({ name: "John Doe", title: "senior engineer" });
@@ -258,7 +257,7 @@ or
 const employee = Employee.create({ name: "John Doe", title: "senior engineer" });
 ```
 
-if you want to load exist entity from the database and replace some of its properties you can use following method:
+if you want to load an exist entity from the database and replace some of its properties you can use following method:
 
 ```typescript
 const employee = await Employee.preload({ id: 1, name: "John Doe" });
@@ -276,7 +275,7 @@ In TypeORM you simply do:
 console.log(employee.name);
 ```
 
-To create index in sequelize you do following:
+To create an index in sequelize you do:
 
 ```typescript
 sequelize.define("user", {}, {
@@ -297,7 +296,3 @@ In TypeORM you do:
 export class User {
 }
 ```
-
-## Setup associations (relations)
-
-Associations in TypeORM are called "relations".

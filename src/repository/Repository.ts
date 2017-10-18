@@ -117,60 +117,37 @@ export class Repository<Entity extends ObjectLiteral> {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    async save(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+    async save<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<T[]>;
 
     /**
      * Saves a given entity in the database.
      * If entity does not exist in the database then inserts, otherwise updates.
      */
-    async save(entity: Entity, options?: SaveOptions): Promise<Entity>;
+    async save<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves one or many given entities.
      */
-    async save(entityOrEntities: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
+    async save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
         return this.manager.save(this.metadata.target, entityOrEntities as any, options);
     }
 
     /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
+     * Inserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient INSERT query.
+     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      */
-    async persist(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Saves a given entity in the database.
-     * If entity does not exist in the database then inserts, otherwise updates.
-     */
-    async persist(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Saves one or many given entities.
-     */
-    async persist(entityOrEntities: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
-        return this.save(entityOrEntities as any, options);
+    async insert(entity: Partial<Entity>|Partial<Entity>[], options?: SaveOptions): Promise<void> {
+        return this.manager.insert(this.metadata.target, entity, options);
     }
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
-
-    /**
-     * Updates entity partially. Entity can be found by a given find options.
-     */
-    async update(findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
-
-    /**
-     * Updates entity partially. Entity can be found by a given conditions.
-     */
-    async update(conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        const entity = await this.findOne(conditionsOrFindOptions as any); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to update by a given criteria`);
-
-        Object.assign(entity, partialEntity);
-        await this.save(entity, options);
+    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+        return this.manager.update(this.metadata.target, conditions, partialEntity, options);
     }
 
     /**
@@ -198,14 +175,40 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Removes entity by a given entity id.
+     * Deletes entities by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
      */
-    async removeById(id: any, options?: RemoveOptions): Promise<void> {
-        return this.manager.removeById(this.metadata.target, id, options);
+    async delete(conditions: Partial<Entity>, options?: RemoveOptions): Promise<void> {
+        return this.manager.delete(this.metadata.target, conditions, options);
+    }
+
+    /**
+     * Deletes entities by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    async deleteById(id: any, options?: RemoveOptions): Promise<void> {
+        return this.manager.deleteById(this.metadata.target, id, options);
     }
 
     /**
      * Removes entity by a given entity id.
+     *
+     * @deprecated use deleteById method instead.
+     */
+    async removeById(id: any, options?: RemoveOptions): Promise<void> {
+        return this.manager.deleteById(this.metadata.target, id, options);
+    }
+
+    /**
+     * Removes entity by a given entity id.
+     *
+     * @deprecated use deleteById method instead.
      */
     async removeByIds(ids: any[], options?: RemoveOptions): Promise<void> {
         return this.manager.removeByIds(this.metadata.target, ids, options);

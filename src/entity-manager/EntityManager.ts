@@ -27,6 +27,8 @@ import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {EntityManagerFactory} from "./EntityManagerFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -249,7 +251,7 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(targetOrEntity: Function|string, entity: Entity, options?: SaveOptions): Promise<Entity>;
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves all given entities in the database.
@@ -261,15 +263,15 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(targetOrEntity: Function|string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entities: T[], options?: SaveOptions): Promise<T[]>;
 
     /**
      * Saves a given entity in the database.
      */
-    save<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntityOrOptions?: Entity|Entity[], maybeOptions?: SaveOptions): Promise<Entity|Entity[]> {
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
 
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
-        const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
+        const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
@@ -357,94 +359,58 @@ export class EntityManager {
     }
 
     /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
+     * Inserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient INSERT query.
+     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     * You can execute bulk inserts using this method.
      */
-    persist<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+    async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<void> {
+        // todo: in the future create InsertResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: Function, entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: string, entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: Function, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: string, entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
-
-    /**
-     * Persists (saves) a given entity in the database.
-     *
-     * @deprecated
-     */
-    persist<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntity?: Entity|Entity[], options?: SaveOptions): Promise<Entity|Entity[]> {
-        return this.save(targetOrEntity as any, maybeEntity as any, options);
+        await this.createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(entity)
+            .execute();
     }
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
      */
-    async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
+    async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+        // todo: in the future create UpdateResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-    /**
-     * Updates entity partially. Entity can be found by a given find options.
-     */
-    async update<Entity>(target: ObjectType<Entity>|string, findOptions: FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void>;
-
-    /**
-     * Updates entity partially. Entity can be found by a given conditions.
-     */
-    async update<Entity>(target: ObjectType<Entity>|string, conditionsOrFindOptions: Partial<Entity>|FindOneOptions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        const entity = await this.findOne(target, conditionsOrFindOptions as any); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to update by a given criteria`);
-
-        Object.assign(entity, partialEntity);
-        await this.save(entity, options);
+        await this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .where(conditions)
+            .execute();
     }
 
     /**
      * Updates entity partially. Entity will be found by a given id.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
      */
-    async updateById<Entity>(target: ObjectType<Entity>|string, id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        const entity = await this.findOneById(target, id as any); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to update by a id`);
+    async updateById<Entity>(target: ObjectType<Entity>|string, id: any|any[], partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+        // todo: in the future create UpdateResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-        Object.assign(entity, partialEntity);
-        await this.save(entity, options);
+        await this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .whereInIds(id)
+            .execute();
     }
 
     /**
@@ -554,29 +520,57 @@ export class EntityManager {
     }
 
     /**
-     * Removes entity by a given entity id.
+     * Deletes entities by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
      */
-    async removeById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any, options?: RemoveOptions): Promise<void> {
-        const entity = await this.findOneById<any>(targetOrEntity, id); // this is temporary, in the future can be refactored to perform better
-        if (!entity)
-            throw new Error(`Cannot find entity to remove by a given id`);
+    async delete<Entity>(targetOrEntity: ObjectType<Entity>|string, conditions: Partial<Entity>, options?: RemoveOptions): Promise<void> {
+        // todo: in the future create DeleteResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
 
-        await this.remove(entity, options);
+        await this.createQueryBuilder()
+            .delete()
+            .from(targetOrEntity)
+            .where(conditions)
+            .execute();
     }
 
     /**
-     * Removes entity by a given entity ids.
+     * Deletes entities by a given entity id or ids.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    async deleteById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any|any[], options?: RemoveOptions): Promise<void> {
+        // todo: in the future create DeleteResult with query result information
+        // todo: think if subscribers and listeners can be executed here as well
+
+        await this.createQueryBuilder()
+            .delete()
+            .from(targetOrEntity)
+            .whereInIds(id)
+            .execute();
+    }
+
+    /**
+     * Deletes entity by a given entity id.
+     *
+     * @deprecated use deleteById method instead.
+     */
+    async removeById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any, options?: RemoveOptions): Promise<void> {
+        return this.deleteById(targetOrEntity, id, options);
+    }
+
+    /**
+     * Deletes entity by a given entity ids.
+     *
+     * @deprecated use deleteById method instead.
      */
     async removeByIds<Entity>(targetOrEntity: ObjectType<Entity>|string, ids: any[], options?: RemoveOptions): Promise<void> {
-        const promises = ids.map(async id => {
-            const entity = await this.findOneById<any>(targetOrEntity, id); // this is temporary, in the future can be refactored to perform better
-            if (!entity)
-                throw new Error(`Cannot find entity to remove by a given id`);
-
-            await this.remove(entity, options);
-        });
-
-        await Promise.all(promises);
+        return this.deleteById(targetOrEntity, ids, options);
     }
 
     /**
@@ -617,6 +611,7 @@ export class EntityManager {
     find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -642,6 +637,7 @@ export class EntityManager {
     findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -673,6 +669,7 @@ export class EntityManager {
             return id;
         });
         qb.whereInIds(ids);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return qb.getMany();
     }
 
@@ -692,6 +689,7 @@ export class EntityManager {
     findOne<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
+        this.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
     }
 
@@ -723,9 +721,10 @@ export class EntityManager {
         if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
             id = metadata.createEntityIdMap([id]);
         }
-        qb.whereInIds([id]);
+
+        this.joinEagerRelations(qb, qb.alias, metadata);
         FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        return qb.getOne();
+        return qb.andWhereInIds([id]).getOne();
     }
 
     /**
@@ -738,7 +737,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         try {
-            return await queryRunner.truncate(metadata.tableName); // await is needed here because we are using finally
+            return await queryRunner.truncate(metadata.tablePath); // await is needed here because we are using finally
 
         } finally {
             if (!this.queryRunner)
@@ -847,6 +846,21 @@ export class EntityManager {
             throw new NoNeedToReleaseEntityManagerError();
 
         return this.queryRunner.release();
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Joins all eager relations recursively.
+     */
+    protected joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
+        metadata.eagerRelations.forEach(relation => {
+            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
+        });
     }
 
 }

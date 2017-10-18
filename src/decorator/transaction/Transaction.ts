@@ -26,29 +26,28 @@ export function Transaction(connectionName: string = "default"): MethodDecorator
                     // gets all @TransactionEntityManager() decorator usages for this method
                     const transactionEntityManagerMetadatas = getMetadataArgsStorage()
                         .filterTransactionEntityManagers(target.constructor)
-                        .filter(transactionEntityManagerMetadata => 
-                            transactionEntityManagerMetadata.methodName === methodName
-                        );
+                        .filter(transactionEntityManagerMetadata => {
+                            return transactionEntityManagerMetadata.methodName === methodName;
+                        });
 
                     // gets all @TransactionRepository() decorator usages for this method
                     const transactionRepositoryMetadatas = getMetadataArgsStorage()
                         .filterTransactionRepository(target.constructor)
-                        .filter(transactionRepositoryMetadata => 
-                            transactionRepositoryMetadata.methodName === methodName
-                        );
+                        .filter(transactionRepositoryMetadata => {
+                            return transactionRepositoryMetadata.methodName === methodName;
+                        });
                         
                     // if there are @TransactionEntityManager() decorator usages the inject them
                     if (transactionEntityManagerMetadatas.length > 0) { 
                         argsWithInjectedTransactionManagerAndRepositories = [...args];
                         // replace method params with injection of transactionEntityManager
-                        transactionEntityManagerMetadatas
-                            .forEach(metadata => 
-                                argsWithInjectedTransactionManagerAndRepositories[metadata.index] = entityManager
-                            );
+                        transactionEntityManagerMetadatas.forEach(metadata => {
+                            argsWithInjectedTransactionManagerAndRepositories.splice(metadata.index, 0, entityManager);
+                        });
 
-                    } // otherwise if there's no transaction repositories in use, inject it as a first parameter
-                    else if (transactionRepositoryMetadatas.length === 0) { 
+                    } else if (transactionRepositoryMetadatas.length === 0) { // otherwise if there's no transaction repositories in use, inject it as a first parameter
                         argsWithInjectedTransactionManagerAndRepositories = [entityManager, ...args];
+
                     } else {
                         argsWithInjectedTransactionManagerAndRepositories = [...args];
                     }
@@ -74,7 +73,7 @@ export function Transaction(connectionName: string = "default"): MethodDecorator
                         }
 
                         // replace method param with injection of repository instance
-                        argsWithInjectedTransactionManagerAndRepositories[metadata.index] = repositoryInstance;
+                        argsWithInjectedTransactionManagerAndRepositories.splice(metadata.index, 0, repositoryInstance);
                     });
 
                     return originalMethod.apply(this, argsWithInjectedTransactionManagerAndRepositories);

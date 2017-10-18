@@ -114,7 +114,7 @@ describe("persistence > partial persist", () => {
         loadedPostAfterStarsUpdate!.counters.commentCount.should.be.equal(2);
 
         // now update in relational column
-        await postRepository.updateById(1, { categories: [{ id: 1, name: "Bears" }] });
+        await postRepository.save({ id: 1, categories: [{ id: 1, name: "Bears" }] });
 
         // now check if update worked as expected, name of category is updated and all other columns are not touched
         const loadedPostAfterCategoryUpdate = await postRepository.findOneById(1, {

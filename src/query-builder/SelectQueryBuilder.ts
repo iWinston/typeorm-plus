@@ -28,7 +28,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 
 /**
@@ -68,8 +68,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     subQuery(): SelectQueryBuilder<any> {
         const qb = this.createQueryBuilder();
-        qb.queryRunner = this.queryRunner;
         qb.expressionMap.subQuery = true;
+        qb.expressionMap.parentQueryBuilder = this;
         return qb;
     }
 
@@ -205,6 +205,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * INNER JOINs (without selection) given subquery.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoin(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
+
+    /**
      * INNER JOINs (without selection) entity's property.
      * Given entity property should be a relation.
      * You also need to specify an alias of the joined data.
@@ -231,10 +238,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoin(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.join("INNER", entityOrProperty, aliasName, condition, parameters);
         return this;
     }
+
+    /**
+     * LEFT JOINs (without selection) given subquery.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoin(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs (without selection) entity's property.
@@ -263,10 +277,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoin(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoin(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.join("LEFT", entityOrProperty, aliasName, condition, parameters);
         return this;
     }
+
+    /**
+     * INNER JOINs given subquery and adds all selection properties to SELECT..
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndSelect(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs entity's property and adds all selection properties to SELECT.
@@ -295,11 +316,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoinAndSelect(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
         this.innerJoin(entityOrProperty, aliasName, condition, parameters);
         return this;
     }
+
+    /**
+     * LEFT JOINs given subquery and adds all selection properties to SELECT..
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndSelect(subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs entity's property and adds all selection properties to SELECT.
@@ -328,11 +356,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndSelect(entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoinAndSelect(entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
         this.leftJoin(entityOrProperty, aliasName, condition, parameters);
         return this;
     }
+
+    /**
+     * INNER JOINs given subquery, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapMany(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -369,11 +407,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
         this.join("INNER", entityOrProperty, aliasName, condition, parameters, mapToProperty, true);
         return this;
     }
+
+    /**
+     * INNER JOINs given subquery, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    innerJoinAndMapOne(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -410,11 +458,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    innerJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
         this.join("INNER", entityOrProperty, aliasName, condition, parameters, mapToProperty, false);
         return this;
     }
+
+    /**
+     * LEFT JOINs given subquery, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapMany(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -451,11 +509,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoinAndMapMany(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
         this.join("LEFT", entityOrProperty, aliasName, condition, parameters, mapToProperty, true);
         return this;
     }
+
+    /**
+     * LEFT JOINs given subquery, SELECTs the data returned by a join and MAPs all that data to some entity's property.
+     * This is extremely useful when you want to select some data and map it to some virtual property.
+     * It will assume that there is a single row of selecting data, and mapped result will be a single selected value.
+     * Given entity property should be a relation.
+     * You also need to specify an alias of the joined data.
+     * Optionally, you can add condition and parameters used in condition.
+     */
+    leftJoinAndMapOne(mapToProperty: string, subQueryFactory: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string, condition?: string, parameters?: ObjectLiteral): this;
 
     /**
      * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -492,7 +560,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string, aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
+    leftJoinAndMapOne(mapToProperty: string, entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>), aliasName: string, condition: string = "", parameters?: ObjectLiteral): this {
         this.addSelect(aliasName);
         this.join("LEFT", entityOrProperty, aliasName, condition, parameters, mapToProperty, false);
         return this;
@@ -561,6 +629,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         if (relationIdAttribute.relation.junctionEntityMetadata) {
             this.expressionMap.createAlias({
+                type: "other",
                 name: relationIdAttribute.junctionAlias,
                 metadata: relationIdAttribute.relation.junctionEntityMetadata
             });
@@ -581,10 +650,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.relationCountAttributes.push(relationCountAttribute);
 
         this.expressionMap.createAlias({
+            type: "other",
             name: relationCountAttribute.junctionAlias
         });
         if (relationCountAttribute.relation.junctionEntityMetadata) {
             this.expressionMap.createAlias({
+                type: "other",
                 name: relationCountAttribute.junctionAlias,
                 metadata: relationCountAttribute.relation.junctionEntityMetadata
             });
@@ -613,9 +684,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: Brackets|string|((qb: this) => string), parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres = [{ type: "simple", condition: this.computeWhereParameter(where) }];
-        if (parameters) this.setParameters(parameters);
+    where(where: Brackets|string|((qb: this) => string)|ObjectLiteral, parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
+        const condition = this.computeWhereParameter(where);
+        if (condition)
+            this.expressionMap.wheres = [{ type: "simple", condition: condition }];
+        if (parameters)
+            this.setParameters(parameters);
         return this;
     }
 
@@ -647,7 +722,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    whereInIds(ids: any[]): this {
+    whereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.where(whereExpression, parameters);
         return this;
@@ -840,26 +916,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets number of entities to skip.
      */
     skip(skip?: number): this {
-        this.expressionMap.skip = skip;
-        return this;
-    }
-
-    /**
-     * Sets maximal number of entities to take.
-     *
-     * @deprecated use take method instead
-     */
-    setMaxResults(take?: number): this {
-        this.expressionMap.take = take;
-        return this;
-    }
-
-    /**
-     * Sets number of entities to skip.
-     *
-     * @deprecated use skip method instead
-     */
-    setFirstResult(skip?: number): this {
         this.expressionMap.skip = skip;
         return this;
     }
@@ -1069,7 +1125,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected join(direction: "INNER"|"LEFT", entityOrProperty: Function|string, aliasName: string, condition?: string, parameters?: ObjectLiteral, mapToProperty?: string, isMappingMany?: boolean): void {
+    protected join(direction: "INNER"|"LEFT",
+                   entityOrProperty: Function|string|((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+                   aliasName: string,
+                   condition?: string,
+                   parameters?: ObjectLiteral,
+                   mapToProperty?: string,
+                   isMappingMany?: boolean): void {
 
         this.setParameters(parameters || {});
 
@@ -1082,15 +1144,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute);
 
-        // todo: find and set metadata right there?
-        joinAttribute.alias = this.expressionMap.createAlias({
-            name: aliasName,
-            metadata: joinAttribute.metadata!
-        });
-        if (joinAttribute.relation && joinAttribute.relation.junctionEntityMetadata) {
-            this.expressionMap.createAlias({
-                name: joinAttribute.junctionAlias,
-                metadata: joinAttribute.relation.junctionEntityMetadata
+        if (joinAttribute.metadata) {
+
+            // todo: find and set metadata right there?
+            joinAttribute.alias = this.expressionMap.createAlias({
+                type: "join",
+                name: aliasName,
+                metadata: joinAttribute.metadata
+            });
+            if (joinAttribute.relation && joinAttribute.relation.junctionEntityMetadata) {
+                this.expressionMap.createAlias({
+                    type: "join",
+                    name: joinAttribute.junctionAlias,
+                    metadata: joinAttribute.relation.junctionEntityMetadata
+                });
+            }
+
+        } else {
+            let subQuery: string = "";
+            if (entityOrProperty instanceof Function) {
+                const subQueryBuilder: SelectQueryBuilder<any> = (entityOrProperty as any)(((this as any) as SelectQueryBuilder<any>).subQuery());
+                this.setParameters(subQueryBuilder.getParameters());
+                subQuery = subQueryBuilder.getQuery();
+
+            } else {
+                subQuery = entityOrProperty;
+            }
+            const isSubQuery = entityOrProperty instanceof Function || entityOrProperty.substr(0, 1) === "(" && entityOrProperty.substr(-1) === ")";
+            joinAttribute.alias = this.expressionMap.createAlias({
+                type: "join",
+                name: aliasName,
+                tableName: isSubQuery === false ? entityOrProperty as string : undefined,
+                subQuery: isSubQuery === true ? subQuery : undefined,
             });
         }
     }
@@ -1185,12 +1270,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // create a selection query
         const froms = this.expressionMap.aliases
-            .filter(alias => alias.tableName || alias.subQuery)
+            .filter(alias => alias.type === "from" && (alias.tableName || alias.subQuery))
             .map(alias => {
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name);
 
-                return this.escape(alias.tableName!) + " " + this.escape(alias.name);
+                return this.getTableName(alias.tableName!) + " " + this.escape(alias.name);
             });
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
         if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
@@ -1222,9 +1307,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
             // table to join, without junction table involved. This means we simply join direct table.
-            if (!parentAlias || !relation)
-                return " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) +
+            if (!parentAlias || !relation) {
+                const destinationJoin = joinAttr.alias.subQuery ? joinAttr.alias.subQuery : this.getTableName(destinationTableName);
+                return " " + joinAttr.direction + " JOIN " + destinationJoin + " " + this.escape(destinationTableAlias) +
                     (joinAttr.condition ? " ON " + this.replacePropertyNames(joinAttr.condition) : "");
+            }
 
             // if real entity relation is involved
             if (relation.isManyToOne || relation.isOneToOneOwner) {
@@ -1235,7 +1322,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         parentAlias + "." + relation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
-                return " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
+                return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
 
@@ -1245,7 +1332,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
-                return " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
+                return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else { // means many-to-many
                 const junctionTableName = relation.junctionEntityMetadata!.tableName;
@@ -1277,8 +1364,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     }).join(" AND ");
                 }
 
-                return " " + joinAttr.direction + " JOIN " + this.escape(junctionTableName) + " " + this.escape(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
-                    " " + joinAttr.direction + " JOIN " + this.escape(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
+                return " " + joinAttr.direction + " JOIN " + this.getTableName(junctionTableName) + " " + this.escape(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
+                    " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
 
             }
         });
@@ -1290,7 +1377,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const condition = metadata.parentIdColumns.map(parentIdColumn => {
                     return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + this.escape(alias) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
                 }).join(" AND ");
-                const join = " JOIN " + this.escape(metadata.parentEntityMetadata.tableName) + " " + this.escape(alias) + " ON " + this.replacePropertyNames(condition);
+                const join = " JOIN " + this.getTableName(metadata.parentEntityMetadata.tableName) + " " + this.escape(alias) + " ON " + this.replacePropertyNames(condition);
                 joins.push(join);
             }
         }
@@ -1425,9 +1512,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected buildEscapedEntityColumnSelects(aliasName: string, metadata: EntityMetadata): SelectQuery[] {
         const hasMainAlias = this.expressionMap.selects.some(select => select.selection === aliasName);
 
-        const columns: ColumnMetadata[] = hasMainAlias ? metadata.columns.filter(column => column.isSelect === true) : metadata.columns.filter(column => {
+        const columns: ColumnMetadata[] = [];
+        if (hasMainAlias) {
+            columns.push(...metadata.columns.filter(column => column.isSelect === true));
+        }
+        columns.push(...metadata.columns.filter(column => {
             return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
-        });
+        }));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
         // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
@@ -1465,7 +1556,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const distinctAlias = this.escape(mainAlias);
         let countSql: string = "";
         if (metadata.hasMultiplePrimaryKeys) {
-            if (this.connection.driver instanceof SqliteDriver) {
+            if (this.connection.driver instanceof AbstractSqliteDriver) {
                 countSql = `COUNT(DISTINCT(` + metadata.primaryColumns.map((primaryColumn, index) => {
                     const propertyName = this.escape(primaryColumn.databaseName);
                     return `${distinctAlias}.${propertyName}`;

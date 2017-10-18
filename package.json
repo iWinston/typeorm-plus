@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.1.0-alpha.42",
+  "version": "0.1.1",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, WebSQL, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -39,12 +39,10 @@
   "module": "index",
   "devDependencies": {
     "@types/chai": "^4.0.4",
-    "@types/chai-as-promised": "0.0.31",
-    "@types/mkdirp": "^0.5.1",
+    "@types/chai-as-promised": "7.1.0",
     "@types/mocha": "^2.2.42",
-    "@types/node": "^8.0.26",
-    "@types/rimraf": "^2.0.2",
-    "@types/sinon": "^2.3.3",
+    "@types/node": "^8.0.41",
+    "@types/sinon": "^2.3.6",
     "chai": "^3.5.0",
     "chai-as-promised": "^7.1.1",
     "del": "^3.0.0",
@@ -61,9 +59,9 @@
     "gulp-uglify": "^3.0.0",
     "gulpclass": "^0.1.2",
     "mocha": "^2.5.3",
-    "mongodb": "^2.2.31",
+    "mongodb": "^2.2.33",
     "mssql": "^4.0.4",
-    "mysql": "^2.14.1",
+    "mysql": "^2.15.0",
     "mysql2": "^1.4.1",
     "pg": "^7.3.0",
     "redis": "^2.8.0",
@@ -71,11 +69,11 @@
     "rimraf": "^2.6.2",
     "sinon": "^2.4.1",
     "sinon-chai": "^2.13.0",
-    "sqlite3": "^3.1.10",
+    "sqlite3": "^3.1.13",
     "ts-node": "^3.3.0",
     "tslint": "^5.6.0",
     "tslint-stylish": "^2.1.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.5.3"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
@@ -88,7 +86,7 @@
     "reflect-metadata": "^0.1.10",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
-    "yargs": "^8.0.2"
+    "yargs": "^9.0.1"
   },
   "scripts": {
     "test": "gulp ci-tests",
@@ -98,5 +96,10 @@
   },
   "bin": {
     "typeorm": "./cli.js"
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/typeorm",
+    "logo": "https://opencollective.com/opencollective/logo.txt"
   }
 }

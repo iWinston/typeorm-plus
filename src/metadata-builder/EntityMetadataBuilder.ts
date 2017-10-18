@@ -280,14 +280,16 @@ export class EntityMetadataBuilder {
         entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (tableArgs.target as any).name; // todo: pass this to naming strategy to generate a name
 
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
-        entityMetadata.ownColumns = this.metadataArgsStorage.filterColumns(inheritanceTree).map(args => {
-            const column = new ColumnMetadata({ connection: this.connection, entityMetadata, args });
-            // console.log(column.propertyName);
-            // if single table inheritance used, we need to mark all inherit table columns as nullable
-            if (singleTableChildrenTargets && singleTableChildrenTargets.indexOf(args.target) !== -1)
-                column.isNullable = true;
-            return column;
-        });
+        entityMetadata.ownColumns = this.metadataArgsStorage
+            .filterColumns(inheritanceTree)
+            .map(args => {
+                const column = new ColumnMetadata({ connection: this.connection, entityMetadata, args });
+                // console.log(column.propertyName);
+                // if single table inheritance used, we need to mark all inherit table columns as nullable
+                if (singleTableChildrenTargets && singleTableChildrenTargets.indexOf(args.target) !== -1)
+                    column.isNullable = true;
+                return column;
+            });
 
         entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(inheritanceTree).map(args => {
             return new RelationMetadata({ entityMetadata, args });
@@ -314,13 +316,15 @@ export class EntityMetadataBuilder {
     protected createEmbeddedsRecursively(entityMetadata: EntityMetadata, embeddedArgs: EmbeddedMetadataArgs[]): EmbeddedMetadata[] {
         return embeddedArgs.map(embeddedArgs => {
             const embeddedMetadata = new EmbeddedMetadata({ entityMetadata: entityMetadata, args: embeddedArgs });
-            embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(embeddedMetadata.type).map(args => {
+            const targets = MetadataUtils.getInheritanceTree(embeddedMetadata.type);
+
+            embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(targets).map(args => {
                 return new ColumnMetadata({ connection: this.connection, entityMetadata, embeddedMetadata, args});
             });
-            embeddedMetadata.relations = this.metadataArgsStorage.filterRelations(embeddedMetadata.type).map(args => {
+            embeddedMetadata.relations = this.metadataArgsStorage.filterRelations(targets).map(args => {
                 return new RelationMetadata({ entityMetadata, embeddedMetadata, args });
             });
-            embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(embeddedMetadata.type));
+            embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(targets));
             embeddedMetadata.embeddeds.forEach(subEmbedded => subEmbedded.parentEmbeddedMetadata = embeddedMetadata);
             return embeddedMetadata;
         });
@@ -338,6 +342,8 @@ export class EntityMetadataBuilder {
         entityMetadata.ownColumns.forEach(column => column.build(this.connection));
         entityMetadata.ownRelations.forEach(relation => relation.build());
         entityMetadata.relations = entityMetadata.embeddeds.reduce((relations, embedded) => relations.concat(embedded.relationsFromTree), entityMetadata.ownRelations);
+        entityMetadata.eagerRelations = entityMetadata.relations.filter(relation => relation.isEager);
+        entityMetadata.lazyRelations = entityMetadata.relations.filter(relation => relation.isLazy);
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(relation => relation.isOneToOne);
         entityMetadata.oneToManyRelations = entityMetadata.relations.filter(relation => relation.isOneToMany);
         entityMetadata.manyToOneRelations = entityMetadata.relations.filter(relation => relation.isManyToOne);

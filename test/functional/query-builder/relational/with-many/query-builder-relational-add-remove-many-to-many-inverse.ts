@@ -8,16 +8,6 @@ import {Connection} from "../../../../../src/connection/Connection";
 describe("query builder > relational query builder > add and remove operations > many to many relation", () => {
 
     let connections: Connection[];
-    let image1: Image,
-        image2: Image,
-        image3: Image,
-        post1: Post,
-        post2: Post,
-        post3: Post,
-        loadedPost1: Post|undefined,
-        loadedPost2: Post|undefined,
-        loadedPost3: Post|undefined;
-
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         dropSchema: true,
@@ -25,35 +15,31 @@ describe("query builder > relational query builder > add and remove operations >
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    async function prepareData(connection: Connection) {
+    it("should add entity relation of a given entity by entity objects", () => Promise.all(connections.map(async connection => {
 
-        image1 = new Image();
+        const image1 = new Image();
         image1.url = "image #1";
         await connection.manager.save(image1);
 
-        image2 = new Image();
+        const image2 = new Image();
         image2.url = "image #2";
         await connection.manager.save(image2);
 
-        image3 = new Image();
+        const image3 = new Image();
         image3.url = "image #3";
         await connection.manager.save(image3);
 
-        post1 = new Post();
+        const post1 = new Post();
         post1.title = "post #1";
         await connection.manager.save(post1);
 
-        post2 = new Post();
+        const post2 = new Post();
         post2.title = "post #2";
         await connection.manager.save(post2);
 
-        post3 = new Post();
+        const post3 = new Post();
         post3.title = "post #3";
         await connection.manager.save(post3);
-    }
-
-    it("should add entity relation of a given entity by entity objects", () => Promise.all(connections.map(async connection => {
-        await prepareData(connection);
 
         await connection
             .createQueryBuilder()
@@ -61,13 +47,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of(image1)
             .add(post1);
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.contain({ id: 1, url: "image #1" });
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.be.empty;
 
         await connection
@@ -87,7 +73,30 @@ describe("query builder > relational query builder > add and remove operations >
     })));
 
     it("should add entity relation of a given entity by entity id", () => Promise.all(connections.map(async connection => {
-        await prepareData(connection);
+
+        const image1 = new Image();
+        image1.url = "image #1";
+        await connection.manager.save(image1);
+
+        const image2 = new Image();
+        image2.url = "image #2";
+        await connection.manager.save(image2);
+
+        const image3 = new Image();
+        image3.url = "image #3";
+        await connection.manager.save(image3);
+
+        const post1 = new Post();
+        post1.title = "post #1";
+        await connection.manager.save(post1);
+
+        const post2 = new Post();
+        post2.title = "post #2";
+        await connection.manager.save(post2);
+
+        const post3 = new Post();
+        post3.title = "post #3";
+        await connection.manager.save(post3);
 
         await connection
             .createQueryBuilder()
@@ -95,13 +104,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of(2) // image id
             .add(2); // post id
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.contain({ id: 2, url: "image #2" });
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.be.empty;
 
         await connection
@@ -121,7 +130,30 @@ describe("query builder > relational query builder > add and remove operations >
     })));
 
     it("should add entity relation of a given entity by entity id map", () => Promise.all(connections.map(async connection => {
-        await prepareData(connection);
+
+        const image1 = new Image();
+        image1.url = "image #1";
+        await connection.manager.save(image1);
+
+        const image2 = new Image();
+        image2.url = "image #2";
+        await connection.manager.save(image2);
+
+        const image3 = new Image();
+        image3.url = "image #3";
+        await connection.manager.save(image3);
+
+        const post1 = new Post();
+        post1.title = "post #1";
+        await connection.manager.save(post1);
+
+        const post2 = new Post();
+        post2.title = "post #2";
+        await connection.manager.save(post2);
+
+        const post3 = new Post();
+        post3.title = "post #3";
+        await connection.manager.save(post3);
 
         await connection
             .createQueryBuilder()
@@ -129,13 +161,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of({ id: 3 }) // image id
             .add({ id: 3 }); // post id
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
 
         await connection
@@ -155,7 +187,30 @@ describe("query builder > relational query builder > add and remove operations >
     })));
 
     it("should add entity relation of a multiple entities", () => Promise.all(connections.map(async connection => {
-        await prepareData(connection);
+
+        const image1 = new Image();
+        image1.url = "image #1";
+        await connection.manager.save(image1);
+
+        const image2 = new Image();
+        image2.url = "image #2";
+        await connection.manager.save(image2);
+
+        const image3 = new Image();
+        image3.url = "image #3";
+        await connection.manager.save(image3);
+
+        const post1 = new Post();
+        post1.title = "post #1";
+        await connection.manager.save(post1);
+
+        const post2 = new Post();
+        post2.title = "post #2";
+        await connection.manager.save(post2);
+
+        const post3 = new Post();
+        post3.title = "post #3";
+        await connection.manager.save(post3);
 
         await connection
             .createQueryBuilder()
@@ -163,13 +218,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of([{ id: 1 }, { id: 3 }]) // images
             .add({ id: 3 }); // post
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.be.empty;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.contain({ id: 1, url: "image #1" });
         expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
 
@@ -191,7 +246,30 @@ describe("query builder > relational query builder > add and remove operations >
     })));
 
     it("should add multiple entities into relation of a multiple entities", () => Promise.all(connections.map(async connection => {
-        await prepareData(connection);
+
+        const image1 = new Image();
+        image1.url = "image #1";
+        await connection.manager.save(image1);
+
+        const image2 = new Image();
+        image2.url = "image #2";
+        await connection.manager.save(image2);
+
+        const image3 = new Image();
+        image3.url = "image #3";
+        await connection.manager.save(image3);
+
+        const post1 = new Post();
+        post1.title = "post #1";
+        await connection.manager.save(post1);
+
+        const post2 = new Post();
+        post2.title = "post #2";
+        await connection.manager.save(post2);
+
+        const post3 = new Post();
+        post3.title = "post #3";
+        await connection.manager.save(post3);
 
         await connection
             .createQueryBuilder()
@@ -199,13 +277,13 @@ describe("query builder > relational query builder > add and remove operations >
             .of({ id: 3 }) // image
             .add([{ id: 1 }, { id: 3 }]); // posts
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
+        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["images"] });
         expect(loadedPost1!.images).to.contain({ id: 3, url: "image #3" });
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
+        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["images"] });
         expect(loadedPost2!.images).to.be.empty;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
+        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.contain({ id: 3, url: "image #3" });
 
         await connection
@@ -222,6 +300,7 @@ describe("query builder > relational query builder > add and remove operations >
 
         loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["images"] });
         expect(loadedPost3!.images).to.not.contain({ id: 3, url: "image #3" });
+
     })));
 
 });

@@ -1,6 +1,5 @@
 import {FindManyOptions} from "./FindManyOptions";
 import {FindOneOptions} from "./FindOneOptions";
-import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 
 /**
@@ -68,7 +67,7 @@ export class FindOptionsUtils {
             return this.applyOptionsToQueryBuilder(qb, options);
 
         if (options)
-            return this.applyConditions(qb, options);
+            return qb.where(options);
 
         return qb;
     }
@@ -81,7 +80,7 @@ export class FindOptionsUtils {
             return this.applyOptionsToQueryBuilder(qb, options);
 
         if (options)
-            return this.applyConditions(qb, options);
+            return qb.where(options);
 
         return qb;
     }
@@ -101,7 +100,7 @@ export class FindOptionsUtils {
         }
 
         if (options.where)
-            this.applyConditions(qb, options.where);
+            qb.where(options.where);
 
         if ((options as FindManyOptions<T>).skip)
             qb.skip((options as FindManyOptions<T>).skip!);
@@ -111,7 +110,21 @@ export class FindOptionsUtils {
 
         if (options.order)
             Object.keys(options.order).forEach(key => {
-                qb.addOrderBy(qb.alias + "." + key, (options as FindOneOptions<T>).order![key as any]);
+                const order = (options as FindOneOptions<T>).order![key as any];
+                switch (order) {
+                    case 1:
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case -1:
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                    case "ASC":
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case "DESC":
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                }
             });
 
         if (options.relations)
@@ -140,24 +153,6 @@ export class FindOptionsUtils {
                     qb.innerJoinAndSelect(options.join!.innerJoinAndSelect![key], key);
                 });
         }
-
-        return qb;
-    }
-
-    /**
-     * Applies given simple conditions set to a given query builder.
-     */
-    static applyConditions<T>(qb: SelectQueryBuilder<T>, conditions: ObjectLiteral): SelectQueryBuilder<T> {
-        Object.keys(conditions).forEach((key, index) => {
-            if (conditions![key] === null) {
-                qb.andWhere(`${qb.alias}.${key} IS NULL`);
-
-            } else {
-                const parameterName = "where_" + index;
-                qb.andWhere(`${qb.alias}.${key}=:${parameterName}`)
-                    .setParameter(parameterName, conditions![key]);
-            }
-        });
 
         return qb;
     }

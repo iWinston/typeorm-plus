@@ -6,7 +6,7 @@ import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -45,6 +45,11 @@ export interface Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults;
+
+    /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withLengthColumnTypes: ColumnType[];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -102,7 +107,7 @@ export interface Driver {
     /**
      * Transforms type of the given column to a database column type.
      */
-    normalizeType(column: { type?: ColumnType, length?: number, precision?: number, scale?: number, isArray?: boolean }): string;
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string;
 
     /**
      * Normalizes "default" value of the column.
@@ -115,9 +120,14 @@ export interface Driver {
     normalizeIsUnique(column: ColumnMetadata): boolean;
 
     /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string;
+
+    /**
      * Normalizes "default" value of the column.
      */
-    createFullType(column: ColumnSchema): string;
+    createFullType(column: TableColumn): string;
 
     /**
      * Obtains a new database connection to a master server.
