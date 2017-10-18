@@ -7,14 +7,16 @@ import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
-import {close, open, stat} from "fs";
-import {dirname} from "path";
-import * as mkdirp from "mkdirp";
 
 /**
  * Organizes communication with sqlite DBMS.
  */
 export class SqliteDriver extends AbstractSqliteDriver {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
     /**
      * Connection options.
      */
@@ -80,55 +82,12 @@ export class SqliteDriver extends AbstractSqliteDriver {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected createDatabaseFile(): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            mkdirp(dirname(this.options.database), (err: NodeJS.ErrnoException) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                open(this.options.database, "w", (err, fd) => {
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    close(fd, (err) => {
-                        if (err) {
-                            return reject(err);
-                        }
-                    });
-
-                    return resolve();
-                });
-            });
-        });
-    }
-
-    protected doesFileExist(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            stat(this.options.database, (err, stats) => {
-                if (err) {
-                    if (err.code === "ENOENT") {
-                        return resolve(false);
-                    }
-
-                    return reject(err);
-                }
-
-                return resolve(stats.isFile());
-            });
-        });
-    }
-
     /**
      * Creates connection with the database.
      */
     protected createDatabaseConnection() {
         return new Promise<void>(async (ok, fail) => {
-            if (!await this.doesFileExist()) {
-                await this.createDatabaseFile();
-            }
-
+            await this.createDatabaseDirectory(this.options.database);
             const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);
 
@@ -152,6 +111,17 @@ export class SqliteDriver extends AbstractSqliteDriver {
         } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
         }
+    }
+
+    /**
+     * Auto creates database directory if it does not exist.
+     */
+    protected createDatabaseDirectory(fullPath: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const mkdirp = PlatformTools.load("mkdirp");
+            const path = PlatformTools.load("path");
+            mkdirp(path.dirname(fullPath), (err: any) => err ? reject(err) : resolve());
+        });
     }
 
 }

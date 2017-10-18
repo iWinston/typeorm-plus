@@ -42,6 +42,7 @@
     "@types/chai-as-promised": "7.1.0",
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.0.41",
+    "@types/rimraf": "^2.0.2",
     "@types/sinon": "^2.3.6",
     "chai": "^3.5.0",
     "chai-as-promised": "^7.1.1",
