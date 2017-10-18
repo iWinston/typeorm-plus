@@ -64,7 +64,7 @@ export class BaseEntity {
     /**
      * Gets current entity's Repository.
      */
-    static getRepository<T extends BaseEntity>(this: ObjectType<T>, ): Repository<T> {
+    static getRepository<T extends BaseEntity>(this: ObjectType<T>): Repository<T> {
         const connection: Connection = (this as any).usedConnection || getConnection();
         return connection.getRepository<T>(this);
     }

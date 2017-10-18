@@ -205,7 +205,7 @@ export class QueryExpressionMap {
      * List of columns where data should be inserted.
      * Used in INSERT query.
      */
-    insertColumns: string[];
+    insertColumns: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
