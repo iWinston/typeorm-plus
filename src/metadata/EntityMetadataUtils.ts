@@ -1,4 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {EntityMetadata} from "./EntityMetadata";
 
 /**
  * Utils used to work with EntityMetadata objects.
@@ -8,14 +9,15 @@ export class EntityMetadataUtils {
     /**
      * Creates a property paths for a given entity.
      */
-    static createPropertyPath(entity: ObjectLiteral, prefix: string = "") {
+    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
         const paths: string[] = [];
         Object.keys(entity).forEach(key => {
 
             // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
             // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            if (entity[key] instanceof Object && !(entity[key] instanceof Function) && !(entity[key] instanceof Date)) {
-                const subPaths = this.createPropertyPath(entity[key], key);
+            const parentPath = prefix ? prefix + "." + key : key;
+            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
+                const subPaths = this.createPropertyPath(metadata, entity[key], key);
                 paths.push(...subPaths);
             } else {
                 const path = prefix ? prefix + "." + key : key;

@@ -7,7 +7,8 @@ feel free to ask us and community.
 
 ## 0.1.2 (next)
 
-* fixed bug with not working `update` of `Date` values (#1037)
+* fixed bug with not properly working `update`  method (#1037, #1042)
+* fixed bug with replication support (#1035)
 * sqlite now supports relative database file paths (#798 and #799) 
 
 ## 0.1.1 (current)

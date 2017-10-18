@@ -483,6 +483,22 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if there is an embedded with a given property path.
+     */
+    hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
+        return !!this.findEmbeddedWithPropertyPath(propertyPath);
+    }
+
+    /**
+     * Finds embedded with a given property path.
+     */
+    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
+        return this.embeddeds.find(embedded => {
+            return embedded.propertyPath === propertyPath;
+        });
+    }
+
+    /**
      * Finds column with a given property name.
      */
     findColumnWithPropertyName(propertyName: string): ColumnMetadata|undefined {

@@ -138,29 +138,46 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected createUpdateExpression() {
         const valuesSet = this.getValueSet();
+        const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
-        EntityMetadataUtils.createPropertyPath(valuesSet).forEach(propertyPath => {
-            const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(propertyPath);
+        if (metadata) {
+            EntityMetadataUtils.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
+                // todo: make this and other query builder to work with properly with tables without metadata
+                const column = metadata.findColumnWithPropertyPath(propertyPath);
 
-            // we update an entity and entity can contain property which aren't columns, so we just skip them
-            if (!column) return;
+                // we update an entity and entity can contain property which aren't columns, so we just skip them
+                if (!column) return;
 
-            const paramName = "_updated_" + column.databaseName;
-            const value = column.getEntityValue(valuesSet);
+                const paramName = "_updated_" + column.databaseName;
+                const value = this.connection.driver.preparePersistentValue(column.getEntityValue(valuesSet), column);
 
-            if (value instanceof Function) { // support for SQL expressions in update query
-                updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
-            } else {
-                if (this.connection.driver instanceof SqlServerDriver) {
-                    this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+                // todo: duplication zone
+                if (value instanceof Function) { // support for SQL expressions in update query
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
                 } else {
-                    this.setParameter(paramName, value);
+                    if (this.connection.driver instanceof SqlServerDriver) {
+                        this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+                    } else {
+                        this.setParameter(paramName, value);
+                    }
+                    updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
                 }
-                updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
-            }
-        });
+            });
+        } else {
+            Object.keys(valuesSet).map(key => {
+                const value = valuesSet[key];
+
+                // todo: duplication zone
+                if (value instanceof Function) { // support for SQL expressions in update query
+                    updateColumnAndValues.push(this.escape(key) + " = " + value());
+                } else {
+                    updateColumnAndValues.push(this.escape(key) + " = :" + key);
+                    this.setParameter(key, value);
+                }
+            });
+        }
 
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression();
