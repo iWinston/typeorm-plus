@@ -141,6 +141,13 @@ export class ConnectionOptionsReader {
                 });
                 Object.assign(connectionOptions, { migrations: migrations });
             }
+            if (options.type === "sqlite") {
+                if (typeof options.database === "string" && options.database.substr(0, 1) !== "/") {
+                    Object.assign(options, {
+                        database: this.baseDirectory + "/" + options.database
+                    });
+                }
+            }
         });
 
         return connectionOptions;

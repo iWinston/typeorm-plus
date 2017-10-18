@@ -7,6 +7,9 @@ import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
+import {close, open, stat} from "fs";
+import {dirname} from "path";
+import * as mkdirp from "mkdirp";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -54,7 +57,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
@@ -77,11 +80,55 @@ export class SqliteDriver extends AbstractSqliteDriver {
     // Protected Methods
     // -------------------------------------------------------------------------
 
+    protected createDatabaseFile(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            mkdirp(dirname(this.options.database), (err: NodeJS.ErrnoException) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                open(this.options.database, "w", (err, fd) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    close(fd, (err) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                    });
+
+                    return resolve();
+                });
+            });
+        });
+    }
+
+    protected doesFileExist(): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            stat(this.options.database, (err, stats) => {
+                if (err) {
+                    if (err.code === "ENOENT") {
+                        return resolve(false);
+                    }
+
+                    return reject(err);
+                }
+
+                return resolve(stats.isFile());
+            });
+        });
+    }
+
     /**
      * Creates connection with the database.
      */
     protected createDatabaseConnection() {
-        return new Promise<void>((ok, fail) => {
+        return new Promise<void>(async (ok, fail) => {
+            if (!await this.doesFileExist()) {
+                await this.createDatabaseFile();
+            }
+
             const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);
 
