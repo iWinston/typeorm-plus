@@ -7,9 +7,10 @@ feel free to ask us and community.
 
 ## 0.1.2 (next)
 
+* sqlite now supports relative database file paths (#798 and #799)
 * fixed bug with not properly working `update`  method (#1037, #1042)
 * fixed bug with replication support (#1035)
-* sqlite now supports relative database file paths (#798 and #799) 
+* fixed bug with wrong embedded column names being generated (#969) 
 
 ## 0.1.1 (current)
 

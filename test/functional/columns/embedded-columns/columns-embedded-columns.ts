@@ -1,22 +1,17 @@
 import "reflect-metadata";
-
 import {expect} from "chai";
-
 import {Connection} from "../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-
 import {SimplePost} from "./entity/SimplePost";
 import {SimpleCounters} from "./entity/SimpleCounters";
 import {Information} from "./entity/Information";
-
 import {Post} from "./entity/Post";
 
 describe("columns > embedded columns", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["postgres", "mysql"],
+        entities: [__dirname + "/entity/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
