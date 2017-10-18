@@ -180,7 +180,6 @@ export class EmbeddedMetadata {
 
         if (this.customPrefix === undefined) {
             prefixes.push(this.propertyName);
-
         } else if (typeof this.customPrefix === "string") {
             prefixes.push(this.customPrefix);
         }
@@ -193,7 +192,7 @@ export class EmbeddedMetadata {
     }
 
     protected buildParentPrefixes(): string[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPrefixes().concat(this.prefix || this.propertyName) : [this.prefix || this.propertyName];
+        return [this.prefix || this.propertyName];
     }
 
     protected buildEmbeddedMetadataTree(): EmbeddedMetadata[] {
