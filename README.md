@@ -1234,7 +1234,7 @@ The selection result will be ordered by id in descending order.
 The photo's albums will be left-joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot. 
-Learn more about QueryBuilder [here](./select-query-builder.md).
+Learn more about QueryBuilder [here](./docs/select-query-builder.md).
 
 ## Samples
 
