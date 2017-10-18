@@ -634,7 +634,7 @@ export abstract class QueryBuilder<Entity> {
 
             } else {
                 Object.keys(where).forEach((key, index) => {
-                    const parameterValue = where[key];
+                    const parameterValue = (where as ObjectLiteral)[key];
                     const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
                     if (parameterValue === null) {
                         ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
