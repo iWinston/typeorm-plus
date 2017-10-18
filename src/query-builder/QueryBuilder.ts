@@ -617,19 +617,36 @@ export abstract class QueryBuilder<Entity> {
             return where(this);
 
         } else if (where instanceof Object) {
-            const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
-            propertyPaths.forEach((propertyPath, index) => {
-                const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
-                const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
-                if (parameterValue === null) {
-                    ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+            if (this.expressionMap.mainAlias!.metadata) {
+                const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+                propertyPaths.forEach((propertyPath, index) => {
+                    const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
+                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
+                    if (parameterValue === null) {
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
 
-                } else {
-                    const parameterName = "where_" + index;
-                    ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
-                    this.setParameter(parameterName, parameterValue);
-                }
-            });
+                    } else {
+                        const parameterName = "where_" + index;
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                        this.setParameter(parameterName, parameterValue);
+                    }
+                });
+
+            } else {
+                Object.keys(where).forEach((key, index) => {
+                    const parameterValue = where[key];
+                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
+                    if (parameterValue === null) {
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+
+                    } else {
+                        const parameterName = "where_" + index;
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                        this.setParameter(parameterName, parameterValue);
+                    }
+                });
+
+            }
         }
 
         return "";

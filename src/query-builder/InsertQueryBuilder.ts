@@ -37,9 +37,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Specifies INTO which entity's table insertion will be executed.
      */
-    into<T>(entityTarget: ObjectType<T>|string): InsertQueryBuilder<T> {
+    into<T>(entityTarget: ObjectType<T>|string, columns?: string[]): InsertQueryBuilder<T> {
         const mainAlias = this.createFromAlias(entityTarget);
         this.expressionMap.setMainAlias(mainAlias);
+        this.expressionMap.insertColumns = columns || [];
         return (this as any) as InsertQueryBuilder<T>;
     }
 
@@ -70,45 +71,86 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
         const valueSets = this.getValueSets();
-        const columns = this.expressionMap.mainAlias!.metadata.columns.filter(column => !column.isGenerated);
+        let values: string, columnNames: string;
 
-        // get values needs to be inserted
-        const values = valueSets.map((valueSet, key) => {
-            const columnNames = columns.map(column => {
-                const paramName = "_inserted_" + key + "_" + column.databaseName;
-                const value = column.getEntityValue(valueSet);
+        if (this.expressionMap.mainAlias!.hasMetadata) {
+            const columns = this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+                if (!this.expressionMap.insertColumns.length)
+                    return !column.isGenerated;
 
-                if (value instanceof Function) { // support for SQL expressions in update query
-                    return value();
+                return this.expressionMap.insertColumns.length.indexOf(column.propertyPath);
+            });
 
-                } else if (value === undefined) {
-                    if (this.connection.driver instanceof SqliteDriver) {
-                        return "NULL";
+            // get a table name and all column database names
+            columnNames = columns.map(column => this.escape(column.databaseName)).join(", ");
+
+            // get values needs to be inserted
+            values = valueSets.map((valueSet, insertionIndex) => {
+                const columnValues = columns.map(column => {
+                    const paramName = "_inserted_" + insertionIndex + "_" + column.databaseName;
+                    const value = this.connection.driver.preparePersistentValue(column.getEntityValue(valueSet), column);
+
+                    if (value instanceof Function) { // support for SQL expressions in update query
+                        return value();
+
+                    } else if (value === undefined) {
+                        if (this.connection.driver instanceof SqliteDriver) {
+                            return "NULL";
+
+                        } else {
+                            return "DEFAULT";
+                        }
 
                     } else {
-                        return "DEFAULT";
+                        if (this.connection.driver instanceof SqlServerDriver) {
+                            this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+                        } else {
+                            this.setParameter(paramName, value);
+                        }
+                        return ":" + paramName;
                     }
+                });
+                return "(" + columnValues.join(",") + ")";
+            }).join(", ");
 
-                } else {
-                    if (this.connection.driver instanceof SqlServerDriver) {
-                        this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+        } else { // for tables without metadata
+
+            // get a table name and all column database names
+            columnNames = this.expressionMap.insertColumns.join(", ");
+
+            // get values needs to be inserted
+            values = valueSets.map((valueSet, insertionIndex) => {
+                const columnValues = Object.keys(valueSet).map(columnName => {
+                    const paramName = "_inserted_" + insertionIndex + "_" + columnName;
+                    const value = valueSet[columnName];
+
+                    if (value instanceof Function) { // support for SQL expressions in update query
+                        return value();
+
+                    } else if (value === undefined) {
+                        if (this.connection.driver instanceof SqliteDriver) {
+                            return "NULL";
+
+                        } else {
+                            return "DEFAULT";
+                        }
+
                     } else {
                         this.setParameter(paramName, value);
+                        return ":" + paramName;
                     }
-                    return ":" + paramName;
-                }
-            });
-            return "(" + columnNames.join(",") + ")";
-        }).join(", ");
-
-        // get a table name and all column database names
-        const columnNames = columns.map(column => this.escape(column.databaseName)).join(", ");
+                });
+                return "(" + columnValues.join(",") + ")";
+            }).join(", ");
+        }
 
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
             return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
+
         } else {
             return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}`;
         }
