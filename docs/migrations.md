@@ -13,7 +13,7 @@ Typically it is unsafe to use `synchronize: true` for schema synchronization on 
 you get data in your database. Here is where migrations come to help.
 
 A migration is just a single file with sql queries to update a database schema
-and apply new changes to an exist database.
+and apply new changes to an existing database.
 
 Let's say you already have a database and a post entity:
 
