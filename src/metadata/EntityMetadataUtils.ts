@@ -14,7 +14,7 @@ export class EntityMetadataUtils {
 
             // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
             // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
-            if (entity[key] instanceof Object && !(entity[key] instanceof Function)) {
+            if (entity[key] instanceof Object && !(entity[key] instanceof Function) && !(entity[key] instanceof Date)) {
                 const subPaths = this.createPropertyPath(entity[key], key);
                 paths.push(...subPaths);
             } else {
