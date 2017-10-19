@@ -1,4 +1,3 @@
-import {Table} from "./Table";
 import {TableColumnOptions} from "../options/TableColumnOptions";
 
 /**
@@ -93,18 +92,13 @@ export class TableColumn {
      */
     enum?: any[];
 
-    /**
-     * Table which column belongs to
-     */
-    table: Table;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(options?: TableColumnOptions) {
         if (options) {
-            this.name = options.name || "";
+            this.name = options.name;
             this.type = options.type || "";
             this.length = options.length || "";
             this.charset = options.charset;

@@ -1,4 +1,3 @@
-import {TableColumn} from "./TableColumn";
 import {TablePrimaryKeyOptions} from "../options/TablePrimaryKeyOptions";
 import {Table} from "./Table";
 
@@ -24,7 +23,7 @@ export class TablePrimaryKey {
     /**
      * Columns to which this primary key is bind.
      */
-    columns: TableColumn[] = [];
+    columnNames: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -33,7 +32,7 @@ export class TablePrimaryKey {
     constructor(options: TablePrimaryKeyOptions) {
         this.table = options.table;
         this.name = options.name;
-        this.columns = options.columns;
+        this.columnNames = options.columnNames;
     }
 
     // -------------------------------------------------------------------------
@@ -47,7 +46,7 @@ export class TablePrimaryKey {
         return new TablePrimaryKey(<TablePrimaryKeyOptions>{
             table: this.table,
             name: this.name,
-            columns: this.columns
+            columnNames: this.columnNames
         });
     }
 

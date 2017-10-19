@@ -13,6 +13,6 @@ export interface SchemaBuilder {
     /**
      * Returns queries to be executed by schema builder.
      */
-    log(): Promise<SqlInMemory[]>;
+    log(): Promise<SqlInMemory>;
 
 }

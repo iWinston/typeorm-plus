@@ -90,7 +90,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: SqlInMemory[] = [];
+    protected sqlInMemory: SqlInMemory;
 
     /**
      * Mode in which query runner executes.
@@ -400,13 +400,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             // create primary key schema
             const primaryKeyConstraints = constraints.filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "P");
             if (primaryKeyConstraints.length > 0) {
-                const pkColumns = constraints.map(constraint => {
-                    return table.columns.find(column => column.name === constraint["COLUMN_NAME"])!;
-                });
                 table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
                     table: table,
                     name: constraints[0]["CONSTRAINT_NAME"],
-                    columns: pkColumns
+                    columnNames: primaryKeyConstraints.map(constraint => constraint["COLUMN_NAME"])
                 });
             }
 
@@ -647,7 +644,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             return Promise.resolve();
 
         await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKey.name}"`);
-        const primaryColumnNames = dbTable.primaryKey.columns.map(column => "\"" + column.name + "\"");
+        const primaryColumnNames = dbTable.primaryKey.columnNames.map(columnName => "\"" + columnName + "\"");
         if (primaryColumnNames.length > 0)
             await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
     }
@@ -696,7 +693,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      */
     async createIndex(table: Table, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table instanceof Table ? table.name : table.name}"(${columns})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table.name}"(${columns})`;
         await this.query(sql);
     }
 
@@ -758,33 +755,29 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void {
-        this.sqlsInMemory = [];
+        this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
     }
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): SqlInMemory[] {
-        return this.sqlsInMemory;
+    getMemorySql(): SqlInMemory {
+        return this.sqlInMemory;
     }
 
     /**
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries, downQuery => this.query(downQuery));
     }
 
     // -------------------------------------------------------------------------

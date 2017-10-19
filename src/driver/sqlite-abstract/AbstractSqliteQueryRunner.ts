@@ -80,7 +80,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: SqlInMemory[] = [];
+    protected sqlInMemory: SqlInMemory;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -323,7 +323,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                     table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
                         table: table,
                         name: index["name"],
-                        columns: indexColumns
+                        columnNames: indexColumns
                     });
                     indexColumns.forEach(indexColumn => {
                     });
@@ -442,18 +442,17 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
         const newTable = table.clone();
-        newTable.addColumns([column]);
+        newTable.addColumn(column);
         await this.recreateTable(newTable, table);
+        table.addColumn(column);
     }
 
     /**
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const table = await this.getTableSchema(tableOrName);
-        const newTable = table.clone();
-        newTable.addColumns(columns);
-        await this.recreateTable(newTable, table);
+        const queries = columns.map(column => this.addColumn(tableOrName, column));
+        await Promise.all(queries);
     }
 
     /**
@@ -595,7 +594,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async createIndex(table: Table, index: TableIndex): Promise<void> {
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table instanceof Table ? table.name : table.name}"(${columnNames})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}"(${columnNames})`;
         await this.query(sql);
     }
 
@@ -653,33 +652,29 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void {
-        this.sqlsInMemory = [];
+        this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
     }
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): SqlInMemory[] {
-        return this.sqlsInMemory;
+    getMemorySql(): SqlInMemory {
+        return this.sqlInMemory;
     }
 
     /**
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries, downQuery => this.query(downQuery));
     }
 
     // -------------------------------------------------------------------------
@@ -716,11 +711,13 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
             upQueries = [upQueries];
         if (typeof downQueries === "string")
             downQueries = [downQueries];
+
+        this.sqlInMemory.upQueries = upQueries;
+        this.sqlInMemory.downQueries = downQueries;
+
         // if sql-in-memory mode is enabled then simply store sql in memory and return
-        if (this.sqlMemoryMode === true) {
-            this.sqlsInMemory.push({ upQueries: upQueries, downQueries: downQueries });
+        if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
-        }
 
         await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
     }

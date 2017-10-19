@@ -256,6 +256,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
             // create columns from the loaded columns
             table.columns = dbColumns.map(dbColumn => {
                 const tableColumn = new TableColumn();
+                tableColumn.table = table;
                 tableColumn.name = dbColumn["name"];
                 tableColumn.type = dbColumn["type"].toLowerCase();
                 tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;

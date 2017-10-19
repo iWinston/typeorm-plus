@@ -23,7 +23,7 @@ export class TableCheck {
     /**
      * Column that contains this constraint.
      */
-    columnName: string;
+    columnNames: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -32,7 +32,7 @@ export class TableCheck {
     constructor(options: TableCheckOptions) {
         this.table = options.table;
         this.name = options.name;
-        this.columnName = options.columnName;
+        this.columnNames = options.columnNames;
     }
 
     // -------------------------------------------------------------------------
@@ -46,7 +46,7 @@ export class TableCheck {
         return new TableCheck(<TableCheckOptions>{
             table: this.table,
             name: this.name,
-            columnName: this.columnName,
+            columnNames: this.columnNames,
         });
     }
 

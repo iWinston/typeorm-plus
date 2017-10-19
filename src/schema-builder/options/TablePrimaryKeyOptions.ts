@@ -1,4 +1,3 @@
-import {TableColumn} from "../table/TableColumn";
 import {Table} from "../table/Table";
 
 /**
@@ -23,6 +22,6 @@ export interface TablePrimaryKeyOptions {
     /**
      * Columns to which this primary key is bind.
      */
-    columns: TableColumn[];
+    columnNames: string[];
 
 }

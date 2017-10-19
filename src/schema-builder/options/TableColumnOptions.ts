@@ -1,3 +1,4 @@
+
 /**
  * Table's column options.
  */

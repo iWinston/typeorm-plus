@@ -94,7 +94,7 @@ export class PostgresQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: SqlInMemory[] = [];
+    protected sqlInMemory: SqlInMemory;
 
     /**
      * Mode in which query runner executes.
@@ -445,13 +445,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
             // create primary key schema
             const primaryKeys = dbPrimaryKeys.filter(primaryKey => primaryKey["table_name"] === table.name);
             if (primaryKeys.length > 0) {
-                const pkColumns = primaryKeys.map(primaryKey => {
-                    return table.columns.find(column => column.name === primaryKey["column_name"])!;
-                });
                 table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
                     table: table,
                     name: primaryKeys[0]["constraint_name"],
-                    columns: pkColumns
+                    columnNames: primaryKeys.map(primaryKey => primaryKey["column_name"])
                 });
             }
 
@@ -761,7 +758,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     async updatePrimaryKeys(table: Table): Promise<void> {
         if (!table.primaryKey)
             return Promise.resolve();
-        const primaryColumnNames = table.primaryKey.columns.map(column => `"${column.name}"`);
+        const primaryColumnNames = table.primaryKey.columnNames.map(columnName => `"${columnName}"`);
 
         const up = `ALTER TABLE ${this.escapeTablePath(table)} DROP CONSTRAINT IF EXISTS "${table.name}_pkey"`;
         const down = `-- TODO: revert ${up}`;
@@ -881,33 +878,29 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void {
-        this.sqlsInMemory = [];
+        this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
     }
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): SqlInMemory[] {
-        return this.sqlsInMemory;
+    getMemorySql(): SqlInMemory {
+        return this.sqlInMemory;
     }
 
     /**
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries, downQuery => this.query(downQuery));
     }
 
     // -------------------------------------------------------------------------
@@ -950,11 +943,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
             upQueries = [upQueries];
         if (typeof downQueries === "string")
             downQueries = [downQueries];
+
+        this.sqlInMemory.upQueries = upQueries;
+        this.sqlInMemory.downQueries = downQueries;
+
         // if sql-in-memory mode is enabled then simply store sql in memory and return
-        if (this.sqlMemoryMode === true) {
-            this.sqlsInMemory.push({ upQueries: upQueries, downQueries: downQueries });
+        if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
-        }
 
         await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
     }

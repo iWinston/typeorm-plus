@@ -22,6 +22,6 @@ export interface TableCheckOptions {
     /**
      * Column that contains this constraint.
      */
-    columnName: string;
+    columnNames: string[];
 
 }

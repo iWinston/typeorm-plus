@@ -23,7 +23,7 @@ export class TableUnique {
     /**
      * Columns that contains this constraint.
      */
-    columnNames: string[];
+    columnNames: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor

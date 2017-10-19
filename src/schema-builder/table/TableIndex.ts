@@ -24,7 +24,7 @@ export class TableIndex {
     /**
      * Columns included in this index.
      */
-    columnNames: string[];
+    columnNames: string[] = [];
 
     /**
      * Indicates if this index is unique.

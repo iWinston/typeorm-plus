@@ -89,7 +89,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: SqlInMemory[] = [];
+    protected sqlInMemory: SqlInMemory;
 
     /**
      * Mode in which query runner executes.
@@ -431,13 +431,10 @@ export class MysqlQueryRunner implements QueryRunner {
 
             // create primary key
             if (primaryKeys.length > 0) {
-                const pkColumns = primaryKeys.map(primaryKey => {
-                    return table.columns.find(column => column.name === primaryKey["Column_name"])!;
-                });
                 table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
                     table: table,
                     name: primaryKeys[0]["Key_name"],
-                    columns: pkColumns
+                    columnNames: primaryKeys.map(primaryKey => primaryKey["Column_name"])
                 });
             }
 
@@ -803,33 +800,29 @@ export class MysqlQueryRunner implements QueryRunner {
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void {
-        this.sqlsInMemory = [];
+        this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
     }
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): SqlInMemory[] {
-        return this.sqlsInMemory;
+    getMemorySql(): SqlInMemory {
+        return this.sqlInMemory;
     }
 
     /**
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.upQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await Promise.all(this.sqlsInMemory.map(sqlInMemory => {
-            return PromiseUtils.runInSequence(sqlInMemory.downQueries, downQuery => this.query(downQuery));
-        }));
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries, downQuery => this.query(downQuery));
     }
 
     // -------------------------------------------------------------------------
@@ -865,11 +858,13 @@ export class MysqlQueryRunner implements QueryRunner {
             upQueries = [upQueries];
         if (typeof downQueries === "string")
             downQueries = [downQueries];
+
+        this.sqlInMemory.upQueries = upQueries;
+        this.sqlInMemory.downQueries = downQueries;
+
         // if sql-in-memory mode is enabled then simply store sql in memory and return
-        if (this.sqlMemoryMode === true) {
-            this.sqlsInMemory.push({ upQueries: upQueries, downQueries: downQueries });
+        if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
-        }
 
         await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
     }

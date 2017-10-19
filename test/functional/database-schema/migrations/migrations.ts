@@ -1,14 +1,8 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases,
-    runDownQueries,
-    runUpQueries
-} from "../../../utils/test-utils";
-import {Post} from "./entity/Post";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {TableColumn} from "../../../../src/schema-builder/table/TableColumn";
 
 describe.only("database schema > migrations", () => {
 
@@ -24,66 +18,83 @@ describe.only("database schema > migrations", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly drop table and revert drop", () => Promise.all(connections.map(async connection => {
+    it.only("should correctly drop table and revert drop", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const entityManager = queryRunner.manager;
 
         let table = await queryRunner.getTable("post");
         table!.should.exist;
 
-        queryRunner.enableSqlMemory();
         await queryRunner.dropTable("post");
-        const queries = queryRunner.getMemorySql();
-        queryRunner.disableSqlMemory();
 
-        await runUpQueries(entityManager, queries);
         table = await queryRunner.getTable("post");
         expect(table).to.be.undefined;
 
-        await runDownQueries(entityManager, queries);
+        await queryRunner.executeMemoryDownSql();
+
         table = await queryRunner.getTable("post");
         table!.should.exist;
 
         await queryRunner.release();
     })));
 
-    it("should correctly remove column and revert remove", () => Promise.all(connections.map(async connection => {
+    it.only("should correctly remove column and revert remove", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const entityManager = queryRunner.manager;
 
         let table = await queryRunner.getTable("post");
-        table!.findColumnByName("text")!.should.be.exist;
+        const textColumn = table!.findColumnByName("id")!;
+        textColumn!.should.be.exist;
 
-        const metadata = connection.getMetadata(Post);
-        const columnMetadata = metadata.ownColumns.find(c => c.propertyName === "text")!;
-        metadata.removeColumn(columnMetadata);
-        const queries = await connection.driver.createSchemaBuilder().log();
+        await queryRunner.dropColumn(table!, textColumn);
 
-        await runUpQueries(entityManager, queries);
         table = await queryRunner.getTable("post");
-        expect(table!.findColumnByName("text")).to.be.undefined;
+        expect(table!.findColumnByName("id")).to.be.undefined;
 
-        await runDownQueries(entityManager, queries);
+        console.log(queryRunner.getMemorySql());
+        await queryRunner.executeMemoryDownSql();
+
         table = await queryRunner.getTable("post");
-        table!.findColumnByName("text")!.should.be.exist;
+        table!.findColumnByName("id")!.should.be.exist;
 
-        metadata.registerColumn(columnMetadata);
         await queryRunner.release();
     })));
 
-    it.only("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
+    it.only("should correctly add column and revert add", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        // const entityManager = queryRunner.manager;
 
-        // const metadata = connection.getMetadata(Post);
+        let table = await queryRunner.getTable("post");
+        const newColumn = new TableColumn({
+            name: "secondId",
+            type: "int",
+            isPrimary: true,
+            isUnique: true,
+        });
+
+        await queryRunner.addColumn(table!, newColumn);
+
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("secondId")!.should.be.exist;
+
+        console.log(queryRunner.getMemorySql());
+        await queryRunner.executeMemoryDownSql();
+
+        table = await queryRunner.getTable("post");
+        expect(table!.findColumnByName("secondId")).to.be.undefined;
+
+        await queryRunner.release();
+    })));
+
+    it("should correctly change column and revert changes", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+
         let table = await queryRunner.getTable("post");
         table!.findColumnByName("text")!.length!.should.be.equal("255");
 
 
-        const textColumn = table!.findColumnByName("text")!;
+     /*   const textColumn = table!.findColumnByName("text")!;
         const changedTextColumn = textColumn.clone();
         changedTextColumn.length = "500";
         await queryRunner.changeColumn(table!, textColumn, changedTextColumn);
@@ -92,22 +103,27 @@ describe.only("database schema > migrations", () => {
         table!.findColumnByName("text")!.length!.should.be.equal("500");
 
         await queryRunner.executeMemoryDownSql();
+        queryRunner.enableSqlMemory();
 
         table = await queryRunner.getTable("post");
-        table!.findColumnByName("text")!.length!.should.be.equal("255");
+        table!.findColumnByName("text")!.length!.should.be.equal("255");*/
 
         const idColumn = table!.findColumnByName("id")!;
         const changedIdColumnColumn = idColumn.clone();
         changedIdColumnColumn!.isGenerated = true;
+        changedIdColumnColumn!.isUnique = true;
         changedIdColumnColumn!.generationStrategy = "increment";
+        console.log("================");
         await queryRunner.changeColumn(table!, idColumn, changedIdColumnColumn);
 
+        console.log("================");
         table = await queryRunner.getTable("post");
         table!.findColumnByName("id")!.isGenerated.should.be.true;
         table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
 
         console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
+        queryRunner.enableSqlMemory();
 
         table = await queryRunner.getTable("post");
         table!.findColumnByName("id")!.isGenerated.should.be.false;

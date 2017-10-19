@@ -316,7 +316,7 @@ export interface QueryRunner {
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): SqlInMemory[];
+    getMemorySql(): SqlInMemory;
 
     /**
      * Executes up sql queries.

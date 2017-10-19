@@ -81,8 +81,30 @@ export class Table {
     constructor(options?: TableOptions) {
         if (options) {
             this.name = options.name;
-            if (options.columns)
-                this.columns = options.columns.map(column => new TableColumn(column));
+            if (options.columns) {
+                this.columns = options.columns.map(column => {
+                    if (column.isUnique) {
+                        this.uniques.push(new TableUnique({
+                            table: this,
+                            name: `UQ_${this.name}_${column.name}`, // TODO make it through naming strategy
+                            columnNames: [column.name]
+                        }));
+                    }
+                    if (column.isPrimary) {
+                        // if we already have primary key, it means that table have multiple primary keys
+                        if (this.primaryKey) {
+                            this.primaryKey.columnNames.push(column.name);
+                        } else {
+                            this.primaryKey = new TablePrimaryKey({
+                                table: this,
+                                name: `PK_${this.name}_${column.name}`, // TODO make it through naming strategy
+                                columnNames: [column.name]
+                            });
+                        }
+                    }
+                    return new TableColumn(column);
+                });
+            }
 
             if (options.justCreated !== undefined)
                 this.justCreated = options.justCreated;
@@ -99,8 +121,8 @@ export class Table {
      * Gets only those primary keys that does not generated.
      */
     get primaryKeyWithoutGenerated(): TablePrimaryKey|undefined {
-        const hasGeneratedColumnsInPrimaryKey = this.primaryKey && this.primaryKey.columns.find(column => column.isGenerated);
-        return hasGeneratedColumnsInPrimaryKey ? undefined : this.primaryKey;
+        const primaryGeneratedColumns = this.columns.filter(column => column.isPrimary && column.isGenerated);
+        return  primaryGeneratedColumns.length === 0 ? this.primaryKey : undefined;
     }
 
     get hasGeneratedColumn(): boolean {
@@ -126,10 +148,63 @@ export class Table {
     }
 
     /**
-     * Adds columns.
+     * Returns all unique constraints of given column.
      */
-    addColumns(columns: TableColumn[]) {
-        this.columns = this.columns.concat(columns);
+    findColumnUniqueConstraints(column: TableColumn): TableUnique[] {
+        return this.uniques.filter(unique => {
+            return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all check constraints of given column.
+     */
+    findColumnCheckConstraints(column: TableColumn): TableCheck[] {
+        return this.checks.filter(check => {
+            return !!check.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all check constraints of given column.
+     */
+    findColumnDefaultConstraints(column: TableColumn): TableDefault[] {
+        return this.defaults.filter(def => def.columnName === column.name);
+    }
+
+    /**
+     * Add column and creates its constraints.
+     * Must be called before database update.
+     */
+    addColumn(column: TableColumn): void {
+        this.columns.push(column);
+    }
+
+    /**
+     * Add columns and creates theirs constraints.
+     * Must be called before database update.
+     */
+    addColumns(columns: TableColumn[]): void {
+        columns.forEach(column => this.addColumn(column));
+    }
+
+    /**
+     * Remove column and its constraints.
+     * Must be called after database update.
+     */
+    removeColumn(column: TableColumn): void {
+        const foundColumn = this.columns.find(c => c.name === column.name);
+        if (!foundColumn)
+            return;
+        this.columns.splice(this.columns.indexOf(foundColumn), 1);
+    }
+
+    /**
+     * Remove columns and theirs constraints.
+     * Must be called after database update.
+     */
+    removeColumns(columns: TableColumn[]) {
+        columns.forEach(column => this.removeColumn(column));
     }
 
     /**
@@ -137,22 +212,6 @@ export class Table {
      */
     replaceColumn(oldColumn: TableColumn, newColumn: TableColumn) {
         this.columns[this.columns.indexOf(oldColumn)] = newColumn;
-    }
-
-    /**
-     * Removes a columns from this table.
-     */
-    removeColumn(columnToRemove: TableColumn) {
-        const foundColumn = this.columns.find(column => column.name === columnToRemove.name);
-        if (foundColumn)
-            this.columns.splice(this.columns.indexOf(foundColumn), 1);
-    }
-
-    /**
-     * Remove all columns from this table.
-     */
-    removeColumns(columns: TableColumn[]) {
-        columns.forEach(column => this.removeColumn(column));
     }
 
     /**
@@ -228,8 +287,7 @@ export class Table {
     /**
      * Compare column lengths only if the datatype supports it.
      */
-
-    private compareColumnLengths(driver: Driver, tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
+    protected compareColumnLengths(driver: Driver, tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
 
         const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
         if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
@@ -276,8 +334,6 @@ export class Table {
             databaseValue = databaseValue.replace(/^'+|'+$/g, "");
         }
 
-        // console.log("columnMetadataValue", columnMetadataValue);
-        // console.log("databaseValue", databaseValue);
         return columnMetadataValue === databaseValue;
     }
 
@@ -288,19 +344,13 @@ export class Table {
     /**
      * Creates table from a given entity metadata.
      */
-    static create(entityMetadata: EntityMetadata, driver: Driver) {
+    static create(entityMetadata: EntityMetadata, driver: Driver): Table {
         const options: TableOptions = {
             name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
                 .filter(column => column)
-                .map(column => {
-                    return TableUtils.createTableColumnOptions(
-                        column,
-                        driver.normalizeType(column),
-                        driver.normalizeDefault(column),
-                        driver.getColumnLength(column));
-                })
+                .map(column => TableUtils.createTableColumnOptions(column, driver))
         };
 
         return new Table(options);

@@ -48,8 +48,8 @@ export class MongoSchemaBuilder implements SchemaBuilder {
     /**
      * Returns query to be executed by schema builder.
      */
-    log(): Promise<SqlInMemory[]> {
-        return Promise.resolve([]);
+    log(): Promise<SqlInMemory> {
+        return Promise.resolve(new SqlInMemory());
     }
 
 }

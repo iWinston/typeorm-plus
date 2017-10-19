@@ -24,7 +24,7 @@ export class TableForeignKey {
     /**
      * Column names which included by this foreign key.
      */
-    columnNames: string[];
+    columnNames: string[] = [];
 
     /**
      * Table referenced in the foreign key.
@@ -34,7 +34,7 @@ export class TableForeignKey {
     /**
      * Column names which included by this foreign key.
      */
-    referencedColumnNames: string[];
+    referencedColumnNames: string[] = [];
 
     /**
      * "ON DELETE" of this foreign key, e.g. what action database should perform when
