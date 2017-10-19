@@ -3,6 +3,7 @@ import {Subject} from "./Subject";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -59,6 +60,9 @@ import {QueryRunner} from "../query-runner/QueryRunner";
  */
 export class SubjectBuilder<Entity extends ObjectLiteral> {
 
+    // todo: make this method to accept multiple instances of entities
+    // this will optimize multiple entities save
+
     // -------------------------------------------------------------------------
     // Protected properties
     // -------------------------------------------------------------------------
@@ -84,9 +88,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     /**
      * Builds operations for entity that is being inserted/updated.
      */
-    async save(entityTarget: Function|string, entity: Entity): Promise<void> {
-
-        const metadata = this.queryRunner.connection.getMetadata(entityTarget);
+    async save(metadata: EntityMetadata, entity: Entity): Promise<void> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
         const mainSubject = new Subject(metadata, entity);
@@ -117,9 +119,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     /**
      * Builds only remove operations for entity that is being removed.
      */
-    async remove(entityTarget: Function|string, entity: Entity): Promise<void> {
-
-        const metadata = this.queryRunner.connection.getMetadata(entityTarget);
+    async remove(metadata: EntityMetadata, entity: Entity): Promise<void> {
 
         // create subject for currently removed entity and mark that it must be removed
         const mainSubject = new Subject(metadata, entity);
@@ -163,14 +163,13 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected buildCascadeUpdateAndInsertOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
-            .filter(([relation, relationEntity, relationEntityMetadata]) => {
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert or update cascades of the relation should be set
-                return  relationEntity !== undefined &&
-                        relationEntity !== null &&
-                        (relation.isCascadeInsert || relation.isCascadeUpdate);
-            })
-            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
+                if (relationEntity === undefined ||
+                    relationEntity === null ||
+                    (!relation.isCascadeInsert && !relation.isCascadeUpdate))
+                return;
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
                 const alreadyExistRelationEntitySubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
@@ -200,12 +199,11 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     protected buildCascadeRemoveOperateSubjects(subject: Subject): void {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
-            .filter(([relation, relationEntity, relationEntityMetadata]) => {
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert cascades of the relation should be set
-                return relationEntity !== undefined && relationEntity !== null && relation.isCascadeRemove;
-            })
-            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
+                if (relationEntity === undefined || relationEntity === null || relation.isCascadeRemove === false)
+                    return;
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
                 const alreadyExistValueSubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
@@ -237,27 +235,23 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
         const promises = this.groupByEntityTargets().map(async subjectGroup => {
 
             // prepare entity ids of the subjects we need to load
-            const allIds = subjectGroup.subjects
-                .filter(subject => !subject.hasDatabaseEntity) // we don't load if subject already has a database entity loaded
-                .filter(subject => {
-                    return !subject.metadata.isEntityMapEmpty(subject.entity);
-                }) // we only need entity id
-                .map(subject => { // we don't need empty ids
-                    // console.log(subject.entity);
-                    return subject.metadata.getEntityIdMap(subject.entity);
-                    // if (mixedId instanceof Object)
-                    //     return Object.keys(mixedId).every(key => mixedId[key] !== undefined && mixedId[key] !== null && mixedId[key] !== "");
-                    //
-                    // return mixedId !== undefined && mixedId !== null && mixedId !== "";
-                });
+            const allIds: ObjectLiteral[] = [];
+            subjectGroup.subjects.forEach(subject => {
 
-            // if there no ids found (which means all entities are new and have generated ids) - then nothing to load there
-            // console.log("allIds: ", allIds);
-            // console.log("subject.entity: ", subjectGroup.subjects);
-            // console.log("allIds: ", allIds);
+                // we don't load if subject already has a database entity loaded
+                if (subject.hasDatabaseEntity)
+                    return;
+
+                // we only need entity id
+                if (subject.metadata.isEntityMapEmpty(subject.entity)) // can we use getEntityIdMap instead
+                    return;
+
+                allIds.push(subject.metadata.getEntityIdMap(subject.entity)!);
+            });
+
+            // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
             if (!allIds.length)
                 return;
-            // console.log("Y");
 
             // load database entities for all given ids
             // todo: such implementation is temporary, need to create a good abstraction there
@@ -268,7 +262,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 entities = await this.queryRunner.manager
                     .getMongoRepository<ObjectLiteral>(subjectGroup.target)
-                    .findByIds(allIds);
+                    .findByIds(allIds, { allRelationIds: true });
 
             } else {
                 entities = await this.queryRunner.manager
@@ -282,7 +276,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject
             entities.forEach(entity => {
-                // console.log(1);
                 const subject = this.findByEntityLike(subjectGroup.target, entity);
                 if (subject)
                     subject.databaseEntity = entity;

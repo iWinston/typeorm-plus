@@ -113,11 +113,12 @@ export class EntityPersitor {
         if (entityTarget === Object)
             throw new CannotDetermineEntityError(this.mode);
 
+        const metadata = this.connection.getMetadata(entityTarget);
         const subjectBuilder = new SubjectBuilder(queryRunner);
         if (this.mode === "save") {
-            await subjectBuilder.save(entityTarget, entity);
+            await subjectBuilder.save(metadata, entity);
         } else { // remove
-            await subjectBuilder.remove(entityTarget, entity);
+            await subjectBuilder.remove(metadata, entity);
         }
 
         return new SubjectOperationExecutor(queryRunner, subjectBuilder.operateSubjects);

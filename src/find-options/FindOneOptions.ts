@@ -30,4 +30,9 @@ export interface FindOneOptions<Entity> {
      */
     order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
 
+    /**
+     * Loads all relation ids of the entity.
+     */
+    loadRelationIds?: boolean;
+
 }
