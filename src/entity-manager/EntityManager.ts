@@ -11,8 +11,6 @@ import {MongoRepository} from "../repository/MongoRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {Repository} from "../repository/Repository";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
-import {SubjectBuilder} from "../persistence/SubjectBuilder";
-import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
@@ -25,10 +23,10 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
-import {EntityManagerFactory} from "./EntityManagerFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
+import {EntityPersitor} from "../persistence/EntityPersitor";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -92,24 +90,25 @@ export class EntityManager {
         if (this.queryRunner && this.queryRunner.isTransactionActive)
             throw new Error(`Cannot start transaction because its already started`);
 
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-        const transactionEntityManager = new EntityManagerFactory().create(this.connection, usedQueryRunner);
+        // if query runner is already defined in this class, it means this entity manager was already created for a single connection
+        // if its not defined we create a new query runner - single connection where we'll execute all our operations
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
         try {
-            await usedQueryRunner.startTransaction();
-            const result = await runInTransaction(transactionEntityManager);
-            await usedQueryRunner.commitTransaction();
+            await queryRunner.startTransaction();
+            const result = await runInTransaction(queryRunner.manager);
+            await queryRunner.commitTransaction();
             return result;
 
         } catch (err) {
             try { // we throw original error even if rollback thrown an error
-                await usedQueryRunner.rollbackTransaction();
+                await queryRunner.rollbackTransaction();
             } catch (rollbackError) { }
             throw err;
 
         } finally {
             if (!this.queryRunner) // if we used a new query runner provider then release it
-                await usedQueryRunner.release();
+                await queryRunner.release();
         }
     }
 
@@ -270,92 +269,15 @@ export class EntityManager {
      */
     save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
 
+        // normalize mixed parameters
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
-        return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded relations are resolved.
-
-            // todo: use transaction instead if possible
-            // await this.transaction(async transactionEntityManager => {
-            //     if (options && options.data)
-            //         transactionEntityManager.data = options.data;
-            //
-            // });
-
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            if (options && options.data) {
-                queryRunner.data = options.data;
-            }
-
-            try {
-                const executors: SubjectOperationExecutor[] = [];
-                if (entity instanceof Array) {
-                    await Promise.all(entity.map(async entity => {
-                        const entityTarget = target ? target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
-
-                        const databaseEntityLoader = new SubjectBuilder(queryRunner);
-                        await databaseEntityLoader.persist(entity, metadata);
-
-                        const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
-                } else {
-                    const finalTarget = target ? target : entity.constructor;
-                    const metadata = this.connection.getMetadata(finalTarget);
-
-                    const databaseEntityLoader = new SubjectBuilder(queryRunner);
-                    await databaseEntityLoader.persist(entity, metadata);
-
-                    const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
-                }
-
-                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
-                if (executorsNeedsToBeExecuted.length) {
-
-                    // start execute queries in a transaction
-                    // if transaction is already opened in this query runner then we don't touch it
-                    // if its not opened yet then we open it here, and once we finish - we close it
-                    let isTransactionStartedByItself = false;
-                    try {
-
-                        // open transaction if its not opened yet
-                        if (!queryRunner.isTransactionActive) {
-                            isTransactionStartedByItself = true;
-                            await queryRunner.startTransaction();
-                        }
-
-                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
-                            return executor.execute();
-                        }));
-
-                        // commit transaction if it was started by us
-                        if (isTransactionStartedByItself === true)
-                            await queryRunner.commitTransaction();
-
-                    } catch (error) {
-
-                        // rollback transaction if it was started by us
-                        if (isTransactionStartedByItself) {
-                            try {
-                                await queryRunner.rollbackTransaction();
-                            } catch (rollbackError) { }
-                        }
-
-                        throw error;
-                    }
-                }
-
-            } finally {
-                if (!this.queryRunner) // release it only if its created by this method
-                    await queryRunner.release();
-            }
-
-            return entity;
-        });
+        // execute save operation
+        return new EntityPersitor(this.connection, this.queryRunner, "save", target, entity, options)
+            .execute()
+            .then(() => entity);
     }
 
     /**
@@ -438,84 +360,15 @@ export class EntityManager {
      */
     remove<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntityOrOptions?: Entity|Entity[], maybeOptions?: RemoveOptions): Promise<Entity|Entity[]> {
 
+        // normalize mixed parameters
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
-        return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
-
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            if (options && options.data)
-                Object.assign(queryRunner.data, options.data);
-
-            try {
-                const executors: SubjectOperationExecutor[] = [];
-                if (entity instanceof Array) {
-                    await Promise.all(entity.map(async entity => {
-                        const entityTarget = target ? target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
-
-                        const databaseEntityLoader = new SubjectBuilder(queryRunner);
-                        await databaseEntityLoader.remove(entity, metadata);
-
-                        const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
-                } else {
-                    const finalTarget = target ? target : entity.constructor;
-                    const metadata = this.connection.getMetadata(finalTarget);
-
-                    const databaseEntityLoader = new SubjectBuilder(queryRunner);
-                    await databaseEntityLoader.remove(entity, metadata);
-
-                    const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
-                }
-
-                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
-                if (executorsNeedsToBeExecuted.length) {
-
-                    // start execute queries in a transaction
-                    // if transaction is already opened in this query runner then we don't touch it
-                    // if its not opened yet then we open it here, and once we finish - we close it
-                    let isTransactionStartedByItself = false;
-                    try {
-
-                        // open transaction if its not opened yet
-                        if (!queryRunner.isTransactionActive) {
-                            isTransactionStartedByItself = true;
-                            await queryRunner.startTransaction();
-                        }
-
-                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
-                            return executor.execute();
-                        }));
-
-                        // commit transaction if it was started by us
-                        if (isTransactionStartedByItself === true)
-                            await queryRunner.commitTransaction();
-
-                    } catch (error) {
-
-                        // rollback transaction if it was started by us
-                        if (isTransactionStartedByItself) {
-                            try {
-                                await queryRunner.rollbackTransaction();
-                            } catch (rollbackError) { }
-                        }
-
-                        throw error;
-                    }
-                }
-
-            } finally {
-                if (!this.queryRunner) // release it only if its created by this method
-                    await queryRunner.release();
-            }
-
-            return entity;
-        });
+        // execute save operation
+        return new EntityPersitor(this.connection, this.queryRunner, "remove", target, entity, options)
+            .execute()
+            .then(() => entity);
     }
 
     /**

@@ -1,4 +1,3 @@
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Subject} from "./Subject";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
@@ -85,7 +84,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     /**
      * Builds operations for entity that is being inserted/updated.
      */
-    async persist(entity: Entity, metadata: EntityMetadata): Promise<void> {
+    async save(entityTarget: Function|string, entity: Entity): Promise<void> {
+
+        const metadata = this.queryRunner.connection.getMetadata(entityTarget);
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
         const mainSubject = new Subject(metadata, entity);
@@ -116,7 +117,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     /**
      * Builds only remove operations for entity that is being removed.
      */
-    async remove(entity: Entity, metadata: EntityMetadata): Promise<void> {
+    async remove(entityTarget: Function|string, entity: Entity): Promise<void> {
+
+        const metadata = this.queryRunner.connection.getMetadata(entityTarget);
 
         // create subject for currently removed entity and mark that it must be removed
         const mainSubject = new Subject(metadata, entity);
