@@ -9,11 +9,11 @@ export class VersionCommand {
 
     async handler(argv: any) {
 
-        const localNpmList = await this.executeCommand("npm list --depth=0");
+        const localNpmList = await VersionCommand.executeCommand("npm list --depth=0");
         const localMatches = localNpmList.match(/ typeorm@(.*)\n/);
         const localNpmVersion = (localMatches && localMatches[1] ? localMatches[1] : "").replace(/"invalid"/gi, "").trim();
 
-        const globalNpmList = await this.executeCommand("npm list -g --depth=0");
+        const globalNpmList = await VersionCommand.executeCommand("npm list -g --depth=0");
         const globalMatches = globalNpmList.match(/ typeorm@(.*)\n/);
         const globalNpmVersion = (globalMatches && globalMatches[1] ? globalMatches[1] : "").replace(/"invalid"/gi, "").trim();
 
@@ -34,7 +34,7 @@ export class VersionCommand {
         }
     }
 
-    protected executeCommand(command: string) {
+    protected static executeCommand(command: string) {
         return new Promise<string>((ok, fail) => {
             exec(command, (error: any, stdout: any, stderr: any) => {
                 if (stdout) return ok(stdout);
