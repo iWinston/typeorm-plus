@@ -255,7 +255,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
             // load database entities for all given ids
             const entities = await this.queryRunner.manager
-                .getMongoRepository<ObjectLiteral>(subjectGroup.target)
+                .getRepository<ObjectLiteral>(subjectGroup.target)
                 .findByIds(allIds, { loadRelationIds: true });
 
             // now when we have entities we need to find subject of each entity
