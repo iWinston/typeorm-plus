@@ -1,6 +1,5 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {OrmUtils} from "../util/OrmUtils";
@@ -76,7 +75,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, protected queryRunner: QueryRunner) {
+    constructor(protected queryRunner: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -262,16 +261,16 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             // todo: its already possible to do that with repository.findByIds method however setting "RELATION_ID_VALUES" option is an issue
             // todo: also custom queryRunnerProvider is an issue
             let entities: any[];
-            if (this.connection.driver instanceof MongoDriver) {
+            if (this.queryRunner.connection.driver instanceof MongoDriver) {
 
-                entities = await this.connection
+                entities = await this.queryRunner.manager
                     .getMongoRepository<ObjectLiteral>(subjectGroup.target)
                     .findByIds(allIds);
 
             } else {
-                entities = await this.connection
+                entities = await this.queryRunner.manager
                     .getRepository<ObjectLiteral>(subjectGroup.target)
-                    .createQueryBuilder("subject", this.queryRunner)
+                    .createQueryBuilder("subject")
                     .whereInIds(allIds)
                     .loadAllRelationIds()
                     .getMany();
@@ -390,9 +389,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 if (!alreadyLoadedRelatedDatabaseSubject) {
 
                     // (example) we need to load a details where details.id = post.details
-                    const qb = this.connection
+                    const qb = this.queryRunner.manager
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .loadAllRelationIds();
 
                     const condition = relation.joinColumns.map(joinColumn => {
@@ -478,9 +477,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 if (!alreadyLoadedRelatedDatabaseSubject) {
 
                     // (example) we need to load a post where post.detailsId = details.id
-                    const databaseEntity = await this.connection
+                    const databaseEntity = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id") // TODO relation.inverseRelation.joinColumns
                         .setParameter("id", relationIdInDatabaseEntity) // (example) subject.entity is a details here, and the value is details.id
                         .loadAllRelationIds()
@@ -553,7 +552,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 let databaseEntities: ObjectLiteral[] = [];
 
                 // create shortcuts for better readability
-                const escape = (name: string) => this.connection.driver.escape(name);
+                const escape = (name: string) => this.queryRunner.connection.driver.escape(name);
 
                 if (relation.isManyToManyOwner) {
 
@@ -578,9 +577,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         return parameters;
                     }, {} as ObjectLiteral);
 
-                    databaseEntities = await this.connection
+                    databaseEntities = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .loadAllRelationIds()
@@ -609,9 +608,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         return parameters;
                     }, {} as ObjectLiteral);
 
-                    databaseEntities = await this.connection
+                    databaseEntities = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .innerJoin(relation.junctionEntityMetadata!.tableName, joinAlias, conditions)
                         .setParameters(parameters)
                         .loadAllRelationIds()
@@ -626,9 +625,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // because we also need inverse entities to be able to perform update of entities
                     // in the inverse side when entities is detached from one-to-many relation
 
-                    databaseEntities = await this.connection
+                    databaseEntities = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                        .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                         .where(qbAlias + "." + relation.inverseSidePropertyPath + "=:id")
                         .setParameter("id", relationIdInDatabaseEntity)
                         .loadAllRelationIds()
@@ -667,9 +666,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                             if (!loadedSubject) {
                                 const id = valueMetadata.getEntityIdMap(persistValue);
                                 if (id) { // if there is no id (for newly inserted) then we cant load
-                                    const databaseEntity = await this.connection
+                                    const databaseEntity = await this.queryRunner.manager
                                         .getRepository<ObjectLiteral>(valueMetadata.target)
-                                        .createQueryBuilder(qbAlias, this.queryRunner) // todo: this wont work for mongodb. implement this in some method and call it here instead?
+                                        .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
                                         .whereInIds([id])
                                         .loadAllRelationIds()
                                         .getOne();

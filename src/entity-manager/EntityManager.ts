@@ -274,7 +274,7 @@ export class EntityManager {
         const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
-        return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
+        return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded relations are resolved.
 
             // todo: use transaction instead if possible
             // await this.transaction(async transactionEntityManager => {
@@ -284,9 +284,9 @@ export class EntityManager {
             // });
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
-            if (options && options.data)
-                Object.assign(queryRunner.data, options.data);
+            if (options && options.data) {
+                queryRunner.data = options.data;
+            }
 
             try {
                 const executors: SubjectOperationExecutor[] = [];
@@ -295,10 +295,10 @@ export class EntityManager {
                         const entityTarget = target ? target : entity.constructor;
                         const metadata = this.connection.getMetadata(entityTarget);
 
-                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                        const databaseEntityLoader = new SubjectBuilder(queryRunner);
                         await databaseEntityLoader.persist(entity, metadata);
 
-                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                        const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
                         executors.push(executor);
                     }));
 
@@ -306,10 +306,10 @@ export class EntityManager {
                     const finalTarget = target ? target : entity.constructor;
                     const metadata = this.connection.getMetadata(finalTarget);
 
-                    const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                    const databaseEntityLoader = new SubjectBuilder(queryRunner);
                     await databaseEntityLoader.persist(entity, metadata);
 
-                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                    const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
                     executors.push(executor);
                 }
 
@@ -445,7 +445,6 @@ export class EntityManager {
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
 
@@ -456,10 +455,10 @@ export class EntityManager {
                         const entityTarget = target ? target : entity.constructor;
                         const metadata = this.connection.getMetadata(entityTarget);
 
-                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                        const databaseEntityLoader = new SubjectBuilder(queryRunner);
                         await databaseEntityLoader.remove(entity, metadata);
 
-                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                        const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
                         executors.push(executor);
                     }));
 
@@ -467,10 +466,10 @@ export class EntityManager {
                     const finalTarget = target ? target : entity.constructor;
                     const metadata = this.connection.getMetadata(finalTarget);
 
-                    const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
+                    const databaseEntityLoader = new SubjectBuilder(queryRunner);
                     await databaseEntityLoader.remove(entity, metadata);
 
-                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
+                    const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
                     executors.push(executor);
                 }
 
@@ -792,18 +791,8 @@ export class EntityManager {
     /**
      * Gets mongodb repository for the given entity class.
      */
-    getMongoRepository<Entity>(entityClass: ObjectType<Entity>): MongoRepository<Entity>;
-
-    /**
-     * Gets mongodb repository for the given entity name.
-     */
-    getMongoRepository<Entity>(entityName: string): MongoRepository<Entity>;
-
-    /**
-     * Gets mongodb repository for the given entity class or name.
-     */
-    getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
-        return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
+    getMongoRepository<Entity>(target: string|ObjectType<Entity>): MongoRepository<Entity> {
+        return this.connection.getMongoRepository<Entity>(target);
     }
 
     /**

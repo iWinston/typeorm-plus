@@ -1,10 +1,8 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {JunctionInsert, JunctionRemove, Subject} from "./Subject";
 import {OrmUtils} from "../util/OrmUtils";
-import {EntityManager} from "../entity-manager/EntityManager";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -48,33 +46,26 @@ export class SubjectOperationExecutor {
 
     protected broadcaster: Broadcaster;
 
+    protected queryRunner: QueryRunner;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection,
-                protected transactionEntityManager: EntityManager,
-                protected queryRunner: QueryRunner,
-                subjects: Subject[]) {
-
-        /*subjects.forEach(subject => {
-         console.log(subject.entity);
-         console.log("mustBeInserted: ", subject.mustBeInserted);
-         console.log("mustBeUpdated: ", subject.mustBeUpdated);
-         console.log("mustBeRemoved: ", subject.mustBeRemoved);
-         });*/
+    constructor(queryRunner: QueryRunner, subjects: Subject[]) {
 
         // validate all subjects first
         subjects.forEach(subject => subject.validate());
 
         // set class properties for easy use
+        this.queryRunner = queryRunner;
         this.allSubjects = subjects;
         this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
         this.relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
 
-        this.broadcaster = new Broadcaster(this.connection);
+        this.broadcaster = new Broadcaster(queryRunner.connection);
     }
 
     // -------------------------------------------------------------------------
@@ -97,7 +88,7 @@ export class SubjectOperationExecutor {
     async execute(): Promise<void> {
 
         // broadcast "before" events before we start updating
-        await this.broadcaster.broadcastBeforeEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.broadcaster.broadcastBeforeEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
         this.updateSubjects.forEach(subject => subject.recompute());
@@ -115,7 +106,7 @@ export class SubjectOperationExecutor {
 
         // finally broadcast "after" events
         // todo: THIS SHOULD NOT BE TRUTH: note that we are broadcasting events after commit because we want to have ids of the entities inside them to be available in subscribers
-        await this.broadcaster.broadcastAfterEventsForAll(this.transactionEntityManager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.broadcaster.broadcastAfterEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
     }
 
     // -------------------------------------------------------------------------
@@ -402,7 +393,7 @@ export class SubjectOperationExecutor {
             if (value === undefined)
                 return;
 
-            object[column.databaseNameWithoutPrefixes] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
+            object[column.databaseNameWithoutPrefixes] = this.queryRunner.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
         });
     }
 
@@ -437,7 +428,7 @@ export class SubjectOperationExecutor {
 
         const values: ObjectLiteral = {};
 
-        if (this.connection.driver instanceof MongoDriver) {
+        if (this.queryRunner.connection.driver instanceof MongoDriver) {
             this.collectColumns(metadata.ownColumns, entity, values, operation);
             metadata.embeddeds.forEach(embed => this.collectEmbeds(embed, entity, values, operation));
 
@@ -450,7 +441,7 @@ export class SubjectOperationExecutor {
                 if (value === undefined)
                     return;
 
-                values[column.databaseName] = this.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
+                values[column.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(value, column); // todo: maybe preparePersistentValue is not responsibility of this class
             });
         }
 
@@ -486,10 +477,10 @@ export class SubjectOperationExecutor {
                             relationValue = referencedColumn.getEntityValue(alreadyInsertedSubject.generatedMap);
                         // if it references to create or update date columns
                         if (referencedColumn.isCreateDate || referencedColumn.isUpdateDate)
-                            relationValue = this.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
+                            relationValue = this.queryRunner.connection.driver.preparePersistentValue(alreadyInsertedSubject.date, referencedColumn);
                         // if it references to version column
                         if (referencedColumn.isVersion)
-                            relationValue = this.connection.driver.preparePersistentValue(1, referencedColumn);
+                            relationValue = this.queryRunner.connection.driver.preparePersistentValue(1, referencedColumn);
                     }
                 } else if (relation.inverseRelation) {
                     const inverseSubject = this.allSubjects.find(subject => {
@@ -519,25 +510,25 @@ export class SubjectOperationExecutor {
 
         // add special column and value - date of creation
         if (metadata.createDateColumn) {
-            const value = this.connection.driver.preparePersistentValue(date, metadata.createDateColumn);
+            const value = this.queryRunner.connection.driver.preparePersistentValue(date, metadata.createDateColumn);
             values[metadata.createDateColumn.databaseName] = value;
         }
 
         // add special column and value - date of updating
         if (metadata.updateDateColumn) {
-            const value = this.connection.driver.preparePersistentValue(date, metadata.updateDateColumn);
+            const value = this.queryRunner.connection.driver.preparePersistentValue(date, metadata.updateDateColumn);
             values[metadata.updateDateColumn.databaseName] = value;
         }
 
         // add special column and value - version column
         if (metadata.versionColumn) {
-            const value = this.connection.driver.preparePersistentValue(1, metadata.versionColumn);
+            const value = this.queryRunner.connection.driver.preparePersistentValue(1, metadata.versionColumn);
             values[metadata.versionColumn.databaseName] = value;
         }
 
         // add special column and value - discriminator value (for tables using table inheritance)
         if (metadata.discriminatorColumn) {
-            const value = this.connection.driver.preparePersistentValue(discriminatorValue || metadata.discriminatorValue, metadata.discriminatorColumn);
+            const value = this.queryRunner.connection.driver.preparePersistentValue(discriminatorValue || metadata.discriminatorValue, metadata.discriminatorColumn);
             values[metadata.discriminatorColumn.databaseName] = value;
         }
 
@@ -546,7 +537,7 @@ export class SubjectOperationExecutor {
             .forEach(column => {
                 if (column.isNullable && values[column.databaseName] === null)
                     return;
-                const uuid = this.connection.driver.preparePersistentValue("", column);
+                const uuid = this.queryRunner.connection.driver.preparePersistentValue("", column);
                 if (uuid && !values[column.databaseName])
                     values[column.databaseName] = uuid;
             });
@@ -657,7 +648,7 @@ export class SubjectOperationExecutor {
     private async update(subject: Subject): Promise<void> {
         const entity = subject.entity;
 
-        if (this.connection.driver instanceof MongoDriver) {
+        if (this.queryRunner.connection.driver instanceof MongoDriver) {
             const idMap = subject.metadata.getDatabaseEntityIdMap(entity);
             if (!idMap)
                 throw new Error(`Internal error. Cannot get id of the updating entity.`);
@@ -679,10 +670,10 @@ export class SubjectOperationExecutor {
                 return;
 
             if (subject.metadata.updateDateColumn)
-                value[subject.metadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
+                value[subject.metadata.updateDateColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
 
             if (subject.metadata.versionColumn)
-                value[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
+                value[subject.metadata.versionColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
 
             return this.queryRunner.update(subject.metadata.tablePath, value, idMap);
         }
@@ -693,14 +684,14 @@ export class SubjectOperationExecutor {
         // console.log(subject.diffColumns);
         subject.diffColumns.forEach(column => {
             // if (!column.entityTarget) return; // todo: how this can be possible?
-            const metadata = this.connection.getMetadata(column.entityMetadata.target);
+            const metadata = this.queryRunner.connection.getMetadata(column.entityMetadata.target);
             let valueMap = valueMaps.find(valueMap => valueMap.tablePath === metadata.tablePath);
             if (!valueMap) {
                 valueMap = { tablePath: metadata.tablePath, metadata: metadata, values: {} };
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[column.databaseName] = this.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
+            valueMap.values[column.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
         });
 
         subject.diffRelations.forEach(relation => {
@@ -727,7 +718,7 @@ export class SubjectOperationExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[subject.metadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
+            valueMap.values[subject.metadata.updateDateColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
         }
 
         if (subject.metadata.versionColumn) {
@@ -737,7 +728,7 @@ export class SubjectOperationExecutor {
                 valueMaps.push(valueMap);
             }
 
-            valueMap.values[subject.metadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
+            valueMap.values[subject.metadata.versionColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
         }
 
         if (subject.metadata.parentEntityMetadata) {
@@ -752,7 +743,7 @@ export class SubjectOperationExecutor {
                     valueMaps.push(valueMap);
                 }
 
-                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.databaseName] = this.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
+                valueMap.values[subject.metadata.parentEntityMetadata.updateDateColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(new Date(), subject.metadata.parentEntityMetadata.updateDateColumn);
             }
 
             if (subject.metadata.parentEntityMetadata.versionColumn) {
@@ -766,7 +757,7 @@ export class SubjectOperationExecutor {
                     valueMaps.push(valueMap);
                 }
 
-                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.databaseName] = this.connection.driver.preparePersistentValue(subject.metadata.parentEntityMetadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.parentEntityMetadata.versionColumn);
+                valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(subject.metadata.parentEntityMetadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.parentEntityMetadata.versionColumn);
             }
         }
 
