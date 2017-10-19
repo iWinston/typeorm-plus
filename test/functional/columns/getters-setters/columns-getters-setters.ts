@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
-describe.only("columns > getters and setters", () => {
+describe("columns > getters and setters", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
