@@ -45,79 +45,57 @@ export class EntityPersitor {
                 queryRunner.data = this.options.data;
 
             try {
+
+                // we create subject operation executors for all passed entities
                 const executors: SubjectOperationExecutor[] = [];
                 if (this.entity instanceof Array) {
-                    await Promise.all(this.entity.map(async entity => {
-
-                        const entityTarget = this.target ? this.target : entity.constructor;
-                        if (entityTarget === Object)
-                            throw new CannotDetermineEntityError(this.mode);
-
-                        const databaseEntityLoader = new SubjectBuilder(queryRunner);
-                        if (this.mode === "save") {
-                            await databaseEntityLoader.save(entityTarget, entity);
-                        } else { // remove
-                            await databaseEntityLoader.remove(entityTarget, entity);
-                        }
-
-                        const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
+                    executors.push(...await Promise.all(this.entity.map(entity => this.createSubjectOperationExecutor(queryRunner, entity))));
                 } else {
-                    const entityTarget = this.target ? this.target : this.entity.constructor;
-                    if (entityTarget === Object)
-                        throw new CannotDetermineEntityError(this.mode);
-
-                    const databaseEntityLoader = new SubjectBuilder(queryRunner);
-                    if (this.mode === "save") {
-                        await databaseEntityLoader.save(entityTarget, this.entity);
-                    } else { // remove
-                        await databaseEntityLoader.remove(entityTarget, this.entity);
-                    }
-
-                    const executor = new SubjectOperationExecutor(queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
+                    executors.push(await this.createSubjectOperationExecutor(queryRunner, this.entity));
                 }
 
+                // make sure we have at least one executable operation before we create a transaction and proceed
+                // if we don't have operations it means we don't really need to update something
                 const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
-                if (executorsNeedsToBeExecuted.length) {
+                if (!executorsNeedsToBeExecuted.length)
+                    return;
 
-                    // start execute queries in a transaction
-                    // if transaction is already opened in this query runner then we don't touch it
-                    // if its not opened yet then we open it here, and once we finish - we close it
-                    let isTransactionStartedByItself = false;
-                    try {
+                // start execute queries in a transaction
+                // if transaction is already opened in this query runner then we don't touch it
+                // if its not opened yet then we open it here, and once we finish - we close it
+                let isTransactionStartedByUs = false;
+                try {
 
-                        // open transaction if its not opened yet
-                        if (!queryRunner.isTransactionActive) {
-                            isTransactionStartedByItself = true;
-                            await queryRunner.startTransaction();
-                        }
-
-                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
-                            return executor.execute();
-                        }));
-
-                        // commit transaction if it was started by us
-                        if (isTransactionStartedByItself === true)
-                            await queryRunner.commitTransaction();
-
-                    } catch (error) {
-
-                        // rollback transaction if it was started by us
-                        if (isTransactionStartedByItself) {
-                            try {
-                                await queryRunner.rollbackTransaction();
-                            } catch (rollbackError) { }
-                        }
-
-                        throw error;
+                    // open transaction if its not opened yet
+                    if (!queryRunner.isTransactionActive) {
+                        isTransactionStartedByUs = true;
+                        await queryRunner.startTransaction();
                     }
+
+                    // execute all persistence operations for all entities we have
+                    await Promise.all(executorsNeedsToBeExecuted.map(executor => {
+                        return executor.execute();
+                    }));
+
+                    // commit transaction if it was started by us
+                    if (isTransactionStartedByUs === true)
+                        await queryRunner.commitTransaction();
+
+                } catch (error) {
+
+                    // rollback transaction if it was started by us
+                    if (isTransactionStartedByUs) {
+                        try {
+                            await queryRunner.rollbackTransaction();
+                        } catch (rollbackError) { }
+                    }
+                    throw error;
                 }
 
             } finally {
-                if (!this.queryRunner) // release query runner only if its created by us
+
+                // release query runner only if its created by us
+                if (!this.queryRunner)
                     await queryRunner.release();
             }
         });
@@ -126,5 +104,23 @@ export class EntityPersitor {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     *
+     */
+    protected async createSubjectOperationExecutor(queryRunner: QueryRunner, entity: ObjectLiteral) {
+        const entityTarget = this.target ? this.target : entity.constructor;
+        if (entityTarget === Object)
+            throw new CannotDetermineEntityError(this.mode);
+
+        const subjectBuilder = new SubjectBuilder(queryRunner);
+        if (this.mode === "save") {
+            await subjectBuilder.save(entityTarget, entity);
+        } else { // remove
+            await subjectBuilder.remove(entityTarget, entity);
+        }
+
+        return new SubjectOperationExecutor(queryRunner, subjectBuilder.operateSubjects);
+    }
 
 }
