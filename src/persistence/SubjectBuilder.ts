@@ -1,6 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Subject} from "./Subject";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {OrmUtils} from "../util/OrmUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityMetadata} from "../metadata/EntityMetadata";
@@ -254,24 +253,9 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 return;
 
             // load database entities for all given ids
-            // todo: such implementation is temporary, need to create a good abstraction there
-            // todo: its already possible to do that with repository.findByIds method however setting "RELATION_ID_VALUES" option is an issue
-            // todo: also custom queryRunnerProvider is an issue
-            let entities: any[];
-            if (this.queryRunner.connection.driver instanceof MongoDriver) {
-
-                entities = await this.queryRunner.manager
-                    .getMongoRepository<ObjectLiteral>(subjectGroup.target)
-                    .findByIds(allIds, { allRelationIds: true });
-
-            } else {
-                entities = await this.queryRunner.manager
-                    .getRepository<ObjectLiteral>(subjectGroup.target)
-                    .createQueryBuilder("subject")
-                    .whereInIds(allIds)
-                    .loadAllRelationIds()
-                    .getMany();
-            }
+            const entities = await this.queryRunner.manager
+                .getMongoRepository<ObjectLiteral>(subjectGroup.target)
+                .findByIds(allIds, { loadRelationIds: true });
 
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject

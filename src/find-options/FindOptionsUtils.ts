@@ -18,7 +18,8 @@ export class FindOptionsUtils {
                     possibleOptions.where instanceof Object ||
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
-                    possibleOptions.order instanceof Object
+                    possibleOptions.order instanceof Object ||
+                    typeof possibleOptions.loadRelationIds === "boolean"
                 );
     }
 
@@ -35,7 +36,8 @@ export class FindOptionsUtils {
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     typeof possibleOptions.skip === "number" ||
-                    typeof possibleOptions.take === "number"
+                    typeof possibleOptions.take === "number" ||
+                    typeof possibleOptions.loadRelationIds === "boolean"
                 );
     }
 
@@ -153,6 +155,9 @@ export class FindOptionsUtils {
                     qb.innerJoinAndSelect(options.join!.innerJoinAndSelect![key], key);
                 });
         }
+
+        if (options.loadRelationIds === true)
+            qb.loadAllRelationIds();
 
         return qb;
     }
