@@ -1,4 +1,3 @@
-import {Table} from "./Table";
 import {TableDefaultOptions} from "../options/TableDefaultOptions";
 
 /**
@@ -9,11 +8,6 @@ export class TableDefault {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table that contains this constraint.
-     */
-    table: Table;
 
     /**
      * Constraint name.
@@ -35,7 +29,6 @@ export class TableDefault {
     // -------------------------------------------------------------------------
 
     constructor(options: TableDefaultOptions) {
-        this.table = options.table;
         this.name = options.name;
         this.columnName = options.columnName;
         this.definition = options.definition;
@@ -50,7 +43,6 @@ export class TableDefault {
      */
     clone(): TableDefault {
         return new TableDefault(<TableDefaultOptions>{
-            table: this.table,
             name: this.name,
             columnName: this.columnName,
             definition: this.definition

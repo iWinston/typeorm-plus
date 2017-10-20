@@ -1,5 +1,4 @@
 import {TablePrimaryKeyOptions} from "../options/TablePrimaryKeyOptions";
-import {Table} from "./Table";
 
 /**
  * Primary key from the database stored in this class.
@@ -9,11 +8,6 @@ export class TablePrimaryKey {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table that contains this primary key.
-     */
-    table: Table;
 
     /**
      * Key name.
@@ -30,7 +24,6 @@ export class TablePrimaryKey {
     // -------------------------------------------------------------------------
 
     constructor(options: TablePrimaryKeyOptions) {
-        this.table = options.table;
         this.name = options.name;
         this.columnNames = options.columnNames;
     }
@@ -44,7 +37,6 @@ export class TablePrimaryKey {
      */
     clone(): TablePrimaryKey {
         return new TablePrimaryKey(<TablePrimaryKeyOptions>{
-            table: this.table,
             name: this.name,
             columnNames: this.columnNames
         });

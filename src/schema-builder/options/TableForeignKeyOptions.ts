@@ -1,5 +1,3 @@
-import {Table} from "../table/Table";
-
 /**
  * Foreign key options.
  */
@@ -8,11 +6,6 @@ export interface TableForeignKeyOptions {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table which contain this foreign key.
-     */
-    table: Table;
 
     /**
      * Name of the table which contains this foreign key.

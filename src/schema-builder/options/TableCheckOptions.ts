@@ -1,5 +1,3 @@
-import {Table} from "../table/Table";
-
 /**
  * Database's table check constraint options.
  */
@@ -8,11 +6,6 @@ export interface TableCheckOptions {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table that contains this constraint.
-     */
-    table: Table;
 
     /**
      * Constraint name.

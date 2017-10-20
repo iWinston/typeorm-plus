@@ -12,11 +12,6 @@ export class TableForeignKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Table which contain this foreign key.
-     */
-    table: Table;
-
-    /**
      * Name of the table which contains this foreign key.
      */
     name: string;
@@ -53,7 +48,6 @@ export class TableForeignKey {
     // -------------------------------------------------------------------------
 
     constructor(options: TableForeignKeyOptions) {
-        this.table = options.table;
         this.name = options.name;
         this.columnNames = options.columnNames;
         this.referencedColumnNames = options.referencedColumnNames;
@@ -71,7 +65,6 @@ export class TableForeignKey {
      */
     clone(): TableForeignKey {
         return new TableForeignKey(<TableForeignKeyOptions>{
-            table: this.table,
             name: this.name,
             columnNames: this.columnNames,
             referencedColumnNames: this.referencedColumnNames,
@@ -90,7 +83,6 @@ export class TableForeignKey {
      */
     static create(metadata: ForeignKeyMetadata, table: Table): TableForeignKey {
         return new TableForeignKey(<TableForeignKeyOptions>{
-            table: table,
             name: metadata.name,
             columnNames: metadata.columnNames,
             referencedColumnNames: metadata.referencedColumnNames,

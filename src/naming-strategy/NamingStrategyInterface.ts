@@ -35,14 +35,19 @@ export interface NamingStrategyInterface {
     relationName(propertyName: string): string;
 
     /**
-     * Gets the table's primary key name from the given table name and column name.
+     * Gets the table's primary key name from the given table name and column names.
      */
     primaryKeyName(tableName: string, columnNames: string[]): string;
 
     /**
-     * Gets the table's unique constraint name from the given table name and column name.
+     * Gets the table's unique constraint name from the given table name and column names.
      */
-    uniqueConstraintName(tableName: string, columnName: string): string;
+    uniqueConstraintName(tableName: string, columnNames: string[]): string;
+
+    /**
+     * Gets the table's default constraint name from the given table name and column name.
+     */
+    defaultConstraintName(tableName: string, columnName: string): string;
 
     /**
      * Gets the name of the index - simple and compose index.

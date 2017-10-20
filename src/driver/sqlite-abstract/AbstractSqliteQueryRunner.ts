@@ -302,7 +302,6 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         const key = `${dbTable["name"]}_${[foreignKey["from"]].join("_")}_${foreignKey["table"]}_${[foreignKey["to"]].join("_")}`;
                         const keyName = "fk_" + RandomGenerator.sha1(key).substr(0, 27);
                         return new TableForeignKey({
-                            table: table,
                             name: keyName,
                             columnNames: [foreignKey["from"]],
                             referencedTableName: foreignKey["table"],

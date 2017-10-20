@@ -1,5 +1,4 @@
 import {IndexMetadata} from "../../metadata/IndexMetadata";
-import {Table} from "./Table";
 import {TableIndexOptions} from "../options/TableIndexOptions";
 
 /**
@@ -10,11 +9,6 @@ export class TableIndex {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table that contains this unique index.
-     */
-    table: Table;
 
     /**
      * Index name.
@@ -36,7 +30,6 @@ export class TableIndex {
     // -------------------------------------------------------------------------
 
     constructor(options: TableIndexOptions) {
-        this.table = options.table;
         this.name = options.name;
         this.columnNames = options.columnNames;
         this.isUnique = options.isUnique;
@@ -51,7 +44,6 @@ export class TableIndex {
      */
     clone(): TableIndex {
         return new TableIndex(<TableIndexOptions>{
-            table: this.table,
             name: this.name,
             columnNames: this.columnNames,
             isUnique: this.isUnique
@@ -65,9 +57,8 @@ export class TableIndex {
     /**
      * Creates index from the index metadata object.
      */
-    static create(indexMetadata: IndexMetadata, table: Table): TableIndex {
+    static create(indexMetadata: IndexMetadata): TableIndex {
         return new TableIndex(<TableIndexOptions>{
-            table: table,
             name: indexMetadata.name,
             columnNames: indexMetadata.columns.map(column => column.databaseName),
             isUnique: indexMetadata.isUnique

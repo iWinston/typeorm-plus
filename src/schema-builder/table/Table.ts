@@ -81,30 +81,8 @@ export class Table {
     constructor(options?: TableOptions) {
         if (options) {
             this.name = options.name;
-            if (options.columns) {
-                this.columns = options.columns.map(column => {
-                    if (column.isUnique) {
-                        this.uniques.push(new TableUnique({
-                            table: this,
-                            name: `UQ_${this.name}_${column.name}`, // TODO make it through naming strategy
-                            columnNames: [column.name]
-                        }));
-                    }
-                    if (column.isPrimary) {
-                        // if we already have primary key, it means that table have multiple primary keys
-                        if (this.primaryKey) {
-                            this.primaryKey.columnNames.push(column.name);
-                        } else {
-                            this.primaryKey = new TablePrimaryKey({
-                                table: this,
-                                name: `PK_${this.name}_${column.name}`, // TODO make it through naming strategy
-                                columnNames: [column.name]
-                            });
-                        }
-                    }
-                    return new TableColumn(column);
-                });
-            }
+            if (options.columns)
+                this.columns = options.columns.map(column => new TableColumn(column));
 
             if (options.justCreated !== undefined)
                 this.justCreated = options.justCreated;
@@ -140,9 +118,13 @@ export class Table {
         return new Table(<TableOptions>{
             name: this.name,
             columns: this.columns.map(column => column.clone()),
-            indices: this.indices.map(index => index.clone()),
-            foreignKeys: this.foreignKeys.map(key => key.clone()),
+            indices: this.indices.map(constraint => constraint.clone()),
+            foreignKeys: this.foreignKeys.map(constraint => constraint.clone()),
+            uniques: this.uniques.map(constraint => constraint.clone()),
+            checks: this.checks.map(constraint => constraint.clone()),
+            defaults: this.defaults.map(constraint => constraint.clone()),
             primaryKey: this.primaryKey,
+            justCreated: this.justCreated,
             engine: this.engine,
         });
     }
@@ -152,7 +134,7 @@ export class Table {
      */
     findColumnUniqueConstraints(column: TableColumn): TableUnique[] {
         return this.uniques.filter(unique => {
-            return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === column.name);
+            return !!unique.columnNames.find(columnName => columnName === column.name);
         });
     }
 
@@ -350,7 +332,8 @@ export class Table {
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
                 .filter(column => column)
-                .map(column => TableUtils.createTableColumnOptions(column, driver))
+                .map(column => TableUtils.createTableColumnOptions(column, driver)),
+            indices: entityMetadata.indices.map(index => TableIndex.create(index)),
         };
 
         return new Table(options);

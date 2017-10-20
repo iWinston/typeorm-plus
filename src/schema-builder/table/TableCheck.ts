@@ -1,4 +1,3 @@
-import {Table} from "./Table";
 import {TableCheckOptions} from "../options/TableCheckOptions";
 
 /**
@@ -9,11 +8,6 @@ export class TableCheck {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table that contains this constraint.
-     */
-    table: Table;
 
     /**
      * Constraint name.
@@ -30,7 +24,6 @@ export class TableCheck {
     // -------------------------------------------------------------------------
 
     constructor(options: TableCheckOptions) {
-        this.table = options.table;
         this.name = options.name;
         this.columnNames = options.columnNames;
     }
@@ -44,7 +37,6 @@ export class TableCheck {
      */
     clone(): TableCheck {
         return new TableCheck(<TableCheckOptions>{
-            table: this.table,
             name: this.name,
             columnNames: this.columnNames,
         });

@@ -18,7 +18,7 @@ describe.only("database schema > migrations", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("should correctly drop table and revert drop", () => Promise.all(connections.map(async connection => {
+    it("should correctly drop table and revert drop", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
 
@@ -38,7 +38,7 @@ describe.only("database schema > migrations", () => {
         await queryRunner.release();
     })));
 
-    it.only("should correctly remove column and revert remove", () => Promise.all(connections.map(async connection => {
+    it("should correctly remove column and revert remove", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
 
@@ -93,41 +93,39 @@ describe.only("database schema > migrations", () => {
         let table = await queryRunner.getTable("post");
         table!.findColumnByName("text")!.length!.should.be.equal("255");
 
-
-     /*   const textColumn = table!.findColumnByName("text")!;
+        const textColumn = table!.findColumnByName("text")!;
         const changedTextColumn = textColumn.clone();
+        changedTextColumn.isPrimary = true;
         changedTextColumn.length = "500";
+        changedTextColumn.default = "default text";
         await queryRunner.changeColumn(table!, textColumn, changedTextColumn);
 
         table = await queryRunner.getTable("post");
+        table!.findColumnByName("text")!.isPrimary.should.be.true;
         table!.findColumnByName("text")!.length!.should.be.equal("500");
-
-        await queryRunner.executeMemoryDownSql();
-        queryRunner.enableSqlMemory();
-
-        table = await queryRunner.getTable("post");
-        table!.findColumnByName("text")!.length!.should.be.equal("255");*/
+        table!.findColumnByName("text")!.default!.should.exist;
 
         const idColumn = table!.findColumnByName("id")!;
-        const changedIdColumnColumn = idColumn.clone();
-        changedIdColumnColumn!.isGenerated = true;
-        changedIdColumnColumn!.isUnique = true;
-        changedIdColumnColumn!.generationStrategy = "increment";
-        console.log("================");
-        await queryRunner.changeColumn(table!, idColumn, changedIdColumnColumn);
+        const changedIdColumn = idColumn.clone();
+        changedIdColumn!.isUnique = true;
 
-        console.log("================");
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
         table = await queryRunner.getTable("post");
-        table!.findColumnByName("id")!.isGenerated.should.be.true;
-        table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
+        table!.findColumnByName("id")!.isUnique.should.be.true;
 
         console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
-        queryRunner.enableSqlMemory();
 
         table = await queryRunner.getTable("post");
-        table!.findColumnByName("id")!.isGenerated.should.be.false;
-        expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
+        table!.findColumnByName("text")!.isPrimary.should.be.false;
+        table!.findColumnByName("text")!.length!.should.be.equal("255");
+        expect(table!.findColumnByName("text")!.default).to.be.undefined;
+        table!.findColumnByName("id")!.isUnique.should.be.false;
+        table!.findColumnByName("text")!.length!.should.be.equal("255");
+
+        changedIdColumn.isGenerated = true;
+        changedIdColumn.generationStrategy = "increment";
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn).should.be.rejected;
 
         await queryRunner.release();
     })));

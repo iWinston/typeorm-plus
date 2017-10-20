@@ -44,10 +44,17 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "PK_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    uniqueConstraintName(tableName: string, columnName: string): string {
+    uniqueConstraintName(tableName: string, columnNames: string[]): string {
+        const replacedTableName = tableName.replace(".", "_");
+        const joinedColumnNames = columnNames.map(columnName => columnName).join("_");
+        const key = `${replacedTableName}_${joinedColumnNames}`;
+        return "UQ_" + RandomGenerator.sha1(key).substr(0, 27);
+    }
+
+    defaultConstraintName(tableName: string, columnName: string): string {
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${columnName}`;
-        return "UQ_" + RandomGenerator.sha1(key).substr(0, 27);
+        return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
     indexName(customName: string|undefined, tableName: string, columns: string[]): string {

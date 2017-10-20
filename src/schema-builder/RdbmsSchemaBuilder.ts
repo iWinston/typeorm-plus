@@ -203,10 +203,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
 
             // create a new table and sync it in the database
-            const table = new Table({
+            const table = Table.create(metadata, this.connection.driver);
+            /*const table = new Table({
                 name: metadata.tablePath,
                 columns: this.metadataColumnsToTableColumnOptions(metadata.columns)
-            });
+            });*/
             this.queryRunner.loadedTables.push(table);
             await this.queryRunner.createTable(table);
         });
@@ -430,7 +431,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const addQueries = metadata.indices
                 .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name))
                 .map(async indexMetadata => {
-                    const tableIndex = TableIndex.create(indexMetadata, table);
+                    const tableIndex = TableIndex.create(indexMetadata);
                     table.indices.push(tableIndex);
                     this.connection.logger.logSchemaBuild(`adding new index: ${tableIndex.name}`);
                     await this.queryRunner.createIndex(table, tableIndex);
@@ -445,7 +446,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async dropColumnReferencedIndices(tableName: string, columnName: string): Promise<void> {
 
-        const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
+       /* const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
         if (!table)
             return;
 
@@ -463,7 +464,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return this.queryRunner.dropIndex(table, index.name);
         });
 
-        await Promise.all(dropPromises);
+        await Promise.all(dropPromises);*/
     }
 
     /**

@@ -1,4 +1,3 @@
-import {Table} from "./Table";
 import {TableUniqueOptions} from "../options/TableUniqueOptions";
 
 /**
@@ -9,11 +8,6 @@ export class TableUnique {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Table that contains this constraint.
-     */
-    table: Table;
 
     /**
      * Constraint name.
@@ -30,7 +24,6 @@ export class TableUnique {
     // -------------------------------------------------------------------------
 
     constructor(options: TableUniqueOptions) {
-        this.table = options.table;
         this.name = options.name;
         this.columnNames = options.columnNames;
     }
@@ -44,9 +37,22 @@ export class TableUnique {
      */
     clone(): TableUnique {
         return new TableUnique(<TableUniqueOptions>{
-            table: this.table,
             name: this.name,
             columnNames: this.columnNames,
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates unique from the unique metadata object.
+     */
+    static create(uniqueMetadata: UniqueMetadata): TableUnique {
+        return new TableUnique(<TableUniqueOptions>{
+            name: uniqueMetadata.name,
+            columnNames: uniqueMetadata.columns.map(column => column.databaseName)
         });
     }
 
