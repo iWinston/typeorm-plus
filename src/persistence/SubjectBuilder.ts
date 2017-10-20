@@ -242,11 +242,10 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     return;
 
                 // we only need entity id
-                const entityMap = subject.metadata.getEntityIdMap(subject.entity);
-                if (!entityMap)
+                if (subject.metadata.isEntityMapEmpty(subject.entity)) // can we use getEntityIdMap instead
                     return;
 
-                allIds.push(entityMap);
+                allIds.push(subject.metadata.getEntityIdMap(subject.entity)!);
             });
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there

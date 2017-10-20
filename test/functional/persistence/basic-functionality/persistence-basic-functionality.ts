@@ -16,6 +16,16 @@ describe("persistence > basic functionality", function() {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
+    it("should save an entity", () => Promise.all(connections.map(async connection => {
+        await connection.manager.save(new Post("Hello Post"));
+    })));
+
+    it("should remove an entity", () => Promise.all(connections.map(async connection => {
+        const post = new Post("Hello Post");
+        await connection.manager.save(post);
+        await connection.manager.remove(post);
+    })));
+
     it("should throw an error when not an object is passed to a save method", () => Promise.all(connections.map(async connection => {
         await connection.manager.save(undefined).should.be.rejectedWith(`Cannot save, given value must be an entity, instead "undefined" is given.`);
         await connection.manager.save(null).should.be.rejectedWith(`Cannot save, given value must be an entity, instead "null" is given.`);

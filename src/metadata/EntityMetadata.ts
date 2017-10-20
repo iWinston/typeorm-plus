@@ -626,8 +626,9 @@ export class EntityMetadata {
         const idMap = this.getEntityIdMap(entity);
         if (this.hasMultiplePrimaryKeys) {
             return idMap;
+
         } else if (idMap) {
-            return idMap[this.primaryColumns[0].propertyName]; // todo: what about parent primary column?
+            return this.primaryColumns[0].getEntityValue(idMap); // todo: what about parent primary column?
         }
 
         return idMap;
