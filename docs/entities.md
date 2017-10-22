@@ -510,7 +510,7 @@ export class Category {
 
 A closure table stores relations between parent and child in a separate table in a special way. 
 Its efficient in both reads and writes. 
-To learn more about closure table take a look at this awesome presentation by Bill Karwin. 
+To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data). 
 Example:
 
 ```typescript
