@@ -152,6 +152,9 @@ export class FindOptionsUtils {
                 });
         }
 
+        if (options.cache)
+            qb.cache(options.cache);
+
         return qb;
     }
 
