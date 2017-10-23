@@ -30,4 +30,9 @@ export interface FindOneOptions<Entity> {
      */
     order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
 
+    /**
+     * Enables or disables query result caching.
+     */
+    cache?: boolean | number | {id: any, milisseconds: number};
+
 }
