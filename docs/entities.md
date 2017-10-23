@@ -245,7 +245,7 @@ or
 `timestamp`, `timestamp without time zone`, `timestamp with time zone`, `int`, `smallint`, `bigint`,
 `character varying`, `character`, `varchar`, `char`, `int2`, `integer`, `int4`, `int8`, 
 `float4`, `float8`, `smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
-`money`, `boolean`, `bool`, `text`, `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
+`money`, `boolean`, `bool`, `text`, `citext`, `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
 `circle`, `path`, `polygon`, `enum`, `cidr`, `inet`, `macaddr`, `bit`, `bit varying`,
  `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
 
