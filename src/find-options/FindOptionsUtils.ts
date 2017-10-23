@@ -18,7 +18,10 @@ export class FindOptionsUtils {
                     possibleOptions.where instanceof Object ||
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
-                    possibleOptions.order instanceof Object
+                    possibleOptions.order instanceof Object ||
+                    (possibleOptions.cache instanceof Object ||
+                        typeof possibleOptions.cache === "boolean" || 
+                        typeof possibleOptions.cache === "number")
                 );
     }
 
@@ -27,17 +30,13 @@ export class FindOptionsUtils {
      */
     static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
         const possibleOptions: FindManyOptions<any> = obj;
-        return possibleOptions &&
-                (
-                    possibleOptions.select instanceof Array ||
-                    possibleOptions.where instanceof Object ||
-                    possibleOptions.relations instanceof Array ||
-                    possibleOptions.join instanceof Object ||
-                    possibleOptions.order instanceof Object ||
-                    typeof possibleOptions.skip === "number" ||
-                    typeof possibleOptions.take === "number"
-                );
+        return possibleOptions && (
+            this.isFindOneOptions(possibleOptions) ||
+            typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||
+            typeof (possibleOptions as FindManyOptions<any>).take === "number"
+        );
     }
+
 
     /**
      * Checks if given object is really instance of FindOptions interface.
