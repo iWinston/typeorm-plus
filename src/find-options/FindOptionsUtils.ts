@@ -19,7 +19,8 @@ export class FindOptionsUtils {
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
-                    typeof possibleOptions.loadRelationIds === "boolean"
+                    typeof possibleOptions.loadRelationIds === "boolean" ||
+                    possibleOptions.loadRelationIds instanceof Array
                 );
     }
 
@@ -37,7 +38,8 @@ export class FindOptionsUtils {
                     possibleOptions.order instanceof Object ||
                     typeof possibleOptions.skip === "number" ||
                     typeof possibleOptions.take === "number" ||
-                    typeof possibleOptions.loadRelationIds === "boolean"
+                    typeof possibleOptions.loadRelationIds === "boolean" ||
+                    possibleOptions.loadRelationIds instanceof Array
                 );
     }
 
@@ -156,8 +158,12 @@ export class FindOptionsUtils {
                 });
         }
 
-        if (options.loadRelationIds === true)
+        if (options.loadRelationIds === true) {
             qb.loadAllRelationIds();
+
+        } else if (options.loadRelationIds instanceof Array) {
+            qb.loadAllRelationIds(options.loadRelationIds);
+        }
 
         return qb;
     }

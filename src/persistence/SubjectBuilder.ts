@@ -113,6 +113,8 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
         // finally find which operate subjects have insert and remove operations in their junction tables
         await this.buildJunctionOperations({ insert: true, remove: true });
+
+        // console.log(this.operateSubjects);
     }
 
     /**
@@ -171,7 +173,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 return;
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistRelationEntitySubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
+                const alreadyExistRelationEntitySubject = this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistRelationEntitySubject) {
                     if (alreadyExistRelationEntitySubject.canBeInserted === false) // if its not marked for insertion yet
                         alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
@@ -205,7 +207,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     return;
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistValueSubject = this.findByEntityLike(relationEntityMetadata.target, relationEntity);
+                const alreadyExistValueSubject = this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistValueSubject) {
                     alreadyExistValueSubject.mustBeRemoved = true;
                     return;
@@ -252,15 +254,27 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
             if (!allIds.length)
                 return;
 
+            // extract all property paths of the relations we need to load relation ids for
+            // this is for optimization purpose - this way we don't load relation ids for entities
+            // whose relations are undefined, and since they are undefined its really pointless to
+            // load something for them, since undefined properties are skipped by the orm
+            const allPropertyPaths: string[] = [];
+            subjectGroup.subjects.forEach(subject => {
+                subject.persistedEntityRelationPropertyPaths.forEach(propertyPath => {
+                    if (allPropertyPaths.indexOf(propertyPath) === -1)
+                        allPropertyPaths.push(propertyPath);
+                });
+            });
+
             // load database entities for all given ids
             const entities = await this.queryRunner.manager
                 .getRepository<ObjectLiteral>(subjectGroup.target)
-                .findByIds(allIds, { loadRelationIds: true });
+                .findByIds(allIds, { loadRelationIds: allPropertyPaths });
 
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject
             entities.forEach(entity => {
-                const subject = this.findByEntityLike(subjectGroup.target, entity);
+                const subject = this.findByPersistEntityLike(subjectGroup.target, entity);
                 if (subject)
                     subject.databaseEntity = entity;
             });
@@ -291,9 +305,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
         const promises = subject.metadata.relations.map(async relation => {
             const valueMetadata = relation.inverseEntityMetadata;
             const qbAlias = valueMetadata.tableName;
-
-            // added for type-safety, but subject without databaseEntity cant come here anyway because of checks on upper levels
-            if (!subject.hasDatabaseEntity) return;
 
             // for one-to-one owner and many-to-one relations no need to load entity to check if something removed
             // because join column is in this side of relation and we have a database entity with which we can compare
@@ -326,30 +337,24 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                 // (example) "persistValue" - is a detailsId from the persisted entity
 
                 // note that if databaseEntity has relation, it can only be a relation id,
-                // because of query builder option "RELATION_ID_VALUES" we used
-                const relationIdInDatabaseEntity = relation.getEntityValue(subject.databaseEntity); // (example) returns post.detailsId
+                // because we loaded all relations using loadRelationIds of QueryBuilder
+                const databaseEntityRelationId = relation.getEntityValue(subject.databaseEntity); // (example) returns post.detailsId
 
                 // if database relation id does not exist in the database object then nothing to remove
-                if (relationIdInDatabaseEntity === null || relationIdInDatabaseEntity === undefined)
+                if (databaseEntityRelationId === null || databaseEntityRelationId === undefined)
                     return;
 
                 // if this subject is persisted subject then we get its value to check if its not empty or its values changed
-                let persistValueRelationId: any = undefined, persistValue: any = undefined;
+                let persistedEntityRelationId: any = undefined, persistedEntityRelatedEntity: any = undefined;
                 if (subject.hasEntity) {
-                    persistValue = relation.getEntityValue(subject.entity);
-                    if (persistValue === null) persistValueRelationId = null;
-                    if (persistValue) persistValueRelationId = relation.joinColumns.reduce((map, column) => column.referencedColumn!.getEntityValueMap(persistValue), {} as ObjectLiteral);
-                    if (persistValueRelationId === undefined) return; // skip undefined properties
+                    persistedEntityRelatedEntity = relation.getEntityValue(subject.entity);
+                    if (persistedEntityRelatedEntity === null) persistedEntityRelationId = null;
+                    if (persistedEntityRelatedEntity) persistedEntityRelationId = relation.joinColumns.reduce((map, column) => column.referencedColumn!.getEntityValueMap(persistedEntityRelatedEntity), {} as ObjectLiteral);
+                    if (persistedEntityRelationId === undefined) return; // skip undefined properties
                 }
 
                 // object is removed only if relation id in the persisted entity is empty or is changed
-                // if (persistValueRelationId !== null && persistValueRelationId === relationIdInDatabaseEntity)
-                //     return;
-                // console.log("relationIdInDatabaseEntity:", relationIdInDatabaseEntity);
-                // console.log("persistValue:", persistValue);
-                // console.log("compareEntities:", relation.entityMetadata.compareEntities(relationIdInDatabaseEntity, persistValue));
-                // console.log("compareIds:", relation.entityMetadata.compareIds(relationIdInDatabaseEntity, persistValue));
-                if (persistValueRelationId !== null && relation.entityMetadata.compareIds(relationIdInDatabaseEntity, persistValue))
+                if (persistedEntityRelationId !== null && relation.entityMetadata.compareIds(databaseEntityRelationId, persistedEntityRelationId))
                     return;
 
                 // first check if we already loaded this object before load from the database
@@ -362,7 +367,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     // (example) here we seek a Details loaded from the database in the subjects
                     // (example) here relatedSubject.databaseEntity is a Details
                     // (example) and we need to compare details.id === post.detailsId
-                    return relation.entityMetadata.compareIds(relationIdInDatabaseEntity, relation.getEntityValue(relatedSubject.databaseEntity));
+                    return relation.entityMetadata.compareIds(databaseEntityRelationId, relation.getEntityValue(relatedSubject.databaseEntity));
                 });
 
                 // if not loaded yet then load it from the database
@@ -379,7 +384,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     }).join(" AND ");
 
                     const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-                        parameters[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(relationIdInDatabaseEntity);
+                        parameters[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(databaseEntityRelationId);
                         return parameters;
                     }, {} as ObjectLiteral);
 
@@ -557,6 +562,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                         return parameters;
                     }, {} as ObjectLiteral);
 
+
                     databaseEntities = await this.queryRunner.manager
                         .getRepository<ObjectLiteral>(valueMetadata.target)
                         .createQueryBuilder(qbAlias) // todo: this wont work for mongodb. implement this in some method and call it here instead?
@@ -616,7 +622,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
                 // add to loadMap loaded entities if some of them are missing
                 databaseEntities.forEach(databaseEntity => {
-                    const subjectInLoadMap = this.findByEntityLike(valueMetadata.target, databaseEntity);
+                    const subjectInLoadMap = this.findByPersistEntityLike(valueMetadata.target, databaseEntity);
                     if (subjectInLoadMap && !subjectInLoadMap.hasDatabaseEntity) {
                         subjectInLoadMap.databaseEntity = databaseEntity;
 
@@ -834,7 +840,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
      * Finds subject where entity like given subject's entity.
      * Comparision made by entity id.
      */
-    protected findByEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
+    protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.operateSubjects.find(subject => {
             if (!subject.hasEntity)
                 return false;

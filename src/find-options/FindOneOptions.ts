@@ -31,8 +31,9 @@ export interface FindOneOptions<Entity> {
     order?: { [P in keyof Entity]?: "ASC"|"DESC"|1|-1 };
 
     /**
-     * Loads all relation ids of the entity.
+     * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).
+     * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadRelationIds?: boolean;
+    loadRelationIds?: boolean|string[];
 
 }

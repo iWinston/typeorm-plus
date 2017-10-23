@@ -666,9 +666,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Loads all relation ids for all relations of the selected entity.
      * All relation ids will be mapped to relation property themself.
+     * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadAllRelationIds(): this {
+    loadAllRelationIds(relations?: string[]): this {
         this.expressionMap.mainAlias!.metadata.relations.forEach(relation => {
+            if (relations !== undefined && relations.indexOf(relation.propertyPath) === -1)
+                return;
+
             this.loadRelationIdAndMap(
                 this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
                 this.expressionMap.mainAlias!.name + "." + relation.propertyPath,

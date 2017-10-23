@@ -171,6 +171,15 @@ export class Subject {
     // -------------------------------------------------------------------------
 
     /**
+     * Gets all relation property paths that exist in the persisted entity.
+     */
+    get persistedEntityRelationPropertyPaths(): string[] {
+        return this.metadata.relations
+            .filter(relation => relation.getEntityValue(this.entity) !== undefined)
+            .map(relation => relation.propertyPath);
+    }
+
+    /**
      * Gets entity sent to the persistence (e.g. changed entity).
      * Throws error if persisted entity was not set.
      */
