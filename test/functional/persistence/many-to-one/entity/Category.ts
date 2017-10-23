@@ -13,7 +13,7 @@ export class Category {
     @Column()
     name: string;
 
-    @ManyToOne(type => Post, post => post.categories, { cascadeAll: true })
+    @ManyToOne(type => Post, post => post.categories, { cascadeAll: true, onDelete: "SET NULL" })
     post?: Post|null|number;
 
     constructor(name: string, post?: Post) {

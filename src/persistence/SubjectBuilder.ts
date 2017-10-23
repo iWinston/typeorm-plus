@@ -104,8 +104,6 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
 
         // finally find which operate subjects have insert and remove operations in their junction tables
         await this.buildJunctionOperations({ insert: true, remove: true });
-
-        // console.log(this.operateSubjects);
     }
 
     /**
