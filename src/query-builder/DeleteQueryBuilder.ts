@@ -54,9 +54,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: Brackets|string|((qb: this) => string), parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres = [{ type: "simple", condition: this.computeWhereParameter(where) }];
-        if (parameters) this.setParameters(parameters);
+    where(where: Brackets|string|((qb: this) => string)|ObjectLiteral, parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
+        const condition = this.computeWhereParameter(where);
+        if (condition)
+            this.expressionMap.wheres = [{ type: "simple", condition: condition }];
+        if (parameters)
+            this.setParameters(parameters);
         return this;
     }
 
@@ -83,7 +87,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
-    whereInIds(ids: any[]): this {
+    whereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.where(whereExpression, parameters);
         return this;

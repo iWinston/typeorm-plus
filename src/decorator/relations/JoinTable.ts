@@ -34,6 +34,8 @@ export function JoinTable(options?: JoinTableOptions|JoinTableMultipleColumnsOpt
             name: options.name,
             joinColumns: (options && (options as JoinTableOptions).joinColumn ? [(options as JoinTableOptions).joinColumn!] : (options as JoinTableMultipleColumnsOptions).joinColumns) as any,
             inverseJoinColumns: (options && (options as JoinTableOptions).inverseJoinColumn ? [(options as JoinTableOptions).inverseJoinColumn!] : (options as JoinTableMultipleColumnsOptions).inverseJoinColumns) as any,
+            schema: options && options.schema ? options.schema : undefined,
+            database: options && options.database ? options.database : undefined,
         };
         getMetadataArgsStorage().joinTables.push(args);
     };

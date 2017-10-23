@@ -113,7 +113,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise;
 
-        if (this.driver.isReplicated) {
+        if (this.mode === "slave" && this.driver.isReplicated) {
 
             this.databaseConnectionPromise = this.driver.obtainSlaveConnection().then(connection => {
                 this.databaseConnection = connection;
@@ -339,7 +339,7 @@ export class MysqlQueryRunner implements QueryRunner {
         // load tables, columns, indices and foreign keys
         const databaseNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
         const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
-        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND TABLE_NAME IN (${tableNamesString})`;
+        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND TABLE_NAME IN (${tableNamesString})`; // todo(dima): fix, remove IN, apply AND and OR like in Mssql
         const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA IN (${databaseNamesString})`;
         const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND INDEX_NAME != 'PRIMARY' ORDER BY SEQ_IN_INDEX`;
         const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND REFERENCED_COLUMN_NAME IS NOT NULL`;
@@ -491,7 +491,7 @@ export class MysqlQueryRunner implements QueryRunner {
      * Creates a database if it's not created.
      */
     createDatabase(database: string): Promise<void[]> {
-        return this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
+        return this.query(`CREATE DATABASE IF NOT EXISTS ${database}`); // todo(dima): IT SHOULD NOT EXECUTE "IF NOT EXIST" if user already has a database (privileges issue)
     }
 
     /**
@@ -702,10 +702,10 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(tableOrPath: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(tableOrPath)}\`(${columns})`;
-        const revertSql = `ALTER TABLE \`${this.escapeTablePath(tableOrPath)}\` DROP INDEX \`${index.name}\``;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(table)}\`(${columns})`;
+        const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` DROP INDEX \`${index.name}\``;
         await this.schemaQuery(sql, revertSql);
     }
 

@@ -42,7 +42,9 @@ export class JunctionEntityMetadataBuilder {
             args: {
                 target: "",
                 name: joinTableName,
-                type: "junction"
+                type: "junction",
+                database: joinTable.database || relation.entityMetadata.database,
+                schema: joinTable.schema || relation.entityMetadata.schema,
             }
         });
 

@@ -16,6 +16,8 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {WhereExpression} from "./WhereExpression";
+import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -600,7 +602,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral) {
         if (typeof where === "string")
             return where;
 
@@ -610,9 +612,44 @@ export abstract class QueryBuilder<Entity> {
             const whereString = whereQueryBuilder.createWhereExpressionString();
             this.setParameters(whereQueryBuilder.getParameters());
             return whereString ? "(" + whereString + ")" : "";
+
+        } else if (where instanceof Function) {
+            return where(this);
+
+        } else if (where instanceof Object) {
+            if (this.expressionMap.mainAlias!.metadata) {
+                const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+                propertyPaths.forEach((propertyPath, index) => {
+                    const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), propertyPath);
+                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : propertyPath;
+                    if (parameterValue === null) {
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+
+                    } else {
+                        const parameterName = "where_" + index;
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                        this.setParameter(parameterName, parameterValue);
+                    }
+                });
+
+            } else {
+                Object.keys(where).forEach((key, index) => {
+                    const parameterValue = (where as ObjectLiteral)[key];
+                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
+                    if (parameterValue === null) {
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+
+                    } else {
+                        const parameterName = "where_" + index;
+                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
+                        this.setParameter(parameterName, parameterValue);
+                    }
+                });
+
+            }
         }
 
-        return where(this);
+        return "";
     }
 
     /**

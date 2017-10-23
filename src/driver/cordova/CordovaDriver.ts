@@ -74,7 +74,14 @@ export class CordovaDriver extends AbstractSqliteDriver {
         return new Promise<void>((ok, fail) => {
             this.sqlite.openDatabase({name: this.options.database, location: this.options.location}, (db: any) => {
                 const databaseConnection = db;
-                ok(databaseConnection);
+
+                // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                // working properly. this also makes onDelete to work with sqlite.
+                databaseConnection.executeSql(`PRAGMA foreign_keys = ON;`, [], (result: any) => {
+                    ok(databaseConnection);
+                }, (error: any) => {
+                    fail(error);
+                });
             }, (error: any) => {
                 fail(error);
             });

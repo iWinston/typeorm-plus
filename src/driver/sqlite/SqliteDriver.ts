@@ -12,6 +12,11 @@ import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
  * Organizes communication with sqlite DBMS.
  */
 export class SqliteDriver extends AbstractSqliteDriver {
+
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
     /**
      * Connection options.
      */
@@ -54,7 +59,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
@@ -81,7 +86,8 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected createDatabaseConnection() {
-        return new Promise<void>((ok, fail) => {
+        return new Promise<void>(async (ok, fail) => {
+            await this.createDatabaseDirectory(this.options.database);
             const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
                 if (err) return fail(err);
 
@@ -105,6 +111,17 @@ export class SqliteDriver extends AbstractSqliteDriver {
         } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
         }
+    }
+
+    /**
+     * Auto creates database directory if it does not exist.
+     */
+    protected createDatabaseDirectory(fullPath: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const mkdirp = PlatformTools.load("mkdirp");
+            const path = PlatformTools.load("path");
+            mkdirp(path.dirname(fullPath), (err: any) => err ? reject(err) : resolve());
+        });
     }
 
 }

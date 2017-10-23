@@ -684,9 +684,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
-    where(where: Brackets|string|((qb: this) => string), parameters?: ObjectLiteral): this {
-        this.expressionMap.wheres = [{ type: "simple", condition: this.computeWhereParameter(where) }];
-        if (parameters) this.setParameters(parameters);
+    where(where: Brackets|string|((qb: this) => string)|ObjectLiteral, parameters?: ObjectLiteral): this {
+        this.expressionMap.wheres = []; // don't move this block below since computeWhereParameter can add where expressions
+        const condition = this.computeWhereParameter(where);
+        if (condition)
+            this.expressionMap.wheres = [{ type: "simple", condition: condition }];
+        if (parameters)
+            this.setParameters(parameters);
         return this;
     }
 
@@ -718,7 +722,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * If you have multiple primary keys you need to pass object with property names and values specified,
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
-    whereInIds(ids: any[]): this {
+    whereInIds(ids: any|any[]): this {
+        ids = ids instanceof Array ? ids : [ids];
         const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
         this.where(whereExpression, parameters);
         return this;

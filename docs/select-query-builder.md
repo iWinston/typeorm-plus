@@ -2,7 +2,7 @@
 
 * [What is `QueryBuilder`](#what-is-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
-* [Building `SELECT` queries](#building-select-queries)
+* [Getting values using QueryBuilder](#getting-values-using-querybuilder)
 * [What are aliases for?](#what-are-aliases-for?)
 * [Using parameters to escape data](#using-parameters-to-escape-data)
 * [Adding `WHERE` expression](#adding-where-expression)
@@ -23,7 +23,6 @@
 * [Set locking](#set-locking)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
-* [Caching queries](#caching-queries)
 
 ## What is `QueryBuilder`
 

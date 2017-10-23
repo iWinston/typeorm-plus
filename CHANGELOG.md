@@ -5,6 +5,29 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.1.2 (next)
+
+* sqlite now supports relative database file paths (#798 and #799)
+* fixed bug with not properly working `update`  method (#1037, #1042)
+* fixed bug with replication support (#1035)
+* fixed bug with wrong embedded column names being generated (#969) 
+
+## 0.1.1 (current)
+
+* added support for `pg-native` for postgres (#975). To use it you just need to install `npm i pg-native` and it will be picked up automatically.
+* now Find Options support `-1` and `1` for `DESC` and `ASC` values. This is better user experience for MongoDB users. 
+* now inheritances in embeddeds are supported (#966).
+* `isArray: boolean` in `ColumnOptions` is deprecated. Use `array: boolean` instead.
+* deprecated `removeById` method, now use `deleteById` method instead.
+* added `insert` and `delete` methods into repository and entity manager.
+* fixed multiple issues with `update`, `updateById` and `removeById` methods in repository and entity manager. Now they do not use `save` and `remove` methods anymore - instead they are using QueryBuilder to build and execute their queries.
+* now `save` method can accept partial entities.
+* removed opencollective dependency.
+* fixed issues with bulk entity insertions.
+* find* methods now can find by embed conditions.
+* fixed issues with multiple schema support, added option to `@JoinTable` to support schema and database.
+* multiple small bugfixes.
+
 ## 0.1.0
 
 #### BREAKING CHANGES

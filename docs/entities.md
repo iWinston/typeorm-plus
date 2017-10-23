@@ -7,7 +7,7 @@
 * [Column types](#column-types)
     * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     * [Column types for `postgres`](#column-types-for-postgres)
-    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql)
+    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
     * [Columns with generated values](#columns-with-generated-values)
@@ -349,7 +349,7 @@ you specify column type and length options.
 By default column is `nullable: false`.
 * `default: string` - Adds database-level column's `DEFAULT` value. 
 * `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates index). Same if you use `@Index`.
+* `unique: boolean` - Marks column as unique column (creates unique constraint).
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
@@ -510,7 +510,7 @@ export class Category {
 
 A closure table stores relations between parent and child in a separate table in a special way. 
 Its efficient in both reads and writes. 
-To learn more about closure table take a look at this awesome presentation by Bill Karwin. 
+To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data). 
 Example:
 
 ```typescript

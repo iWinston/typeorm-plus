@@ -264,7 +264,7 @@ export interface QueryRunner {
     /**
      * Creates a new index.
      */
-    createIndex(tableName: string, index: TableIndex): Promise<void>;
+    createIndex(tableName: Table|string, index: TableIndex): Promise<void>;
 
     /**
      * Drops an index from the table.

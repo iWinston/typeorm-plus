@@ -15,6 +15,12 @@ TypeORM可以帮助开发者专注于业务逻辑，而不用过于担心数据�
 
 TypeORM参考了很多其他优秀ORM的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework).
 
+## Note
+
+This documentation is not up-to-date. 
+See latest english documentation on the [website](http://typeorm.io).
+Contributions are welcomed.
+
 ## 安装
 
 1. 安装TypeORM:
@@ -75,7 +81,7 @@ TypeORM在Node.JS 4.0或以上版本上测试通过。
 
 TypeORM可以在浏览器环境中工作，并且试验性的支持WebSQL
 如果在浏览器环境中使用TypeORM需要使用 `npm i typeorm-browser` 来替代 `typeorm`.
-更多相关可以参考[这里](https://typeorm.github.io/usage-in-browser.html)和[这个例子](https://github.com/typeorm/browser-example).
+更多相关可以参考[这里](https://typeorm.io)和[这个例子](https://github.com/typeorm/browser-example).
 
 ## 快速开始
 
@@ -933,5 +939,3 @@ let photos = await photoRepository
 并且只会得到10个结果（分页每页个数决定的），
 所得结果是以id的倒序排序的，
 Photo的albums是左联接，photo的metadata是内联接。
-
-更多关于QueryBuilder可以查看[这里](https://typeorm.github.io/query-builder.html).

@@ -1,7 +1,7 @@
 # Connection API
 
 * [Main API](#main-api)
-* [`Connection` API](#connection-api)
+* [`Connection` API](#connection-api-1)
 * [`ConnectionManager` API](#connectionmanager-api)
 
 ## Main API

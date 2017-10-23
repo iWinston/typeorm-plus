@@ -37,6 +37,13 @@ export class EmbeddedMetadata {
     propertyName: string;
 
     /**
+     * Gets full path to this embedded property (including embedded property name).
+     * Full path is relevant when embedded is used inside other embeds (one or multiple nested).
+     * For example it will return "counters.subcounters".
+     */
+    propertyPath: string;
+
+    /**
      * Columns inside this embed.
      */
     columns: ColumnMetadata[] = [];
@@ -152,6 +159,7 @@ export class EmbeddedMetadata {
         this.prefix = this.buildPrefix(connection);
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.parentPrefixes = this.buildParentPrefixes();
+        this.propertyPath = this.parentPrefixes.join(".");
         this.embeddedMetadataTree = this.buildEmbeddedMetadataTree();
         this.columnsFromTree = this.buildColumnsFromTree();
         this.relationsFromTree = this.buildRelationsFromTree();
@@ -172,7 +180,6 @@ export class EmbeddedMetadata {
 
         if (this.customPrefix === undefined) {
             prefixes.push(this.propertyName);
-
         } else if (typeof this.customPrefix === "string") {
             prefixes.push(this.customPrefix);
         }
@@ -185,7 +192,7 @@ export class EmbeddedMetadata {
     }
 
     protected buildParentPrefixes(): string[] {
-        return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPrefixes().concat(this.prefix || this.propertyName) : [this.prefix || this.propertyName];
+        return [this.prefix || this.propertyName];
     }
 
     protected buildEmbeddedMetadataTree(): EmbeddedMetadata[] {

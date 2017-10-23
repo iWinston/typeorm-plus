@@ -316,13 +316,15 @@ export class EntityMetadataBuilder {
     protected createEmbeddedsRecursively(entityMetadata: EntityMetadata, embeddedArgs: EmbeddedMetadataArgs[]): EmbeddedMetadata[] {
         return embeddedArgs.map(embeddedArgs => {
             const embeddedMetadata = new EmbeddedMetadata({ entityMetadata: entityMetadata, args: embeddedArgs });
-            embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(embeddedMetadata.type).map(args => {
+            const targets = MetadataUtils.getInheritanceTree(embeddedMetadata.type);
+
+            embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(targets).map(args => {
                 return new ColumnMetadata({ connection: this.connection, entityMetadata, embeddedMetadata, args});
             });
-            embeddedMetadata.relations = this.metadataArgsStorage.filterRelations(embeddedMetadata.type).map(args => {
+            embeddedMetadata.relations = this.metadataArgsStorage.filterRelations(targets).map(args => {
                 return new RelationMetadata({ entityMetadata, embeddedMetadata, args });
             });
-            embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(embeddedMetadata.type));
+            embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(targets));
             embeddedMetadata.embeddeds.forEach(subEmbedded => subEmbedded.parentEmbeddedMetadata = embeddedMetadata);
             return embeddedMetadata;
         });

@@ -483,10 +483,43 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if there is an embedded with a given property path.
+     */
+    hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
+        return !!this.findEmbeddedWithPropertyPath(propertyPath);
+    }
+
+    /**
+     * Finds embedded with a given property path.
+     */
+    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
+        return this.embeddeds.find(embedded => {
+            return embedded.propertyPath === propertyPath;
+        });
+    }
+
+    /**
      * Finds column with a given property name.
      */
     findColumnWithPropertyName(propertyName: string): ColumnMetadata|undefined {
         return this.columns.find(column => column.propertyName === propertyName);
+    }
+
+    /**
+     * Finds column with a given property path.
+     */
+    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
+        const column = this.columns.find(column => column.propertyPath === propertyPath);
+        if (column)
+            return column;
+
+        // in the case if column with property path was not found, try to find a relation with such property path
+        // if we find relation and it has a single join column then its the column user was seeking
+        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        if (relation && relation.joinColumns.length === 1)
+            return relation.joinColumns[0];
+
+        return undefined;
     }
 
     /**

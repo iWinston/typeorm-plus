@@ -2,7 +2,7 @@
 
 * [NodeJS](#nodejs)
 * [Browser](#browser)
-* [Cordova / PhoneGap / Ionic apps](#cordova-phonegap-ionic-apps)
+* [Cordova / PhoneGap / Ionic apps](#cordova--phonegap--ionic-apps)
 * [NativeScript](#nativescript)
 
 ## NodeJS

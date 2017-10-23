@@ -109,7 +109,7 @@ you specify column type and length options.
 By default column is `nullable: false`.
 * `default: string` - Adds database-level column's `DEFAULT` value. 
 * `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates index). Same if you use `@Index`.
+* `unique: boolean` - Marks column as unique column (creates unique constraint).
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.

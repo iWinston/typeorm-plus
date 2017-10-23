@@ -946,7 +946,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
     /**
      * Creates a new index.
      */
-    async createIndex(tablePath: string, index: TableIndex): Promise<void> {
+    async createIndex(tablePath: Table|string, index: TableIndex): Promise<void> {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
         const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTablePath(tablePath)}(${columns})`;
         await this.query(sql);
@@ -988,7 +988,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${database}' AND columnUsages.TABLE_SCHE
             let allTablesSql = `SELECT * FROM ${database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA IN (${schemaNamesString})`;
             const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
             await Promise.all(allTablesResults.map(async tablesResult => {
-                const dropForeignKeySql = `SELECT 'ALTER TABLE ' +  OBJECT_SCHEMA_NAME(parent_object_id) + '.[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT ' + name as query FROM ${database}.sys.foreign_keys WHERE referenced_object_id = object_id('"${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
+                const dropForeignKeySql = `SELECT 'ALTER TABLE "${database}"."' + OBJECT_SCHEMA_NAME(fk.parent_object_id, DB_ID('${database}')) + '"."' + OBJECT_NAME(fk.parent_object_id, DB_ID('${database}')) + '" DROP CONSTRAINT "' + fk.name + '"' as query FROM ${database}.sys.foreign_keys AS fk WHERE fk.referenced_object_id = object_id('"${database}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
                 const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
                 return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
                     return this.query(dropQuery);
