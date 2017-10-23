@@ -37,7 +37,6 @@ export class FindOptionsUtils {
         );
     }
 
-
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
