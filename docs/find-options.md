@@ -64,6 +64,14 @@ userRepository.find({
 });
 ```
 
+* `cache` - Enables or disables query result caching. See [caching](caching.md) for more information and options.
+
+```typescript
+userRepository.find({
+    cache: true
+})
+```
+
 Complete example of find options:
 
 ```typescript
@@ -79,6 +87,7 @@ userRepository.find({
         "id": "DESC"
     },
     skip: 5,
-    take: 10
+    take: 10,
+    cache: true
 });
 ```
