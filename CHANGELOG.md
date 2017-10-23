@@ -11,6 +11,7 @@ feel free to ask us and community.
 * fixed bug with not properly working `update`  method (#1037, #1042)
 * fixed bug with replication support (#1035)
 * fixed bug with wrong embedded column names being generated (#969) 
+* added support for caching in respositories [#1057](https://github.com/typeorm/typeorm/issues/1057)
 
 ## 0.1.1 (current)
 
