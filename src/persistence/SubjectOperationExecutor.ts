@@ -169,8 +169,15 @@ export class SubjectOperationExecutor {
                     const relatedEntity = relation.getEntityValue(subject.entity);
 
                     // if relation value is not set then nothing to do here
-                    if (!relatedEntity)
+                    if (relatedEntity === undefined || relatedEntity === null)
                         return;
+
+                    // if relation entity is just a relation id set (for example post.tag = 1)
+                    // then we don't really need to check cascades since there is no object to insert or update
+                    if (!(relatedEntity instanceof Object)) {
+                        updateOptions[joinColumn.databaseName] = relatedEntity;
+                        return;
+                    }
 
                     // check if relation reference column is a relation
                     let relationId: any;
@@ -703,7 +710,18 @@ export class SubjectOperationExecutor {
 
             const value = relation.getEntityValue(entity);
             relation.joinColumns.forEach(joinColumn => {
-                valueMap!.values[joinColumn.databaseName] = value !== null && value !== undefined ? value[joinColumn.referencedColumn!.propertyName] : null; // todo: should not have a call to primaryColumn, instead join column metadata should be used
+                if (value === undefined)
+                    return;
+
+                if (value === null) {
+                    valueMap!.values[joinColumn.databaseName] = null;
+
+                } else if (value instanceof Object) {
+                    valueMap!.values[joinColumn.databaseName] = joinColumn.referencedColumn!.getEntityValue(value);
+
+                } else {
+                    valueMap!.values[joinColumn.databaseName] = value;
+                }
             });
         });
 

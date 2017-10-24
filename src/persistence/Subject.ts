@@ -384,36 +384,31 @@ export class Subject {
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
     protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
-        this.diffRelations = this.metadata.relations.filter(relation => {
-            if (!relation.isManyToOne && !(relation.isOneToOne && relation.isOwning))
-                return false;
+        this.diffRelations = this.metadata.relationsWithJoinColumns.filter(relation => {
 
             // here we cover two scenarios:
             // 1. related entity can be another entity which is natural way
             // 2. related entity can be entity id which is hacked way of updating entity
             // todo: what to do if there is a column with relationId? (cover this too?)
-            const entityValue = relation.getEntityValue(this.entity);
-            const updatedEntityRelationId: any = entityValue instanceof Object
-                    ? relation.inverseEntityMetadata.getEntityIdMixedMap(entityValue)
-                    : entityValue;
+            let relatedEntity = relation.getEntityValue(this.entity);
 
-            const dbEntityRelationId = relation.getEntityValue(this.databaseEntity);
+            // we don't perform operation over undefined properties (but we DO need null properties!)
+            if (relatedEntity === undefined)
+                return false;
+
+            // if relation entity is just a relation id set (for example post.tag = 1)
+            // then we create an id map from it to make a proper compare
+            if (relatedEntity !== null && !(relatedEntity instanceof Object))
+                relatedEntity = relation.createRelationIdMap(relatedEntity);
+
+            const databaseRelatedEntity = relation.getEntityValue(this.databaseEntity);
 
             // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
             // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
             // todo:     return false;
 
-            // we don't perform operation over undefined properties
-            if (updatedEntityRelationId === undefined)
-                return false;
-
-            // if both are empty totally no need to do anything
-            if ((updatedEntityRelationId === undefined || updatedEntityRelationId === null) &&
-                (dbEntityRelationId === undefined || dbEntityRelationId === null))
-                return false;
-
             // if relation ids aren't equal then we need to update them
-            return updatedEntityRelationId !== dbEntityRelationId;
+            return !relation.inverseEntityMetadata.compareIds(relatedEntity, databaseRelatedEntity);
         });
     }
 

@@ -472,8 +472,8 @@ export class EntityMetadata {
     compareEntities(firstEntity: ObjectLiteral, secondEntity: ObjectLiteral): boolean {
 
         // if any entity ids are empty then they aren't equal
-        const isFirstEntityEmpty = this.isEntityMapEmpty(firstEntity);
-        const isSecondEntityEmpty = this.isEntityMapEmpty(secondEntity);
+        const isFirstEntityEmpty = this.isEntityIdMapEmpty(firstEntity);
+        const isSecondEntityEmpty = this.isEntityIdMapEmpty(secondEntity);
         if (isFirstEntityEmpty || isSecondEntityEmpty)
             return false;
 
@@ -553,15 +553,23 @@ export class EntityMetadata {
     }
 
     /**
+     * Creates value map from the given values and columns.
+     * Examples of usages are primary columns map and join columns map.
+     */
+    createValueMap(values: any|any[], columns: ColumnMetadata[]): ObjectLiteral {
+        if (!(values instanceof Array))
+            values = [values];
+
+        return columns.reduce((map, column, index) => {
+            return OrmUtils.mergeDeep(map, column.createValueMap(values[index]));
+        }, {} as ObjectLiteral);
+    }
+
+    /**
      * Creates entity id map from the given entity ids array.
      */
-    createEntityIdMap(ids: any|any[]) {
-        if (!(ids instanceof Array))
-            ids = [ids];
-
-        return this.primaryColumns.reduce((map, column, index) => {
-            return OrmUtils.mergeDeep(map, column.createValueMap(ids[index]));
-        }, {} as ObjectLiteral);
+    createEntityIdMap(ids: any|any[]): ObjectLiteral {
+        return this.createValueMap(ids, this.primaryColumns);
     }
 
     /**
@@ -569,7 +577,7 @@ export class EntityMetadata {
      * If they all aren't empty it returns true.
      * If at least one id in the given map is empty it returns false.
      */
-    isEntityMapEmpty(entity: ObjectLiteral): boolean {
+    isEntityIdMapEmpty(entity: ObjectLiteral): boolean {
         return !this.primaryColumns.every(column => {
             const value = column.getEntityValue(entity);
             return value !== null && value !== undefined;

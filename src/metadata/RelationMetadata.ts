@@ -275,6 +275,13 @@ export class RelationMetadata {
     // ---------------------------------------------------------------------
 
     /**
+     * Creates join column ids map from the given related entity ids array.
+     */
+    createRelationIdMap(relationIds: any|any[]): ObjectLiteral {
+        return this.inverseEntityMetadata.createValueMap(relationIds, this.joinColumns.map(joinColumn => joinColumn.referencedColumn!));
+    }
+
+    /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */

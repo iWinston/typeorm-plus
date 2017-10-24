@@ -152,6 +152,11 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     (!relation.isCascadeInsert && !relation.isCascadeUpdate))
                 return;
 
+                // if relation entity is just a relation id set (for example post.tag = 1)
+                // then we don't really need to check cascades since there is no object to insert or update
+                if (!(relationEntity instanceof Object))
+                    return;
+
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
                 const alreadyExistRelationEntitySubject = this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistRelationEntitySubject) {
@@ -224,7 +229,7 @@ export class SubjectBuilder<Entity extends ObjectLiteral> {
                     return;
 
                 // we only need entity id
-                if (subject.metadata.isEntityMapEmpty(subject.entity)) // can we use getEntityIdMap instead
+                if (subject.metadata.isEntityIdMapEmpty(subject.entity)) // can we use getEntityIdMap instead
                     return;
 
                 allIds.push(subject.metadata.getEntityIdMap(subject.entity)!);
