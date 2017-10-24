@@ -12,6 +12,7 @@ feel free to ask us and community.
 * fixed bug with replication support (#1035)
 * fixed bug with wrong embedded column names being generated (#969) 
 * added support for caching in respositories [#1057](https://github.com/typeorm/typeorm/issues/1057)
+* added support for the `citext` column type for postgres [#1075[(https://github.com/typeorm/typeorm/pull/1075)
 
 ## 0.1.1 (current)
 
