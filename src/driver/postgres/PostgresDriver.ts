@@ -96,6 +96,7 @@ export class PostgresDriver implements Driver {
         "character",
         "char",
         "text",
+        "citext",
         "bytea",
         "bit",
         "bit varying",
@@ -413,6 +414,9 @@ export class PostgresDriver implements Driver {
 
         } else if (type === "float4") {
             type = "real";
+
+        } else if (type === "citext") {
+            type = "citext";
 
         } else if (type === "char") {
             type = "character";
