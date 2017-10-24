@@ -66,8 +66,8 @@ export class TableForeignKey {
     clone(): TableForeignKey {
         return new TableForeignKey(<TableForeignKeyOptions>{
             name: this.name,
-            columnNames: this.columnNames,
-            referencedColumnNames: this.referencedColumnNames,
+            columnNames: [...this.columnNames],
+            referencedColumnNames: [...this.referencedColumnNames],
             referencedTableName: this.referencedTableName,
             onDelete: this.onDelete,
             onUpdate: this.onUpdate

@@ -189,22 +189,22 @@ export interface QueryRunner {
     /**
      * Adds a new column in the table.
      */
-    addColumn(tableName: string, column: TableColumn): Promise<void>;
+    addColumn(table: Table, column: TableColumn): Promise<void>;
 
     /**
      * Adds a new column in the table.
      */
-    addColumn(table: Table, column: TableColumn): Promise<void>;
-
-    /**
-     * Adds new columns in the table.
-     */
-    addColumns(table: string, columns: TableColumn[]): Promise<void>;
+    addColumn(tableName: string, column: TableColumn): Promise<void>;
 
     /**
      * Adds new columns in the table.
      */
     addColumns(table: Table, columns: TableColumn[]): Promise<void>;
+
+    /**
+     * Adds new columns in the table.
+     */
+    addColumns(table: string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Renames column in the given table.
@@ -224,7 +224,7 @@ export interface QueryRunner {
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: string, oldColumn: string, newColumn: TableColumn): Promise<void>;
+    changeColumn(tableName: string, oldColumn: string, newColumn: TableColumn): Promise<void>;
 
     /**
      * Changes a columns in the table.
@@ -232,14 +232,29 @@ export interface QueryRunner {
     changeColumns(table: Table, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
     /**
+     * Changes a columns in the table.
+     */
+    changeColumns(tableName: string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
+
+    /**
      * Drops the column in the table.
      */
     dropColumn(table: Table, column: TableColumn): Promise<void>;
 
     /**
+     * Drops the column in the table.
+     */
+    dropColumn(tableName: string, column: TableColumn): Promise<void>;
+
+    /**
      * Drops the columns in the table.
      */
     dropColumns(table: Table, columns: TableColumn[]): Promise<void>;
+
+    /**
+     * Drops the columns in the table.
+     */
+    dropColumns(tableName: string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Updates primary keys in the table.

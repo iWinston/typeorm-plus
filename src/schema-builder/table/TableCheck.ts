@@ -38,7 +38,7 @@ export class TableCheck {
     clone(): TableCheck {
         return new TableCheck(<TableCheckOptions>{
             name: this.name,
-            columnNames: this.columnNames,
+            columnNames: [...this.columnNames],
         });
     }
 

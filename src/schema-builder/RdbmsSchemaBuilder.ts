@@ -156,7 +156,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropRemovedColumns();
         await this.addNewColumns();
         await this.updateExistColumns();
-        await this.updatePrimaryKeys();
+        // await this.updatePrimaryKeys();
         await this.createIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
         await this.createForeignKeys();
     }
@@ -390,7 +390,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata, table));
             this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
-            table.addForeignKeys(dbForeignKeys);
+            table.addForeignKeys(dbForeignKeys); // TODO remove, it will done in createForeignKey method
         });
     }
 

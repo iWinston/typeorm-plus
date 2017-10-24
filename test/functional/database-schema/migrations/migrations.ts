@@ -51,7 +51,6 @@ describe.only("database schema > migrations", () => {
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("id")).to.be.undefined;
 
-        console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
@@ -60,7 +59,7 @@ describe.only("database schema > migrations", () => {
         await queryRunner.release();
     })));
 
-    it.only("should correctly add column and revert add", () => Promise.all(connections.map(async connection => {
+    it("should correctly add column and revert add", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
 
@@ -77,7 +76,6 @@ describe.only("database schema > migrations", () => {
         table = await queryRunner.getTable("post");
         table!.findColumnByName("secondId")!.should.be.exist;
 
-        console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
@@ -113,7 +111,6 @@ describe.only("database schema > migrations", () => {
         table = await queryRunner.getTable("post");
         table!.findColumnByName("id")!.isUnique.should.be.true;
 
-        console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");

@@ -1,4 +1,5 @@
 import {TableUniqueOptions} from "../options/TableUniqueOptions";
+import {UniqueMetadata} from "../../metadata/UniqueMetadata";
 
 /**
  * Database's table unique constraint stored in this class.
@@ -38,7 +39,7 @@ export class TableUnique {
     clone(): TableUnique {
         return new TableUnique(<TableUniqueOptions>{
             name: this.name,
-            columnNames: this.columnNames,
+            columnNames: [...this.columnNames]
         });
     }
 

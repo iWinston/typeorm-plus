@@ -38,7 +38,7 @@ export class TablePrimaryKey {
     clone(): TablePrimaryKey {
         return new TablePrimaryKey(<TablePrimaryKeyOptions>{
             name: this.name,
-            columnNames: this.columnNames
+            columnNames: [...this.columnNames]
         });
     }
 

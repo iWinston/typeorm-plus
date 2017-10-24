@@ -8,7 +8,6 @@ import {ColumnType} from "../../driver/types/ColumnTypes";
 import {TableOptions} from "../options/TableOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {TableUtils} from "../util/TableUtils";
-import {TableDefault} from "./TableDefault";
 import {TableUnique} from "./TableUnique";
 import {TableCheck} from "./TableCheck";
 
@@ -53,11 +52,6 @@ export class Table {
     checks: TableCheck[] = [];
 
     /**
-     * Table default constraints.
-     */
-    defaults: TableDefault[] = [];
-
-    /**
      * Table primary key.
      */
     primaryKey?: TablePrimaryKey;
@@ -81,8 +75,24 @@ export class Table {
     constructor(options?: TableOptions) {
         if (options) {
             this.name = options.name;
+
             if (options.columns)
                 this.columns = options.columns.map(column => new TableColumn(column));
+
+            if (options.indices)
+                this.indices = options.indices.map(index => new TableIndex(index));
+
+            if (options.foreignKeys)
+                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey(foreignKey));
+
+            if (options.uniques)
+                this.uniques = options.uniques.map(unique => new TableUnique(unique));
+
+            if (options.checks)
+                this.checks = options.checks.map(check => new TableCheck(check));
+
+            if (options.primaryKey)
+                this.primaryKey = new TablePrimaryKey(options.primaryKey);
 
             if (options.justCreated !== undefined)
                 this.justCreated = options.justCreated;
@@ -122,8 +132,7 @@ export class Table {
             foreignKeys: this.foreignKeys.map(constraint => constraint.clone()),
             uniques: this.uniques.map(constraint => constraint.clone()),
             checks: this.checks.map(constraint => constraint.clone()),
-            defaults: this.defaults.map(constraint => constraint.clone()),
-            primaryKey: this.primaryKey,
+            primaryKey: this.primaryKey ? this.primaryKey.clone() : undefined,
             justCreated: this.justCreated,
             engine: this.engine,
         });
@@ -145,13 +154,6 @@ export class Table {
         return this.checks.filter(check => {
             return !!check.columnNames.find(columnName => columnName === column.name);
         });
-    }
-
-    /**
-     * Returns all check constraints of given column.
-     */
-    findColumnDefaultConstraints(column: TableColumn): TableDefault[] {
-        return this.defaults.filter(def => def.columnName === column.name);
     }
 
     /**
@@ -249,7 +251,7 @@ export class Table {
             return  tableColumn.name !== columnMetadata.databaseName ||
                     tableColumn.type !== driver.normalizeType(columnMetadata) ||
                     tableColumn.comment !== columnMetadata.comment ||
-                    (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
+                    (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
                     tableColumn.isNullable !== columnMetadata.isNullable ||
                     tableColumn.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
                     // tableColumn.isPrimary !== columnMetadata.isPrimary ||

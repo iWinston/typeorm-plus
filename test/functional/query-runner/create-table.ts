@@ -5,7 +5,7 @@ import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
 import {PostEntity} from "./entity/PostEntity";
 
-describe("query runner > create table", () => {
+describe.only("query runner > create table", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -33,6 +33,7 @@ describe("query runner > create table", () => {
                 {
                     name: "name",
                     type: "varchar",
+                    isUnique: true,
                     isNullable: false
                 }
             ]
@@ -40,7 +41,17 @@ describe("query runner > create table", () => {
         await queryRunner.createTable(new Table(options));
 
         const table = await queryRunner.getTable("post");
+        const idColumn = table!.findColumnByName("id");
+        const nameColumn = table!.findColumnByName("name");
+        idColumn!.should.be.exist;
+        idColumn!.isPrimary.should.be.true;
+        idColumn!.isGenerated.should.be.true;
+        idColumn!.generationStrategy!.should.be.equal("increment");
+        nameColumn!.should.be.exist;
+        nameColumn!.isUnique.should.be.true;
         table!.should.exist;
+        table!.primaryKey!.should.exist;
+        table!.uniques.length.should.be.equal(1);
 
         await queryRunner.release();
     })));

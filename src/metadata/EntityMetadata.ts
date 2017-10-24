@@ -17,6 +17,7 @@ import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {UniqueMetadata} from "./UniqueMetadata";
 
 /**
  * Contains all entity metadata.
@@ -199,6 +200,11 @@ export class EntityMetadata {
      * Entity's index metadatas.
      */
     indices: IndexMetadata[] = [];
+
+    /**
+     * Entity's unique metadatas.
+     */
+    uniques: UniqueMetadata[] = [];
 
     /**
      * Entity's foreign key metadatas.

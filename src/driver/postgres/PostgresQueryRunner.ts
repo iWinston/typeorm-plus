@@ -726,9 +726,9 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Changes a column in the table.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         const updatePromises = changedColumns.map(async changedColumn => {
-            return this.changeColumn(table, changedColumn.oldColumn, changedColumn.newColumn);
+            return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
 
         await Promise.all(updatePromises);
@@ -737,9 +737,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
-        const up = `ALTER TABLE ${this.escapeTablePath(table)} DROP "${column.name}"`;
-        const down = `ALTER TABLE ${this.escapeTablePath(table)} ADD ${this.buildCreateColumnSql(column, false)}`;
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        const up = `ALTER TABLE ${this.escapeTablePath(table!)} DROP "${column.name}"`;
+        const down = `ALTER TABLE ${this.escapeTablePath(table!)} ADD ${this.buildCreateColumnSql(column, false)}`;
 
         return this.schemaQuery(up, down);
     }
@@ -747,8 +748,9 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const dropPromises = columns.map(column => this.dropColumn(table, column));
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        const dropPromises = columns.map(column => this.dropColumn(table!, column));
         await Promise.all(dropPromises);
     }
 

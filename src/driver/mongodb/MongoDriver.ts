@@ -254,7 +254,7 @@ export class MongoDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
+    normalizeDefault(defaultValue: string): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 

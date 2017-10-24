@@ -614,9 +614,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Changes a column in the table.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         const updatePromises = changedColumns.map(async changedColumn => {
-            return this.changeColumn(table, changedColumn.oldColumn, changedColumn.newColumn);
+            return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
         await Promise.all(updatePromises);
     }
@@ -624,15 +624,17 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
-        return this.query(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        return this.query(`ALTER TABLE "${table!.name}" DROP COLUMN "${column.name}"`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const dropPromises = columns.map(column => this.dropColumn(table, column));
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        const dropPromises = columns.map(column => this.dropColumn(table!, column));
         await Promise.all(dropPromises);
     }
 

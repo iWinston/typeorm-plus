@@ -322,168 +322,16 @@ export class MysqlQueryRunner implements QueryRunner {
      * Loads given table's data from the database.
      */
     async getTable(tableName: string): Promise<Table|undefined> {
-        const tables = await this.getTables([tableName]);
-        return tables.length > 0 ? tables[0] : undefined;
+        this.loadedTables = await this.loadTables([tableName]);
+        return this.loadedTables.length > 0 ? this.loadedTables[0] : undefined;
     }
 
     /**
-     * Loads all tables (with given names) from the database and creates a Table from them.
+     * Loads all tables (with given names) from the database.
      */
-    async getTables(tablePaths: string[]): Promise<Table[]> {
-        /*if (this.sqlMemoryMode)
-            throw new Error(`Loading table is not supported in sql memory mode`);*/
-
-        // if no tables given then no need to proceed
-        if (!tablePaths || !tablePaths.length)
-            return [];
-
-        const tableNames = tablePaths.map(tablePath => {
-            return tablePath.indexOf(".") === -1 ? tablePath : tablePath.split(".")[1];
-        });
-        const dbNames = tablePaths
-            .filter(tablePath => tablePath.indexOf(".") !== -1)
-            .map(tablePath => tablePath.split(".")[0]);
-        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
-            dbNames.push(this.driver.database);
-
-        // load tables, columns, indices and foreign keys
-        const databaseNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
-        const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
-        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND TABLE_NAME IN (${tableNamesString})`; // todo(dima): fix, remove IN, apply AND and OR like in Mssql
-        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA IN (${databaseNamesString})`;
-        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND INDEX_NAME != 'PRIMARY' ORDER BY SEQ_IN_INDEX`;
-        const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND REFERENCED_COLUMN_NAME IS NOT NULL`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
-            this.query(tablesSql),
-            this.query(columnsSql),
-            this.query(indicesSql),
-            this.query(foreignKeysSql)
-        ]);
-
-        // if tables were not found in the db, no need to proceed
-        if (!dbTables.length)
-            return [];
-
-        const isMariaDb = this.driver.options.type === "mariadb";
-
-        // create tables for loaded tables
-        return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table();
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
-
-            const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_SCHEMA"]}\`.\`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
-
-            // create columns from the loaded columns
-            table.columns = dbColumns
-                .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
-                .map(dbColumn => {
-                    const tableColumn = new TableColumn();
-                    tableColumn.name = dbColumn["COLUMN_NAME"];
-
-                    const columnType = dbColumn["COLUMN_TYPE"].toLowerCase();
-                    const endIndex = columnType.indexOf("(");
-                    tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
-
-                    if (dbColumn["COLUMN_DEFAULT"] === null
-                        || dbColumn["COLUMN_DEFAULT"] === undefined
-                        || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
-                        tableColumn.default = undefined;
-
-                    } else {
-                        tableColumn.default = dbColumn["COLUMN_DEFAULT"];
-                    }
-
-                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    tableColumn.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
-                    tableColumn.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
-                    tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
-                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
-                    tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                    tableColumn.scale = dbColumn["NUMERIC_SCALE"];
-                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                    tableColumn.collation = dbColumn["COLLATION_NAME"];
-
-                    if (tableColumn.type === "int" || tableColumn.type === "tinyint"
-                        ||  tableColumn.type === "smallint" || tableColumn.type === "mediumint"
-                        || tableColumn.type === "bigint" || tableColumn.type === "year") {
-
-                        const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
-                        tableColumn.length = length ? length.toString() : "";
-
-                    } else {
-                        tableColumn.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
-                    }
-
-                    if (tableColumn.type === "enum") {
-                        const colType = dbColumn["COLUMN_TYPE"];
-                        const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
-                        tableColumn.enum = (items as string[]).map(item => {
-                            return item.substring(1, item.length - 1);
-                        });
-                    }
-
-                    if (tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") {
-                        tableColumn.precision = dbColumn["DATETIME_PRECISION"];
-                    }
-
-                    return tableColumn;
-                });
-
-            // create primary key
-            if (primaryKeys.length > 0) {
-                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
-                    table: table,
-                    name: primaryKeys[0]["Key_name"],
-                    columnNames: primaryKeys.map(primaryKey => primaryKey["Column_name"])
-                });
-            }
-
-            // create foreign key schemas from the loaded indices
-            table.foreignKeys = dbForeignKeys
-                .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === table.name)
-                .map(dbForeignKey => {
-                    return new TableForeignKey(<TableForeignKeyOptions>{
-                        table: table,
-                        name: dbForeignKey["CONSTRAINT_NAME"],
-                        columnNames: [],
-                        referencedTableName: "",
-                        referencedColumnNames: []
-                    });
-                }); // todo: fix missing params
-
-            // create index schemas from the loaded indices
-            table.indices = dbIndices
-                .filter(dbIndex => {
-                    return dbIndex["TABLE_NAME"] === table.name &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (table.primaryKey && !table.primaryKey.name === dbIndex["INDEX_NAME"]);
-                })
-                .map(dbIndex => dbIndex["INDEX_NAME"])
-                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
-                .map(dbIndexName => {
-                    const currentDbIndices = dbIndices.filter(dbIndex => dbIndex["TABLE_NAME"] === table.name && dbIndex["INDEX_NAME"] === dbIndexName);
-                    const columnNames = currentDbIndices.map(dbIndex => dbIndex["COLUMN_NAME"]);
-
-                    // find a special index - unique index and
-                    if (currentDbIndices.length === 1 && currentDbIndices[0]["NON_UNIQUE"] === 0) {
-                        const column = table.columns.find(column => column.name === currentDbIndices[0]["INDEX_NAME"] && column.name === currentDbIndices[0]["COLUMN_NAME"]);
-                        if (column) {
-                            column.isUnique = true;
-                            return;
-                        }
-                    }
-
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: dbIndexName,
-                        columnNames: columnNames,
-                        isUnique: currentDbIndices[0]["NON_UNIQUE"] === 0
-                    });
-                })
-                .filter(index => !!index) as TableIndex[]; // remove empty returns
-
-            return table;
-        }));
+    async getTables(tableNames: string[]): Promise<Table[]> {
+        this.loadedTables = await this.loadTables(tableNames);
+        return this.loadedTables;
     }
 
     /**
@@ -635,9 +483,9 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         const updatePromises = changedColumns.map(async changedColumn => {
-            return this.changeColumn(table, changedColumn.oldColumn, changedColumn.newColumn);
+            return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
 
         await Promise.all(updatePromises);
@@ -646,7 +494,8 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const sql = `ALTER TABLE \`${this.escapeTablePath(table)}\` DROP \`${column.name}\``;
         const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` ADD ${this.buildCreateColumnSql(column, false)}`;
         return this.schemaQuery(sql, revertSql);
@@ -655,8 +504,8 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const dropPromises = columns.map(column => this.dropColumn(table, column));
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const dropPromises = columns.map(column => this.dropColumn(tableOrName, column));
         await Promise.all(dropPromises);
     }
 
@@ -828,6 +677,179 @@ export class MysqlQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Loads all tables (with given names) from the database and creates a Table from them.
+     */
+    protected async loadTables(tablePaths: string[]): Promise<Table[]> {
+
+        // if no tables given then no need to proceed
+        if (!tablePaths || !tablePaths.length)
+            return [];
+
+        const tableNames = tablePaths.map(tablePath => {
+            return tablePath.indexOf(".") === -1 ? tablePath : tablePath.split(".")[1];
+        });
+        const dbNames = tablePaths
+            .filter(tablePath => tablePath.indexOf(".") !== -1)
+            .map(tablePath => tablePath.split(".")[0]);
+        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
+            dbNames.push(this.driver.database);
+
+        // load tables, columns, indices and foreign keys
+        const databaseNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
+        const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
+        const tablesSql      = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND TABLE_NAME IN (${tableNamesString})`; // todo(dima): fix, remove IN, apply AND and OR like in Mssql
+        const columnsSql     = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA IN (${databaseNamesString})`;
+        const indicesSql     = `SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND INDEX_NAME != 'PRIMARY' ORDER BY SEQ_IN_INDEX`;
+        const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA IN (${databaseNamesString}) AND REFERENCED_COLUMN_NAME IS NOT NULL`;
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
+            this.query(tablesSql),
+            this.query(columnsSql),
+            this.query(indicesSql),
+            this.query(foreignKeysSql)
+        ]);
+
+        // if tables were not found in the db, no need to proceed
+        if (!dbTables.length)
+            return [];
+
+        const isMariaDb = this.driver.options.type === "mariadb";
+
+        // create tables for loaded tables
+        return Promise.all(dbTables.map(async dbTable => {
+            const table = new Table();
+            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
+
+            const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_SCHEMA"]}\`.\`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
+
+            // create columns from the loaded columns
+            table.columns = dbColumns
+                .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
+                .map(dbColumn => {
+                    const tableColumn = new TableColumn();
+                    tableColumn.name = dbColumn["COLUMN_NAME"];
+
+                    const columnType = dbColumn["COLUMN_TYPE"].toLowerCase();
+                    const endIndex = columnType.indexOf("(");
+                    tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
+
+                    if (dbColumn["COLUMN_DEFAULT"] === null
+                        || dbColumn["COLUMN_DEFAULT"] === undefined
+                        || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
+                        tableColumn.default = undefined;
+
+                    } else {
+                        tableColumn.default = dbColumn["COLUMN_DEFAULT"];
+                    }
+
+                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
+                    tableColumn.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                    tableColumn.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
+                    tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
+                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
+                    tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
+                    tableColumn.scale = dbColumn["NUMERIC_SCALE"];
+                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
+                    tableColumn.collation = dbColumn["COLLATION_NAME"];
+
+                    if (tableColumn.type === "int" || tableColumn.type === "tinyint"
+                        ||  tableColumn.type === "smallint" || tableColumn.type === "mediumint"
+                        || tableColumn.type === "bigint" || tableColumn.type === "year") {
+
+                        const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
+                        tableColumn.length = length ? length.toString() : "";
+
+                    } else {
+                        tableColumn.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
+                    }
+
+                    if (tableColumn.type === "enum") {
+                        const colType = dbColumn["COLUMN_TYPE"];
+                        const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
+                        tableColumn.enum = (items as string[]).map(item => {
+                            return item.substring(1, item.length - 1);
+                        });
+                    }
+
+                    if (tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") {
+                        tableColumn.precision = dbColumn["DATETIME_PRECISION"];
+                    }
+
+                    return tableColumn;
+                });
+
+            // create primary key
+            if (primaryKeys.length > 0) {
+                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
+                    table: table,
+                    name: primaryKeys[0]["Key_name"],
+                    columnNames: primaryKeys.map(primaryKey => primaryKey["Column_name"])
+                });
+            }
+
+            // create foreign key schemas from the loaded indices
+            table.foreignKeys = dbForeignKeys
+                .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === table.name)
+                .map(dbForeignKey => {
+                    return new TableForeignKey(<TableForeignKeyOptions>{
+                        table: table,
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: [],
+                        referencedTableName: "",
+                        referencedColumnNames: []
+                    });
+                }); // todo: fix missing params
+
+            // create index schemas from the loaded indices
+            table.indices = dbIndices
+                .filter(dbIndex => {
+                    return dbIndex["TABLE_NAME"] === table.name &&
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
+                        (table.primaryKey && !table.primaryKey.name === dbIndex["INDEX_NAME"]);
+                })
+                .map(dbIndex => dbIndex["INDEX_NAME"])
+                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
+                .map(dbIndexName => {
+                    const currentDbIndices = dbIndices.filter(dbIndex => dbIndex["TABLE_NAME"] === table.name && dbIndex["INDEX_NAME"] === dbIndexName);
+                    const columnNames = currentDbIndices.map(dbIndex => dbIndex["COLUMN_NAME"]);
+
+                    // find a special index - unique index and
+                    if (currentDbIndices.length === 1 && currentDbIndices[0]["NON_UNIQUE"] === 0) {
+                        const column = table.columns.find(column => column.name === currentDbIndices[0]["INDEX_NAME"] && column.name === currentDbIndices[0]["COLUMN_NAME"]);
+                        if (column) {
+                            column.isUnique = true;
+                            return;
+                        }
+                    }
+
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndexName,
+                        columnNames: columnNames,
+                        isUnique: currentDbIndices[0]["NON_UNIQUE"] === 0
+                    });
+                })
+                .filter(index => !!index) as TableIndex[]; // remove empty returns
+
+            return table;
+        }));
+    }
+
+    /**
+     * Gets table from previously loaded tables, otherwise loads it from database.
+     */
+    protected async getCachedTable(tableName: string): Promise<Table> {
+        const table = this.loadedTables.find(table => table.name === tableName);
+        if (table) return table;
+
+        const foundTables = await this.loadTables([tableName]);
+        if (foundTables.length > 0) {
+            return foundTables[0];
+        } else {
+            throw new Error(`Table "${tableName}" does not exist.`);
+        }
+    }
 
     /**
      * Builds create table sql

@@ -12,7 +12,7 @@ export class TableUtils {
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,
             scale: columnMetadata.scale,
-            default: driver.normalizeDefault(columnMetadata),
+            default: driver.normalizeDefault(columnMetadata.default),
             comment: columnMetadata.comment,
             isGenerated: columnMetadata.isGenerated,
             generationStrategy: columnMetadata.generationStrategy,

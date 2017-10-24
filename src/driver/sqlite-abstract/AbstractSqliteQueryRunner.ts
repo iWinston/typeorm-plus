@@ -522,29 +522,32 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Changes a column in the table.
      * Changed column looses all its keys in the db.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
         // todo: fix it. it should not depend on table
-        await this.recreateTable(table);
+        await this.recreateTable(table!);
     }
 
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
-        return this.dropColumns(table, [column]);
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        return this.dropColumns(table!, [column]);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const updatingTable = table.clone();
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        const updatingTable = table!.clone();
         updatingTable.removeColumns(columns);
         await this.recreateTable(updatingTable);
 
-        const newTable = table.clone();
+        const newTable = table!.clone();
         newTable.addColumns(columns);
-        await this.recreateTable(newTable, table, false);
+        await this.recreateTable(newTable, table!, false);
     }
 
     /**

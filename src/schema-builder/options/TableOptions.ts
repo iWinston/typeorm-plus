@@ -4,7 +4,6 @@ import {TableForeignKeyOptions} from "./TableForeignKeyOptions";
 import {TablePrimaryKeyOptions} from "./TablePrimaryKeyOptions";
 import {TableUniqueOptions} from "./TableUniqueOptions";
 import {TableCheckOptions} from "./TableCheckOptions";
-import {TableDefaultOptions} from "./TableDefaultOptions";
 
 /**
  * Table options.
@@ -49,11 +48,6 @@ export interface TableOptions {
      * Table check constraints.
      */
     checks?: TableCheckOptions[];
-
-    /**
-     * Table default constraints.
-     */
-    defaults?: TableDefaultOptions[];
 
     /**
      * Indicates if table was just created.

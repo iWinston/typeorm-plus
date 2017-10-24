@@ -45,7 +45,7 @@ export class TableIndex {
     clone(): TableIndex {
         return new TableIndex(<TableIndexOptions>{
             name: this.name,
-            columnNames: this.columnNames,
+            columnNames: [...this.columnNames],
             isUnique: this.isUnique
         });
     }
