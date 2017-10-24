@@ -163,7 +163,10 @@ export class MongoEntityManager extends EntityManager {
      */
     async findOneById<Entity>(entityClassOrName: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        query["_id"] = id;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        query["_id"] = (id instanceof objectIdInstance)
+            ? id
+            : new objectIdInstance(id);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
             if (optionsOrConditions.order)
