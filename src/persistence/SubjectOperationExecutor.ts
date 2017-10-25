@@ -265,15 +265,13 @@ export class SubjectOperationExecutor {
                 if (!Object.keys(conditions).length)
                     return;
 
-
-
                 const updatePromise = this.queryRunner.update(subject.metadata.tablePath, updateOptions, conditions);
                 updatePromises.push(updatePromise);
             }
 
             // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
             // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
-            const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
+            /*const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
             // console.log(oneToManyAndOneToOneNonOwnerRelations);
             subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
                 .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
@@ -337,11 +335,12 @@ export class SubjectOperationExecutor {
                             updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue;
                         }
 
+                        console.log("or this update?");
                         const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tablePath, updateOptions, conditions);
                         updatePromises.push(updatePromise);
 
                     });
-                });
+                });*/
 
         });
 
@@ -796,26 +795,21 @@ export class SubjectOperationExecutor {
      * Updates relations of all given subjects in the database.
      */
     private executeUpdateRelations() {
-        return Promise.all(this.relationUpdateSubjects.map(subject => this.updateRelations(subject)));
+        return Promise.all(this.allSubjects.map(subject => this.updateRelations(subject)));
     }
 
     /**
      * Updates relations of the given subject in the database.
      */
-    private async updateRelations(subject: Subject) {
-        const values: ObjectLiteral = {};
-        subject.relationUpdates.forEach(setRelation => {
-            setRelation.relation.joinColumns.forEach(joinColumn => {
-                const value = setRelation.value ? setRelation.value[joinColumn.referencedColumn!.propertyName] : null;
-                values[joinColumn.databaseName] = value; // todo: || fromInsertedSubjects ??
-            });
-        });
-
-        const idMap = subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity);
-        if (!idMap)
-            throw new Error(`Internal error. Cannot get id of the updating entity.`);
-
-        return this.queryRunner.update(subject.metadata.tablePath, values, idMap);
+    private async updateRelations(subject: Subject): Promise<void> {
+        await Promise.all(subject.oneToManyUpdateOperations.map(relationUpdate => {
+            return this.queryRunner.manager
+                .createQueryBuilder()
+                .update(relationUpdate.metadata.target)
+                .set(relationUpdate.updateValues)
+                .whereInIds(relationUpdate.condition)
+                .execute();
+        }));
     }
 
     // -------------------------------------------------------------------------

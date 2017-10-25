@@ -1,5 +1,6 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "./EntityMetadata";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Utils used to work with EntityMetadata objects.
@@ -41,6 +42,27 @@ export class EntityMetadataUtils {
             return value;
         };
         return recursive(entity);
+    }
+
+    /**
+     * Finds difference between two entity id maps.
+     * Returns items that exist in the first array and absent in the second array.
+     */
+    static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]) {
+        return firstIdMaps.filter(firstIdMap => {
+            return !secondIdMaps.find(secondIdMap => OrmUtils.deepCompare(firstIdMap, secondIdMap));
+        });
+    }
+
+    /**
+     * Compares ids of the two entities.
+     * Returns true if they match, false otherwise.
+     */
+    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
+        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
+            return false;
+
+        return OrmUtils.deepCompare(firstId, secondId);
     }
 
 }

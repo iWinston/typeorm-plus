@@ -257,8 +257,8 @@ export class PostgresQueryRunner implements QueryRunner {
         const generatedColumnSql = generatedColumns.length > 0 ? ` RETURNING ${generatedColumnNames}` : "";
 
         const sql = columns.length > 0
-            ? `INSERT INTO ${this.escapeTablePath(tablePath)}(${columns}) VALUES (${values}) ${generatedColumnSql}`
-            : `INSERT INTO ${this.escapeTablePath(tablePath)} DEFAULT VALUES ${generatedColumnSql}`;
+            ? `INSERT INTO ${this.escapeTablePath(tablePath)}(${columns}) VALUES (${values})${generatedColumnSql}`
+            : `INSERT INTO ${this.escapeTablePath(tablePath)} DEFAULT VALUES${generatedColumnSql}`;
 
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);

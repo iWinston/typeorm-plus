@@ -3,6 +3,8 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {DateUtils} from "../util/DateUtils";
+import {OneToManyUpdateOperation} from "./operation/OneToManyUpdateOperation";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Holds information about insert operation into junction table.
@@ -34,22 +36,6 @@ export interface JunctionRemove {
      * Entity ids that needs to be removed from the junction table.
      */
     junctionRelationIds: any[];
-}
-
-/**
- * Holds information about relation update in some subject.
- */
-export interface RelationUpdate {
-
-    /**
-     * Relation that needs to be updated.
-     */
-    relation: RelationMetadata;
-
-    /**
-     * New value that needs to be set into into new relation.
-     */
-    value: any;
 }
 
 /**
@@ -128,7 +114,7 @@ export class Subject {
      * List of relations which need to be unset.
      * This is used to update relation from inverse side.
      */
-    relationUpdates: RelationUpdate[] = [];
+    oneToManyUpdateOperations: OneToManyUpdateOperation[] = [];
 
     /**
      * Records that needs to be inserted into the junction tables of this subject.
@@ -188,6 +174,22 @@ export class Subject {
             throw new Error(`Persistence entity is not set for the given subject.`);
 
         return this._persistEntity;
+    }
+
+    /**
+     * Gets new instance of object that contains entity properties and generated map properties.
+     */
+    get entityWithGeneratedMapMerged() {
+
+        // we need to use mergeDeep because generatedMap may have ids in the embed properties of entity
+        // we use extra Object.assign to create a new instance of entity,
+        // but at the same time not pass multiple arguments into mergeDeep function
+        // this is necessary because we want to avoid mergeDeep function to perform merging
+        // properties from our entity into empty object, because our entity may have circular references
+        if (this.generatedMap)
+            return OrmUtils.mergeDeep(Object.assign({}, this.entity), this.generatedMap || {});
+
+        return this.entity;
     }
 
     /**
@@ -255,7 +257,7 @@ export class Subject {
      * Checks if this subject has relations to be updated.
      */
     get hasRelationUpdates(): boolean {
-        return this.relationUpdates.length > 0;
+        return this.oneToManyUpdateOperations.length > 0;
     }
 
     /**
@@ -399,7 +401,7 @@ export class Subject {
             // if relation entity is just a relation id set (for example post.tag = 1)
             // then we create an id map from it to make a proper compare
             if (relatedEntity !== null && !(relatedEntity instanceof Object))
-                relatedEntity = relation.createRelationIdMap(relatedEntity);
+                relatedEntity = relation.getRelationIdMap(relatedEntity);
 
             const databaseRelatedEntity = relation.getEntityValue(this.databaseEntity);
 

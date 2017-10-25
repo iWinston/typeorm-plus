@@ -415,7 +415,7 @@ describe("many-to-one", function() {
                         .getOne();
 
                 }).then(reloadedPost => {
-                    expect(reloadedPost!.metadata).to.be.empty;
+                    expect(reloadedPost!.metadata).to.be.null;
                 });
         });
 

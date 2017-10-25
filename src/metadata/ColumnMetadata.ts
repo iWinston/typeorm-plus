@@ -441,11 +441,12 @@ export class ColumnMetadata {
             return undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
-            if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
+            if (this.relationMetadata && this.referencedColumn && this.isVirtual) { // todo: do we really need isVirtual?
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 if (relatedEntity && relatedEntity instanceof Object)
                     return this.referencedColumn.getEntityValue(relatedEntity);
             }
+
             return entity[this.propertyName];
         }
     }

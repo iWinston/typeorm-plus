@@ -513,14 +513,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-
-        ids = ids.map(id => {
-            if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
-                return metadata.createEntityIdMap([id]);
-            }
-            return id;
-        });
-        qb.whereInIds(ids);
+        qb.whereInIds(ids.map(id => metadata.ensureEntityIdMap(id)));
         this.joinEagerRelations(qb, qb.alias, metadata);
         return qb.getMany();
     }
@@ -570,13 +563,9 @@ export class EntityManager {
                 `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
         }
 
-        if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
-            id = metadata.createEntityIdMap([id]);
-        }
-
         this.joinEagerRelations(qb, qb.alias, metadata);
         FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        return qb.andWhereInIds([id]).getOne();
+        return qb.andWhereInIds(metadata.ensureEntityIdMap(id)).getOne();
     }
 
     /**

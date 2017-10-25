@@ -582,7 +582,7 @@ export abstract class QueryBuilder<Entity> {
         const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
         const parameters: ObjectLiteral = {};
         const whereStrings = ids.map((id, index) => {
-            id = id instanceof Object ? id : metadata.createEntityIdMap(id);
+            id = metadata.ensureEntityIdMap(id);
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                 whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);

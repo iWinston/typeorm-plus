@@ -457,6 +457,8 @@ export class EntityMetadata {
     /**
      * Compares ids of the two entities.
      * Returns true if they match, false otherwise.
+     *
+     * todo: extract into Utils all those static methods
      */
     compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
         if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
@@ -553,23 +555,19 @@ export class EntityMetadata {
     }
 
     /**
-     * Creates value map from the given values and columns.
-     * Examples of usages are primary columns map and join columns map.
+     * Ensures that given object is an entity id map.
+     * If given id is an object then it means its already id map.
+     * If given id isn't an object then it means its a value of the id column
+     * and it creates a new id map with this value and name of the primary column.
      */
-    createValueMap(values: any|any[], columns: ColumnMetadata[]): ObjectLiteral {
-        if (!(values instanceof Array))
-            values = [values];
+    ensureEntityIdMap(id: any): ObjectLiteral {
+        if (id instanceof Object)
+            return id;
 
-        return columns.reduce((map, column, index) => {
-            return OrmUtils.mergeDeep(map, column.createValueMap(values[index]));
-        }, {} as ObjectLiteral);
-    }
+        if (this.hasMultiplePrimaryKeys)
+            throw new Error(`Cannot create entity id map for a single value because this entity metadata contains multiple primary columns.`);
 
-    /**
-     * Creates entity id map from the given entity ids array.
-     */
-    createEntityIdMap(ids: any|any[]): ObjectLiteral {
-        return this.createValueMap(ids, this.primaryColumns);
+        return this.primaryColumns[0].createValueMap(id);
     }
 
     /**
@@ -594,7 +592,15 @@ export class EntityMetadata {
         if (!entity) // todo: shall it accept an empty entity? try to remove this
             return undefined;
 
-        const map = this.primaryColumns.reduce((map, column) => {
+        return this.getValueMap(entity, this.primaryColumns);
+    }
+
+    /**
+     * Creates value map from the given values and columns.
+     * Examples of usages are primary columns map and join columns map.
+     */
+    getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral {
+        const map = columns.reduce((map, column) => {
             if (column.isObjectId)
                 return Object.assign(map, column.getEntityValueMap(entity));
 

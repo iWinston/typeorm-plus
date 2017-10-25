@@ -100,6 +100,14 @@ export class RelationMetadata {
     isEager: boolean = false;
 
     /**
+     * Indicates if persistence is enabled for the relation.
+     * By default its enabled, but if you want to avoid any changes in the relation to be reflected in the database you can disable it.
+     * If its disabled you can only change a relation from inverse side of a relation or using relation query builder functionality.
+     * This is useful for performance optimization since its disabling avoid multiple extra queries during entity save.
+     */
+    persistenceEnabled: boolean = true;
+
+    /**
      * If set to true then related objects are allowed to be inserted to the database.
      */
     isCascadeInsert: boolean = false;
@@ -258,6 +266,7 @@ export class RelationMetadata {
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;
         this.isEager = args.options.eager || false;
+        this.persistenceEnabled = args.options.persistence || true;
         this.isTreeParent = args.isTreeParent || false;
         this.isTreeChildren = args.isTreeChildren || false;
         this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;
@@ -277,8 +286,29 @@ export class RelationMetadata {
     /**
      * Creates join column ids map from the given related entity ids array.
      */
-    createRelationIdMap(relationIds: any|any[]): ObjectLiteral {
-        return this.inverseEntityMetadata.createValueMap(relationIds, this.joinColumns.map(joinColumn => joinColumn.referencedColumn!));
+    getRelationIdMap(entity: ObjectLiteral): ObjectLiteral {
+        const joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation!.joinColumns;
+        const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
+        return this.inverseEntityMetadata.getValueMap(entity, referencedColumns);
+    }
+
+    /**
+     * Ensures that given object is an entity id map.
+     * If given id is an object then it means its already id map.
+     * If given id isn't an object then it means its a value of the id column
+     * and it creates a new id map with this value and name of the primary column.
+     */
+    ensureRelationIdMap(id: any): ObjectLiteral {
+        if (id instanceof Object)
+            return id;
+
+        const joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation!.joinColumns;
+        const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
+
+        if (referencedColumns.length > 1)
+            throw new Error(`Cannot create relation id map for a single value because relation contains multiple referenced columns.`);
+
+        return referencedColumns[0].createValueMap(id);
     }
 
     /**
