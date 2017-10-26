@@ -60,13 +60,13 @@ export class OneToManyUpdateBuilder {
         // by example: since subject is a post, we are expecting to get all post's categories saved in the database here,
         //             particularly their relation ids, e.g. category ids stored in the database
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = [];
-        if (subject.hasDatabaseEntity) { // related entities in the database can exist only if this entity (post) is saved
+        if (subject.databaseEntity) { // related entities in the database can exist only if this entity (post) is saved
             relatedEntityDatabaseRelationIds = relation.getEntityValue(subject.databaseEntity);
         }
 
         // get related entities of persisted entity
         // by example: get categories from the passed to persist post entity
-        let relatedEntities: ObjectLiteral[] = relation.getEntityValue(subject.entity);
+        let relatedEntities: ObjectLiteral[] = relation.getEntityValue(subject.entity!);
         if (relatedEntities === null) // we treat relations set to null as removed, so we don't skip it
             relatedEntities = [] as ObjectLiteral[];
         if (relatedEntities === undefined) // if relation is undefined then nothing to update
@@ -80,7 +80,7 @@ export class OneToManyUpdateBuilder {
 
             // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
             let relatedEntitySubject = this.subjects.find(operateSubject => {
-                return operateSubject.hasEntity && operateSubject.entity === relatedEntity;
+                return !!operateSubject.entity && operateSubject.entity === relatedEntity;
             });
 
             // if relationIdMap is undefined then it means user binds object which is not saved in the database yet

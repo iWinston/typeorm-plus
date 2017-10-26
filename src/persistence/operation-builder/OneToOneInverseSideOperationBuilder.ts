@@ -59,12 +59,12 @@ export class OneToOneInverseSideOperationBuilder {
         // by example: since subject is a post, we are expecting to get post's category saved in the database here,
         //             particularly its relation id, e.g. category id stored in the database
         let relatedEntityDatabaseRelationId: ObjectLiteral|undefined = undefined;
-        if (subject.hasDatabaseEntity) // related entity in the database can exist only if this entity (post) is saved
+        if (subject.databaseEntity) // related entity in the database can exist only if this entity (post) is saved
             relatedEntityDatabaseRelationId = relation.getEntityValue(subject.databaseEntity);
 
         // get related entities of persisted entity
         // by example: get category from the passed to persist post entity
-        let relatedEntity: ObjectLiteral|null = relation.getEntityValue(subject.entity); // by example: relatedEntity is a category here
+        let relatedEntity: ObjectLiteral|null = relation.getEntityValue(subject.entity!); // by example: relatedEntity is a category here
         if (relatedEntity === undefined) // if relation is undefined then nothing to update
             return;
 
@@ -97,7 +97,7 @@ export class OneToOneInverseSideOperationBuilder {
 
         // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
         let relatedEntitySubject = this.subjects.find(operateSubject => {
-            return operateSubject.hasEntity && operateSubject.entity === relatedEntity;
+            return !!operateSubject.entity && operateSubject.entity === relatedEntity;
         });
 
         // if relationIdMap is undefined then it means user binds object which is not saved in the database yet

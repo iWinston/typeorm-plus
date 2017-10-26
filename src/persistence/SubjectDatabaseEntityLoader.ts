@@ -35,14 +35,14 @@ export class SubjectDatabaseEntityLoader {
             subjectGroup.subjects.forEach(subject => {
 
                 // we don't load if subject already has a database entity loaded
-                if (subject.hasDatabaseEntity)
+                if (subject.databaseEntity)
                     return;
 
                 // we only need entity id
-                if (subject.metadata.isEntityIdMapEmpty(subject.entity)) // can we use getEntityIdMap instead
+                if (subject.metadata.isEntityIdMapEmpty(subject.entity!)) // can we use getEntityIdMap instead
                     return;
 
-                allIds.push(subject.metadata.getEntityIdMap(subject.entity)!);
+                allIds.push(subject.metadata.getEntityIdMap(subject.entity!)!);
             });
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
@@ -55,10 +55,15 @@ export class SubjectDatabaseEntityLoader {
             // load something for them, since undefined properties are skipped by the orm
             const allPropertyPaths: string[] = [];
             subjectGroup.subjects.forEach(subject => {
-                subject.persistedEntityRelationPropertyPaths.forEach(propertyPath => {
-                    if (allPropertyPaths.indexOf(propertyPath) === -1)
-                        allPropertyPaths.push(propertyPath);
-                });
+
+                // gets all relation property paths that exist in the persisted entity.
+                this.metadata.relations
+                    .filter(relation => relation.getEntityValue(this.entity!) !== undefined)
+                    .map(relation => relation.propertyPath)
+                    .forEach(propertyPath => {
+                        if (allPropertyPaths.indexOf(propertyPath) === -1)
+                            allPropertyPaths.push(propertyPath);
+                    });
             });
 
             // load database entities for all given ids
@@ -70,8 +75,12 @@ export class SubjectDatabaseEntityLoader {
             // and insert that entity into database entity of the found subject
             entities.forEach(entity => {
                 const subject = this.findByPersistEntityLike(subjectGroup.target, entity);
-                if (subject)
+                if (subject) {
                     subject.databaseEntity = entity;
+                    if (!subject.identifier)
+                        subject.identifier = subject.metadata.isEntityIdMapEmpty(entity) ? undefined : subject.metadata.getEntityIdMap(entity);
+                    subject.recompute();
+                }
             });
 
         });
@@ -89,13 +98,13 @@ export class SubjectDatabaseEntityLoader {
      */
     protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.subjects.find(subject => {
-            if (!subject.hasEntity)
+            if (!subject.entity)
                 return false;
 
             if (subject.entity === entity)
                 return true;
 
-            return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
+            return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
         });
     }
 
@@ -104,9 +113,9 @@ export class SubjectDatabaseEntityLoader {
      */
     protected groupByEntityTargets(): { target: Function|string, subjects: Subject[] }[] {
         return this.subjects.reduce((groups, operatedEntity) => {
-            let group = groups.find(group => group.target === operatedEntity.entityTarget);
+            let group = groups.find(group => group.target === operatedEntity.metadata.target);
             if (!group) {
-                group = { target: operatedEntity.entityTarget, subjects: [] };
+                group = { target: operatedEntity.metadata.target, subjects: [] };
                 groups.push(group);
             }
             group.subjects.push(operatedEntity);

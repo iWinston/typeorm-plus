@@ -28,7 +28,7 @@ export class CascadeSubjectsBuilder {
      */
     build(subject: Subject): void {
         subject.metadata
-            .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations)
+            .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations)
             .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert or update cascades of the relation should be set
@@ -74,13 +74,13 @@ export class CascadeSubjectsBuilder {
      */
     protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
         return this.subjects.find(subject => {
-            if (!subject.hasEntity)
+            if (!subject.entity)
                 return false;
 
             if (subject.entity === entity)
                 return true;
 
-            return subject.entityTarget === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
+            return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
         });
     }
 

@@ -31,7 +31,7 @@ export class ManyToManyOperationBuilder {
         this.subjects.forEach(subject => {
 
             // if subject doesn't have entity then no need to find something that should be inserted or removed
-            if (!subject.hasEntity)
+            if (!subject.entity)
                 return;
 
             // go through all persistence enabled many-to-many relations and build subject operations for them
@@ -53,7 +53,7 @@ export class ManyToManyOperationBuilder {
 
         // if subject does not have a database entity then it means it does not exist in the database
         // if it does not exist in the database then we don't have anything for deletion
-        if (!subject.hasDatabaseEntity)
+        if (!subject.databaseEntity)
             return;
 
         // go through all persistence enabled many-to-many relations and build subject operations for them
@@ -65,7 +65,7 @@ export class ManyToManyOperationBuilder {
 
             // get all related entities (actually related entity relation ids) bind to this subject entity
             // by example: returns category ids of the post we are currently working with (subject.entity is post)
-            const relatedEntityRelationIdsInDatabase: ObjectLiteral[] = relation.getEntityValue(subject.databaseEntity);
+            const relatedEntityRelationIdsInDatabase: ObjectLiteral[] = relation.getEntityValue(subject.databaseEntity!);
 
             // go through all related entities and create a new junction subject for each row in junction table
             relatedEntityRelationIdsInDatabase.forEach(relationId => {
@@ -98,12 +98,12 @@ export class ManyToManyOperationBuilder {
 
         // if subject don't have database entity it means all related entities in persisted subject are new and must be bind
         // and we don't need to remove something that is not exist
-        if (subject.hasDatabaseEntity)
+        if (subject.databaseEntity)
             databaseRelatedEntityIds = relation.getEntityValue(subject.databaseEntity);
 
         // extract entity's relation value
         // by example: categories inside our post (subject.entity is post)
-        let relatedEntities: ObjectLiteral[] = relation.getEntityValue(subject.entity);
+        let relatedEntities: ObjectLiteral[] = relation.getEntityValue(subject.entity!);
         if (relatedEntities === null) // if value set to null its equal if we set it to empty array - all items must be removed from the database
             relatedEntities = [];
         if (!(relatedEntities instanceof Array))
@@ -128,8 +128,8 @@ export class ManyToManyOperationBuilder {
             if (relatedEntityExistInDatabase)
                 return;
 
-            const ownerEntityMap = relation.isOwning ? subject.entity : relatedEntity; // by example: ownerEntityMap is post from subject here
-            const inverseEntityMap = relation.isOwning ? relatedEntity : subject.entity; // by example: inverseEntityMap is category from categories array here
+            const ownerEntityMap = relation.isOwning ? subject.entity! : relatedEntity; // by example: ownerEntityMap is post from subject here
+            const inverseEntityMap = relation.isOwning ? relatedEntity : subject.entity!; // by example: inverseEntityMap is category from categories array here
 
             // create a new subject for insert operation of junction rows
             const junctionSubject = new Subject(relation.junctionEntityMetadata!);
@@ -177,8 +177,8 @@ export class ManyToManyOperationBuilder {
      * Example: { postId: 1, categoryId: 2 }
      */
     protected buildJunctionIdentifier(subject: Subject, relation: RelationMetadata, relationId: ObjectLiteral) {
-        const ownerEntityMap = relation.isOwning ? subject.entity : relationId;
-        const inverseEntityMap = relation.isOwning ? relationId : subject.entity;
+        const ownerEntityMap = relation.isOwning ? subject.entity! : relationId;
+        const inverseEntityMap = relation.isOwning ? relationId : subject.entity!;
 
         const identifier: ObjectLiteral = {};
         relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
