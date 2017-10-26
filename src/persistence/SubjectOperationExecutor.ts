@@ -155,7 +155,9 @@ export class SubjectOperationExecutor {
                 .execute();
 
             subject.generatedMap = insertResult;
-            subject.identifier = subject.buildIdentifier();
+
+            if (subject.hasEntity)
+                subject.identifier = subject.buildIdentifier();
             // todo: clear changeSet
         });
 

@@ -24,7 +24,7 @@ describe("persistence > one-to-many", function() {
     // Specifications
     // -------------------------------------------------------------------------
 
-    it.only("should add exist element to exist object with empty one-to-many relation and save it", () => Promise.all(connections.map(async connection => {
+    it("should add exist element to exist object with empty one-to-many relation and save it", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);

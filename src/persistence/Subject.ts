@@ -124,6 +124,10 @@ export class Subject {
         }, {} as ObjectLiteral);
     }
 
+    buildJunctionIdentifier() {
+
+    }
+
     /**
      * Indicates if this is an exist subject that must be removed from the database.
      */
