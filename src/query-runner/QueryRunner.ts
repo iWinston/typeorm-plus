@@ -220,7 +220,7 @@ export interface QueryRunner {
     /**
      * Changes a columns in the table.
      */
-    changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>; // todo: change to { old, new }
+    changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
     /**
      * Drops the column in the table.

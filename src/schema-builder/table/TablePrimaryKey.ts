@@ -12,7 +12,7 @@ export class TablePrimaryKey {
     /**
      * Key name.
      */
-    name: string;
+    name?: string;
 
     /**
      * Columns to which this primary key is bind.

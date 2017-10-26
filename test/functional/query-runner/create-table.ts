@@ -90,10 +90,13 @@ describe.only("query runner > create table", () => {
                 {
                     name: "name",
                     type: "varchar",
-                    comment: "this is category name",
                     default: "'default category'",
                     isUnique: true,
                     isNullable: false
+                },
+                {
+                    name: "alternativeName",
+                    type: "varchar",
                 },
                 {
                     name: "postId",
@@ -101,6 +104,7 @@ describe.only("query runner > create table", () => {
                     isUnique: true
                 }
             ],
+            uniques: [{ columnNames: ["name", "alternativeName"] }],
             indices: [{ columnNames: ["postId"] }]
         }));
 
@@ -122,10 +126,18 @@ describe.only("query runner > create table", () => {
                     name: "text",
                     type: "varchar",
                     isNullable: false
+                },
+                {
+                    name: "authorId",
+                    type: "int"
+                },
+                {
+                    name: "authorUserId",
+                    type: "int"
                 }
             ],
             uniques: [{ columnNames: ["name", "text"] }],
-            indices: [{ columnNames: ["text"], isUnique: true }],
+            indices: [{ columnNames: ["authorId", "authorUserId"], isUnique: true }],
             foreignKeys: [
                 {
                     columnNames: ["id"],
@@ -134,6 +146,39 @@ describe.only("query runner > create table", () => {
                 }
             ]
         }));
+
+        await queryRunner.createTable(new Table({
+            name: "person",
+            columns: [
+                {
+                    name: "id",
+                    type: "int",
+                    isPrimary: true
+                },
+                {
+                    name: "userId",
+                    type: "int",
+                    isPrimary: true
+                },
+                {
+                    name: "name",
+                    type: "varchar",
+                }
+            ],
+            foreignKeys: [
+                {
+                    columnNames: ["id", "userId"],
+                    referencedTableName: "post",
+                    referencedColumnNames: ["authorId", "authorUserId"]
+                }
+            ]
+        }));
+
+        let categoryTable = await queryRunner.getTable("category");
+        categoryTable!.should.exist;
+        categoryTable!.primaryKey!.should.exist;
+        categoryTable!.uniques.length.should.be.equal(3);
+        categoryTable!.indices.length.should.be.equal(1);
 
         let postTable = await queryRunner.getTable("post");
         const idColumn = postTable!.findColumnByName("id");
@@ -146,12 +191,24 @@ describe.only("query runner > create table", () => {
         postTable!.uniques.length.should.be.equal(1);
         postTable!.uniques[0].columnNames.length.should.be.equal(2);
         postTable!.indices.length.should.be.equal(1);
-        postTable!.indices[0].columnNames.length.should.be.equal(1);
+        postTable!.indices[0].columnNames.length.should.be.equal(2);
         postTable!.foreignKeys.length.should.be.equal(1);
+
+        let personTable = await queryRunner.getTable("person");
+        personTable!.should.exist;
+        personTable!.primaryKey!.should.exist;
+        personTable!.primaryKey!.columnNames.length.should.be.equal(2);
+        personTable!.foreignKeys.length.should.be.equal(1);
+        personTable!.foreignKeys[0].columnNames.length.should.be.equal(2);
+        personTable!.foreignKeys[0].referencedColumnNames.length.should.be.equal(2);
 
         await queryRunner.executeMemoryDownSql();
         postTable = await queryRunner.getTable("post");
+        categoryTable = await queryRunner.getTable("category");
+        personTable = await queryRunner.getTable("person");
         expect(postTable).to.be.undefined;
+        expect(categoryTable).to.be.undefined;
+        expect(personTable).to.be.undefined;
 
         await queryRunner.release();
     })));
