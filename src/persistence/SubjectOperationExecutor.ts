@@ -1,8 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {JunctionInsert, JunctionRemove, Subject} from "./Subject";
-import {OrmUtils} from "../util/OrmUtils";
+import {Subject} from "./Subject";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -71,9 +70,7 @@ export class SubjectOperationExecutor {
     areExecutableOperations(): boolean {
         return this.insertSubjects.length > 0 ||
             this.updateSubjects.length > 0 ||
-            this.removeSubjects.length > 0 ||
-            this.allSubjects.some(subject => subject.junctionInserts.length > 0) ||
-            this.allSubjects.some(subject => subject.junctionRemoves.length > 0);
+            this.removeSubjects.length > 0;
     }
 
     /**
@@ -94,8 +91,6 @@ export class SubjectOperationExecutor {
         // console.log("insert operations");
         await this.executeInsertOperations();
         await this.executeInsertClosureTableOperations();
-        await this.executeInsertJunctionsOperations();
-        await this.executeRemoveJunctionsOperations();
         await this.executeUpdateOperations();
         // await this.executeUpdateRelations();
         await this.executeRemoveOperations();
@@ -889,7 +884,7 @@ export class SubjectOperationExecutor {
 
     /**
      * Inserts into database junction tables all given array of subjects junction data.
-     */
+
     private async executeInsertJunctionsOperations(): Promise<void> {
         const promises: Promise<any>[] = [];
         this.allSubjects.forEach(subject => {
@@ -899,11 +894,11 @@ export class SubjectOperationExecutor {
         });
 
         await Promise.all(promises);
-    }
+    }*/
 
     /**
      * Inserts into database junction table given subject's junction insert data.
-     */
+
     private async insertJunctions(subject: Subject, junctionInsert: JunctionInsert): Promise<void> {
         // I think here we can only support to work only with single primary key entities
 
@@ -945,7 +940,7 @@ export class SubjectOperationExecutor {
         });
 
         await Promise.all(promises);
-    }
+    } */
 
     // -------------------------------------------------------------------------
     // Private Methods: Remove from junction tables
@@ -953,7 +948,7 @@ export class SubjectOperationExecutor {
 
     /**
      * Removes from database junction tables all given array of subjects removal junction data.
-     */
+
     private async executeRemoveJunctionsOperations(): Promise<void> {
         const promises: Promise<any>[] = [];
         this.allSubjects.forEach(subject => {
@@ -963,11 +958,11 @@ export class SubjectOperationExecutor {
         });
 
         await Promise.all(promises);
-    }
+    }*/
 
     /**
      * Removes from database junction table all given subject's removal junction data.
-     */
+
     private async removeJunctions(subject: Subject, junctionRemove: JunctionRemove) {
         const junctionMetadata = junctionRemove.relation.junctionEntityMetadata!;
         const entity = subject.hasEntity ? subject.entity : subject.databaseEntity;
@@ -988,7 +983,7 @@ export class SubjectOperationExecutor {
         });
 
         await Promise.all(removePromises);
-    }
+    } */
 
     // -------------------------------------------------------------------------
     // Private Methods: Refresh entity values after persistence

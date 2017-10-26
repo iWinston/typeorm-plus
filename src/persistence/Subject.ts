@@ -1,42 +1,8 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
 import {DateUtils} from "../util/DateUtils";
 import {OrmUtils} from "../util/OrmUtils";
 import {ChangeMap} from "./ChangeMap";
-
-/**
- * Holds information about insert operation into junction table.
- */
-export interface JunctionInsert {
-
-    /**
-     * Relation of the junction table.
-     */
-    relation: RelationMetadata;
-
-    /**
-     * Entities that needs to be "bind" to the subject.
-     */
-    junctionEntities: ObjectLiteral[];
-}
-
-/**
- * Holds information about remove operation from the junction table.
- */
-export interface JunctionRemove {
-
-    /**
-     * Relation of the junction table.
-     */
-    relation: RelationMetadata;
-
-    /**
-     * Entity ids that needs to be removed from the junction table.
-     */
-    junctionRelationIds: any[];
-}
-
 
 /**
  * Subject is a subject of persistence.
@@ -83,14 +49,18 @@ export class Subject {
     }
 
     /**
-     * Indicates if this is a new subject and it must be inserted into the database.
+     * Checks if this subject must be inserted into the database.
+     * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
+     * and if it does not have database entity set.
      */
     get mustBeInserted() {
         return this.canBeInserted && this.identifier === undefined && this.hasChanges();
     }
 
     /**
-     * Indicates if this is an exist subject that must be updated in the database.
+     * Checks if this subject must be updated into the database.
+     * Subject can be updated in the database if it is allowed to be updated (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
      */
     get mustBeUpdated() {
         return this.canBeUpdated && this.identifier !== undefined && this.hasChanges();
@@ -184,16 +154,6 @@ export class Subject {
      * This means that this subject either was removed, either was removed by cascades.
      */
     mustBeRemoved: boolean = false;
-
-    /**
-     * Records that needs to be inserted into the junction tables of this subject.
-     */
-    junctionInserts: JunctionInsert[] = [];
-
-    /**
-     * Records that needs to be removed from the junction tables of this subject.
-     */
-    junctionRemoves: JunctionRemove[] = [];
 
     /**
      * When subject is newly persisted it may have a generated entity id.
@@ -296,44 +256,6 @@ export class Subject {
     get entityTarget(): Function|string {
         return this.metadata.target;
     }
-
-    /**
-     * Checks if this subject must be inserted into the database.
-     * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
-     * and if it does not have database entity set.
-     */
-    // get mustBeInserted() {
-    //     return this.canBeInserted && !this.hasDatabaseEntity;
-    // }
-
-    /**
-     * Checks if this subject must be updated into the database.
-     * Subject can be updated in the database if it is allowed to be updated (explicitly persisted or by cascades)
-     * and if it does have differentiated columns or relations.
-     */
-    // get mustBeUpdated() {
-    //     return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
-    // }
-
-    /**
-     * Gets id of the persisted entity.
-     * If entity is not set then it returns undefined.
-     * If entity itself has an id then it simply returns it.
-     * If entity does not have an id then it returns newly generated id.
-
-    get getPersistedEntityIdMap(): any|undefined {
-        if (!this.hasEntity)
-            return undefined;
-
-        const entityIdMap = this.metadata.getDatabaseEntityIdMap(this.entity);
-        if (entityIdMap)
-            return entityIdMap;
-
-        if (this.newlyGeneratedId)
-            return this.metadata.createSimpleDatabaseIdMap(this.newlyGeneratedId);
-
-        return undefined;
-    }*/
 
     // -------------------------------------------------------------------------
     // Public Methods
