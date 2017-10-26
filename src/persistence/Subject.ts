@@ -3,7 +3,6 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {DateUtils} from "../util/DateUtils";
 import {OrmUtils} from "../util/OrmUtils";
 import {ChangeMap} from "./ChangeMap";
-import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Subject is a subject of persistence.
@@ -93,19 +92,6 @@ export class Subject {
                 return OrmUtils.mergeDeep(identifier, column.getEntityValueMap(this.entity));
             }
         }, {} as ObjectLiteral);
-    }
-
-    buildJunctionIdentifier(relation: RelationMetadata, relationId: ObjectLiteral) {
-        const map: ObjectLiteral = {};
-        relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
-            const id = relation.isOwning ? this.entity : relationId;
-            OrmUtils.mergeDeep(map, column.createValueMap(column.referencedColumn!.getEntityValue(id)));
-        });
-        relation.junctionEntityMetadata!.inverseColumns.forEach(column => {
-            const id = relation.isOwning ? relationId : this.entity;
-            OrmUtils.mergeDeep(map, column.createValueMap(column.referencedColumn!.getEntityValue(id)));
-        });
-        return map;
     }
 
     /**

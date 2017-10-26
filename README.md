@@ -306,8 +306,7 @@ creating more entities.
 
 What are you expecting from ORM?
 First of all you are expecting it will create a database tables for you
-and find / insert / update / delete your data without pain and  
-having to write lot of hardly maintainable SQL queries.
+and find / insert / update / delete your data without pain and having to write lot of hardly maintainable SQL queries.
 This guide will show you how to setup TypeORM from scratch and make it to do what you are expecting from ORM.
 
 ### Create a model
