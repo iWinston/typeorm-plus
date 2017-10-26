@@ -28,6 +28,14 @@ export interface WhereExpression {
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
      */
+    where(where: ObjectLiteral, parameters?: ObjectLiteral): this;
+
+    /**
+     * Sets WHERE condition in the query builder.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
+     * Additionally you can add parameters used in where expression.
+     */
     where(subQuery: (qb: this) => string, parameters?: ObjectLiteral): this;
 
     /**

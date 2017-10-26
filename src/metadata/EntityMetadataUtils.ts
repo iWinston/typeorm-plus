@@ -48,7 +48,7 @@ export class EntityMetadataUtils {
      * Finds difference between two entity id maps.
      * Returns items that exist in the first array and absent in the second array.
      */
-    static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]) {
+    static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]): ObjectLiteral[] {
         return firstIdMaps.filter(firstIdMap => {
             return !secondIdMaps.find(secondIdMap => OrmUtils.deepCompare(firstIdMap, secondIdMap));
         });

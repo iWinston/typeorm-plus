@@ -599,7 +599,7 @@ export class EntityMetadata {
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
      */
-    getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral {
+    getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
         const map = columns.reduce((map, column) => {
             if (column.isObjectId)
                 return Object.assign(map, column.getEntityValueMap(entity));

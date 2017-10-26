@@ -21,6 +21,8 @@ export class Broadcaster {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    // todo: those methods must accept QueryRunner instead of manager
+
     /**
      * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
      */
@@ -83,8 +85,8 @@ export class Broadcaster {
                 manager: manager,
                 entity: subject.entity,
                 databaseEntity: subject.databaseEntity,
-                updatedColumns: subject.diffColumns,
-                updatedRelations: subject.diffRelations,
+                updatedColumns: [], // todo: subject.diffColumns,
+                updatedRelations: [] // subject.diffRelations,
             }));
 
         await Promise.all(listeners.concat(subscribers));
@@ -154,8 +156,8 @@ export class Broadcaster {
                 manager: manager,
                 entity: subject.entity,
                 databaseEntity: subject.databaseEntity,
-                updatedColumns: subject.diffColumns,
-                updatedRelations: subject.diffRelations,
+                updatedColumns: [], // todo: subject.diffColumns,
+                updatedRelations: [] // todo: subject.diffRelations,
             }));
 
         await Promise.all(listeners.concat(subscribers));

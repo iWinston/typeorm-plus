@@ -181,13 +181,14 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression();
+        const returningExpression = this.createReturningExpression();
 
         // generate and return sql update query
-        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${this.expressionMap.returning}`;
+        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
 
-        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${this.expressionMap.returning}${whereExpression}`;
+        } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
 
         } else {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?

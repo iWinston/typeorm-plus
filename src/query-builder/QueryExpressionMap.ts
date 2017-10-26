@@ -59,7 +59,7 @@ export class QueryExpressionMap {
     /**
      * Optional returning (or output) clause for insert, update or delete queries.
      */
-    returning: string = "";
+    returning: string|string[];
 
     /**
      * JOIN queries.

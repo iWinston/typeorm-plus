@@ -34,6 +34,6 @@ export interface FindOneOptions<Entity> {
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).
      * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadRelationIds?: boolean|string[];
+    loadRelationIds?: boolean|{ relations?: string[], disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
 
 }

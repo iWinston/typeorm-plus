@@ -286,7 +286,7 @@ export class RelationMetadata {
     /**
      * Creates join column ids map from the given related entity ids array.
      */
-    getRelationIdMap(entity: ObjectLiteral): ObjectLiteral {
+    getRelationIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {
         const joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation!.joinColumns;
         const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
         return this.inverseEntityMetadata.getValueMap(entity, referencedColumns);

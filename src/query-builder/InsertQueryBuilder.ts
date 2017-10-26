@@ -25,8 +25,25 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Optional returning/output clause.
+     * This will return given column values.
      */
-    output(output: string): this {
+    output(columns: string[]): this;
+
+    /**
+     * Optional returning/output clause.
+     * Returning is a SQL string containing returning statement.
+     */
+    output(output: string): this;
+
+    /**
+     * Optional returning/output clause.
+     */
+    output(output: string|string[]): this;
+
+    /**
+     * Optional returning/output clause.
+     */
+    output(output: string|string[]): this {
          return this.returning(output);
     }
 
@@ -54,12 +71,29 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * Optional returning/output clause.
+     * This will return given column values.
      */
-    returning(returning: string): this {
+    returning(columns: string[]): this;
+
+    /**
+     * Optional returning/output clause.
+     * Returning is a SQL string containing returning statement.
+     */
+    returning(returning: string): this;
+
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string|string[]): this;
+
+    /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string|string[]): this {
         if (this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof PostgresDriver) {
             this.expressionMap.returning = returning;
             return this;
-        } else throw new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL");
+        } else throw new Error("OUTPUT or RETURNING clause only supported by Microsoft SQLServer or PostgreSQL");
     }
 
     // -------------------------------------------------------------------------
@@ -110,7 +144,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         return ":" + paramName;
                     }
                 });
-                return "(" + columnValues.join(",") + ")";
+                return "(" + columnValues.join(", ") + ")";
             }).join(", ");
 
         } else { // for tables without metadata
@@ -144,15 +178,18 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }).join(", ");
         }
 
-        // generate sql query
-        if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+        const tableName = this.getTableName(this.getMainTableName());
+        const returningExpression = this.createReturningExpression();
 
-        } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
+        // generate sql query
+        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+            return `INSERT INTO ${tableName}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values} RETURNING ${returningExpression}`;
+
+        } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
+            return `INSERT INTO ${tableName}(${columnNames}) OUTPUT ${returningExpression} VALUES ${values}`;
 
         } else {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}`;
+            return `INSERT INTO ${tableName}(${columnNames}) VALUES ${values}`;
         }
     }
 

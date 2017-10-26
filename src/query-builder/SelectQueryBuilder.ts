@@ -593,13 +593,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * LEFT JOINs relation id and maps it into some entity's property.
      * Optionally, you can add condition and parameters used in condition.
      */
-    loadRelationIdAndMap(mapToProperty: string, relationName: string): this;
-
-    /**
-     * LEFT JOINs relation id and maps it into some entity's property.
-     * Optionally, you can add condition and parameters used in condition.
-     */
-    loadRelationIdAndMap(mapToProperty: string, relationName: string, options: { disableMixedMap: boolean }): this;
+    loadRelationIdAndMap(mapToProperty: string, relationName: string, options?: { disableMixedMap?: boolean }): this;
 
     /**
      * LEFT JOINs relation id and maps it into some entity's property.
@@ -668,15 +662,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * All relation ids will be mapped to relation property themself.
      * If array of strings is given then loads only relation ids of the given properties.
      */
-    loadAllRelationIds(relations?: string[]): this {
+    loadAllRelationIds(options?: { relations?: string[], disableMixedMap?: boolean }): this { // todo: add skip relations
         this.expressionMap.mainAlias!.metadata.relations.forEach(relation => {
-            if (relations !== undefined && relations.indexOf(relation.propertyPath) === -1)
+            if (options !== undefined && options.relations !== undefined && options.relations.indexOf(relation.propertyPath) === -1)
                 return;
 
             this.loadRelationIdAndMap(
                 this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
                 this.expressionMap.mainAlias!.name + "." + relation.propertyPath,
-                { disableMixedMap: true }
+                options
             );
         });
         return this;

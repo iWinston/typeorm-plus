@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe.only("persistence > one-to-many", function() {
+describe("persistence > one-to-many", function() {
 
     // -------------------------------------------------------------------------
     // Setup
@@ -47,7 +47,7 @@ describe.only("persistence > one-to-many", function() {
 
     })));
 
-    it.only("should add exist element to new object with empty one-to-many relation and save it", () => Promise.all(connections.map(async connection => {
+    it("should add exist element to new object with empty one-to-many relation and save it", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
         const categoryRepository = connection.getRepository(Category);
 
@@ -155,7 +155,7 @@ describe.only("persistence > one-to-many", function() {
         newPost.categories = [firstNewCategory, secondNewCategory];
         await postRepository.save(newPost);
 
-        newPost.categories = null; // todo: what to do with undefined?
+        newPost.categories = null;
         await postRepository.save(newPost);
 
         const loadedPost = (await postRepository.findOneById(1, {

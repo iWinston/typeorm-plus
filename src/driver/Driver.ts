@@ -92,7 +92,7 @@ export interface Driver {
     /**
      * Escapes a table name, column name or an alias.
      */
-    escape(tableName: string): string;
+    escape(name: string): string;
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.

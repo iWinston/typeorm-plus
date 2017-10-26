@@ -65,7 +65,9 @@ export class SubjectOperationExecutor {
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
         this.relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
 
-        this.broadcaster = new Broadcaster(queryRunner.connection);
+        // console.log("allSubjects", this.allSubjects);
+        // console.log("insertSubjects", this.insertSubjects);
+        this.broadcaster = new Broadcaster(queryRunner.connection); // todo: move broadcaster to connection?
     }
 
     // -------------------------------------------------------------------------
@@ -91,21 +93,24 @@ export class SubjectOperationExecutor {
         await this.broadcaster.broadcastBeforeEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
-        this.updateSubjects.forEach(subject => subject.recompute());
+        // todo: recompute things only if at least one subscriber or listener was really executed ?
+        this.allSubjects.forEach(subject => subject.recompute());
 
+        // console.log("updateSubjects", this.updateSubjects);
+
+        // console.log("insert operations");
         await this.executeInsertOperations();
         await this.executeInsertClosureTableOperations();
         await this.executeInsertJunctionsOperations();
         await this.executeRemoveJunctionsOperations();
         await this.executeUpdateOperations();
-        await this.executeUpdateRelations();
+        // await this.executeUpdateRelations();
         await this.executeRemoveOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         await this.updateSpecialColumnsInPersistedEntities();
 
         // finally broadcast "after" events
-        // todo: THIS SHOULD NOT BE TRUTH: note that we are broadcasting events after commit because we want to have ids of the entities inside them to be available in subscribers
         await this.broadcaster.broadcastAfterEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
     }
 
@@ -133,23 +138,33 @@ export class SubjectOperationExecutor {
      */
     private async executeInsertOperations(): Promise<void> {
 
-        // separate insert entities into groups:
-
+        // we are sorting entities for insertions before execute insert operation
+        // we put into first order entities with relations which do has non nullable relations
+        // then we put into order all other entities
         // TODO: current ordering mechanism is bad. need to create a correct order in which entities should be persisted, need to build a dependency graph
+        // this is a trivial sorting mechanism and needs improvements in the future
+        const insertSubjects = this.insertSubjects.sort((subject1, subject2) => { // todo: check if it works later
+            const x = subject1.metadata.hasNonNullableRelations;
+            const y = subject2.metadata.hasNonNullableRelations;
+            return (x === y) ? 0 : x ? 1 : -1;
+        });
 
-        // first group of subjects are subjects without any non-nullable column
-        // we need to insert first such entities because second group entities may rely on those entities.
-        const firstInsertSubjects = this.insertSubjects.filter(subject => !subject.metadata.hasNonNullableRelations);
+        // then we run insertion in the sequential order which is important since we have an ordered subjects
+        await PromiseUtils.runInSequence(insertSubjects, async subject => {
 
-        // second group - are all other subjects
-        // since in this group there are non nullable columns, some of them may depend on value of the
-        // previously inserted entity (which only can be entity with all nullable columns)
-        const secondInsertSubjects = this.insertSubjects.filter(subject => subject.metadata.hasNonNullableRelations);
+            const changeSet = subject.createChangeSet();
+            const [insertResult] = await this.queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into(subject.metadata.target)
+                .values(changeSet)
+                .returning(subject.metadata.generatedColumns.map(column => column.propertyPath))
+                .execute();
 
-        // note: these operations should be executed in sequence, not in parallel
-        // because second group depend of obtained data from the first group
-        await Promise.all(firstInsertSubjects.map(subject => this.insert(subject, [])));
-        await Promise.all(secondInsertSubjects.map(subject => this.insert(subject, firstInsertSubjects)));
+            subject.generatedMap = insertResult;
+            subject.identifier = subject.buildIdentifier();
+            // todo: clear changeSet
+        });
 
         // we need to update relation ids of the newly inserted objects (where we inserted NULLs in relations)
         // once we inserted all entities, we need to update relations which were bind to inserted entities.
@@ -158,8 +173,8 @@ export class SubjectOperationExecutor {
         // Here this method executes two inserts: one for post, one for category,
         // but category in post is inserted with "null".
         // now we need to update post table - set category with a newly persisted category id.
-        const updatePromises: Promise<any>[] = [];
-        firstInsertSubjects.forEach(subject => {
+        /*const updatePromises: Promise<any>[] = [];
+        ([] as Subject[]).forEach(subject => {
 
             // first update relations with join columns (one-to-one owner and many-to-one relations)
             const updateOptions: ObjectLiteral = {};
@@ -226,7 +241,7 @@ export class SubjectOperationExecutor {
             });
 
             // if we found relations which we can update - then update them
-            if (Object.keys(updateOptions).length > 0 /*&& subject.hasEntity*/) {
+            if (Object.keys(updateOptions).length > 0) {
                 // const relatedEntityIdMap = subject.getPersistedEntityIdMap; // todo: this works incorrectly
 
                 const columns = subject.metadata.parentEntityMetadata ? subject.metadata.primaryColumns : subject.metadata.primaryColumns;
@@ -267,7 +282,7 @@ export class SubjectOperationExecutor {
 
                 const updatePromise = this.queryRunner.update(subject.metadata.tablePath, updateOptions, conditions);
                 updatePromises.push(updatePromise);
-            }
+            }*/
 
             // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
             // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
@@ -342,11 +357,9 @@ export class SubjectOperationExecutor {
                     });
                 });*/
 
-        });
-
-        await Promise.all(updatePromises);
-
-        // todo: make sure to search in all insertSubjects during updating too if updated entity uses links to the newly persisted entity
+        // });
+        //
+        // await Promise.all(updatePromises);
     }
 
     /**
@@ -354,7 +367,7 @@ export class SubjectOperationExecutor {
      * If entity has an generated column, then after saving new generated value will be stored to the InsertOperation.
      * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
      */
-    private async insert(subject: Subject, alreadyInsertedSubjects: Subject[]): Promise<any> {
+    async insert(subject: Subject, alreadyInsertedSubjects: Subject[]): Promise<any> {
 
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
@@ -373,19 +386,26 @@ export class SubjectOperationExecutor {
             const secondGeneratedId = await this.queryRunner.insert(metadata.tablePath, childValuesMap);
             if (!insertResult && secondGeneratedId) insertResult = secondGeneratedId;
 
+            if (parentGeneratedId)
+                subject.parentGeneratedId = parentGeneratedId.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName];
+
+            // todo: better if insert method will return object with all generated ids, object id, etc.
+            if (insertResult.generatedMap)
+                subject.generatedMap = insertResult.generatedMap;
+
         } else { // in the case when class table inheritance is not used
 
-            const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects, "insert");
+            // const valuesMap = this.collectColumnsAndValues(metadata, entity, subject.date, undefined, undefined, alreadyInsertedSubjects, "insert");
             // console.log("valuesMap", valuesMap);
-            insertResult = await this.queryRunner.insert(metadata.tablePath, valuesMap);
+            // insertResult = await this.queryRunner.insert(metadata.tablePath, valuesMap);
+
+            // if (parentGeneratedId)
+            //     subject.parentGeneratedId = parentGeneratedId.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName];
+
+            // todo: better if insert method will return object with all generated ids, object id, etc.
+            // if (insertResult.generatedMap)
+            //     subject.generatedMap = insertResult.generatedMap;
         }
-
-        if (parentGeneratedId)
-            subject.parentGeneratedId = parentGeneratedId.generatedMap[parentEntityMetadata.primaryColumns[0].propertyName];
-
-        // todo: better if insert method will return object with all generated ids, object id, etc.
-        if (insertResult.generatedMap)
-            subject.generatedMap = insertResult.generatedMap;
     }
 
     private collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
@@ -652,9 +672,9 @@ export class SubjectOperationExecutor {
      * Updates given subject in the database.
      */
     private async update(subject: Subject): Promise<void> {
-        const entity = subject.entity;
 
         if (this.queryRunner.connection.driver instanceof MongoDriver) {
+            const entity = subject.entity;
             const idMap = subject.metadata.getDatabaseEntityIdMap(entity);
             if (!idMap)
                 throw new Error(`Internal error. Cannot get id of the updating entity.`);
@@ -685,10 +705,28 @@ export class SubjectOperationExecutor {
         }
 
         // we group by table name, because metadata can have different table names
-        const valueMaps: { tablePath: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
+        // const valueMaps: { tablePath: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
+
+        const updateMap = subject.createChangeSet();
+
+        // if number of updated columns = 0 no need to update updated date and version columns
+        // if (Object.keys(updateMap).length === 0) // can this be possible?!
+        //     return;
+
+        // console.log(subject);
+        if (!subject.identifier) {
+            throw new Error(`Subject does not have identifier`);
+        }
+
+        return this.queryRunner.manager
+            .createQueryBuilder()
+            .update(subject.metadata.target)
+            .set(updateMap)
+            .where(subject.identifier)
+            .execute();
 
         // console.log(subject.diffColumns);
-        subject.diffColumns.forEach(column => {
+        /*subject.diffColumns.forEach(column => {
             // if (!column.entityTarget) return; // todo: how this can be possible?
             const metadata = this.queryRunner.connection.getMetadata(column.entityMetadata.target);
             let valueMap = valueMaps.find(valueMap => valueMap.tablePath === metadata.tablePath);
@@ -698,9 +736,9 @@ export class SubjectOperationExecutor {
             }
 
             valueMap.values[column.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(column.getEntityValue(entity), column);
-        });
+        });*/
 
-        subject.diffRelations.forEach(relation => {
+        /*subject.diffRelations.forEach(relation => {
             let valueMap = valueMaps.find(valueMap => valueMap.tablePath === relation.entityMetadata.tablePath);
             if (!valueMap) {
                 valueMap = { tablePath: relation.entityMetadata.tablePath, metadata: relation.entityMetadata, values: {} };
@@ -722,13 +760,10 @@ export class SubjectOperationExecutor {
                     valueMap!.values[joinColumn.databaseName] = value;
                 }
             });
-        });
+        });*/
 
-        // if number of updated columns = 0 no need to update updated date and version columns
-        if (Object.keys(valueMaps).length === 0)
-            return;
-
-        if (subject.metadata.updateDateColumn) {
+        // todo: this must be a database-level updation
+        /*if (subject.metadata.updateDateColumn) {
             let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.tablePath);
             if (!valueMap) {
                 valueMap = { tablePath: subject.metadata.tablePath, metadata: subject.metadata, values: {} };
@@ -736,9 +771,10 @@ export class SubjectOperationExecutor {
             }
 
             valueMap.values[subject.metadata.updateDateColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(new Date(), subject.metadata.updateDateColumn);
-        }
+        }*/
 
-        if (subject.metadata.versionColumn) {
+        // todo: this must be a database-level updation
+        /*if (subject.metadata.versionColumn) {
             let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.tablePath);
             if (!valueMap) {
                 valueMap = { tablePath: subject.metadata.tablePath, metadata: subject.metadata, values: {} };
@@ -746,9 +782,10 @@ export class SubjectOperationExecutor {
             }
 
             valueMap.values[subject.metadata.versionColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(subject.metadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.versionColumn);
-        }
+        }*/
 
-        if (subject.metadata.parentEntityMetadata) {
+        // todo: table inheritance. most probably this will be removed and implemented later in 0.3.0
+        /*if (subject.metadata.parentEntityMetadata) {
             if (subject.metadata.parentEntityMetadata.updateDateColumn) {
                 let valueMap = valueMaps.find(valueMap => valueMap.tablePath === subject.metadata.parentEntityMetadata.tablePath);
                 if (!valueMap) {
@@ -776,15 +813,15 @@ export class SubjectOperationExecutor {
 
                 valueMap.values[subject.metadata.parentEntityMetadata.versionColumn.databaseName] = this.queryRunner.connection.driver.preparePersistentValue(subject.metadata.parentEntityMetadata.versionColumn.getEntityValue(entity) + 1, subject.metadata.parentEntityMetadata.versionColumn);
             }
-        }
+        }*/
 
-        await Promise.all(valueMaps.map(valueMap => {
+        /*await Promise.all(valueMaps.map(valueMap => {
             const idMap = valueMap.metadata.getDatabaseEntityIdMap(entity);
             if (!idMap)
                 throw new Error(`Internal error. Cannot get id of the updating entity.`);
 
             return this.queryRunner.update(valueMap.tablePath, valueMap.values, idMap);
-        }));
+        }));*/
     }
 
     // -------------------------------------------------------------------------
@@ -793,14 +830,14 @@ export class SubjectOperationExecutor {
 
     /**
      * Updates relations of all given subjects in the database.
-     */
+
     private executeUpdateRelations() {
         return Promise.all(this.allSubjects.map(subject => this.updateRelations(subject)));
-    }
+    }*/
 
     /**
      * Updates relations of the given subject in the database.
-     */
+
     private async updateRelations(subject: Subject): Promise<void> {
         await Promise.all(subject.oneToManyUpdateOperations.map(relationUpdate => {
             return this.queryRunner.manager
@@ -810,7 +847,7 @@ export class SubjectOperationExecutor {
                 .whereInIds(relationUpdate.condition)
                 .execute();
         }));
-    }
+    }*/
 
     // -------------------------------------------------------------------------
     // Private Methods: Remove
@@ -820,7 +857,7 @@ export class SubjectOperationExecutor {
      * Removes all given subjects from the database.
      */
     private async executeRemoveOperations(): Promise<void> {
-        await PromiseUtils.runInSequence(this.removeSubjects, async subject => await this.remove(subject));
+        await PromiseUtils.runInSequence(this.removeSubjects, subject => this.remove(subject));
     }
 
     /**
@@ -839,9 +876,16 @@ export class SubjectOperationExecutor {
                 childConditions[column.databaseName] = column.getEntityValue(subject.databaseEntity);
             });
             await this.queryRunner.delete(subject.metadata.tableName, childConditions);
-        } else {
-            await this.queryRunner.delete(subject.metadata.tableName, subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity)!);
+            return;
         }
+
+        // await this.queryRunner.delete(subject.metadata.tableName, subject.metadata.getDatabaseEntityIdMap(subject.databaseEntity)!);
+        await this.queryRunner.manager
+            .createQueryBuilder()
+            .delete()
+            .from(subject.metadata.target)
+            .where(subject.identifier!) // todo: what if identified will be undefined?!
+            .execute();
     }
 
     // -------------------------------------------------------------------------

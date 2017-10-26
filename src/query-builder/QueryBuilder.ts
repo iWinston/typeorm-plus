@@ -557,6 +557,27 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
+     * Creates "RETURNING" / "OUTPUT" expression.
+     */
+    protected createReturningExpression(): string {
+        if (this.expressionMap.returning instanceof Array) {
+            return (this.expressionMap.returning as string[]).map(columnName => {
+                if (this.expressionMap.mainAlias!.hasMetadata) {
+                    const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(columnName);
+                    if (column)
+                        return this.escape(column.databaseName);
+                }
+                return columnName;
+            }).join(", ");
+
+        } else if (this.expressionMap.returning) {
+            return this.expressionMap.returning;
+        }
+
+        return "";
+    }
+
+    /**
      * Concatenates all added where expressions into one string.
      */
     protected createWhereExpressionString(): string {

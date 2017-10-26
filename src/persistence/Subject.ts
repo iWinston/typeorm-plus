@@ -1,10 +1,10 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {DateUtils} from "../util/DateUtils";
 import {OneToManyUpdateOperation} from "./operation/OneToManyUpdateOperation";
 import {OrmUtils} from "../util/OrmUtils";
+import {ChangeMap} from "./ChangeMap";
 
 /**
  * Holds information about insert operation into junction table.
@@ -38,6 +38,7 @@ export interface JunctionRemove {
     junctionRelationIds: any[];
 }
 
+
 /**
  * Subject is a subject of persistence.
  * It holds information about each entity that needs to be persisted:
@@ -51,6 +52,92 @@ export interface JunctionRemove {
 export class Subject {
 
     // -------------------------------------------------------------------------
+    // Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Subject identifier.
+     * This can be entity id or ids as well as some unique entity properties, like name or title.
+     * Insert / Update / Remove operation will be executed by a given identifier.
+     */
+    identifier: ObjectLiteral|undefined = undefined;
+
+    /**
+     * Changes needs to be applied in the database for the given subject.
+     */
+    changeMaps: ChangeMap[] = [];
+
+    /**
+     * Entity metadata of the subject entity.
+     */
+    metadata: EntityMetadata;
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates if this subject has some changes needs to be inserted or updated.
+     */
+    hasChanges() {
+        return this.changeMaps.length > 0;
+    }
+
+    /**
+     * Indicates if this is a new subject and it must be inserted into the database.
+     */
+    get mustBeInserted() {
+        return this.canBeInserted && this.identifier === undefined && this.hasChanges();
+    }
+
+    /**
+     * Indicates if this is an exist subject that must be updated in the database.
+     */
+    get mustBeUpdated() {
+        return this.canBeUpdated && this.identifier !== undefined && this.hasChanges();
+    }
+
+    createChangeSet() {
+        return this.changeMaps.reduce((updateMap, changeMap) => {
+            let value = changeMap.value;
+            if (value instanceof Subject)
+                value = value.identifier;
+
+            if (changeMap.column) {
+                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(value));
+
+            } else if (changeMap.relation) {
+                changeMap.relation!.joinColumns.forEach(column => {
+                    OrmUtils.mergeDeep(updateMap, column.createValueMap(value));
+                });
+            }
+            return updateMap;
+        }, {} as ObjectLiteral);
+    }
+
+    buildIdentifier() {
+        return this.metadata.primaryColumns.reduce((identifier, column) => {
+            if (column.isGenerated && this.generatedMap) {
+                return OrmUtils.mergeDeep(identifier, column.createValueMap(this.generatedMap[column.databaseName]));
+            } else {
+                return OrmUtils.mergeDeep(identifier, column.getEntityValueMap(this.entity));
+            }
+        }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Indicates if this is an exist subject that must be removed from the database.
+     */
+    // mustBeRemoved() {
+    //     return this.idenifier !== undefined && this.hasChanges();
+    // }
+
+    // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+
     // Private Properties
     // -------------------------------------------------------------------------
 
@@ -67,11 +154,6 @@ export class Subject {
     // -------------------------------------------------------------------------
     // Public Readonly Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Entity metadata of the subject entity.
-     */
-    readonly metadata: EntityMetadata;
 
     /**
      * Date when this entity is persisted.
@@ -103,12 +185,12 @@ export class Subject {
     /**
      * Differentiated columns between persisted and database entities.
      */
-    diffColumns: ColumnMetadata[] = [];
+    // diffColumns: ColumnMetadata[] = [];
 
     /**
      * Differentiated relations between persisted and database entities.
      */
-    diffRelations: RelationMetadata[] = [];
+    // diffRelations: RelationMetadata[] = [];
 
     /**
      * List of relations which need to be unset.
@@ -150,6 +232,13 @@ export class Subject {
         this.metadata = metadata;
         this._persistEntity = entity;
         this._databaseEntity = databaseEntity;
+        if (entity) {
+            this.identifier = this.metadata.isEntityIdMapEmpty(entity) ? undefined : this.metadata.getEntityIdMap(entity);
+
+        } else if (databaseEntity) {
+            this.identifier = this.metadata.isEntityIdMapEmpty(databaseEntity) ? undefined : this.metadata.getEntityIdMap(databaseEntity);
+        }
+        this.recompute(); // todo: optimize
     }
 
     // -------------------------------------------------------------------------
@@ -225,6 +314,8 @@ export class Subject {
      */
     set databaseEntity(databaseEntity: ObjectLiteral) {
         this._databaseEntity = databaseEntity;
+        if (!this.identifier)
+            this.identifier = this.metadata.isEntityIdMapEmpty(databaseEntity) ? undefined : this.metadata.getEntityIdMap(databaseEntity);
         this.recompute();
     }
 
@@ -240,18 +331,18 @@ export class Subject {
      * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
      * and if it does not have database entity set.
      */
-    get mustBeInserted() {
-        return this.canBeInserted && !this.hasDatabaseEntity;
-    }
+    // get mustBeInserted() {
+    //     return this.canBeInserted && !this.hasDatabaseEntity;
+    // }
 
     /**
      * Checks if this subject must be updated into the database.
      * Subject can be updated in the database if it is allowed to be updated (explicitly persisted or by cascades)
      * and if it does have differentiated columns or relations.
      */
-    get mustBeUpdated() {
-        return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
-    }
+    // get mustBeUpdated() {
+    //     return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
+    // }
 
     /**
      * Checks if this subject has relations to be updated.
@@ -306,7 +397,7 @@ export class Subject {
      * Performs entity re-computations.
      */
     recompute() {
-        if (this.hasEntity && this._databaseEntity) {
+        if (this.hasEntity) {
             this.computeDiffColumns();
             this.computeDiffRelationalColumns();
         }
@@ -320,13 +411,16 @@ export class Subject {
      * Differentiate columns from the updated entity and entity stored in the database.
      */
     protected computeDiffColumns(): void {
-        this.diffColumns = this.metadata.columns.filter(column => {
+        const diffColumns = this.metadata.columns.filter(column => {
 
             // prepare both entity and database values to make comparision
             let entityValue = column.getEntityValue(this.entity);
-            let databaseValue = column.getEntityValue(this.databaseEntity);
             if (entityValue === undefined)
                 return false;
+            if (!this.hasDatabaseEntity)
+                return true;
+
+            let databaseValue = column.getEntityValue(this.databaseEntity);
 
             // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
             if (entityValue !== null && entityValue !== undefined) {
@@ -350,15 +444,6 @@ export class Subject {
                     databaseValue = DateUtils.simpleArrayToString(databaseValue);
                 }
             }
-            // todo: this mechanism does not get in count embeddeds in embeddeds
-
-            // if value is not defined then no need to update it
-            // if (!column.isInEmbedded && this.entity[column.propertyName] === undefined)
-            //     return false;
-            //
-            // if value is in embedded and is not defined then no need to update it
-            // if (column.isInEmbedded && (this.entity[column.embeddedProperty] === undefined || this.entity[column.embeddedProperty][column.propertyName] === undefined))
-            //     return false;
 
             // if its a special column or value is not changed - then do nothing
             if (column.isVirtual ||
@@ -371,14 +456,26 @@ export class Subject {
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity
-            const relation = this.metadata.findRelationWithDbName(column.databaseName);
-            if (relation) {
-                const value = relation.getEntityValue(this.entity);
+            if (column.relationMetadata) {
+                const value = column.relationMetadata.getEntityValue(this.entity);
                 if (value !== null && value !== undefined)
                     return false;
             }
 
             return true;
+        });
+        diffColumns.forEach(column => {
+            let changeMap = this.changeMaps.find(changeMap => changeMap.column === column);
+            if (changeMap) {
+                changeMap.value = column.getEntityValue(this.entity);
+
+            } else {
+                changeMap = {
+                    column: column,
+                    value: column.getEntityValue(this.entity)
+                };
+                this.changeMaps.push(changeMap);
+            }
         });
     }
 
@@ -386,7 +483,9 @@ export class Subject {
      * Difference columns of the owning one-to-one and many-to-one columns.
      */
     protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
-        this.diffRelations = this.metadata.relationsWithJoinColumns.filter(relation => {
+        const diffRelations = this.metadata.relationsWithJoinColumns.filter(relation => {
+            if (!this.hasDatabaseEntity)
+                return true;
 
             // here we cover two scenarios:
             // 1. related entity can be another entity which is natural way
@@ -412,6 +511,34 @@ export class Subject {
             // if relation ids aren't equal then we need to update them
             return !relation.inverseEntityMetadata.compareIds(relatedEntity, databaseRelatedEntity);
         });
+
+        diffRelations.forEach(relation => {
+            let changeMap = this.changeMaps.find(changeMap => changeMap.relation === relation);
+            if (changeMap) {
+                changeMap.value = relation.getEntityValue(this.entity);
+
+            } else {
+                changeMap = {
+                    relation: relation,
+                    value: relation.getEntityValue(this.entity)
+                };
+                this.changeMaps.push(changeMap);
+            }
+        });
     }
 
 }
+
+// you'll need this code later
+// add operations for removed relations
+// if (removedRelatedEntityRelationIds.length) {
+//     const updateUnsetColumns = relation.inverseRelation!.joinColumns.reduce((map, column) => {
+//         return OrmUtils.mergeDeep(map, column.createValueMap(null));
+//     }, {} as ObjectLiteral);
+//
+//     operations.push({
+//         metadata: relation.inverseEntityMetadata!,
+//         updateValues: updateUnsetColumns,
+//         condition: removedRelatedEntityRelationIds,
+//     });
+// }
