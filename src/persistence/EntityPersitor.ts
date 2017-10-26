@@ -4,10 +4,72 @@ import {RemoveOptions} from "../repository/RemoveOptions";
 import {MustBeEntityError} from "../error/MustBeEntityError";
 import {SubjectOperationExecutor} from "./SubjectOperationExecutor";
 import {CannotDetermineEntityError} from "../error/CannotDetermineEntityError";
-import {SubjectBuilder} from "./SubjectBuilder";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
+import {Subject} from "./Subject";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {OneToManyUpdateBuilder} from "./operation-builder/OneToManyUpdateBuilder";
+import {OneToOneInverseSideOperationBuilder} from "./operation-builder/OneToOneInverseSideOperationBuilder";
+import {ManyToManyOperationBuilder} from "./operation-builder/ManyToManyOperationBuilder";
+import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
+import {CascadeSubjectsBuilder} from "./CascadeSubjectsBuilder";
 
+/**
+ * To be able to execute persistence operations we need to load all entities from the database we need.
+ * Loading should be efficient - we need to load entities in as few queries as possible + load as less data as we can.
+ * This is how we determine which entities needs to be loaded from db:
+ *
+ * 1. example with cascade updates and inserts:
+ *
+ * [Y] - means "yes, we load"
+ * [N] - means "no, we don't load"
+ * in {} braces we specify what cascade options are set between relations
+ *
+ * if Post is new, author is not set in the post
+ *
+ * [Y] Post -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+ *   [Y] Author -> {all} // no because author is not set
+ *     [Y] Photo -> {all} // no because author and its photo are not set
+ *       [Y] Tag -> {all} // no because author and its photo and its tag are not set
+ *
+ * if Post is new, author is new (or anything else is new)
+ * if Post is updated
+ * if Post and/or Author are updated
+ *
+ * [Y] Post -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+ *   [Y] Author -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+ *     [Y] Photo -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+ *       [Y] Tag -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
+ *
+ * Here we load post, author, photo, tag to check if they are new or not to persist insert or update operation.
+ * We load post, author, photo, tag only if they exist in the relation.
+ * From these examples we can see that we always load entity relations when it has "update" or "insert" cascades.
+ *
+ * 2. example with cascade removes
+ *
+ * if entity is new its remove operations by cascades should not be executed
+ * if entity is updated then values that are null or missing in array (not undefined!, undefined means skip - don't do anything) are treated as removed
+ * if entity is removed then all its downside relations which has cascade remove should be removed
+ *
+ * Once we find removed entity - we load it, and every downside entity which has "remove" cascade set.
+ *
+ * At the end we have all entities we need to operate with.
+ * Next step is to store all loaded entities to manipulate them efficiently.
+ *
+ * Rules of updating by cascades.
+ * Insert operation can lead to:
+ *  - insert operations
+ *  - update operations
+ * Update operation can lead to:
+ *  - insert operations
+ *  - update operations
+ *  - remove operations
+ * Remove operation can lead to:
+ *  - remove operation
+
+ // todo: make this method to accept multiple instances of entities
+ // this will optimize multiple entities save
+ */
 export class EntityPersitor {
 
     // -------------------------------------------------------------------------
@@ -114,14 +176,59 @@ export class EntityPersitor {
             throw new CannotDetermineEntityError(this.mode);
 
         const metadata = this.connection.getMetadata(entityTarget);
-        const subjectBuilder = new SubjectBuilder(queryRunner);
         if (this.mode === "save") {
-            await subjectBuilder.save(metadata, entity);
+            const operateSubjects = await this.save(queryRunner, metadata, entity);
+            return new SubjectOperationExecutor(queryRunner, operateSubjects);
         } else { // remove
-            await subjectBuilder.remove(metadata, entity);
+            const operateSubjects = await this.remove(queryRunner, metadata, entity);
+            return new SubjectOperationExecutor(queryRunner, operateSubjects);
         }
-
-        return new SubjectOperationExecutor(queryRunner, subjectBuilder.operateSubjects);
     }
+
+    /**
+     * Builds operations for entity that is being inserted/updated.
+     */
+    protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
+        const operateSubjects: Subject[] = [];
+
+        // create subject for currently persisted entity and mark that it can be inserted and updated
+        const mainSubject = new Subject(metadata, entity);
+        mainSubject.canBeInserted = true;
+        mainSubject.canBeUpdated = true;
+        operateSubjects.push(mainSubject);
+
+        // next step we build list of subjects we will operate with
+        // these subjects are subjects that we need to insert or update alongside with main persisted entity
+        await new CascadeSubjectsBuilder(operateSubjects).build(mainSubject);
+
+        // next step is to load database entities of all operate subjects
+        await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
+
+        new OneToManyUpdateBuilder(operateSubjects).build();
+        new OneToOneInverseSideOperationBuilder(operateSubjects).build();
+        new ManyToManyOperationBuilder(operateSubjects).build({ insert: true, remove: true });
+
+        return operateSubjects;
+    }
+
+    /**
+     * Builds only remove operations for entity that is being removed.
+     */
+    protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
+        const operateSubjects: Subject[] = [];
+
+        // create subject for currently removed entity and mark that it must be removed
+        const mainSubject = new Subject(metadata, entity);
+        mainSubject.mustBeRemoved = true;
+        operateSubjects.push(mainSubject);
+
+        // next step is to load database entities for all operate subjects
+        await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
+
+        new ManyToManyOperationBuilder(operateSubjects).build({ insert: false, remove: true });
+
+        return operateSubjects;
+    }
+
 
 }

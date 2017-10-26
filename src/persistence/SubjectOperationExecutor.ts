@@ -39,11 +39,6 @@ export class SubjectOperationExecutor {
      */
     protected removeSubjects: Subject[];
 
-    /**
-     * Subjects which relations should be updated.
-     */
-    protected relationUpdateSubjects: Subject[];
-
     protected broadcaster: Broadcaster;
 
     protected queryRunner: QueryRunner;
@@ -63,7 +58,6 @@ export class SubjectOperationExecutor {
         this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
-        this.relationUpdateSubjects = subjects.filter(subject => subject.hasRelationUpdates);
 
         // console.log("allSubjects", this.allSubjects);
         // console.log("insertSubjects", this.insertSubjects);
@@ -78,7 +72,6 @@ export class SubjectOperationExecutor {
         return this.insertSubjects.length > 0 ||
             this.updateSubjects.length > 0 ||
             this.removeSubjects.length > 0 ||
-            this.relationUpdateSubjects.length > 0 ||
             this.allSubjects.some(subject => subject.junctionInserts.length > 0) ||
             this.allSubjects.some(subject => subject.junctionRemoves.length > 0);
     }

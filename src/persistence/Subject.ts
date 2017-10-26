@@ -2,7 +2,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {DateUtils} from "../util/DateUtils";
-import {OneToManyUpdateOperation} from "./operation/OneToManyUpdateOperation";
 import {OrmUtils} from "../util/OrmUtils";
 import {ChangeMap} from "./ChangeMap";
 
@@ -183,22 +182,6 @@ export class Subject {
     mustBeRemoved: boolean = false;
 
     /**
-     * Differentiated columns between persisted and database entities.
-     */
-    // diffColumns: ColumnMetadata[] = [];
-
-    /**
-     * Differentiated relations between persisted and database entities.
-     */
-    // diffRelations: RelationMetadata[] = [];
-
-    /**
-     * List of relations which need to be unset.
-     * This is used to update relation from inverse side.
-     */
-    oneToManyUpdateOperations: OneToManyUpdateOperation[] = [];
-
-    /**
      * Records that needs to be inserted into the junction tables of this subject.
      */
     junctionInserts: JunctionInsert[] = [];
@@ -266,22 +249,6 @@ export class Subject {
     }
 
     /**
-     * Gets new instance of object that contains entity properties and generated map properties.
-     */
-    get entityWithGeneratedMapMerged() {
-
-        // we need to use mergeDeep because generatedMap may have ids in the embed properties of entity
-        // we use extra Object.assign to create a new instance of entity,
-        // but at the same time not pass multiple arguments into mergeDeep function
-        // this is necessary because we want to avoid mergeDeep function to perform merging
-        // properties from our entity into empty object, because our entity may have circular references
-        if (this.generatedMap)
-            return OrmUtils.mergeDeep(Object.assign({}, this.entity), this.generatedMap || {});
-
-        return this.entity;
-    }
-
-    /**
      * Checks if subject has a persisted entity.
      */
     get hasEntity(): boolean {
@@ -343,13 +310,6 @@ export class Subject {
     // get mustBeUpdated() {
     //     return this.canBeUpdated && (this.diffColumns.length > 0 || this.diffRelations.length > 0);
     // }
-
-    /**
-     * Checks if this subject has relations to be updated.
-     */
-    get hasRelationUpdates(): boolean {
-        return this.oneToManyUpdateOperations.length > 0;
-    }
 
     /**
      * Gets id of the persisted entity.
