@@ -148,11 +148,6 @@ export class Subject {
     }
 
     /**
-     */
-    validate() {
-    }
-
-    /**
      * Performs entity re-computations.
      */
     recompute() {

@@ -14,7 +14,7 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
  * note: this class shares lot of things with OneToManyUpdateBuilder, so when you change this class
  *       make sure to reflect changes there as well.
  */
-export class OneToOneInverseSideOperationBuilder {
+export class OneToOneInverseSideSubjectBuilder {
 
     // ---------------------------------------------------------------------
     // Constructor

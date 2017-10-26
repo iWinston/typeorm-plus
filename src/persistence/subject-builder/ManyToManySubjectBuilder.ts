@@ -11,7 +11,7 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
  *             If user adds categories into the post and saves post we need to bind them.
  *             This operation requires updation of junction table.
  */
-export class ManyToManyOperationBuilder {
+export class ManyToManySubjectBuilder {
 
     // ---------------------------------------------------------------------
     // Constructor

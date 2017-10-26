@@ -1,5 +1,5 @@
-import {Subject} from "./Subject";
-import {ObjectLiteral} from "../common/ObjectLiteral";
+import {Subject} from "../Subject";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
  * Builds and pushes to array of operate entities all entities that we will work with.
@@ -11,7 +11,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  * That's why we first need to load all changed entities, then extract ids of the removed entities from them,
  * and only then load removed entities by extracted ids.
  */
-export class CascadeSubjectsBuilder {
+export class CascadesSubjectBuilder {
 
     // ---------------------------------------------------------------------
     // Constructor

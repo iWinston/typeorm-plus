@@ -8,11 +8,11 @@ import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {OneToManyUpdateBuilder} from "./operation-builder/OneToManyUpdateBuilder";
-import {OneToOneInverseSideOperationBuilder} from "./operation-builder/OneToOneInverseSideOperationBuilder";
-import {ManyToManyOperationBuilder} from "./operation-builder/ManyToManyOperationBuilder";
+import {OneToManySubjectBuilder} from "./subject-builder/OneToManySubjectBuilder";
+import {OneToOneInverseSideSubjectBuilder} from "./subject-builder/OneToOneInverseSideSubjectBuilder";
+import {ManyToManySubjectBuilder} from "./subject-builder/ManyToManySubjectBuilder";
 import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
-import {CascadeSubjectsBuilder} from "./CascadeSubjectsBuilder";
+import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 import {SubjectValidator} from "./SubjectValidator";
 
 /**
@@ -204,14 +204,14 @@ export class EntityPersitor {
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        await new CascadeSubjectsBuilder(operateSubjects).build(mainSubject);
+        await new CascadesSubjectBuilder(operateSubjects).build(mainSubject);
 
         // next step is to load database entities of all operate subjects
         await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
 
-        new OneToManyUpdateBuilder(operateSubjects).build();
-        new OneToOneInverseSideOperationBuilder(operateSubjects).build();
-        new ManyToManyOperationBuilder(operateSubjects).build();
+        new OneToManySubjectBuilder(operateSubjects).build();
+        new OneToOneInverseSideSubjectBuilder(operateSubjects).build();
+        new ManyToManySubjectBuilder(operateSubjects).build();
 
         return operateSubjects;
     }
@@ -230,7 +230,7 @@ export class EntityPersitor {
         // next step is to load database entities for all operate subjects
         await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
 
-        new ManyToManyOperationBuilder(operateSubjects).buildForAllRemoval(mainSubject);
+        new ManyToManySubjectBuilder(operateSubjects).buildForAllRemoval(mainSubject);
 
         return operateSubjects;
     }

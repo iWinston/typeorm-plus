@@ -122,8 +122,9 @@ export class SubjectExecutor {
 
             subject.generatedMap = insertResult;
 
-            if (subject.entity)
+            if (subject.entity) {
                 subject.identifier = subject.buildIdentifier();
+            }
             // todo: clear changeSet
         });
     }
