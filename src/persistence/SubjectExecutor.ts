@@ -6,17 +6,21 @@ import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
-import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
  * with given persistence subjects.
  */
-export class SubjectOperationExecutor {
+export class SubjectExecutor {
 
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * QueryRunner used to execute all queries with a given subjects.
+     */
+    protected queryRunner: QueryRunner;
 
     /**
      * All subjects that needs to be operated.
@@ -38,29 +42,16 @@ export class SubjectOperationExecutor {
      */
     protected removeSubjects: Subject[];
 
-    protected broadcaster: Broadcaster;
-
-    protected queryRunner: QueryRunner;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(queryRunner: QueryRunner, subjects: Subject[]) {
-
-        // validate all subjects first
-        subjects.forEach(subject => subject.validate());
-
-        // set class properties for easy use
         this.queryRunner = queryRunner;
         this.allSubjects = subjects;
         this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
-
-        // console.log("allSubjects", this.allSubjects);
-        // console.log("insertSubjects", this.insertSubjects);
-        this.broadcaster = new Broadcaster(queryRunner.connection); // todo: move broadcaster to connection?
     }
 
     // -------------------------------------------------------------------------
@@ -80,14 +71,13 @@ export class SubjectOperationExecutor {
     async execute(): Promise<void> {
 
         // broadcast "before" events before we start updating
-        await this.broadcaster.broadcastBeforeEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.queryRunner.connection.broadcaster.broadcastBeforeEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
         // todo: recompute things only if at least one subscriber or listener was really executed ?
         this.allSubjects.forEach(subject => subject.recompute());
 
         await this.executeInsertOperations();
-        await this.executeInsertClosureTableOperations();
         await this.executeUpdateOperations();
         await this.executeRemoveOperations();
 
@@ -95,32 +85,17 @@ export class SubjectOperationExecutor {
         await this.updateSpecialColumnsInPersistedEntities();
 
         // finally broadcast "after" events
-        await this.broadcaster.broadcastAfterEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.queryRunner.connection.broadcaster.broadcastAfterEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
     }
 
     // -------------------------------------------------------------------------
-    // Private Methods: Insertion
+    // Protected Methods
     // -------------------------------------------------------------------------
 
     /**
      * Executes insert operations.
-     *
-     * For insertion we separate two groups of entities:
-     * - first group of entities are entities which do not have any relations
-     *      or entities which do not have any non-nullable relation
-     * - second group of entities are entities which does have non-nullable relations
-     *
-     * Insert process of the entities from the first group which can only have nullable relations are actually a two-step process:
-     * - first we insert entities without their relations, explicitly left them NULL
-     * - later we update inserted entity once again with id of the object inserted with it
-     *
-     * Yes, two queries are being executed, but this is by design.
-     * There is no better way to solve this problem and others at the same time.
-     *
-     * Insert process of the entities from the second group which can have only non nullable relations is a single-step process:
-     * - we simply insert all entities and get into attention all its dependencies which were inserted in the first group
      */
-    private async executeInsertOperations(): Promise<void> {
+    protected async executeInsertOperations(): Promise<void> {
 
         // we are sorting entities for insertions before execute insert operation
         // we put into first order entities with relations which do has non nullable relations
@@ -151,7 +126,132 @@ export class SubjectOperationExecutor {
                 subject.identifier = subject.buildIdentifier();
             // todo: clear changeSet
         });
+    }
 
+    /**
+     * Updates all given subjects in the database.
+     */
+    protected async executeUpdateOperations(): Promise<void> {
+        await Promise.all(this.updateSubjects.map(subject => {
+            const updateMap = subject.createChangeSet();
+            if (!subject.identifier)
+                throw new Error(`Subject does not have identifier`);
+
+            return this.queryRunner.manager
+                .createQueryBuilder()
+                .update(subject.metadata.target)
+                .set(updateMap)
+                .where(subject.identifier)
+                .execute();
+        }));
+    }
+
+    /**
+     * Removes all given subjects from the database.
+     */
+    protected async executeRemoveOperations(): Promise<void> {
+        await PromiseUtils.runInSequence(this.removeSubjects, async subject => {
+
+            await this.queryRunner.manager
+                .createQueryBuilder()
+                .delete()
+                .from(subject.metadata.target)
+                .where(subject.identifier!) // todo: what if identified will be undefined?!
+                .execute();
+        });
+    }
+
+    /**
+     * Updates all special columns of the saving entities (create date, update date, versioning).
+     */
+    protected updateSpecialColumnsInPersistedEntities() {
+
+        // update entity columns that gets updated on each entity insert
+        this.insertSubjects.forEach(subject => {
+            // if (subject.generatedObjectId && subject.metadata.objectIdColumn)
+            //     subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
+
+            if (subject.generatedMap) {
+                subject.metadata.generatedColumns.forEach(generatedColumn => {
+                    const generatedValue = generatedColumn.getEntityValue(subject.generatedMap!);
+                    if (!generatedValue)
+                        return;
+
+                    generatedColumn.setEntityValue(subject.entity!, generatedValue);
+                });
+            }
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
+                if (subject.parentGeneratedId)
+                    primaryColumn.setEntityValue(subject.entity!, subject.parentGeneratedId);
+            });
+
+            if (subject.metadata.updateDateColumn)
+                subject.metadata.updateDateColumn.setEntityValue(subject.entity!, subject.date);
+            if (subject.metadata.createDateColumn)
+                subject.metadata.createDateColumn.setEntityValue(subject.entity!, subject.date);
+            if (subject.metadata.versionColumn)
+                subject.metadata.versionColumn.setEntityValue(subject.entity!, 1);
+            if (subject.metadata.treeLevelColumn) {
+                // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
+                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
+                subject.metadata.treeLevelColumn.setEntityValue(subject.entity!, subject.treeLevel);
+            }
+            /*if (subject.metadata.hasTreeChildrenCountColumn) {
+                 subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
+            }*/
+
+            // set values to "null" for nullable columns that did not have values
+            subject.metadata.columns.forEach(column => {
+                if (!column.isNullable || column.isVirtual)
+                    return;
+
+                const columnValue = column.getEntityValue(subject.entity!);
+                if (columnValue === undefined)
+                    column.setEntityValue(subject.entity!, null);
+            });
+        });
+
+        // update special columns that gets updated on each entity update
+        this.updateSubjects.forEach(subject => {
+            if (!subject.entity)
+                return;
+
+            if (subject.metadata.updateDateColumn)
+                subject.metadata.updateDateColumn.setEntityValue(subject.entity, subject.date);
+            if (subject.metadata.versionColumn)
+                subject.metadata.versionColumn.setEntityValue(subject.entity, subject.metadata.versionColumn.getEntityValue(subject.entity) + 1);
+        });
+
+        // remove ids from the entities that were removed
+        this.removeSubjects.forEach(subject => {
+            subject.metadata.primaryColumns.forEach(primaryColumn => {
+                if (!subject.entity) return;
+                primaryColumn.setEntityValue(subject.entity!, undefined);
+            });
+        });
+
+        this.allSubjects.forEach(subject => {
+            subject.metadata.relationIds.forEach(relationId => {
+                if (!subject.entity) return;
+                relationId.setValue(subject.entity);
+            });
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Deprecated Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Inserts an entity from the given insert operation into the database.
+     * If entity has an generated column, then after saving new generated value will be stored to the InsertOperation.
+     * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
+     *
+     * @deprecated
+     */
+    protected async insert(subject: Subject, alreadyInsertedSubjects: Subject[]): Promise<any> {
+
+        // from executeInsertOperations
         // we need to update relation ids of the newly inserted objects (where we inserted NULLs in relations)
         // once we inserted all entities, we need to update relations which were bind to inserted entities.
         // For example we have a relation many-to-one Post<->Category. Relation is nullable.
@@ -270,90 +370,82 @@ export class SubjectOperationExecutor {
                 updatePromises.push(updatePromise);
             }*/
 
-            // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
-            // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
-            /*const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
-            // console.log(oneToManyAndOneToOneNonOwnerRelations);
-            subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
-                .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
-                    relation.inverseRelation!.joinColumns.forEach(joinColumn => {
+        // we need to update relation ids if newly inserted objects are used from inverse side in one-to-many inverse relation
+        // we also need to update relation ids if newly inserted objects are used from inverse side in one-to-one inverse relation
+        /*const oneToManyAndOneToOneNonOwnerRelations = subject.metadata.oneToManyRelations.concat(subject.metadata.oneToOneRelations.filter(relation => !relation.isOwning));
+        // console.log(oneToManyAndOneToOneNonOwnerRelations);
+        subject.metadata.extractRelationValuesFromEntity(subject.entity, oneToManyAndOneToOneNonOwnerRelations)
+            .forEach(([relation, subRelatedEntity, inverseEntityMetadata]) => {
+                relation.inverseRelation!.joinColumns.forEach(joinColumn => {
 
-                        const referencedColumn = joinColumn.referencedColumn!;
-                        const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumns : inverseEntityMetadata.primaryColumns;
-                        const conditions: ObjectLiteral = {};
+                    const referencedColumn = joinColumn.referencedColumn!;
+                    const columns = inverseEntityMetadata.parentEntityMetadata ? inverseEntityMetadata.primaryColumns : inverseEntityMetadata.primaryColumns;
+                    const conditions: ObjectLiteral = {};
 
-                        columns.forEach(column => {
-                            const entityValue = column.getEntityValue(subRelatedEntity);
+                    columns.forEach(column => {
+                        const entityValue = column.getEntityValue(subRelatedEntity);
 
-                            // if entity id is a relation, then extract referenced column from that relation
-                            const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
+                        // if entity id is a relation, then extract referenced column from that relation
+                        const columnRelation = inverseEntityMetadata.relations.find(relation => relation.propertyName === column.propertyName);
 
-                            if (entityValue && columnRelation) { // not sure if we need handle join column from inverse side
-                                columnRelation.joinColumns.forEach(columnRelationJoinColumn => {
-                                    let relationIdOfEntityValue = entityValue[columnRelationJoinColumn.referencedColumn!.propertyName];
-                                    if (!relationIdOfEntityValue) {
-                                        const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
-                                        if (entityValueInsertSubject) {
-                                            if (columnRelationJoinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap) {
-                                                relationIdOfEntityValue = columnRelationJoinColumn.referencedColumn!.getEntityValue(entityValueInsertSubject.generatedMap);
-                                            }
+                        if (entityValue && columnRelation) { // not sure if we need handle join column from inverse side
+                            columnRelation.joinColumns.forEach(columnRelationJoinColumn => {
+                                let relationIdOfEntityValue = entityValue[columnRelationJoinColumn.referencedColumn!.propertyName];
+                                if (!relationIdOfEntityValue) {
+                                    const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === entityValue);
+                                    if (entityValueInsertSubject) {
+                                        if (columnRelationJoinColumn.referencedColumn!.isGenerated && entityValueInsertSubject.generatedMap) {
+                                            relationIdOfEntityValue = columnRelationJoinColumn.referencedColumn!.getEntityValue(entityValueInsertSubject.generatedMap);
                                         }
                                     }
-                                    if (relationIdOfEntityValue) {
-                                        conditions[column.databaseName] = relationIdOfEntityValue;
-                                    }
-                                });
-
-                            } else {
-                                const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === subRelatedEntity);
-                                if (entityValue) {
-                                    conditions[column.databaseName] = entityValue;
-                                } else {
-                                    if (entityValueInsertSubject && entityValueInsertSubject.generatedMap)
-                                        conditions[column.databaseName] = column.getEntityValue(entityValueInsertSubject.generatedMap);
                                 }
-                            }
-                        });
-
-                        if (!Object.keys(conditions).length)
-                            return;
-
-                        const updateOptions: ObjectLiteral = {};
-                        const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === referencedColumn.propertyName);
-                        const columnValue = referencedColumn.getEntityValue(subject.entity);
-                        if (columnRelation) {
-                            let id = columnRelation.getEntityValue(columnValue);
-                            if (!id) {
-                                const insertSubject = this.insertSubjects.find(subject => subject.entity === columnValue);
-                                if (insertSubject) {
-                                    if (insertSubject.generatedMap)
-                                        id = referencedColumn.getEntityValue(insertSubject.generatedMap);
+                                if (relationIdOfEntityValue) {
+                                    conditions[column.databaseName] = relationIdOfEntityValue;
                                 }
-                            }
-                            updateOptions[joinColumn.databaseName] = id;
+                            });
+
                         } else {
-                            const generatedColumnValue = subject.generatedMap ? referencedColumn.getEntityValue(subject.generatedMap) : undefined;
-                            updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue;
+                            const entityValueInsertSubject = this.insertSubjects.find(subject => subject.entity === subRelatedEntity);
+                            if (entityValue) {
+                                conditions[column.databaseName] = entityValue;
+                            } else {
+                                if (entityValueInsertSubject && entityValueInsertSubject.generatedMap)
+                                    conditions[column.databaseName] = column.getEntityValue(entityValueInsertSubject.generatedMap);
+                            }
                         }
-
-                        console.log("or this update?");
-                        const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tablePath, updateOptions, conditions);
-                        updatePromises.push(updatePromise);
-
                     });
-                });*/
+
+                    if (!Object.keys(conditions).length)
+                        return;
+
+                    const updateOptions: ObjectLiteral = {};
+                    const columnRelation = relation.inverseEntityMetadata.relations.find(rel => rel.propertyName === referencedColumn.propertyName);
+                    const columnValue = referencedColumn.getEntityValue(subject.entity);
+                    if (columnRelation) {
+                        let id = columnRelation.getEntityValue(columnValue);
+                        if (!id) {
+                            const insertSubject = this.insertSubjects.find(subject => subject.entity === columnValue);
+                            if (insertSubject) {
+                                if (insertSubject.generatedMap)
+                                    id = referencedColumn.getEntityValue(insertSubject.generatedMap);
+                            }
+                        }
+                        updateOptions[joinColumn.databaseName] = id;
+                    } else {
+                        const generatedColumnValue = subject.generatedMap ? referencedColumn.getEntityValue(subject.generatedMap) : undefined;
+                        updateOptions[joinColumn.databaseName] = columnValue || generatedColumnValue;
+                    }
+
+                    console.log("or this update?");
+                    const updatePromise = this.queryRunner.update(relation.inverseEntityMetadata.tablePath, updateOptions, conditions);
+                    updatePromises.push(updatePromise);
+
+                });
+            });*/
 
         // });
         //
         // await Promise.all(updatePromises);
-    }
-
-    /**
-     * Inserts an entity from the given insert operation into the database.
-     * If entity has an generated column, then after saving new generated value will be stored to the InsertOperation.
-     * If entity uses class-table-inheritance, then multiple inserts may by performed to save all entities.
-     */
-    async insert(subject: Subject, alreadyInsertedSubjects: Subject[]): Promise<any> {
 
         const parentEntityMetadata = subject.metadata.parentEntityMetadata;
         const metadata = subject.metadata;
@@ -394,7 +486,10 @@ export class SubjectOperationExecutor {
         }
     }
 
-    private collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
+    /**
+     * @deprecated
+     */
+    protected collectColumns(columns: ColumnMetadata[], entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
         columns.forEach(column => {
             if (column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
@@ -409,7 +504,10 @@ export class SubjectOperationExecutor {
         });
     }
 
-    private collectEmbeds(embed: EmbeddedMetadata, entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
+    /**
+     * @deprecated
+     */
+    protected collectEmbeds(embed: EmbeddedMetadata, entity: ObjectLiteral, object: ObjectLiteral, operation: "insert"|"update") {
 
         if (embed.isArray) {
             if (entity[embed.propertyName] instanceof Array) {
@@ -435,8 +533,10 @@ export class SubjectOperationExecutor {
 
     /**
      * Collects columns and values for the insert operation.
+     *
+     * @deprecated
      */
-    private collectColumnsAndValues(metadata: EntityMetadata, entity: ObjectLiteral, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[], operation: "insert"|"update"): ObjectLiteral {
+    protected collectColumnsAndValues(metadata: EntityMetadata, entity: ObjectLiteral, date: Date, parentIdColumnValue: any, discriminatorValue: any, alreadyInsertedSubjects: Subject[], operation: "insert"|"update"): ObjectLiteral {
 
         const values: ObjectLiteral = {};
 
@@ -570,14 +670,12 @@ export class SubjectOperationExecutor {
         return values;
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods: Insertion into closure tables
-    // -------------------------------------------------------------------------
-
     /**
      * Inserts all given subjects into closure table.
+     *
+     * @deprecated
      */
-    private executeInsertClosureTableOperations(/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
+    protected executeInsertClosureTableOperations(/*, updatesByRelations: Subject[]*/) { // todo: what to do with updatesByRelations
         const promises = this.insertSubjects
             .filter(subject => subject.metadata.isClosure)
             .map(async subject => {
@@ -590,8 +688,10 @@ export class SubjectOperationExecutor {
 
     /**
      * Inserts given subject into closure table.
+     *
+     * @deprecated
      */
-    private async insertClosureTableValues(subject: Subject): Promise<void> {
+    protected async insertClosureTableValues(subject: Subject): Promise<void> {
         // todo: since closure tables do not support compose primary keys - throw an exception?
         // todo: what if parent entity or parentEntityId is empty?!
         const tablePath = subject.metadata.closureJunctionTable.tablePath;
@@ -643,21 +743,21 @@ export class SubjectOperationExecutor {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods: Update
-    // -------------------------------------------------------------------------
-
     /**
      * Updates all given subjects in the database.
+     *
+     * @deprecated
      */
-    private async executeUpdateOperations(): Promise<void> {
-        await Promise.all(this.updateSubjects.map(subject => this.update(subject)));
+    protected async executeUpdateOperationsOld(): Promise<void> {
+        await Promise.all(this.updateSubjects.map(subject => this.updateOld(subject)));
     }
 
     /**
      * Updates given subject in the database.
+     *
+     * @deprecated
      */
-    private async update(subject: Subject): Promise<void> {
+    protected async updateOld(subject: Subject): Promise<void> {
 
         if (this.queryRunner.connection.driver instanceof MongoDriver) {
             const entity = subject.entity!;
@@ -810,10 +910,6 @@ export class SubjectOperationExecutor {
         }));*/
     }
 
-    // -------------------------------------------------------------------------
-    // Private Methods: Update only relations
-    // -------------------------------------------------------------------------
-
     /**
      * Updates relations of all given subjects in the database.
 
@@ -835,21 +931,21 @@ export class SubjectOperationExecutor {
         }));
     }*/
 
-    // -------------------------------------------------------------------------
-    // Private Methods: Remove
-    // -------------------------------------------------------------------------
-
     /**
      * Removes all given subjects from the database.
+     *
+     * @deprecated
      */
-    private async executeRemoveOperations(): Promise<void> {
-        await PromiseUtils.runInSequence(this.removeSubjects, subject => this.remove(subject));
+    protected async executeRemoveOperationsOld(): Promise<void> {
+        await PromiseUtils.runInSequence(this.removeSubjects, subject => this.removeOld(subject));
     }
 
     /**
      * Updates given subject from the database.
+     *
+     * @deprecated
      */
-    private async remove(subject: Subject): Promise<void> {
+    protected async removeOld(subject: Subject): Promise<void> {
         if (subject.metadata.parentEntityMetadata) { // this code should not be there. it should be handled by  subject.metadata.getEntityIdColumnMap
             const parentConditions: ObjectLiteral = {};
             subject.metadata.primaryColumns.forEach(column => {
@@ -873,10 +969,6 @@ export class SubjectOperationExecutor {
             .where(subject.identifier!) // todo: what if identified will be undefined?!
             .execute();
     }
-
-    // -------------------------------------------------------------------------
-    // Private Methods: Insertion into junction tables
-    // -------------------------------------------------------------------------
 
     /**
      * Inserts into database junction tables all given array of subjects junction data.
@@ -938,10 +1030,6 @@ export class SubjectOperationExecutor {
         await Promise.all(promises);
     } */
 
-    // -------------------------------------------------------------------------
-    // Private Methods: Remove from junction tables
-    // -------------------------------------------------------------------------
-
     /**
      * Removes from database junction tables all given array of subjects removal junction data.
 
@@ -980,84 +1068,5 @@ export class SubjectOperationExecutor {
 
         await Promise.all(removePromises);
     } */
-
-    // -------------------------------------------------------------------------
-    // Private Methods: Refresh entity values after persistence
-    // -------------------------------------------------------------------------
-
-    /**
-     * Updates all special columns of the saving entities (create date, update date, versioning).
-     */
-    private updateSpecialColumnsInPersistedEntities() {
-
-        // update entity columns that gets updated on each entity insert
-        this.insertSubjects.forEach(subject => {
-            // if (subject.generatedObjectId && subject.metadata.objectIdColumn)
-            //     subject.metadata.objectIdColumn.setEntityValue(subject.entity, subject.generatedObjectId);
-
-            if (subject.generatedMap) {
-                subject.metadata.generatedColumns.forEach(generatedColumn => {
-                    const generatedValue = generatedColumn.getEntityValue(subject.generatedMap!);
-                    if (!generatedValue)
-                        return;
-
-                    generatedColumn.setEntityValue(subject.entity!, generatedValue);
-                });
-            }
-            subject.metadata.primaryColumns.forEach(primaryColumn => {
-                if (subject.parentGeneratedId)
-                    primaryColumn.setEntityValue(subject.entity!, subject.parentGeneratedId);
-            });
-
-            if (subject.metadata.updateDateColumn)
-                subject.metadata.updateDateColumn.setEntityValue(subject.entity!, subject.date);
-            if (subject.metadata.createDateColumn)
-                subject.metadata.createDateColumn.setEntityValue(subject.entity!, subject.date);
-            if (subject.metadata.versionColumn)
-                subject.metadata.versionColumn.setEntityValue(subject.entity!, 1);
-            if (subject.metadata.treeLevelColumn) {
-                // const parentEntity = insertOperation.entity[metadata.treeParentMetadata.propertyName];
-                // const parentLevel = parentEntity ? (parentEntity[metadata.treeLevelColumn.propertyName] || 0) : 0;
-                subject.metadata.treeLevelColumn.setEntityValue(subject.entity!, subject.treeLevel);
-            }
-            /*if (subject.metadata.hasTreeChildrenCountColumn) {
-                 subject.entity[subject.metadata.treeChildrenCountColumn.propertyName] = 0;
-            }*/
-
-            // set values to "null" for nullable columns that did not have values
-            subject.metadata.columns
-                .filter(column => column.isNullable && !column.isVirtual)
-                .forEach(column => {
-                    const columnValue = column.getEntityValue(subject.entity!);
-                    if (columnValue === undefined)
-                        column.setEntityValue(subject.entity!, null);
-                });
-        });
-
-        // update special columns that gets updated on each entity update
-        this.updateSubjects.forEach(subject => {
-            if (subject.metadata.updateDateColumn)
-                subject.metadata.updateDateColumn.setEntityValue(subject.entity!, subject.date);
-            if (subject.metadata.versionColumn)
-                subject.metadata.versionColumn.setEntityValue(subject.entity!, subject.metadata.versionColumn.getEntityValue(subject.entity!) + 1);
-        });
-
-        // remove ids from the entities that were removed
-        this.removeSubjects
-            .filter(subject => !!subject.entity)
-            .forEach(subject => {
-                subject.metadata.primaryColumns.forEach(primaryColumn => {
-                    primaryColumn.setEntityValue(subject.entity!, undefined);
-                });
-            });
-
-        this.allSubjects
-            .filter(subject => !!subject.entity)
-            .forEach(subject => {
-                subject.metadata.relationIds.forEach(relationId => {
-                    relationId.setValue(subject.entity!);
-                });
-            });
-    }
 
 }

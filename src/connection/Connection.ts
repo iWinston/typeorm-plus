@@ -30,6 +30,7 @@ import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -73,6 +74,11 @@ export class Connection {
     readonly namingStrategy: NamingStrategyInterface;
 
     /**
+     * Used to broadcast ORM events.
+     */
+    readonly broadcaster: Broadcaster;
+
+    /**
      * Logger used to log orm events.
      */
     readonly logger: Logger;
@@ -104,6 +110,7 @@ export class Connection {
     constructor(options: ConnectionOptions) {
         this.name = options.name || "default";
         this.options = options;
+        this.broadcaster = new Broadcaster(this);
         this.logger = new LoggerFactory().create(this.options.logger, this.options.logging);
         this.driver = new DriverFactory().create(this);
         this.manager = new EntityManagerFactory().create(this);

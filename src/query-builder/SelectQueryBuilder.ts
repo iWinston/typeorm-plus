@@ -12,7 +12,6 @@ import {RelationIdLoader} from "./relation-id/RelationIdLoader";
 import {RelationIdMetadataToAttributeTransformer} from "./relation-id/RelationIdMetadataToAttributeTransformer";
 import {RelationCountLoader} from "./relation-count/RelationCountLoader";
 import {RelationCountMetadataToAttributeTransformer} from "./relation-count/RelationCountMetadataToAttributeTransformer";
-import {Broadcaster} from "../subscriber/Broadcaster";
 import {QueryBuilder} from "./QueryBuilder";
 import {ReadStream} from "../platform/PlatformTools";
 import {LockNotSupportedOnGivenDriverError} from "../error/LockNotSupportedOnGivenDriverError";
@@ -1608,7 +1607,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 throw new NoVersionOrUpdateDateColumnError(metadata.name);
         }
 
-        const broadcaster = new Broadcaster(this.connection);
+        const broadcaster = this.connection.broadcaster;
         const relationIdLoader = new RelationIdLoader(this.connection, queryRunner, this.expressionMap.relationIdAttributes);
         const relationCountLoader = new RelationCountLoader(this.connection, queryRunner, this.expressionMap.relationCountAttributes);
         const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);

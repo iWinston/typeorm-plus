@@ -148,19 +148,8 @@ export class Subject {
     }
 
     /**
-     * Validates this subject for errors.
-     * Subject cannot be at the same time inserted and updated, removed and inserted, removed and updated.
      */
     validate() {
-        if (this.mustBeInserted && this.mustBeRemoved)
-            throw new Error(`Removed entity ${this.metadata.name} is also scheduled for insert operation. This looks like ORM problem. Please report a github issue.`);
-
-        if (this.mustBeUpdated && this.mustBeRemoved)
-            throw new Error(`Removed entity "${this.metadata.name}" is also scheduled for update operation. ` +
-                `Make sure you are not updating and removing same object (note that update or remove may be executed by cascade operations).`);
-
-        if (this.mustBeInserted && this.mustBeUpdated)
-            throw new Error(`Inserted entity ${this.metadata.name} is also scheduled for updated operation. This looks like ORM problem. Please report a github issue.`);
     }
 
     /**

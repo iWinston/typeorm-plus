@@ -2,7 +2,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SaveOptions} from "../repository/SaveOptions";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {MustBeEntityError} from "../error/MustBeEntityError";
-import {SubjectOperationExecutor} from "./SubjectOperationExecutor";
+import {SubjectExecutor} from "./SubjectExecutor";
 import {CannotDetermineEntityError} from "../error/CannotDetermineEntityError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
@@ -13,6 +13,7 @@ import {OneToOneInverseSideOperationBuilder} from "./operation-builder/OneToOneI
 import {ManyToManyOperationBuilder} from "./operation-builder/ManyToManyOperationBuilder";
 import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
 import {CascadeSubjectsBuilder} from "./CascadeSubjectsBuilder";
+import {SubjectValidator} from "./SubjectValidator";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -109,11 +110,11 @@ export class EntityPersitor {
             try {
 
                 // we create subject operation executors for all passed entities
-                const executors: SubjectOperationExecutor[] = [];
+                const executors: SubjectExecutor[] = [];
                 if (this.entity instanceof Array) {
-                    executors.push(...await Promise.all(this.entity.map(entity => this.createSubjectOperationExecutor(queryRunner, entity))));
+                    executors.push(...await Promise.all(this.entity.map(entity => this.createSubjectExecutor(queryRunner, entity))));
                 } else {
-                    executors.push(await this.createSubjectOperationExecutor(queryRunner, this.entity));
+                    executors.push(await this.createSubjectExecutor(queryRunner, this.entity));
                 }
 
                 // make sure we have at least one executable operation before we create a transaction and proceed
@@ -170,19 +171,23 @@ export class EntityPersitor {
     /**
      *
      */
-    protected async createSubjectOperationExecutor(queryRunner: QueryRunner, entity: ObjectLiteral) {
+    protected async createSubjectExecutor(queryRunner: QueryRunner, entity: ObjectLiteral) {
         const entityTarget = this.target ? this.target : entity.constructor;
         if (entityTarget === Object)
             throw new CannotDetermineEntityError(this.mode);
 
         const metadata = this.connection.getMetadata(entityTarget);
+        let subjects: Subject[] = [];
         if (this.mode === "save") {
-            const operateSubjects = await this.save(queryRunner, metadata, entity);
-            return new SubjectOperationExecutor(queryRunner, operateSubjects);
+            subjects = await this.save(queryRunner, metadata, entity);
         } else { // remove
-            const operateSubjects = await this.remove(queryRunner, metadata, entity);
-            return new SubjectOperationExecutor(queryRunner, operateSubjects);
+            subjects = await this.remove(queryRunner, metadata, entity);
         }
+
+        // validate all subjects
+        new SubjectValidator().validate(subjects);
+
+        return new SubjectExecutor(queryRunner, subjects);
     }
 
     /**
