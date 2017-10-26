@@ -10,7 +10,7 @@ export interface TableIndexOptions {
     /**
      * Constraint name.
      */
-    name: string;
+    name?: string;
 
     /**
      * Columns included in this index.
@@ -20,6 +20,6 @@ export interface TableIndexOptions {
     /**
      * Indicates if this index is unique.
      */
-    isUnique: boolean;
+    isUnique?: boolean;
 
 }

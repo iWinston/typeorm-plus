@@ -333,6 +333,21 @@ export class PostgresQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(tablePath: string): Promise<Table|undefined> {
@@ -510,6 +525,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tablePath: string): Promise<boolean> {
@@ -520,20 +542,25 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     }
 
     /**
-     * Creates a database if it's not created.
+     * Creates a new database.
      * Postgres does not supports database creation inside a transaction block.
      */
-    createDatabase(database: string): Promise<void[]> {
-        return Promise.resolve([]);
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        await Promise.resolve();
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    async createSchema(schemas: string[]): Promise<void[]> {
-        if (this.driver.options.schema)
-            schemas.push(this.driver.options.schema);
-        return Promise.all(schemas.map(schema => this.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`)));
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schema: string): Promise<void> {
+        await this.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
     }
 
     /**
@@ -553,6 +580,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
         const table = tableOrPath instanceof Table ? tableOrPath : await this.getTable(tableOrPath);
         const down = this.createTableSql(table!);
         await this.schemaQuery(up, down);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        // TODO
     }
 
     /**
@@ -812,10 +846,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-
-        const up = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTablePath(table)}(${columnNames})`;
+        const up = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTablePath(tableName)}(${columnNames})`;
         const down = `-- TODO: revert ${up}`;
         await this.schemaQuery(up, down); // TODO: Add revert logic
     }
@@ -831,9 +865,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     }
 
     /**
-     * Truncates table.
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async truncate(tablePath: string): Promise<void> {
+    async clearTable(tablePath: string): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapeTablePath(tablePath)}`);
     }
 
@@ -882,6 +917,13 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     disableSqlMemory(): void {
         this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        this.sqlInMemory = new SqlInMemory();
     }
 
     /**

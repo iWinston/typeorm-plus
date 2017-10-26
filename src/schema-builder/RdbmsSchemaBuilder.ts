@@ -14,6 +14,10 @@ import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUtils} from "./util/TableUtils";
 import {TableColumnOptions} from "./options/TableColumnOptions";
 import {TablePrimaryKeyOptions} from "./options/TablePrimaryKeyOptions";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -129,7 +133,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 databases.push(metadata.database);
         });
 
-        await Promise.all(databases.map(database => this.queryRunner.createDatabase(database!)));
+        await Promise.all(databases.map(database => this.queryRunner.createDatabase(database!, true)));
     }
 
     /**
@@ -145,7 +149,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 if (!existSchemaPath)
                     schemaPaths.push(entityMetadata.schemaPath!);
             });
-        await this.queryRunner.createSchema(schemaPaths);
+
+        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof SqlServerDriver) {
+            const schema = (<PostgresConnectionOptions|SqlServerConnectionOptions>this.connection.driver.options).schema;
+            if (schema)
+                schemaPaths.push(schema);
+        }
+        schemaPaths.forEach(schemaPath => this.queryRunner.createSchema(schemaPath));
 
         await this.dropOldForeignKeys();
         // await this.dropOldIndexes();
@@ -179,9 +189,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return;
 
             this.connection.logger.logSchemaBuild(`dropping old foreign keys of ${table.name}: ${tableForeignKeysToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
-
-            // remove foreign keys from the table
-            table.removeForeignKeys(tableForeignKeysToDrop);
 
             // drop foreign keys from the database
             await this.queryRunner.dropForeignKeys(table, tableForeignKeysToDrop);
@@ -240,10 +247,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             }));*/
 
             this.connection.logger.logSchemaBuild(`columns dropped in ${table.name}: ` + droppedTableColumns.map(column => column.name).join(", "));
-
-            // remove columns from the table and primary keys of it if its used in the primary keys
-            table.removeColumns(droppedTableColumns);
-            // table.removePrimaryKeyOfColumns(droppedTableColumns); TODO check it
 
             // drop columns from the database
             await this.queryRunner.dropColumns(table, droppedTableColumns);
@@ -390,7 +393,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata, table));
             this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
-            table.addForeignKeys(dbForeignKeys); // TODO remove, it will done in createForeignKey method
         });
     }
 
@@ -422,7 +424,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 .map(async tableIndex => {
                     this.connection.logger.logSchemaBuild(`dropping an index: ${tableIndex.name}`);
                     table.removeIndex(tableIndex);
-                    await this.queryRunner.dropIndex(metadata.tablePath, tableIndex.name);
+                    await this.queryRunner.dropIndex(metadata.tablePath, tableIndex);
                 });
 
             await Promise.all(dropQueries);
@@ -505,7 +507,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
         const tableForeignKeys = dependForeignKeyInTable.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata, table));
-        table.removeForeignKeys(tableForeignKeys);
         await this.queryRunner.dropForeignKeys(table, tableForeignKeys);
     }
 

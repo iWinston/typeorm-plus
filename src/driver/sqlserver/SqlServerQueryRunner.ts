@@ -13,7 +13,6 @@ import {ReadStream} from "../../platform/PlatformTools";
 import {MssqlParameter} from "./MssqlParameter";
 import {OrmUtils} from "../../util/OrmUtils";
 import {QueryFailedError} from "../../error/QueryFailedError";
-import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
 import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
 import {TableUnique} from "../../schema-builder/table/TableUnique";
@@ -22,8 +21,6 @@ import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 
 /**
  * Runs queries on a single mysql database connection.
- *
- * todo: create BaseQueryRunner
  */
 export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
@@ -146,75 +143,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 ok();
             });
         });
-    }
-
-    protected mssqlParameterToNativeParameter(parameter: MssqlParameter): any {
-        switch (this.driver.normalizeType({ type: parameter.type as any })) {
-            case "bit":
-                return this.driver.mssql.Bit;
-            case "bigint":
-                return this.driver.mssql.BigInt;
-            case "decimal":
-                return this.driver.mssql.Decimal(...parameter.params);
-            case "float":
-                return this.driver.mssql.Float;
-            case "int":
-                return this.driver.mssql.Int;
-            case "money":
-                return this.driver.mssql.Money;
-            case "numeric":
-                return this.driver.mssql.Numeric(...parameter.params);
-            case "smallint":
-                return this.driver.mssql.SmallInt;
-            case "smallmoney":
-                return this.driver.mssql.SmallMoney;
-            case "real":
-                return this.driver.mssql.Real;
-            case "tinyint":
-                return this.driver.mssql.TinyInt;
-            case "char":
-                return this.driver.mssql.Char(...parameter.params);
-            case "nchar":
-                return this.driver.mssql.NChar(...parameter.params);
-            case "text":
-                return this.driver.mssql.Text;
-            case "ntext":
-                return this.driver.mssql.Ntext;
-            case "varchar":
-                return this.driver.mssql.VarChar(...parameter.params);
-            case "nvarchar":
-                return this.driver.mssql.NVarChar(...parameter.params);
-            case "xml":
-                return this.driver.mssql.Xml;
-            case "time":
-                return this.driver.mssql.Time(...parameter.params);
-            case "date":
-                return this.driver.mssql.Date;
-            case "datetime":
-                return this.driver.mssql.DateTime;
-            case "datetime2":
-                return this.driver.mssql.DateTime2(...parameter.params);
-            case "datetimeoffset":
-                return this.driver.mssql.DateTimeOffset(...parameter.params);
-            case "smalldatetime":
-                return this.driver.mssql.SmallDateTime;
-            case "uniqueidentifier":
-                return this.driver.mssql.UniqueIdentifier;
-            case "variant":
-                return this.driver.mssql.Variant;
-            case "binary":
-                return this.driver.mssql.Binary;
-            case "varbinary":
-                return this.driver.mssql.VarBinary(...parameter.params);
-            case "image":
-                return this.driver.mssql.Image;
-            case "udt":
-                return this.driver.mssql.UDT;
-            case "geography":
-                return this.driver.mssql.Geography;
-            case "geometry":
-                return this.driver.mssql.Geometry;
-        }
     }
 
     /**
@@ -435,6 +363,24 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        const result = await this.query(`EXEC sp_databases`) as any[];
+        return result.map(db => db["DATABASE_NAME"]);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        const query = database ? `SELECT * from ${database}.sys.schemas` : `SELECT * from sys.schemas`;
+        const result = await this.query(query) as any[];
+        return result.map(schema => schema["name"]);
+    }
+
+    /**
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
@@ -444,51 +390,66 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        const result = await this.query(`SELECT SCHEMA_ID('${schema}') as schema_id`);
+        const schemaId = result[0]["schema_id"];
+        return !!schemaId;
+    }
+
+    // todo: escape everything everywhere
+
+    /**
      * Checks if table with the given name exist in the database.
      */
-    async hasTable(target: Table|string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(target);
+    async hasTable(tableOrName: Table|string): Promise<boolean> {
+        const parsedTableName = this.parseTableName(tableOrName);
         const sql = `SELECT * FROM ${parsedTableName.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTableName.schema}' AND TABLE_SCHEMA = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
 
     /**
-     * Creates a database if it's not created.
+     * Creates a new database.
      */
-    createDatabase(database: string): Promise<void[]> {
-        return this.query(`IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}`);
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        const up = ifNotExist ? `IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}` : `CREATE DATABASE ${database}`;
+        const down = ifNotExist ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE ${database}` : `DROP DATABASE ${database}`;
+        await this.executeQueries(up, down);
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemaPaths: string[]): Promise<void[]> {
-        if (this.driver.options.schema)
-            schemaPaths.push(this.driver.options.schema);
-
-        return PromiseUtils.runInSequence(schemaPaths, async path => {
-            if (path.indexOf(".") === -1) {
-                const query = `IF SCHEMA_ID('${path}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${path}' END`;
-                return this.query(query);
-            } else {
-                const dbName = path.split(".")[0];
-                const schema = path.split(".")[1];
-                const currentDB = await this.getCurrentDatabase();
-                await this.query(`USE ${dbName}`);
-                const query = `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schema}' END`;
-                await this.query(query);
-                return this.query(`USE ${currentDB}`);
-            }
-        });
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        const down = ifExist ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE ${database}` : `DROP DATABASE ${database}`;
+        const up = ifExist ? `IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}` : `CREATE DATABASE ${database}`;
+        await this.executeQueries(up, down);
     }
 
     /**
-     * Creates a new table from the given Table metadata and column metadatas.
-     * "skipForeignKeys" and "skipIndices" flags needs because in RdbmsSchemaBuilder create/drop operations of this constraints
-     * runs in separated methods. But when we call "createTable" method directly, we need to create all user specified constraints.
+     * Creates table schema.
      */
-    async createTable(table: Table, ifNotExist?: boolean, skipForeignKeys?: boolean, skipIndices?: boolean): Promise<void> {
+    async createSchema(schemaPath: string): Promise<void> {
+        if (schemaPath.indexOf(".") === -1) {
+            const query = `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schemaPath}' END`;
+            await this.query(query);
+        } else {
+            const dbName = schemaPath.split(".")[0];
+            const schema = schemaPath.split(".")[1];
+            const currentDB = await this.getCurrentDatabase();
+            await this.query(`USE ${dbName}`);
+            const query = `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schema}' END`;
+            await this.query(query);
+            await this.query(`USE ${currentDB}`);
+        }
+    }
+
+    /**
+     * Creates a new table.
+     */
+    async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true, createIndices: boolean = true): Promise<void> {
         if (ifNotExist) {
             const isTableExist = await this.hasTable(table);
             if (isTableExist) return Promise.resolve();
@@ -496,53 +457,66 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        upQueries.push(this.createTableSql(table, skipForeignKeys));
+        upQueries.push(this.createTableSql(table, createForeignKeys));
+        downQueries.push(this.dropTableSql(table));
 
         // if skipForeignKeys is true, we just drop the table, otherwise we also drop table foreign keys.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
-        if (skipForeignKeys) {
-            downQueries.push(this.dropTableSql(table));
-        } else {
-            downQueries.push(this.dropTableSql(table));
+        if (createForeignKeys)
             table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
+
+        if (createIndices) {
+            table.indices.forEach(index => {
+                upQueries.push(this.createIndexSql(table, index));
+                downQueries.push(this.dropIndexSql(table, index));
+            });
         }
 
-        if (!skipIndices) {
-            table.indices.forEach(index => upQueries.push(this.createIndexSql(table, index)));
-            table.indices.forEach(index => downQueries.push(this.dropIndexSql(table, index)));
-        }
-
-        await this.schemaQuery(upQueries, downQueries);
+        await this.executeQueries(upQueries, downQueries);
     }
 
     /**
      * Drops the table.
-     * "skipForeignKeys" and "skipIndices" flags needs because in RdbmsSchemaBuilder create/drop operations of this constraints
-     * runs in separated methods. But when we call "dropTable" method directly, we need to create all user specified constraints.
+     *
+     * todo: think to create options and move skips there
      */
-    async dropTable(target: Table|string, ifExist?: boolean, skipForeignKeys?: boolean, skipIndices?: boolean): Promise<void> {
+    async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+        // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query and vice versa
+        const createForeignKeys: boolean = dropForeignKeys;
         const tableName = target instanceof Table ? target.name : target;
         const table = await this.getCachedTable(tableName);
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        if (!skipIndices) {
-            table.indices.forEach(index => upQueries.push(this.dropIndexSql(table, index)));
-            table.indices.forEach(index => downQueries.push(this.createIndexSql(table, index)));
+        if (dropIndices) {
+            table.indices.forEach(index => {
+                upQueries.push(this.dropIndexSql(table, index));
+                downQueries.push(this.createIndexSql(table, index));
+            });
         }
 
         // if skipForeignKeys is true, we just drop the table, otherwise we also drop table foreign keys.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
-        if (skipForeignKeys) {
-            upQueries.push(this.dropTableSql(table));
-        } else {
+        if (dropForeignKeys)
             table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
-            upQueries.push(this.dropTableSql(table));
-        }
 
-        downQueries.push(this.createTableSql(table, skipForeignKeys));
+        upQueries.push(this.dropTableSql(table));
+        downQueries.push(this.createTableSql(table, createForeignKeys));
 
-        await this.schemaQuery(upQueries, downQueries);
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        const oldTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
+        const newTableName = newTableOrName instanceof Table ? newTableOrName.name : newTableOrName;
+
+        const up = `EXEC sp_rename '${this.escapeTableName(oldTableName, true)}', '${newTableName}'`;
+        const down = `EXEC sp_rename '${this.escapeTableName(newTableName, true)}', '${oldTableName}'`;
+
+        await this.executeQueries(up, down);
     }
 
     /**
@@ -600,12 +574,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (column.default !== null && column.default !== undefined) {
             const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
-            column.default = this.driver.normalizeDefault(column.default);
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${column.default} FOR "${column.name}"`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${defaultName}"`);
         }
 
-        await this.schemaQuery(upQueries, downQueries);
+        await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
         this.replaceCachedTable(clonedTable);
@@ -623,25 +596,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Renames column in the given table.
      */
     async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        if (!table)
-            throw new Error(`Table ${tableOrName} was not found.`);
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const oldColumnName = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName.name : oldTableColumnOrName;
+        const newColumnName = newTableColumnOrName instanceof TableColumn ? newTableColumnOrName.name : newTableColumnOrName;
 
-        const oldColumn = oldTableColumnOrName instanceof TableColumn
-            ? oldTableColumnOrName
-            : table.columns.find(column => column.name === oldTableColumnOrName);
-        if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+        const up = `EXEC sp_rename '${this.escapeTableName(tableName, true)}.${oldColumnName}', '${newColumnName}', 'COLUMN'`;
+        const down = `EXEC sp_rename '${this.escapeTableName(tableName, true)}.${newColumnName}', '${oldColumnName}', 'COLUMN'`;
 
-        let newColumn: TableColumn|undefined = undefined;
-        if (newTableColumnOrName instanceof TableColumn) {
-            newColumn = newTableColumnOrName;
-        } else {
-            newColumn = oldColumn.clone();
-            newColumn.name = newTableColumnOrName;
-        }
-
-        return this.changeColumn(table, oldColumn, newColumn);
+        await this.executeQueries(up, down);
     }
 
     /**
@@ -659,7 +621,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        // to update an identity column we have to drop column and recreate it again
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
             throw new Error(`Changing column's "isGenerated" property is not supported. Drop column and recreate it with a new "isGenerated" property instead.`);
 
@@ -737,7 +698,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             }
         }
 
-        await this.schemaQuery(upQueries, downQueries);
+        await this.executeQueries(upQueries, downQueries);
+        this.replaceCachedTable(clonedTable);
     }
 
     /**
@@ -792,7 +754,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, false, true)}`);
 
-        await this.schemaQuery(upQueries, downQueries);
+        await this.executeQueries(upQueries, downQueries);
 
         table.removeColumn(column);
         this.replaceCachedTable(clonedTable);
@@ -833,9 +795,11 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        const up = this.createForeignKeySql(tableOrName, foreignKey);
-        const down = this.dropForeignKeySql(tableOrName, foreignKey);
-        await this.schemaQuery(up, down);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const up = this.createForeignKeySql(table, foreignKey);
+        const down = this.dropForeignKeySql(table, foreignKey);
+        await this.executeQueries(up, down);
+        table.addForeignKey(foreignKey);
     }
 
     /**
@@ -857,7 +821,8 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
-        await this.schemaQuery(up, down);
+        await this.executeQueries(up, down);
+        table.removeForeignKey(foreignKey);
     }
 
     /**
@@ -872,9 +837,11 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      * Creates a new index.
      */
     async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
-        const up = this.createIndexSql(tableOrName, index);
-        const down = this.dropIndexSql(tableOrName, index);
-        await this.schemaQuery(up, down);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const up = this.createIndexSql(table, index);
+        const down = this.dropIndexSql(table, index);
+        await this.executeQueries(up, down);
+        table.addIndex(index);
     }
 
     /**
@@ -888,21 +855,52 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
-        await this.schemaQuery(up, down);
+        await this.executeQueries(up, down);
+        table.removeIndex(index);
     }
 
     /**
-     * Truncates table.
-     * This operation can't be reverted.
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async truncate(tablePath: string): Promise<void> {
+    async clearTable(tablePath: string): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapeTableName(tablePath)}`);
     }
 
     /**
      * Removes all tables from the currently connected database.
      */
-    async clearDatabase(schemas?: string[], database?: string): Promise<void> {
+    async clearDatabase(): Promise<void> {
+        await this.startTransaction();
+        try {
+            let allTablesSql = `SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`;
+            const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
+            await Promise.all(allTablesResults.map(async tablesResult => {
+                const dropForeignKeySql = `SELECT 'ALTER TABLE "' + OBJECT_SCHEMA_NAME(fk.parent_object_id) + '"."' + OBJECT_NAME(fk.parent_object_id) + '" DROP CONSTRAINT "' + fk.name + '"' as query FROM sys.foreign_keys AS fk WHERE fk.referenced_object_id = object_id('"${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
+                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
+                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => {
+                    return this.query(dropQuery);
+                }));
+            }));
+            await Promise.all(allTablesResults.map(tablesResult => {
+                const dropTableSql = `DROP TABLE "${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
+                return this.query(dropTableSql);
+            }));
+
+            await this.commitTransaction();
+
+        } catch (error) {
+            try { // we throw original error even if rollback thrown an error
+                await this.rollbackTransaction();
+            } catch (rollbackError) { }
+            throw error;
+        }
+    }
+
+    /**
+     * Removes all tables from the currently connected database.
+     */
+    /*async clearDatabase(schemas?: string[], database?: string): Promise<void> {
         const isDatabaseExist = await this.hasDatabase(database!);
         if (!isDatabaseExist)
             return Promise.resolve();
@@ -938,7 +936,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
             } catch (rollbackError) { }
             throw error;
         }
-    }
+    }*/
 
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -1040,7 +1038,14 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                 `INNER JOIN ${dbName}.sys.tables t ON ind.object_id = t.object_id ` +
                 `WHERE ind.is_primary_key = 0 AND ind.is_unique_constraint = 0 AND t.is_ms_shipped = 0`;
         }).join(" UNION ALL ");
-        const [dbTables, dbColumns, dbConstraints, dbForeignKeys, dbIdentityColumns, dbIndices]: ObjectLiteral[][] = await Promise.all([
+        const [
+            dbTables,
+            dbColumns,
+            dbConstraints,
+            dbForeignKeys,
+            dbIdentityColumns,
+            dbIndices
+        ]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(constraintsSql),
@@ -1106,7 +1111,6 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                     tableColumn.isUnique = isUnique;
                     tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"];
-                    tableColumn.comment = ""; // todo: less priority, implement this later
 
                     if (tableColumn.type === "datetime2" || tableColumn.type === "time" || tableColumn.type === "datetimeoffset") {
                         tableColumn.precision = dbColumn["DATETIME_PRECISION"];
@@ -1128,19 +1132,19 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                 });
             }
 
-            table.uniques = dbConstraints
-                .filter(dbConstraint => {
-                    const isUniqueExist = !!table.uniques.find(u => u.name === dbConstraint["CONSTRAINT_NAME"]);
-                    return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                        && dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE" && !isUniqueExist;
-                })
-                .map(dbConstraint => {
-                    const uniques = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === dbConstraint["CONSTRAINT_NAME"]);
-                    return new TableUnique({
-                        name: dbConstraint["CONSTRAINT_NAME"],
-                        columnNames: uniques.map(u => u["COLUMN_NAME"])
-                    });
+            // find unique constraints of table, group them by constraint name and return new TableUnique.
+            const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
+                return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
+                    && dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
+            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
+
+            table.uniques = tableUniqueConstraints.map(constraint => {
+                const uniques = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                return new TableUnique({
+                    name: constraint["CONSTRAINT_NAME"],
+                    columnNames: uniques.map(u => u["COLUMN_NAME"])
                 });
+            });
 
             table.checks = dbConstraints
                 .filter(dbConstraint => {
@@ -1174,31 +1178,20 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                     });
                 });
 
-            // create index schemas from the loaded indices
-            table.indices = dbIndices
-                .filter(dbIndex => this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["TABLE_SCHEMA"], dbIndex["TABLE_CATALOG"]) === tableFullName
-                    && (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]))
-                    && (table.primaryKey && !table.primaryKey.name === dbIndex["INDEX_NAME"]))
-                .map(dbIndex => dbIndex["INDEX_NAME"])
-                .filter((value, index, self) => self.indexOf(value) === index) // unqiue
-                .map(dbIndexName => {
-                    const columnNames = dbIndices
-                        .filter(dbIndex => this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["TABLE_SCHEMA"], dbIndex["TABLE_CATALOG"]) === tableFullName && dbIndex["INDEX_NAME"] === dbIndexName)
-                        .map(dbIndex => dbIndex["COLUMN_NAME"]);
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => {
+                return this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["TABLE_SCHEMA"], dbIndex["TABLE_CATALOG"]) === tableFullName;
+            }), dbIndex => dbIndex["INDEX_NAME"]);
 
-                    const isUnique = !!dbIndices.find(dbIndex => {
-                        return this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["TABLE_SCHEMA"], dbIndex["TABLE_CATALOG"]) === tableFullName
-                            && dbIndex["INDEX_NAME"] === dbIndexName
-                            && dbIndex["IS_UNIQUE"] === true;
-                    });
-
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: dbIndexName,
-                        columnNames: columnNames,
-                        isUnique: isUnique
-                    });
+            table.indices = tableIndexConstraints.map(constraint => {
+                const indices = dbIndices.filter(index => index["INDEX_NAME"] === constraint["INDEX_NAME"]);
+                return new TableIndex(<TableIndexOptions>{
+                    table: table,
+                    name: constraint["INDEX_NAME"],
+                    columnNames: indices.map(i => i["COLUMN_NAME"]),
+                    isUnique: constraint["IS_UNIQUE"]
                 });
+            });
 
             return table;
         }));
@@ -1207,7 +1200,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     /**
      * Builds and returns SQL for create table.
      */
-    protected createTableSql(table: Table, skipForeignKeys?: boolean): string {
+    protected createTableSql(table: Table, createForeignKeys?: boolean): string {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, false, true)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
 
@@ -1222,24 +1215,32 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
         table.uniques.push(...uniqueColumns);
 
         if (table.uniques.length > 0) {
-            sql += table.uniques.map(unique => {
+            const uniquesSql = table.uniques.map(unique => {
+                const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table.name, unique.columnNames);
                 const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
-                return `, CONSTRAINT "${unique.name}" UNIQUE (${columnNames})`;
-            });
+                return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+            }).join(", ");
+
+            sql += `, ${uniquesSql}`;
         }
 
-        if (table.foreignKeys.length > 0 && !skipForeignKeys) {
-            sql += table.foreignKeys.map(fk => {
+        if (table.foreignKeys.length > 0 && createForeignKeys) {
+            const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
+                if (!fk.name)
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
-                let constraint = `, CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName} (${referencedColumnNames})"`;
+
+                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapeTableName(fk.referencedTableName)} (${referencedColumnNames})`;
                 if (fk.onDelete)
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)
                     constraint += ` ON UPDATE ${fk.onUpdate}`;
 
                 return constraint;
-            });
+            }).join(", ");
+
+            sql += `, ${foreignKeysSql}`;
         }
 
         const primaryColumns = table.columns.filter(column => column.isPrimary);
@@ -1264,26 +1265,31 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     /**
      * Builds create index sql.
      */
-    protected createIndexSql(tableOrName: Table|string, index: TableIndex): string {
+    protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(tableOrName)}(${columns})`;
+        if (!index.name)
+            index.name = this.connection.namingStrategy.indexName(index.name, table.name, index.columnNames);
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)}(${columns})`;
     }
 
     /**
      * Builds drop index sql.
      */
-    protected dropIndexSql(tableOrName: Table|string, indexOrName: TableIndex|string): string {
-        const indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return `DROP INDEX "${indexName}" ON ${this.escapeTableName(tableOrName)}`;
+    protected dropIndexSql(table: Table, indexOrName: TableIndex|string): string {
+        let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
+        return `DROP INDEX "${indexName}" ON ${this.escapeTableName(table)}`;
     }
 
     /**
      * Builds create foreign key sql.
      */
-    protected createForeignKeySql(tableOrPath: Table|string, foreignKey: TableForeignKey): string {
+    protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): string {
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
+        const fkName = foreignKey.name
+            ? foreignKey.name
+            : this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-        let sql = `ALTER TABLE ${this.escapeTableName(tableOrPath)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
+        let sql = `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${fkName}" FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
         if (foreignKey.onDelete)
             sql += ` ON DELETE ${foreignKey.onDelete}`;
@@ -1296,9 +1302,9 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     /**
      * Builds drop foreign key sql.
      */
-    protected dropForeignKeySql(tableOrPath: Table|string, foreignKeyOrName: TableForeignKey|string): string {
+    protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): string {
         const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
-        return `ALTER TABLE ${this.escapeTableName(tableOrPath)} DROP CONSTRAINT "${foreignKeyName}"`;
+        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${foreignKeyName}"`;
     }
 
     /**
@@ -1368,8 +1374,6 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
             c += " NOT NULL";
         if (column.isGenerated === true && column.generationStrategy === "increment" && !skipIdentity) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " IDENTITY(1,1)";
-        if (column.comment)
-            c += " COMMENT '" + column.comment + "'";
         if (column.default !== undefined && column.default !== null && createDefault)
             c += " DEFAULT " + column.default;
         if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
@@ -1377,5 +1381,76 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
         return c;
     }
 
+    /**
+     * Converts MssqlParameter into real mssql parameter type.
+     */
+    protected mssqlParameterToNativeParameter(parameter: MssqlParameter): any {
+        switch (this.driver.normalizeType({ type: parameter.type as any })) {
+            case "bit":
+                return this.driver.mssql.Bit;
+            case "bigint":
+                return this.driver.mssql.BigInt;
+            case "decimal":
+                return this.driver.mssql.Decimal(...parameter.params);
+            case "float":
+                return this.driver.mssql.Float;
+            case "int":
+                return this.driver.mssql.Int;
+            case "money":
+                return this.driver.mssql.Money;
+            case "numeric":
+                return this.driver.mssql.Numeric(...parameter.params);
+            case "smallint":
+                return this.driver.mssql.SmallInt;
+            case "smallmoney":
+                return this.driver.mssql.SmallMoney;
+            case "real":
+                return this.driver.mssql.Real;
+            case "tinyint":
+                return this.driver.mssql.TinyInt;
+            case "char":
+                return this.driver.mssql.Char(...parameter.params);
+            case "nchar":
+                return this.driver.mssql.NChar(...parameter.params);
+            case "text":
+                return this.driver.mssql.Text;
+            case "ntext":
+                return this.driver.mssql.Ntext;
+            case "varchar":
+                return this.driver.mssql.VarChar(...parameter.params);
+            case "nvarchar":
+                return this.driver.mssql.NVarChar(...parameter.params);
+            case "xml":
+                return this.driver.mssql.Xml;
+            case "time":
+                return this.driver.mssql.Time(...parameter.params);
+            case "date":
+                return this.driver.mssql.Date;
+            case "datetime":
+                return this.driver.mssql.DateTime;
+            case "datetime2":
+                return this.driver.mssql.DateTime2(...parameter.params);
+            case "datetimeoffset":
+                return this.driver.mssql.DateTimeOffset(...parameter.params);
+            case "smalldatetime":
+                return this.driver.mssql.SmallDateTime;
+            case "uniqueidentifier":
+                return this.driver.mssql.UniqueIdentifier;
+            case "variant":
+                return this.driver.mssql.Variant;
+            case "binary":
+                return this.driver.mssql.Binary;
+            case "varbinary":
+                return this.driver.mssql.VarBinary(...parameter.params);
+            case "image":
+                return this.driver.mssql.Image;
+            case "udt":
+                return this.driver.mssql.UDT;
+            case "geography":
+                return this.driver.mssql.Geography;
+            case "geometry":
+                return this.driver.mssql.Geometry;
+        }
+    }
 
 }

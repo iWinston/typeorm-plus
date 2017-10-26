@@ -213,6 +213,21 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(tableName: string): Promise<Table|undefined> {
@@ -294,7 +309,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                         }
                     }
                 }
-                const columnForeignKeys = dbForeignKeys
+                table.foreignKeys = dbForeignKeys
                     .filter(foreignKey => foreignKey["from"] === dbColumn["name"])
                     .map(foreignKey => {
                         // const keyName = this.driver.namingStrategy.foreignKeyName(dbTable["name"], [foreignKey["from"]], foreignKey["table"], [foreignKey["to"]]);
@@ -309,7 +324,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                             onDelete: foreignKey["on_delete"]
                         }); // todo: how sqlite return from and to when they are arrays? (multiple column foreign keys)
                     });
-                table.addForeignKeys(columnForeignKeys);
+                // table.addForeignKeys(columnForeignKeys); // todo: why ?
                 return tableColumn;
             });
 
@@ -385,6 +400,13 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        throw new Error(`This driver does not support table schemas`);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
@@ -394,17 +416,24 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a database if it's not created.
+     * Creates a new database.
      */
-    createDatabase(database: string): Promise<void[]> {
-        return Promise.resolve([]);
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
-        return Promise.resolve([]);
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schema: string): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
@@ -424,6 +453,13 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
         const table = await this.getTable(tableName as string);
         const down = this.createTableSql(table!);
         await this.schemaQuery(up, down);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        // TODO
     }
 
     /**
@@ -542,11 +578,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
         const updatingTable = table!.clone();
-        updatingTable.removeColumns(columns);
+        columns.forEach(column => updatingTable.removeColumn(column));
         await this.recreateTable(updatingTable);
 
         const newTable = table!.clone();
-        newTable.addColumns(columns);
+        columns.forEach(column => newTable.addColumn(column));
         await this.recreateTable(newTable, table!, false);
     }
 
@@ -570,7 +606,7 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
         const changedTable = table.clone();
-        changedTable.addForeignKeys(foreignKeys);
+        foreignKeys.forEach(foreignKey => changedTable.addForeignKey(foreignKey));
         await this.recreateTable(changedTable);
     }
 
@@ -587,31 +623,33 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const table = await this.getTableSchema(tableOrName);
         const changedTable = table.clone();
-        changedTable.removeForeignKeys(foreignKeys);
+        foreignKeys.forEach(foreignKey => table.removeForeignKey(foreignKey));
         await this.recreateTable(changedTable);
     }
 
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const columnNames = index.columnNames.map(columnName => `"${columnName}"`).join(",");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}"(${columnNames})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${tableName}"(${columnNames})`;
         await this.query(sql);
     }
 
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableSchemeOrName: Table|string, indexName: string): Promise<void> {
+    async dropIndex(tableOrName: Table|string, indexName: string): Promise<void> {
         const sql = `DROP INDEX "${indexName}"`;
         await this.query(sql);
     }
 
     /**
-     * Truncates table.
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async truncate(tableName: string): Promise<void> {
+    async clearTable(tableName: string): Promise<void> {
         await this.query(`DELETE FROM "${tableName}"`);
     }
 
@@ -656,6 +694,13 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     disableSqlMemory(): void {
         this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        this.sqlInMemory = new SqlInMemory();
     }
 
     /**

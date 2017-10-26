@@ -319,6 +319,21 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(tableName: string): Promise<Table|undefined> {
@@ -343,6 +358,13 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        throw new Error(`This driver does not support table schemas`);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrPath: Table|string): Promise<boolean> {
@@ -364,17 +386,24 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a database if it's not created.
+     * Creates a new database.
      */
-    createDatabase(database: string): Promise<void[]> {
-        return this.query(`CREATE DATABASE IF NOT EXISTS ${database}`); // todo(dima): IT SHOULD NOT EXECUTE "IF NOT EXIST" if user already has a database (privileges issue)
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        await this.query(`CREATE DATABASE IF NOT EXISTS ${database}`); // todo(dima): IT SHOULD NOT EXECUTE "IF NOT EXIST" if user already has a database (privileges issue)
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
-        return Promise.resolve([]);
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schema: string): Promise<void> {
+        await Promise.resolve();
     }
 
     /**
@@ -394,6 +423,13 @@ export class MysqlQueryRunner implements QueryRunner {
         const table = tableOrPath instanceof Table ? tableOrPath : await this.getTable(tableOrPath);
         const down = this.createTableSql(table!);
         return this.schemaQuery(up, down);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        // TODO
     }
 
     /**
@@ -575,10 +611,11 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const columns = index.columnNames.map(columnName => "`" + columnName + "`").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(table)}\`(${columns})`;
-        const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` DROP INDEX \`${index.name}\``;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON \`${this.escapeTablePath(tableName)}\`(${columns})`;
+        const revertSql = `ALTER TABLE \`${this.escapeTablePath(tableName)}\` DROP INDEX \`${index.name}\``;
         await this.schemaQuery(sql, revertSql);
     }
 
@@ -600,9 +637,10 @@ export class MysqlQueryRunner implements QueryRunner {
     }
 
     /**
-     * Truncates table.
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async truncate(tableOrPath: Table|string): Promise<void> {
+    async clearTable(tableOrPath: Table|string): Promise<void> {
         await this.query(`TRUNCATE TABLE \`${this.escapeTablePath(tableOrPath)}\``);
     }
 
@@ -611,11 +649,14 @@ export class MysqlQueryRunner implements QueryRunner {
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    async clearDatabase(schemas?: string[], database?: string): Promise<void> {
+    async clearDatabase(database?: string): Promise<void> {
+        if (!this.driver.database)
+            throw new Error(`Can not clear database. No database is specified`);
+
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`;') AS query FROM information_schema.tables WHERE table_schema = '${database}'`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`;') AS query FROM information_schema.tables WHERE table_schema = '${this.driver.database}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
             await this.query(disableForeignKeysCheckQuery);
@@ -651,6 +692,13 @@ export class MysqlQueryRunner implements QueryRunner {
     disableSqlMemory(): void {
         this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        this.sqlInMemory = new SqlInMemory();
     }
 
     /**

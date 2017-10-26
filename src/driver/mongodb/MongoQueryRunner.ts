@@ -446,6 +446,21 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(collectionName: string): Promise<Table|undefined> {
@@ -468,6 +483,13 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        throw new Error(`Check schema queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(collectionName: string): Promise<boolean> {
@@ -477,14 +499,21 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a database if it's not created.
      */
-    createDatabase(database: string): Promise<void[]> {
+    async createDatabase(database: string): Promise<void> {
         throw new Error(`Database create queries are not supported by MongoDB driver.`);
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Database drop queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schema: string): Promise<void> {
         throw new Error(`Schema create queries are not supported by MongoDB driver.`);
     }
 
@@ -499,6 +528,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops the table.
      */
     async dropTable(tableName: Table|string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -596,7 +632,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -610,7 +646,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops collection.
      */
-    async truncate(collectionName: string): Promise<void> {
+    async clearTable(collectionName: string): Promise<void> {
         await this.databaseConnection
             .dropCollection(collectionName);
     }
@@ -631,6 +667,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void {
+        throw new Error(`This operation is not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
         throw new Error(`This operation is not supported by MongoDB driver.`);
     }
 

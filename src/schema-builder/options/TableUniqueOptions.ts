@@ -10,7 +10,7 @@ export interface TableUniqueOptions {
     /**
      * Constraint name.
      */
-    name: string;
+    name?: string;
 
     /**
      * Columns that contains this constraint.

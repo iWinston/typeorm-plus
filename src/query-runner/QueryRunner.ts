@@ -11,11 +11,6 @@ import {SqlInMemory} from "../driver/SqlInMemory";
 
 /**
  * Runs queries on a single database connection.
- *
- * todo: extract schema build operations out of query runner.
- *
- * todo: add following methods:
- * - renameTable
  */
 export interface QueryRunner {
 
@@ -25,7 +20,7 @@ export interface QueryRunner {
     readonly connection: Connection;
 
     /**
-     * Isolated entity manager working only with current query runner.
+     * Isolated entity manager working only with this query runner.
      */
     readonly manager: EntityManager;
 
@@ -44,22 +39,22 @@ export interface QueryRunner {
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */
-    data: ObjectLiteral;
+    readonly data: ObjectLiteral;
 
     /**
      * All synchronized tables in the database.
      */
-    loadedTables: Table[];
+    readonly loadedTables: Table[];
 
     /**
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
-    connect(): Promise<void>;
+    connect(): Promise<any>;
 
     /**
      * Releases used database connection.
-     * You cannot use this query runner methods after connection is released.
+     * You cannot use query runner methods after connection is released.
      */
     release(): Promise<void>;
 
@@ -68,7 +63,9 @@ export interface QueryRunner {
      * Be careful with using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    clearDatabase(schemas?: string[], database?: string): Promise<void>;
+    clearDatabase(): Promise<void>;
+
+    // todo: create clearSchema instead
 
     /**
      * Starts transaction.
@@ -95,7 +92,7 @@ export interface QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>; // todo: ReadStream gonna bring problems in websql driver
+    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>;
 
     /**
      * Insert a new row with given values into the given table.
@@ -117,33 +114,38 @@ export interface QueryRunner {
      *
      * @deprecated todo: remove later use query builder instead
      */
-    delete(tablePath: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Performs a simple DELETE query by a given conditions in a given table.
-     *
-     * @deprecated todo: remove later use query builder instead
-     */
-    delete(tablePath: string, conditions: Object): Promise<void>;
+    delete(tablePath: string, condition: Object|string, parameters?: any[]): Promise<void>;
 
     /**
      * Inserts new values into closure table.
      *
-     * @deprecated todo: what to do? create ClosureQueryBuilder ?
+     * @deprecated todo: move to ClosureQueryBuilder
      */
     insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
 
     /**
-     * Loads a table by a given given name from the database and creates a Table from them.
+     * Returns all available database names including system databases.
+     */
+    getDatabases(): Promise<string[]>;
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     * Useful for SQLServer and Postgres only.
+     */
+    getSchemas(database?: string): Promise<string[]>;
+
+    /**
+     * Loads a table by a given name from the database.
      */
     getTable(tableName: string): Promise<Table|undefined>;
 
     /**
-     * Loads all tables (with given names) from the database and creates a Table from them.
+     * Loads all tables from the database and returns them.
      *
      * todo: make tableNames optional
      */
-    getTables(tablePaths: string[]): Promise<Table[]>;  // todo: add flag cache = true
+    getTables(tableNames: string[]): Promise<Table[]>;
 
     /**
      * Checks if database with the given name exist.
@@ -151,167 +153,127 @@ export interface QueryRunner {
     hasDatabase(database: string): Promise<boolean>;
 
     /**
-     * Checks if table with the given name exist in the database.
+     * Checks if schema with the given name exist.
      */
-    hasTable(tablePath: string): Promise<boolean>;
-    // todo: hasSchema
+    hasSchema(schema: string): Promise<boolean>;
 
     /**
-     * Creates a database if it's not created.
+     * Checks if table with the given name exist.
      */
-    createDatabase(database: string): Promise<void[]>;
+    hasTable(table: Table|string): Promise<boolean>;
 
     /**
-     * Creates a schema if it's not created.
+     * Creates a new database.
      */
-    createSchema(schemas: string[]): Promise<void[]>;
+    createDatabase(database: string, ifNotExist?: boolean): Promise<void>;
 
     /**
-     * Creates a new table from the given table metadata and column metadatas.
+     * Drops database.
+     */
+    dropDatabase(database: string, ifNotExist?: boolean): Promise<void>;
+
+    /**
+     * Creates a new table schema.
+     */
+    createSchema(schemaPath: string): Promise<void>;
+
+    /**
+     * Creates a new table.
      */
     createTable(table: Table, ifNotExist?: boolean): Promise<void>;
 
     /**
-     * Drops the table.
+     * Drops a table.
      */
-    dropTable(table: Table, ifExist?: boolean): Promise<void>;
+    dropTable(table: Table|string, ifExist?: boolean): Promise<void>;
 
     /**
-     * Drops the table.
+     * Renames a table.
      */
-    dropTable(tableName: string, ifExist?: boolean): Promise<void>;
+    renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void>;
 
     /**
-     * Checks if column with the given name exist in the given table.
+     * Checks if column exist in the table.
      */
     hasColumn(tableName: string, columnName: string): Promise<boolean>;
 
     /**
-     * Adds a new column in the table.
+     * Adds a new column.
      */
-    addColumn(table: Table, column: TableColumn): Promise<void>;
+    addColumn(table: Table|string, column: TableColumn): Promise<void>;
 
     /**
-     * Adds a new column in the table.
+     * Adds a new columns.
      */
-    addColumn(tableName: string, column: TableColumn): Promise<void>;
+    addColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
     /**
-     * Adds new columns in the table.
+     * Renames a column.
      */
-    addColumns(table: Table, columns: TableColumn[]): Promise<void>;
-
-    /**
-     * Adds new columns in the table.
-     */
-    addColumns(table: string, columns: TableColumn[]): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(table: Table, oldColumn: TableColumn, newColumn: TableColumn): Promise<void>;
-
-    /**
-     * Renames column in the given table.
-     */
-    renameColumn(tableName: string, oldColumnName: string, newColumnName: string): Promise<void>;
+    renameColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn|string): Promise<void>;
 
     /**
      * Changes a column in the table.
      */
-    changeColumn(table: Table, oldColumn: TableColumn, newColumn: TableColumn): Promise<void>;
-
-    /**
-     * Changes a column in the table.
-     */
-    changeColumn(tableName: string, oldColumn: string, newColumn: TableColumn): Promise<void>;
+    changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>;
 
     /**
      * Changes a columns in the table.
      */
-    changeColumns(table: Table, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
-
-    /**
-     * Changes a columns in the table.
-     */
-    changeColumns(tableName: string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
+    changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>; // todo: change to { old, new }
 
     /**
      * Drops the column in the table.
      */
-    dropColumn(table: Table, column: TableColumn): Promise<void>;
-
-    /**
-     * Drops the column in the table.
-     */
-    dropColumn(tableName: string, column: TableColumn): Promise<void>;
+    dropColumn(table: Table|string, column: TableColumn): Promise<void>;
 
     /**
      * Drops the columns in the table.
      */
-    dropColumns(table: Table, columns: TableColumn[]): Promise<void>;
-
-    /**
-     * Drops the columns in the table.
-     */
-    dropColumns(tableName: string, columns: TableColumn[]): Promise<void>;
+    dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Updates primary keys in the table.
+     *
+     * @deprecated todo: remove?
      */
     updatePrimaryKeys(table: Table): Promise<void>;
 
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(tableName: string, foreignKey: TableForeignKey): Promise<void>;
-
-    /**
-     * Creates a new foreign key.
-     */
-    createForeignKey(table: Table, foreignKey: TableForeignKey): Promise<void>;
+    createForeignKey(tableName: Table|string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Creates a new foreign keys.
      */
-    createForeignKeys(table: Table, foreignKeys: TableForeignKey[]): Promise<void>;
+    createForeignKeys(tableName: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
-     * Drops a foreign keys from the table.
+     * Drops a foreign key.
      */
-    dropForeignKey(table: string, foreignKey: TableForeignKey): Promise<void>;
+    dropForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
-     * Drops a foreign keys from the table.
+     * Drops a foreign keys.
      */
-    dropForeignKey(table: Table, foreignKey: TableForeignKey): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    dropForeignKeys(table: string, foreignKeys: TableForeignKey[]): Promise<void>;
-
-    /**
-     * Drops a foreign keys from the table.
-     */
-    dropForeignKeys(table: Table, foreignKeys: TableForeignKey[]): Promise<void>;
+    dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Creates a new index.
      */
-    createIndex(table: Table, index: TableIndex): Promise<void>;
+    createIndex(table: Table|string, index: TableIndex): Promise<void>;
 
     /**
      * Drops an index from the table.
      */
-    dropIndex(tableSchemeOrPath: Table|string, index: TableIndex|string): Promise<void>;
+    dropIndex(table: Table|string, index: TableIndex|string): Promise<void>;
 
     /**
-     * Truncates table.
-     *
-     * todo: probably this should be renamed to drop or clear?
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    truncate(tableName: string): Promise<void>;
+    clearTable(tableName: string): Promise<void>;
 
     /**
      * Enables special query runner mode in which sql queries won't be executed,
@@ -327,6 +289,14 @@ export interface QueryRunner {
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void;
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void;
+
+    // todo: remove TablePrimaryKey
+    // todo: add methods: addPrimaryKey, dropPrimaryKey, addUniqueConstraint, dropUniqueConstraint, check...
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.

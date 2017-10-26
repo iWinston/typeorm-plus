@@ -59,7 +59,7 @@ export abstract class BaseQueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlInMemory: SqlInMemory;
+    protected sqlInMemory: SqlInMemory = new SqlInMemory();
 
     /**
      * Mode in which query runner executes.
@@ -125,6 +125,13 @@ export abstract class BaseQueryRunner {
     }
 
     /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        this.sqlInMemory = new SqlInMemory();
+    }
+
+    /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
     getMemorySql(): SqlInMemory {
@@ -176,14 +183,12 @@ export abstract class BaseQueryRunner {
     /**
      * Executes sql used special for schema build.
      */
-    protected async schemaQuery(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
+    protected async executeQueries(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
         if (typeof upQueries === "string")
             upQueries = [upQueries];
         if (typeof downQueries === "string")
             downQueries = [downQueries];
 
-        if (!this.sqlInMemory)
-            this.sqlInMemory = new SqlInMemory();
         this.sqlInMemory.upQueries.push(...upQueries);
         this.sqlInMemory.downQueries.push(...downQueries);
 
@@ -193,4 +198,5 @@ export abstract class BaseQueryRunner {
 
         await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
     }
+
 }

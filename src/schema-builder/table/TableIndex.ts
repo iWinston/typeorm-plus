@@ -13,7 +13,7 @@ export class TableIndex {
     /**
      * Index name.
      */
-    name: string;
+    name?: string;
 
     /**
      * Columns included in this index.
@@ -23,7 +23,7 @@ export class TableIndex {
     /**
      * Indicates if this index is unique.
      */
-    isUnique: boolean;
+    isUnique?: boolean;
 
     // -------------------------------------------------------------------------
     // Constructor

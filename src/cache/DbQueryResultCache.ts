@@ -157,7 +157,7 @@ export class DbQueryResultCache implements QueryResultCache {
      * Clears everything stored in the cache.
      */
     async clear(queryRunner: QueryRunner): Promise<void> {
-        return this.getQueryRunner(queryRunner).truncate("query-result-cache");
+        return this.getQueryRunner(queryRunner).clearTable("query-result-cache");
     }
 
     /**

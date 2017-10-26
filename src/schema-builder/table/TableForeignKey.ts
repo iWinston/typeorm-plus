@@ -14,7 +14,7 @@ export class TableForeignKey {
     /**
      * Name of the table which contains this foreign key.
      */
-    name: string;
+    name?: string;
 
     /**
      * Column names which included by this foreign key.

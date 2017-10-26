@@ -318,6 +318,21 @@ export class OracleQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(tableName: string): Promise<Table|undefined> {
@@ -448,6 +463,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
@@ -457,17 +479,24 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
-     * Creates a database if it's not created.
+     * Creates a new database.
      */
-    createDatabase(database: string): Promise<void[]> {
-        return this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        await this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
-        return Promise.resolve([]);
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schemas: string): Promise<void> {
+        await Promise.resolve();
     }
 
     /**
@@ -489,6 +518,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     async dropTable(tableName: Table|string): Promise<void> {
         let sql = `DROP TABLE "${tableName}"`;
         await this.query(sql);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        // TODO
     }
 
     /**
@@ -693,9 +729,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table.name}"(${columns})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"(${columns})`;
         await this.query(sql);
     }
 
@@ -709,9 +746,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
-     * Truncates table.
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async truncate(tableName: string): Promise<void> {
+    async clearTable(tableName: string): Promise<void> {
         await this.query(`TRUNCATE TABLE "${tableName}"`);
     }
 
@@ -759,6 +797,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     disableSqlMemory(): void {
         this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        this.sqlInMemory = new SqlInMemory();
     }
 
     /**

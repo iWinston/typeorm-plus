@@ -39,15 +39,13 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     primaryKeyName(tableName: string, columnNames: string[]): string {
         const replacedTableName = tableName.replace(".", "_");
-        const joinedColumnNames = columnNames.map(columnName => columnName).join("_");
-        const key = `${replacedTableName}_${joinedColumnNames}`;
+        const key = `${replacedTableName}_${columnNames.join("_")}`;
         return "PK_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
     uniqueConstraintName(tableName: string, columnNames: string[]): string {
         const replacedTableName = tableName.replace(".", "_");
-        const joinedColumnNames = columnNames.map(columnName => columnName).join("_");
-        const key = `${replacedTableName}_${joinedColumnNames}`;
+        const key = `${replacedTableName}_${columnNames.join("_")}`;
         return "UQ_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
@@ -57,12 +55,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    indexName(customName: string|undefined, tableName: string, columns: string[]): string {
+    indexName(customName: string|undefined, tableName: string, columnNames: string[]): string {
         if (customName)
             return customName;
-
-        const key = "ind_" + tableName + "_" + columns.join("_");
-        return "ind_" + RandomGenerator.sha1(key).substr(0, 26);
+        const replacedTableName = tableName.replace(".", "_");
+        const key = `${replacedTableName}_${columnNames.join("_")}`;
+        return "IDX_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
     joinColumnName(relationName: string, referencedColumnName: string): string {
