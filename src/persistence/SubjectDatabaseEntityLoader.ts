@@ -57,7 +57,7 @@ export class SubjectDatabaseEntityLoader {
             subjectGroup.subjects.forEach(subject => {
 
                 // gets all relation property paths that exist in the persisted entity.
-                this.metadata.relations
+                subject.metadata.relations
                     .filter(relation => relation.getEntityValue(this.entity!) !== undefined)
                     .map(relation => relation.propertyPath)
                     .forEach(propertyPath => {
