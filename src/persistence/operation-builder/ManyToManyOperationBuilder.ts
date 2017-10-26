@@ -25,20 +25,63 @@ export class ManyToManyOperationBuilder {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds all required operations.
+     * Builds operations for any changes in the many-to-many relations of the subjects.
      */
-    build(options: { insert: boolean, remove: boolean } = { insert: true, remove: true }): void {
+    build(): void {
         this.subjects.forEach(subject => {
-            if (!subject.hasEntity) // why
+
+            // if subject don't have entity then no need to find something that should be inserted or removed
+            if (!subject.hasEntity)
                 return;
+
             subject.metadata.manyToManyRelations.forEach(relation => {
 
                 // skip relations for which persistence is disabled
                 if (relation.persistenceEnabled === false)
                     return;
 
-                this.buildForSubjectRelation(subject, relation, options);
+                this.buildForSubjectRelation(subject, relation);
             });
+        });
+    }
+
+    /**
+     * Builds operations for removal of all many-to-many records of all many-to-many relations of the given subject.
+     */
+    buildForAllRemoval(subject: Subject) {
+        subject.metadata.manyToManyRelations.forEach(relation => {
+
+            // skip relations for which persistence is disabled
+            if (relation.persistenceEnabled === false)
+                return;
+
+            // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
+            // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
+            // we could load this relation ids with entity using however this way it may be more efficient, because
+            // this way we load only relations that come, e.g. we don't load data for empty relations set with object.
+            // this is also useful when object is being saved partial.
+            let existInverseEntityRelationIds: ObjectLiteral[] = [];
+
+            // if subject don't have database entity it means its new and we don't need to remove something that is not exist
+            if (subject.hasDatabaseEntity) {
+                existInverseEntityRelationIds = relation.getEntityValue(subject.databaseEntity);
+                // console.log("existInverseEntityRelationIds:", existInverseEntityRelationIds[0]);
+            }
+
+            // if subject marked to be removed then all its junctions must be removed
+            // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
+            // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
+
+            // finally create a new junction remove operation and push it to the array of such operations
+            if (existInverseEntityRelationIds.length > 0) {
+
+                existInverseEntityRelationIds.forEach(relationId => {
+                    const junctionSubject = new Subject(relation.junctionEntityMetadata!);
+                    junctionSubject.mustBeRemoved = true;
+                    junctionSubject.identifier = subject.buildJunctionIdentifier(relation, relationId);
+                    this.subjects.unshift(junctionSubject);
+                });
+            }
         });
     }
 
@@ -51,8 +94,7 @@ export class ManyToManyOperationBuilder {
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
      */
-    protected buildForSubjectRelation(subject: Subject, relation: RelationMetadata, options: { insert: boolean, remove: boolean }) {
-
+    protected buildForSubjectRelation(subject: Subject, relation: RelationMetadata) {
 
         // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
         // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
@@ -66,42 +108,6 @@ export class ManyToManyOperationBuilder {
             existInverseEntityRelationIds = relation.getEntityValue(subject.databaseEntity);
             // console.log("existInverseEntityRelationIds:", existInverseEntityRelationIds[0]);
         }
-
-        const buildJunctionIdentifier = (relationId: ObjectLiteral) => {
-            const map: ObjectLiteral = {};
-            relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
-                const id = relation.isOwning ? subject.entity : relationId;
-                OrmUtils.mergeDeep(map, column.createValueMap(column.referencedColumn!.getEntityValue(id)));
-            });
-            relation.junctionEntityMetadata!.inverseColumns.forEach(column => {
-                const id = relation.isOwning ? relationId : subject.entity;
-                OrmUtils.mergeDeep(map, column.createValueMap(column.referencedColumn!.getEntityValue(id)));
-            });
-            return map;
-        };
-
-        // if subject marked to be removed then all its junctions must be removed
-        if (subject.mustBeRemoved && options.remove) {
-            // load from db all relation ids of inverse entities that are "bind" to the currently persisted entity
-            // this way we gonna check which relation ids are missing and which are new (e.g. inserted or removed)
-
-            // finally create a new junction remove operation and push it to the array of such operations
-            if (existInverseEntityRelationIds.length > 0) {
-
-                existInverseEntityRelationIds.forEach(relationId => {
-                    const junctionSubject = new Subject(relation.junctionEntityMetadata!);
-                    junctionSubject.mustBeRemoved = true;
-                    junctionSubject.identifier = buildJunctionIdentifier(relationId);
-                    this.subjects.unshift(junctionSubject);
-                });
-            }
-
-            return;
-        }
-
-        // if entity don't have entity then no need to find something that should be inserted or removed
-        if (!subject.hasEntity)
-            return;
 
         // else check changed junctions in the persisted entity
         // extract entity value - we only need to proceed if value is defined and its an array
@@ -164,20 +170,12 @@ export class ManyToManyOperationBuilder {
             }
         });
 
-        // console.log("newJunctionEntities: ", newJunctionEntities);
-
-        // finally create a new junction insert operation and push it to the array of such operations
-        /*if (newJunctionEntities.length > 0 && options.insert) {
-            newJunctionEntities.forEach(newRelationId => {
-            });
-        }*/
-
         // finally create a new junction remove operation and push it to the array of such operations
-        if (removedJunctionEntityIds.length > 0 && options.remove) {
+        if (removedJunctionEntityIds.length > 0) {
             removedJunctionEntityIds.forEach(removedEntityRelationId => {
                 const junctionSubject = new Subject(relation.junctionEntityMetadata!);
                 junctionSubject.mustBeRemoved = true;
-                junctionSubject.identifier = buildJunctionIdentifier(removedEntityRelationId);
+                junctionSubject.identifier = subject.buildJunctionIdentifier(relation, removedEntityRelationId);
                 this.subjects.unshift(junctionSubject);
             });
         }

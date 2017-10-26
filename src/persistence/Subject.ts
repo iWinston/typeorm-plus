@@ -3,6 +3,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {DateUtils} from "../util/DateUtils";
 import {OrmUtils} from "../util/OrmUtils";
 import {ChangeMap} from "./ChangeMap";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Subject is a subject of persistence.
@@ -94,8 +95,17 @@ export class Subject {
         }, {} as ObjectLiteral);
     }
 
-    buildJunctionIdentifier() {
-
+    buildJunctionIdentifier(relation: RelationMetadata, relationId: ObjectLiteral) {
+        const map: ObjectLiteral = {};
+        relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
+            const id = relation.isOwning ? this.entity : relationId;
+            OrmUtils.mergeDeep(map, column.createValueMap(column.referencedColumn!.getEntityValue(id)));
+        });
+        relation.junctionEntityMetadata!.inverseColumns.forEach(column => {
+            const id = relation.isOwning ? relationId : this.entity;
+            OrmUtils.mergeDeep(map, column.createValueMap(column.referencedColumn!.getEntityValue(id)));
+        });
+        return map;
     }
 
     /**
@@ -414,17 +424,3 @@ export class Subject {
     }
 
 }
-
-// you'll need this code later
-// add operations for removed relations
-// if (removedRelatedEntityRelationIds.length) {
-//     const updateUnsetColumns = relation.inverseRelation!.joinColumns.reduce((map, column) => {
-//         return OrmUtils.mergeDeep(map, column.createValueMap(null));
-//     }, {} as ObjectLiteral);
-//
-//     operations.push({
-//         metadata: relation.inverseEntityMetadata!,
-//         updateValues: updateUnsetColumns,
-//         condition: removedRelatedEntityRelationIds,
-//     });
-// }

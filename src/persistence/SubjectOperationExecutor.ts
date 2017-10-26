@@ -86,13 +86,9 @@ export class SubjectOperationExecutor {
         // todo: recompute things only if at least one subscriber or listener was really executed ?
         this.allSubjects.forEach(subject => subject.recompute());
 
-        // console.log("updateSubjects", this.updateSubjects);
-
-        // console.log("insert operations");
         await this.executeInsertOperations();
         await this.executeInsertClosureTableOperations();
         await this.executeUpdateOperations();
-        // await this.executeUpdateRelations();
         await this.executeRemoveOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities

@@ -206,7 +206,7 @@ export class EntityPersitor {
 
         new OneToManyUpdateBuilder(operateSubjects).build();
         new OneToOneInverseSideOperationBuilder(operateSubjects).build();
-        new ManyToManyOperationBuilder(operateSubjects).build({ insert: true, remove: true });
+        new ManyToManyOperationBuilder(operateSubjects).build();
 
         return operateSubjects;
     }
@@ -225,7 +225,7 @@ export class EntityPersitor {
         // next step is to load database entities for all operate subjects
         await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
 
-        new ManyToManyOperationBuilder(operateSubjects).build({ insert: false, remove: true });
+        new ManyToManyOperationBuilder(operateSubjects).buildForAllRemoval(mainSubject);
 
         return operateSubjects;
     }
