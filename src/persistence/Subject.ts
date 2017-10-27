@@ -129,16 +129,23 @@ export class Subject {
                 }
             }
 
-            if (changeMap.column) {
+            // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
+
+            if (this.metadata.isJunction && changeMap.column) {
+                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value)));
+
+            } else if (changeMap.column) {
                 OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(value));
 
             } else if (changeMap.relation) {
-                changeMap.relation!.joinColumns.forEach(column => {
-                    OrmUtils.mergeDeep(updateMap, column.createValueMap(value));
-                });
+                OrmUtils.mergeDeep(updateMap, changeMap.relation!.createValueMap(value));
+                // changeMap.relation!.joinColumns.forEach(column => {
+                //     OrmUtils.mergeDeep(updateMap, column.createValueMap(value));
+                // });
             }
             return updateMap;
         }, {} as ObjectLiteral);
+        // console.log(changeSet);
         this.changeMaps = changeMapsWithoutValues;
         return changeSet;
     }
@@ -146,7 +153,7 @@ export class Subject {
     buildIdentifier() {
         return this.metadata.primaryColumns.reduce((identifier, column) => {
             if (column.isGenerated && this.generatedMap) {
-                return OrmUtils.mergeDeep(identifier, column.createValueMap(this.generatedMap[column.databaseName]));
+                return OrmUtils.mergeDeep(identifier, column.getEntityValueMap(this.generatedMap));
             } else {
                 return OrmUtils.mergeDeep(identifier, column.getEntityValueMap(this.entity!));
             }

@@ -25,4 +25,9 @@ export interface SubjectChangeMap {
      */
     value: Subject|any;
 
+    /**
+     * Callback used to produce a final value.
+     */
+    valueFactory?: (value: any) => any;
+
 }

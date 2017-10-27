@@ -18,7 +18,7 @@ export class EntityMetadataUtils {
             // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
             const parentPath = prefix ? prefix + "." + key : key;
             if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
-                const subPaths = this.createPropertyPath(metadata, entity[key], key);
+                const subPaths = this.createPropertyPath(metadata, entity[key], parentPath);
                 paths.push(...subPaths);
             } else {
                 const path = prefix ? prefix + "." + key : key;

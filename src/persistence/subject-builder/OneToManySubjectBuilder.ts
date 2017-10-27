@@ -76,7 +76,7 @@ export class OneToManySubjectBuilder {
         // by example: extract from categories only relation ids (category id, or let's say category title, depend on join column options)
         const relatedPersistedEntityRelationIds: ObjectLiteral[] = [];
         relatedEntities.forEach(relatedEntity => { // by example: relatedEntity is a category here
-            const relationIdMap = relation.getRelationIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
+            const relationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
 
             // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
             let relatedEntitySubject = this.subjects.find(subject => {
@@ -93,9 +93,9 @@ export class OneToManySubjectBuilder {
                 // in this persistence because he didn't pass this entity for save or he did not set cascades
                 // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
                 if (!relatedEntitySubject)
-                    throw new Error(`One-to-many relation ${relation.entityMetadata.name}.${relation.propertyPath} contains ` +
+                    throw new Error(`One-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
                         `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
-                        `Please setup cascade insertion or save entity before binding it.`);
+                        `Please setup cascade insertion or save entities before binding it.`);
 
                 // okay, so related subject exist and its marked for insertion, then add a new change map
                 // by example: this will tell category to insert into its post relation our post we are working with

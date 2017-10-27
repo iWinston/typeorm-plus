@@ -113,10 +113,26 @@ export class SubjectExecutor {
                 newInsertedSubjects.push(...entityTargetSubjects);
                 entityTargetSubjects.forEach(entityTargetSubject => this.insertSubjects.splice(this.insertSubjects.indexOf(entityTargetSubject), 1));
             });
+
+            const dependencies2: string[][] = [];
+            metadatas.forEach(metadata => {
+                metadata.relationsWithJoinColumns.forEach(relation => {
+                    dependencies2.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
+                });
+            });
+
+            const sortedEntityTargets2 = OrmUtils.toposort(dependencies2).reverse();
+
+            const newInsertedSubjects2: Subject[] = [];
+            sortedEntityTargets2.forEach(sortedEntityTarget => {
+                const entityTargetSubjects = this.insertSubjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
+                newInsertedSubjects2.push(...entityTargetSubjects);
+                entityTargetSubjects.forEach(entityTargetSubject => this.insertSubjects.splice(this.insertSubjects.indexOf(entityTargetSubject), 1));
+            });
+
+            newInsertedSubjects.push(...newInsertedSubjects2);
             newInsertedSubjects.push(...this.insertSubjects);
             this.insertSubjects = newInsertedSubjects;
-            // console.log("dependencies", dependencies);
-            // console.log("toposort", );
         }
 
         await this.executeInsertOperations();
@@ -203,6 +219,10 @@ export class SubjectExecutor {
                     return false;
             }
 
+            // if (column.referencedColumn) {
+            //
+            // }
+
             return true;
         });
         diffColumns.forEach(column => {
@@ -281,6 +301,8 @@ export class SubjectExecutor {
      */
     protected async executeInsertOperations(): Promise<void> {
 
+        // console.log(this.insertSubjects.map(subject => subject.entity));
+
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
@@ -308,7 +330,6 @@ export class SubjectExecutor {
             //     const valueSets = this.getValueSets();
             //     if (valueSets.length > 1)
             //         throw Error(`Returning / output can be used only when a single value / entity is inserted.`);
-
                 // const alias = this.expressionMap.mainAlias!.name;
                 // const returningResult = await this.createQueryBuilder()
                 //     .select(this.expressionMap.returning as string[])
@@ -323,12 +344,12 @@ export class SubjectExecutor {
 
             if (subject.entity) {
                 subject.identifier = subject.buildIdentifier();
+                // console.log(subject.identifier);
             }
 
             // if there are changes left mark it for updation
             if (subject.hasChanges()) {
                 subject.canBeUpdated = true;
-                // console.log("can be updated!", subject.mustBeUpdated);
             }
         });
     }

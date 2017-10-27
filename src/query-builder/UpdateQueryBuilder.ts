@@ -147,11 +147,17 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 // todo: make this and other query builder to work with properly with tables without metadata
                 const column = metadata.findColumnWithPropertyPath(propertyPath);
 
-                // we update an entity and entity can contain property which aren't columns, so we just skip them
+                // we update an entity and entity can contain properties which aren't columns, so we just skip them
                 if (!column) return;
 
                 const paramName = "_updated_" + column.databaseName;
-                const value = this.connection.driver.preparePersistentValue(column.getEntityValue(valuesSet), column);
+
+                //
+                let value = column.getEntityValue(valuesSet);
+                if (column.referencedColumn && value instanceof Object) {
+                    value = column.referencedColumn.getEntityValue(value);
+                }
+                value = this.connection.driver.preparePersistentValue(value, column);
 
                 // todo: duplication zone
                 if (value instanceof Function) { // support for SQL expressions in update query

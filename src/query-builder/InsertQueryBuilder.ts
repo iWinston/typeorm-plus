@@ -131,7 +131,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             values = valueSets.map((valueSet, insertionIndex) => {
                 const columnValues = columns.map(column => {
                     const paramName = "_inserted_" + insertionIndex + "_" + column.databaseName;
-                    const value = this.connection.driver.preparePersistentValue(column.getEntityValue(valueSet), column);
+
+                    let value = column.getEntityValue(valueSet);
+                    if (column.referencedColumn && value instanceof Object) {
+                        value = column.referencedColumn.getEntityValue(value);
+                    }
+                    value = this.connection.driver.preparePersistentValue(value, column);
 
                     if (value instanceof Function) { // support for SQL expressions in update query
                         return value();

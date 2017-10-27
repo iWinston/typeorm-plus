@@ -211,6 +211,11 @@ export class EntityMetadata {
     embeddeds: EmbeddedMetadata[] = [];
 
     /**
+     * All embeddeds - embeddeds from this entity metadata and from all child embeddeds, etc.
+     */
+    allEmbeddeds: EmbeddedMetadata[] = [];
+
+    /**
      * Entity listener metadatas.
      */
     listeners: EntityListenerMetadata[] = [];
@@ -495,7 +500,7 @@ export class EntityMetadata {
      * Finds embedded with a given property path.
      */
     findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
-        return this.embeddeds.find(embedded => {
+        return this.allEmbeddeds.find(embedded => {
             return embedded.propertyPath === propertyPath;
         });
     }

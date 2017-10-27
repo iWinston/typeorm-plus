@@ -116,9 +116,7 @@ export class ManyToManySubjectBuilder {
 
             // extract only relation id from the related entities, since we only need it for comparision
             // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
-            const relatedEntityRelationIdMap = relation.getRelationIdMap(relatedEntity);
-
-            console.log("relatedEntityRelationIdMap", relatedEntityRelationIdMap);
+            const relatedEntityRelationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity);
 
             // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
             const relatedEntitySubject = this.subjects.find(subject => {
@@ -131,10 +129,10 @@ export class ManyToManySubjectBuilder {
                 // if related entity does not have a subject then it means user tries to bind entity which wasn't saved
                 // in this persistence because he didn't pass this entity for save or he did not set cascades
                 // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
-                if (!relatedEntitySubject || true === true)
-                    throw new Error(`Many-to-many relation ${relation.entityMetadata.name}.${relation.propertyPath} contains ` +
+                if (!relatedEntitySubject)
+                    throw new Error(`Many-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
                         `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
-                        `Please setup cascade insertion or save entity before binding it.`);
+                        `Please setup cascade insertion or save entities before binding it.`);
             }
 
             // try to find related entity in the database
@@ -147,8 +145,8 @@ export class ManyToManySubjectBuilder {
             if (relatedEntityExistInDatabase)
                 return;
 
-            const ownerEntityMap = relation.isOwning ? subject.entity! : relatedEntity; // by example: ownerEntityMap is post from subject here
-            const inverseEntityMap = relation.isOwning ? relatedEntity : subject.entity!; // by example: inverseEntityMap is category from categories array here
+            const ownerValue = relation.isOwning ? subject : (relatedEntitySubject || relatedEntity); // by example: ownerEntityMap is post from subject here
+            const inverseValue = relation.isOwning ? (relatedEntitySubject || relatedEntity) : subject; // by example: inverseEntityMap is category from categories array here
 
             // create a new subject for insert operation of junction rows
             const junctionSubject = new Subject(relation.junctionEntityMetadata!);
@@ -158,21 +156,23 @@ export class ManyToManySubjectBuilder {
             relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
                 junctionSubject.changeMaps.push({
                     column: column,
-                    value: column.referencedColumn!.getEntityValue(ownerEntityMap),
+                    value: ownerValue,
+                    // valueFactory: (value) => column.referencedColumn!.getEntityValue(value) // column.referencedColumn!.getEntityValue(ownerEntityMap),
                 });
             });
 
             relation.junctionEntityMetadata!.inverseColumns.forEach(column => {
                 junctionSubject.changeMaps.push({
                     column: column,
-                    value: column.referencedColumn!.getEntityValue(inverseEntityMap),
+                    value: inverseValue,
+                    // valueFactory: (value) => column.referencedColumn!.getEntityValue(value) // column.referencedColumn!.getEntityValue(inverseEntityMap),
                 });
             });
         });
 
         // get all inverse entities relation ids that are "bind" to the currently persisted entity
         const changedInverseEntityRelationIds = relatedEntities
-            .map(relatedEntity => relation.getRelationIdMap(relatedEntity))
+            .map(relatedEntity => relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity))
             .filter(relatedEntityRelationIdMap => relatedEntityRelationIdMap !== undefined && relatedEntityRelationIdMap !== null);
 
         // now from all entities in the persisted entity find only those which aren't found in the db

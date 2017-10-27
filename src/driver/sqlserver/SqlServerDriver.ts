@@ -17,6 +17,7 @@ import {MssqlParameter} from "./MssqlParameter";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -468,8 +469,18 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertionResult: any) {
-        return insertionResult[0];
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        if (!insertResult || !insertResult[0])
+            return undefined;
+
+        const result: ObjectLiteral = insertResult[0];
+        return Object.keys(result).reduce((map, key) => {
+            const column = metadata.findColumnWithDatabaseName(key);
+            if (column) {
+                OrmUtils.mergeDeep(map, column.createValueMap(result[key]));
+            }
+            return map;
+        }, {} as ObjectLiteral);
     }
 
     // -------------------------------------------------------------------------

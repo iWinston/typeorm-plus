@@ -326,6 +326,7 @@ export class EntityMetadataBuilder {
             });
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(targets));
             embeddedMetadata.embeddeds.forEach(subEmbedded => subEmbedded.parentEmbeddedMetadata = embeddedMetadata);
+            entityMetadata.allEmbeddeds.push(embeddedMetadata);
             return embeddedMetadata;
         });
     }

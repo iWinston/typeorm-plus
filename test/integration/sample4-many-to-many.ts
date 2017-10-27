@@ -48,7 +48,7 @@ describe("many-to-many", function() {
     // Specifications
     // -------------------------------------------------------------------------
 
-    describe.only("insert post and details (has inverse relation + full cascade options)", function() {
+    describe("insert post and details (has inverse relation + full cascade options)", function() {
         let newPost: Post, details: PostDetails, savedPost: Post;
         
         before(reloadDatabase);

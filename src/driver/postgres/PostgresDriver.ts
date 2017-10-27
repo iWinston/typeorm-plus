@@ -17,6 +17,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -560,7 +561,17 @@ export class PostgresDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
-        return insertResult[0];
+        if (!insertResult || !insertResult[0])
+            return undefined;
+
+        const result: ObjectLiteral = insertResult[0];
+        return Object.keys(result).reduce((map, key) => {
+            const column = metadata.findColumnWithDatabaseName(key);
+            if (column) {
+                OrmUtils.mergeDeep(map, column.createValueMap(result[key]));
+            }
+            return map;
+        }, {} as ObjectLiteral);
     }
 
     // -------------------------------------------------------------------------

@@ -563,7 +563,14 @@ export abstract class QueryBuilder<Entity> {
     protected createReturningExpression(): string {
         const columns = this.getReturningColumns();
         if (columns.length) {
-            return columns.map(column => "INSERTED." + this.escape(column.databaseName)).join(", ");
+            return columns.map(column => {
+                const name = this.escape(column.databaseName);
+                if (this.connection.driver instanceof SqlServerDriver) {
+                    return "INSERTED." + name;
+                } else {
+                    return name;
+                }
+            }).join(", ");
 
         } else if (typeof this.expressionMap.returning === "string") {
             return this.expressionMap.returning;

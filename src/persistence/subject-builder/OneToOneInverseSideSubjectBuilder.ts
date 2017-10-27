@@ -94,7 +94,7 @@ export class OneToOneInverseSideSubjectBuilder {
 
         // extract only relation id from the related entities, since we only need it for comparision
         // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
-        const relationIdMap = relation.getRelationIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
+        const relationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
 
         // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
         let relatedEntitySubject = this.subjects.find(operateSubject => {
@@ -111,7 +111,7 @@ export class OneToOneInverseSideSubjectBuilder {
             // in this persistence because he didn't pass this entity for save or he did not set cascades
             // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
             if (!relatedEntitySubject)
-                throw new Error(`One-to-one inverse relation ${relation.entityMetadata.name}.${relation.propertyPath} contains ` +
+                throw new Error(`One-to-one inverse relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
                     `entity which does not exist in the database yet, thus cannot be bind in the database. ` +
                     `Please setup cascade insertion or save entity before binding it.`);
 

@@ -60,11 +60,19 @@ export class OrmUtils {
 
         if (this.isObject(target) && this.isObject(source)) {
             for (const key in source) {
-                if (this.isObject(source[key])) {
+                let propertyKey = key;
+                if (source[key] instanceof Promise)
+                    continue;
+
+                // if (source[key] instanceof Promise) {
+                //     propertyKey = "__" + key + "__";
+                // }
+
+                if (this.isObject(source[propertyKey]) && !(source[propertyKey] instanceof Date)) {
                     if (!target[key]) Object.assign(target, { [key]: {} });
-                    this.mergeDeep(target[key], source[key]);
+                    this.mergeDeep(target[key], source[propertyKey]);
                 } else {
-                    Object.assign(target, { [key]: source[key] });
+                    Object.assign(target, { [key]: source[propertyKey] });
                 }
             }
         }
