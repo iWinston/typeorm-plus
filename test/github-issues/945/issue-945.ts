@@ -15,13 +15,13 @@ describe("github issues > #945 synchronization with multiple primary keys", () =
 
     it("schema should include two primary keys", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
-        const tableSchema = await queryRunner.getTable("test_entity");
+        const table = await queryRunner.getTable("test_entity");
 
-        if (tableSchema) {
-            const firstId = tableSchema.primaryKey!.columnNames.find(columnName => columnName === "id1");
-            const secondId = tableSchema.primaryKey!.columnNames.find(columnName => columnName === "id2");
+        if (table) {
+            const firstId = table.columns.find(column => column.name === "id1");
+            const secondId = table.columns.find(column => column.name === "id2");
 
-            expect(tableSchema.primaryKey!.columnNames).length(2);
+            expect(table.columns.filter(column => column.isPrimary)).length(2);
             expect(firstId).not.to.be.undefined;
             expect(secondId).not.to.be.undefined;
         }

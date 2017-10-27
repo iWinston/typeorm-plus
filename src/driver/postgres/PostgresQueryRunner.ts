@@ -6,7 +6,6 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {PostgresDriver} from "./PostgresDriver";
 import {Connection} from "../../connection/Connection";
@@ -18,7 +17,6 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
-import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
 import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
 
 /**
@@ -392,17 +390,16 @@ WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid
 AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNamesString}) AND t.relnamespace = ns.OID AND ns.nspname IN (${schemaNamesString}) ORDER BY t.relname, i.relname`;
         const foreignKeysSql = `SELECT table_name, constraint_name FROM information_schema.table_constraints WHERE table_schema IN (${schemaNamesString}) AND constraint_type = 'FOREIGN KEY'`;
         const uniqueKeysSql  = `SELECT * FROM information_schema.table_constraints WHERE table_schema IN (${schemaNamesString}) AND constraint_type = 'UNIQUE'`;
-        const primaryKeysSql = `SELECT c.column_name, tc.table_name, tc.constraint_name FROM information_schema.table_constraints tc
+        /*const primaryKeysSql = `SELECT c.column_name, tc.table_name, tc.constraint_name FROM information_schema.table_constraints tc
 JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
 JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
-where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString})`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, dbPrimaryKeys]: ObjectLiteral[][] = await Promise.all([
+where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString})`;*/
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
             this.query(uniqueKeysSql),
-            this.query(primaryKeysSql),
         ]);
 
         // if tables were not found in the db, no need to proceed
@@ -457,16 +454,6 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                     return tableColumn;
                 });
 
-            // create primary key schema
-            const primaryKeys = dbPrimaryKeys.filter(primaryKey => primaryKey["table_name"] === table.name);
-            if (primaryKeys.length > 0) {
-                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
-                    table: table,
-                    name: primaryKeys[0]["constraint_name"],
-                    columnNames: primaryKeys.map(primaryKey => primaryKey["column_name"])
-                });
-            }
-
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["table_name"] === table.name)
@@ -492,8 +479,8 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                 .filter(dbIndex => {
                     return dbIndex["table_name"] === table.name &&
                         (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["index_name"])) &&
-                        (table.primaryKey && !table.primaryKey.name === dbIndex["index_name"]) &&
                         (!dbUniqueKeys.find(key => key["constraint_name"] === dbIndex["index_name"]));
+                    /* (table.primaryKey && !table.primaryKey.name === dbIndex["index_name"]) */ // TODO: check and fix
                 })
                 .map(dbIndex => dbIndex["index_name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
@@ -790,9 +777,10 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
 
     /**
      * Updates table's primary keys.
+     * TODO: check and fix
      */
     async updatePrimaryKeys(table: Table): Promise<void> {
-        if (!table.primaryKey)
+        /*if (!table.primaryKey)
             return Promise.resolve();
         const primaryColumnNames = table.primaryKey.columnNames.map(columnName => `"${columnName}"`);
 
@@ -808,7 +796,7 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
             const up3 = `ALTER TABLE ${this.escapeTablePath(table)} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`;
             const down3 = `ALTER TABLE ${this.escapeTablePath(table)} DROP PRIMARY KEY (${primaryColumnNames.join(", ")})`;
             await this.schemaQuery(up3, down3);
-        }
+        }*/
     }
 
     /**

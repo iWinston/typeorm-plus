@@ -1,14 +1,16 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 
 @Entity()
-export class PostEntity {
+export class Post {
 
-    @PrimaryGeneratedColumn()
+    @Column({ primary: true, unique: true })
     id: number;
 
+    @Column({ default: "My post" })
+    name: string;
+
     @Column()
-    title: string;
+    text: string;
 
 }

@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
-import {PostEntity} from "./entity/PostEntity";
+import {Post} from "./entity/Post";
 
 describe.only("query runner > create table", () => {
 
@@ -22,7 +22,7 @@ describe.only("query runner > create table", () => {
 
         const queryRunner = connection.createQueryRunner();
         const options: TableOptions = {
-            name: "post",
+            name: "category",
             columns: [
                 {
                     name: "id",
@@ -41,7 +41,7 @@ describe.only("query runner > create table", () => {
         };
         await queryRunner.createTable(new Table(options));
 
-        let table = await queryRunner.getTable("post");
+        let table = await queryRunner.getTable("category");
         const idColumn = table!.findColumnByName("id");
         const nameColumn = table!.findColumnByName("name");
         idColumn!.should.be.exist;
@@ -51,11 +51,10 @@ describe.only("query runner > create table", () => {
         nameColumn!.should.be.exist;
         nameColumn!.isUnique.should.be.true;
         table!.should.exist;
-        table!.primaryKey!.should.exist;
         table!.uniques.length.should.be.equal(1);
 
         await queryRunner.executeMemoryDownSql();
-        table = await queryRunner.getTable("post");
+        table = await queryRunner.getTable("category");
         expect(table).to.be.undefined;
 
         await queryRunner.release();
@@ -64,17 +63,17 @@ describe.only("query runner > create table", () => {
     it("should correctly create table from Entity", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const metadata = connection.getMetadata(PostEntity);
+        const metadata = connection.getMetadata(Post);
         const newTable = Table.create(metadata, connection.driver);
         await queryRunner.createTable(newTable);
 
-        const table = await queryRunner.getTable("post_entity");
+        const table = await queryRunner.getTable("post");
         table!.should.exist;
 
         await queryRunner.release();
     })));
 
-    it.only("should correctly create table with all dependencies and revert creation", () => Promise.all(connections.map(async connection => {
+    it("should correctly create table with all dependencies and revert creation", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
@@ -99,17 +98,17 @@ describe.only("query runner > create table", () => {
                     type: "varchar",
                 },
                 {
-                    name: "postId",
+                    name: "questionId",
                     type: "int",
                     isUnique: true
                 }
             ],
             uniques: [{ columnNames: ["name", "alternativeName"] }],
-            indices: [{ columnNames: ["postId"] }]
+            indices: [{ columnNames: ["questionId"] }]
         }));
 
         await queryRunner.createTable(new Table({
-            name: "post",
+            name: "question",
             columns: [
                 {
                     name: "id",
@@ -142,7 +141,7 @@ describe.only("query runner > create table", () => {
                 {
                     columnNames: ["id"],
                     referencedTableName: "category",
-                    referencedColumnNames: ["postId"]
+                    referencedColumnNames: ["questionId"]
                 }
             ]
         }));
@@ -168,45 +167,48 @@ describe.only("query runner > create table", () => {
             foreignKeys: [
                 {
                     columnNames: ["id", "userId"],
-                    referencedTableName: "post",
+                    referencedTableName: "question",
                     referencedColumnNames: ["authorId", "authorUserId"]
                 }
             ]
         }));
 
         let categoryTable = await queryRunner.getTable("category");
+        const categoryTableIdColumn = categoryTable!.findColumnByName("id");
+        categoryTableIdColumn!.isPrimary.should.be.true;
+        categoryTableIdColumn!.isGenerated.should.be.true;
+        categoryTableIdColumn!.generationStrategy!.should.be.equal("increment");
         categoryTable!.should.exist;
-        categoryTable!.primaryKey!.should.exist;
         categoryTable!.uniques.length.should.be.equal(3);
         categoryTable!.indices.length.should.be.equal(1);
 
-        let postTable = await queryRunner.getTable("post");
-        const idColumn = postTable!.findColumnByName("id");
-        idColumn!.should.be.exist;
-        idColumn!.isPrimary.should.be.true;
-        idColumn!.isGenerated.should.be.true;
-        idColumn!.generationStrategy!.should.be.equal("increment");
-        postTable!.should.exist;
-        postTable!.primaryKey!.should.exist;
-        postTable!.uniques.length.should.be.equal(1);
-        postTable!.uniques[0].columnNames.length.should.be.equal(2);
-        postTable!.indices.length.should.be.equal(1);
-        postTable!.indices[0].columnNames.length.should.be.equal(2);
-        postTable!.foreignKeys.length.should.be.equal(1);
+        let questionTable = await queryRunner.getTable("question");
+        const questionIdColumn = questionTable!.findColumnByName("id");
+        questionIdColumn!.isPrimary.should.be.true;
+        questionIdColumn!.isGenerated.should.be.true;
+        questionIdColumn!.generationStrategy!.should.be.equal("increment");
+        questionTable!.should.exist;
+        questionTable!.uniques.length.should.be.equal(1);
+        questionTable!.uniques[0].columnNames.length.should.be.equal(2);
+        questionTable!.indices.length.should.be.equal(1);
+        questionTable!.indices[0].columnNames.length.should.be.equal(2);
+        questionTable!.foreignKeys.length.should.be.equal(1);
 
         let personTable = await queryRunner.getTable("person");
+        const personIdColumn = personTable!.findColumnByName("id");
+        const personUserIdColumn = personTable!.findColumnByName("id");
+        personIdColumn!.isPrimary.should.be.true;
+        personUserIdColumn!.isPrimary.should.be.true;
         personTable!.should.exist;
-        personTable!.primaryKey!.should.exist;
-        personTable!.primaryKey!.columnNames.length.should.be.equal(2);
         personTable!.foreignKeys.length.should.be.equal(1);
         personTable!.foreignKeys[0].columnNames.length.should.be.equal(2);
         personTable!.foreignKeys[0].referencedColumnNames.length.should.be.equal(2);
 
         await queryRunner.executeMemoryDownSql();
-        postTable = await queryRunner.getTable("post");
+        questionTable = await queryRunner.getTable("question");
         categoryTable = await queryRunner.getTable("category");
         personTable = await queryRunner.getTable("person");
-        expect(postTable).to.be.undefined;
+        expect(questionTable).to.be.undefined;
         expect(categoryTable).to.be.undefined;
         expect(personTable).to.be.undefined;
 

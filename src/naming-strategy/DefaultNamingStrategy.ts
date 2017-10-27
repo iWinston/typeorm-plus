@@ -83,8 +83,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {
-        const key = `${tableName}_${columnNames.join("_")}_${referencedTableName}_${referencedColumnNames.join("_")}`;
-        return "fk_" + RandomGenerator.sha1(key).substr(0, 27); // todo: use crypto instead?
+        const replacedTableName = tableName.replace(".", "_");
+        const replacedReferencedTableName = referencedTableName.replace(".", "_");
+        const key = `${replacedTableName}_${columnNames.join("_")}_${replacedReferencedTableName}_${referencedColumnNames.join("_")}`;
+        return "FK_" + RandomGenerator.sha1(key).substr(0, 27); // todo: use crypto instead?
     }
 
     classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string {

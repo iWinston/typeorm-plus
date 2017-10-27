@@ -7,7 +7,6 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
 import {RandomGenerator} from "../../util/RandomGenerator";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {Connection} from "../../connection/Connection";
@@ -17,7 +16,6 @@ import {InsertResult} from "../InsertResult";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
-import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -328,29 +326,12 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
                 return tableColumn;
             });
 
-            // create primary key schema
-            await Promise.all(dbIndices
-                .filter(index => index["origin"] === "pk")
-                .map(async index => {
-                    const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${index["name"]}")`);
-                    const indexColumns = indexInfos.map(indexInfo => indexInfo["name"]);
-                    table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
-                        table: table,
-                        name: index["name"],
-                        columnNames: indexColumns
-                    });
-                    indexColumns.forEach(indexColumn => {
-                    });
-
-                    // TODO
-                }));
-
             // create index schemas from the loaded indices
             const indicesPromises = dbIndices
                 .filter(dbIndex => {
                     return dbIndex["origin"] !== "pk" &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"])) &&
-                        (table.primaryKey && !table.primaryKey.name === dbIndex["name"]);
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["name"]));
+                    // && (table.primaryKey && !table.primaryKey.name === dbIndex["name"]); TODO: check and fix
                 })
                 .map(dbIndex => dbIndex["name"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue

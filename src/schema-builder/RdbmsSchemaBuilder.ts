@@ -4,7 +4,6 @@ import {TableColumn} from "./table/TableColumn";
 import {TableForeignKey} from "./table/TableForeignKey";
 import {TableIndex} from "./table/TableIndex";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {TablePrimaryKey} from "./table/TablePrimaryKey";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {PromiseUtils} from "../util/PromiseUtils";
@@ -13,7 +12,6 @@ import {SchemaBuilder} from "./SchemaBuilder";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUtils} from "./util/TableUtils";
 import {TableColumnOptions} from "./options/TableColumnOptions";
-import {TablePrimaryKeyOptions} from "./options/TablePrimaryKeyOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
@@ -337,9 +335,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates primary keys which does not exist in the table yet.
+     * TODO: i think this already does not need
      */
     protected updatePrimaryKeys() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+        /*return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName && !table.justCreated);
             if (!table)
                 return;
@@ -372,7 +371,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`primary keys of ${table.name} has changed: dropped - ${droppedKey ? droppedKey.columnNames.map(columnName => columnName).join(", ") : "nothing"}; added - ${addedPrimaryColumns.map(column => column.databaseName).join(", ") || "nothing"}`);
             await this.queryRunner.updatePrimaryKeys(table);
-        });
+        });*/
     }
 
     /**

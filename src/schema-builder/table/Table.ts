@@ -1,7 +1,6 @@
 import {TableColumn} from "./TableColumn";
 import {TableIndex} from "./TableIndex";
 import {TableForeignKey} from "./TableForeignKey";
-import {TablePrimaryKey} from "./TablePrimaryKey";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
@@ -54,7 +53,7 @@ export class Table {
     /**
      * Table primary key.
      */
-    primaryKey?: TablePrimaryKey;
+    // primaryKey?: TablePrimaryKey;
 
     /**
      * Indicates if table was just created.
@@ -91,9 +90,6 @@ export class Table {
             if (options.checks)
                 this.checks = options.checks.map(check => new TableCheck(check));
 
-            if (options.primaryKey)
-                this.primaryKey = new TablePrimaryKey(options.primaryKey);
-
             if (options.justCreated !== undefined)
                 this.justCreated = options.justCreated;
 
@@ -108,9 +104,13 @@ export class Table {
     /**
      * Gets only those primary keys that does not generated.
      */
-    get primaryKeyWithoutGenerated(): TablePrimaryKey|undefined {
+    /*get primaryKeyWithoutGenerated(): TablePrimaryKey|undefined {
         const primaryGeneratedColumns = this.columns.filter(column => column.isPrimary && column.isGenerated);
         return  primaryGeneratedColumns.length === 0 ? this.primaryKey : undefined;
+    }*/
+
+    get primaryColumns(): TableColumn[] {
+        return this.columns.filter(column => column.isPrimary);
     }
 
     get hasGeneratedColumn(): boolean {
@@ -132,7 +132,6 @@ export class Table {
             foreignKeys: this.foreignKeys.map(constraint => constraint.clone()),
             uniques: this.uniques.map(constraint => constraint.clone()),
             checks: this.checks.map(constraint => constraint.clone()),
-            primaryKey: this.primaryKey ? this.primaryKey.clone() : undefined,
             justCreated: this.justCreated,
             engine: this.engine,
         });

@@ -5,7 +5,6 @@ import {TransactionNotStartedError} from "../../error/TransactionNotStartedError
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/table/TablePrimaryKey";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {MysqlDriver} from "./MysqlDriver";
@@ -18,7 +17,6 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
-import {TablePrimaryKeyOptions} from "../../schema-builder/options/TablePrimaryKeyOptions";
 import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
 
 /**
@@ -769,8 +767,6 @@ export class MysqlQueryRunner implements QueryRunner {
             const table = new Table();
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], undefined, dbTable["TABLE_SCHEMA"]);
 
-            const primaryKeys: ObjectLiteral[] = await this.query(`SHOW INDEX FROM \`${dbTable["TABLE_SCHEMA"]}\`.\`${dbTable["TABLE_NAME"]}\` WHERE Key_name = 'PRIMARY'`);
-
             // create columns from the loaded columns
             table.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
@@ -827,15 +823,6 @@ export class MysqlQueryRunner implements QueryRunner {
                     return tableColumn;
                 });
 
-            // create primary key
-            if (primaryKeys.length > 0) {
-                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
-                    table: table,
-                    name: primaryKeys[0]["Key_name"],
-                    columnNames: primaryKeys.map(primaryKey => primaryKey["Column_name"])
-                });
-            }
-
             // create foreign key schemas from the loaded indices
             table.foreignKeys = dbForeignKeys
                 .filter(dbForeignKey => dbForeignKey["TABLE_NAME"] === table.name)
@@ -853,8 +840,8 @@ export class MysqlQueryRunner implements QueryRunner {
             table.indices = dbIndices
                 .filter(dbIndex => {
                     return dbIndex["TABLE_NAME"] === table.name &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (table.primaryKey && !table.primaryKey.name === dbIndex["INDEX_NAME"]);
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]));
+                        // && (table.primaryKey && !table.primaryKey.name === dbIndex["INDEX_NAME"]); todo: check and fix it
                 })
                 .map(dbIndex => dbIndex["INDEX_NAME"])
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
