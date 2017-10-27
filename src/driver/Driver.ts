@@ -7,6 +7,7 @@ import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -142,5 +143,10 @@ export interface Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any>;
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any): ObjectLiteral|undefined;
 
 }

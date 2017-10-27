@@ -118,6 +118,25 @@ export class ManyToManySubjectBuilder {
             // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
             const relatedEntityRelationIdMap = relation.getRelationIdMap(relatedEntity);
 
+            console.log("relatedEntityRelationIdMap", relatedEntityRelationIdMap);
+
+            // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
+            const relatedEntitySubject = this.subjects.find(subject => {
+                return subject.entity === relatedEntity;
+            });
+
+            // if related entity relation id map is empty it means related entity is newly persisted
+            if (!relatedEntityRelationIdMap) {
+
+                // if related entity does not have a subject then it means user tries to bind entity which wasn't saved
+                // in this persistence because he didn't pass this entity for save or he did not set cascades
+                // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
+                if (!relatedEntitySubject || true === true)
+                    throw new Error(`Many-to-many relation ${relation.entityMetadata.name}.${relation.propertyPath} contains ` +
+                        `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
+                        `Please setup cascade insertion or save entity before binding it.`);
+            }
+
             // try to find related entity in the database
             // by example: find post's category in the database post's categories
             const relatedEntityExistInDatabase = databaseRelatedEntityIds.find(databaseRelatedEntityRelationId => {

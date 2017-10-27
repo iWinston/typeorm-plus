@@ -15,6 +15,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
 import {DriverUtils} from "../DriverUtils";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -444,6 +445,13 @@ export class OracleDriver implements Driver {
                 ok(connection);
             });
         });
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertionResult: any) {
+        return undefined;
     }
 
     // -------------------------------------------------------------------------

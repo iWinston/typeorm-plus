@@ -79,8 +79,8 @@ export class OneToManySubjectBuilder {
             const relationIdMap = relation.getRelationIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
 
             // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
-            let relatedEntitySubject = this.subjects.find(operateSubject => {
-                return !!operateSubject.entity && operateSubject.entity === relatedEntity;
+            let relatedEntitySubject = this.subjects.find(subject => {
+                return subject.entity === relatedEntity;
             });
 
             // if relationIdMap is undefined then it means user binds object which is not saved in the database yet

@@ -32,10 +32,11 @@ export class OneToOneInverseSideSubjectBuilder {
      */
     build(): void {
         this.subjects.forEach(subject => {
-            subject.metadata.ownerOneToOneRelations.forEach(relation => {
+            subject.metadata.oneToOneRelations.forEach(relation => {
 
+                // we don't need owning relations, this operation is only for inverse side of one-to-one relations
                 // skip relations for which persistence is disabled
-                if (relation.persistenceEnabled === false)
+                if (relation.isOwning || relation.persistenceEnabled === false)
                     return;
 
                 this.buildForSubjectRelation(subject, relation);

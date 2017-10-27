@@ -79,7 +79,6 @@ export class SubjectDatabaseEntityLoader {
                     subject.databaseEntity = entity;
                     if (!subject.identifier)
                         subject.identifier = subject.metadata.isEntityIdMapEmpty(entity) ? undefined : subject.metadata.getEntityIdMap(entity);
-                    subject.recompute();
                 }
             });
 

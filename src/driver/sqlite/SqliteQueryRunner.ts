@@ -36,26 +36,36 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
+        const connection = this.driver.connection;
+
         return new Promise<any[]>(async (ok, fail) => {
-            const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
-            databaseConnection.all(query, parameters, (err: any, result: any) => {
+
+            const handler = function (err: any, result: any) {
 
                 // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                const maxQueryExecutionTime = connection.options.maxQueryExecutionTime;
                 const queryEndTime = +new Date();
                 const queryExecutionTime = queryEndTime - queryStartTime;
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                 if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                    connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 } else {
-                    ok(result);
+                    ok(isInsertQuery ? this["lastID"] : result);
                 }
-            });
+            };
+
+            const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const queryStartTime = +new Date();
+            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
+            if (isInsertQuery) {
+                databaseConnection.run(query, parameters, handler);
+            } else {
+                databaseConnection.all(query, parameters, handler);
+            }
         });
     }
 

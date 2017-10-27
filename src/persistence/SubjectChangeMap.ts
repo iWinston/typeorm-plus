@@ -5,7 +5,7 @@ import {Subject} from "./Subject";
 /**
  * Change for insertion or updation of the column of the subject.
  */
-export interface ChangeMap {
+export interface SubjectChangeMap {
 
     /**
      * Column that needs to be changed.

@@ -213,4 +213,62 @@ export class OrmUtils {
         }, {} as ObjectLiteral);
     }
 
+    /**
+     * Implements topological sort.
+     * Sorts given graph.
+     *
+     * Algorithm is kindly taken from https://github.com/marcelklehr/toposort repository.
+     */
+    static toposort(edges: any[][]) {
+
+        function uniqueNodes(arr: any[]) {
+            let res = [];
+            for (let i = 0, len = arr.length; i < len; i++) {
+                let edge: any = arr[i];
+                if (res.indexOf(edge[0]) < 0) res.push(edge[0]);
+                if (res.indexOf(edge[1]) < 0) res.push(edge[1]);
+            }
+            return res;
+        }
+
+        const nodes = uniqueNodes(edges);
+        let cursor = nodes.length
+            , sorted = new Array(cursor)
+            , visited: any = {}
+            , i = cursor;
+
+        while (i--) {
+            if (!visited[i]) visit(nodes[i], i, []);
+        }
+
+        function visit(node: any, i: number, predecessors: any[]) {
+            if (predecessors.indexOf(node) >= 0) {
+                throw new Error("Cyclic dependency: " + JSON.stringify(node));
+            }
+
+            if (!~nodes.indexOf(node)) {
+                throw new Error("Found unknown node. Make sure to provided all involved nodes. Unknown node: " + JSON.stringify(node));
+            }
+
+            if (visited[i]) return;
+            visited[i] = true;
+
+            // outgoing edges
+            let outgoing = edges.filter(function(edge){
+                return edge[0] === node;
+            });
+            if (i = outgoing.length) {
+                let preds = predecessors.concat(node);
+                do {
+                    let child = outgoing[--i][1];
+                    visit(child, nodes.indexOf(child), preds);
+                } while (i);
+            }
+
+            sorted[--cursor] = node;
+        }
+
+        return sorted;
+    }
+
 }

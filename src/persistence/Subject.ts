@@ -1,8 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {DateUtils} from "../util/DateUtils";
 import {OrmUtils} from "../util/OrmUtils";
-import {ChangeMap} from "./ChangeMap";
+import {SubjectChangeMap} from "./SubjectChangeMap";
 
 /**
  * Subject is a subject of persistence.
@@ -47,7 +46,7 @@ export class Subject {
     /**
      * Changes needs to be applied in the database for the given subject.
      */
-    changeMaps: ChangeMap[] = [];
+    changeMaps: SubjectChangeMap[] = [];
 
     /**
      * Indicates if this subject can be inserted into the database.
@@ -87,7 +86,6 @@ export class Subject {
         } else if (databaseEntity) {
             this.identifier = this.metadata.isEntityIdMapEmpty(databaseEntity) ? undefined : this.metadata.getEntityIdMap(databaseEntity);
         }
-        this.recompute(); // todo: optimize
     }
 
     // -------------------------------------------------------------------------
@@ -107,7 +105,7 @@ export class Subject {
      * and if it does not have database entity set.
      */
     get mustBeInserted() {
-        return this.canBeInserted && this.identifier === undefined && this.hasChanges();
+        return this.canBeInserted && !this.databaseEntity;
     }
 
     /**
@@ -116,14 +114,20 @@ export class Subject {
      * and if it does have differentiated columns or relations.
      */
     get mustBeUpdated() {
-        return this.canBeUpdated && this.identifier !== undefined && this.hasChanges();
+        return this.canBeUpdated && this.identifier && this.hasChanges();
     }
 
-    createChangeSet() {
-        return this.changeMaps.reduce((updateMap, changeMap) => {
+    popChangeSet() {
+        const changeMapsWithoutValues: SubjectChangeMap[] = [];
+        const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
             let value = changeMap.value;
-            if (value instanceof Subject)
+            if (value instanceof Subject) {
                 value = value.identifier;
+                if (!value) {
+                    changeMapsWithoutValues.push(changeMap);
+                    return updateMap;
+                }
+            }
 
             if (changeMap.column) {
                 OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(value));
@@ -135,6 +139,8 @@ export class Subject {
             }
             return updateMap;
         }, {} as ObjectLiteral);
+        this.changeMaps = changeMapsWithoutValues;
+        return changeSet;
     }
 
     buildIdentifier() {
@@ -147,139 +153,9 @@ export class Subject {
         }, {} as ObjectLiteral);
     }
 
-    /**
-     * Performs entity re-computations.
-     */
-    recompute() {
-        if (this.entity) {
-            this.computeDiffColumns();
-            this.computeDiffRelationalColumns();
-        }
-    }
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Differentiate columns from the updated entity and entity stored in the database.
-     */
-    protected computeDiffColumns(): void {
-        const diffColumns = this.metadata.columns.filter(column => {
-
-            // prepare both entity and database values to make comparision
-            let entityValue = column.getEntityValue(this.entity!);
-            if (entityValue === undefined)
-                return false;
-            if (!this.databaseEntity)
-                return true;
-
-            let databaseValue = column.getEntityValue(this.databaseEntity);
-
-            // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
-            if (entityValue !== null && entityValue !== undefined) {
-                if (column.type === "date") {
-                    entityValue = DateUtils.mixedDateToDateString(entityValue);
-
-                } else if (column.type === "time") {
-                    entityValue = DateUtils.mixedDateToTimeString(entityValue);
-
-                } else if (column.type === "datetime" || column.type === Date) {
-                    entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
-                    databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
-
-                } else if (column.type === "json" || column.type === "jsonb") {
-                    entityValue = JSON.stringify(entityValue);
-                    if (databaseValue !== null && databaseValue !== undefined)
-                        databaseValue = JSON.stringify(databaseValue);
-
-                } else if (column.type === "sample-array") {
-                    entityValue = DateUtils.simpleArrayToString(entityValue);
-                    databaseValue = DateUtils.simpleArrayToString(databaseValue);
-                }
-            }
-
-            // if its a special column or value is not changed - then do nothing
-            if (column.isVirtual ||
-                column.isParentId ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate ||
-                entityValue === databaseValue)
-                return false;
-
-            // filter out "relational columns" only in the case if there is a relation object in entity
-            if (column.relationMetadata) {
-                const value = column.relationMetadata.getEntityValue(this.entity!);
-                if (value !== null && value !== undefined)
-                    return false;
-            }
-
-            return true;
-        });
-        diffColumns.forEach(column => {
-            let changeMap = this.changeMaps.find(changeMap => changeMap.column === column);
-            if (changeMap) {
-                changeMap.value = column.getEntityValue(this.entity!);
-
-            } else {
-                changeMap = {
-                    column: column,
-                    value: column.getEntityValue(this.entity!)
-                };
-                this.changeMaps.push(changeMap);
-            }
-        });
-    }
-
-    /**
-     * Difference columns of the owning one-to-one and many-to-one columns.
-     */
-    protected computeDiffRelationalColumns(/*todo: updatesByRelations: UpdateByRelationOperation[], */): void {
-        const diffRelations = this.metadata.relationsWithJoinColumns.filter(relation => {
-            if (!this.databaseEntity)
-                return true;
-
-            // here we cover two scenarios:
-            // 1. related entity can be another entity which is natural way
-            // 2. related entity can be entity id which is hacked way of updating entity
-            // todo: what to do if there is a column with relationId? (cover this too?)
-            let relatedEntity = relation.getEntityValue(this.entity!);
-
-            // we don't perform operation over undefined properties (but we DO need null properties!)
-            if (relatedEntity === undefined)
-                return false;
-
-            // if relation entity is just a relation id set (for example post.tag = 1)
-            // then we create an id map from it to make a proper compare
-            if (relatedEntity !== null && !(relatedEntity instanceof Object))
-                relatedEntity = relation.getRelationIdMap(relatedEntity);
-
-            const databaseRelatedEntity = relation.getEntityValue(this.databaseEntity);
-
-            // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
-            // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
-            // todo:     return false;
-
-            // if relation ids aren't equal then we need to update them
-            return !relation.inverseEntityMetadata.compareIds(relatedEntity, databaseRelatedEntity);
-        });
-
-        diffRelations.forEach(relation => {
-            let changeMap = this.changeMaps.find(changeMap => changeMap.relation === relation);
-            if (changeMap) {
-                changeMap.value = relation.getEntityValue(this.entity!);
-
-            } else {
-                changeMap = {
-                    relation: relation,
-                    value: relation.getEntityValue(this.entity!)
-                };
-                this.changeMaps.push(changeMap);
-            }
-        });
-    }
 
     // -------------------------------------------------------------------------
     // Deprecated

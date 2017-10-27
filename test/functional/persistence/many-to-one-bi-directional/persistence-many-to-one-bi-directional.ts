@@ -20,6 +20,8 @@ describe("persistence > many-to-one bi-directional relation", function() {
         const post = new Post("Hello Post");
         await connection.manager.save(post);
 
+        console.log("inserted!");
+
         const category = new Category("Hello Category");
         category.post = post;
         await connection.manager.save(category);

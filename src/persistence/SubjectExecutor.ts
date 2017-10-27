@@ -6,6 +6,10 @@ import {PromiseUtils} from "../util/PromiseUtils";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
+import {DateUtils} from "../util/DateUtils";
+import {OrmUtils} from "../util/OrmUtils";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -30,17 +34,17 @@ export class SubjectExecutor {
     /**
      * Subjects that must be inserted.
      */
-    protected insertSubjects: Subject[];
+    protected insertSubjects: Subject[] = [];
 
     /**
      * Subjects that must be updated.
      */
-    protected updateSubjects: Subject[];
+    protected updateSubjects: Subject[] = [];
 
     /**
      * Subjects that must be removed.
      */
-    protected removeSubjects: Subject[];
+    protected removeSubjects: Subject[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -49,9 +53,12 @@ export class SubjectExecutor {
     constructor(queryRunner: QueryRunner, subjects: Subject[]) {
         this.queryRunner = queryRunner;
         this.allSubjects = subjects;
+        this.allSubjects.forEach(subject => this.recompute(subject));
         this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
+
+        //
     }
 
     // -------------------------------------------------------------------------
@@ -59,9 +66,9 @@ export class SubjectExecutor {
     // -------------------------------------------------------------------------
 
     areExecutableOperations(): boolean {
-        return this.insertSubjects.length > 0 ||
-            this.updateSubjects.length > 0 ||
-            this.removeSubjects.length > 0;
+        return  this.insertSubjects.length > 0 ||
+                this.updateSubjects.length > 0 ||
+                this.removeSubjects.length > 0;
     }
 
     /**
@@ -75,9 +82,48 @@ export class SubjectExecutor {
 
         // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
         // todo: recompute things only if at least one subscriber or listener was really executed ?
-        this.allSubjects.forEach(subject => subject.recompute());
+        this.allSubjects.forEach(subject => this.recompute(subject));
+        this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
+        this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
+        this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
+
+        // console.log("insertSubjects", this.insertSubjects.map(subject => subject.entity));
+
+        const metadatas = this.insertSubjects
+            .map(subject => subject.metadata)
+            .filter((value, index, self) => self.indexOf(value) === index);
+
+        if (metadatas.length > 0) {
+
+            const dependencies: string[][] = [];
+            metadatas.forEach(metadata => {
+                metadata.relationsWithJoinColumns.forEach(relation => {
+                    if (relation.isNullable)
+                        return;
+
+                    dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
+                });
+            });
+
+            const sortedEntityTargets = OrmUtils.toposort(dependencies).reverse();
+
+            const newInsertedSubjects: Subject[] = [];
+            sortedEntityTargets.forEach(sortedEntityTarget => {
+                const entityTargetSubjects = this.insertSubjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
+                newInsertedSubjects.push(...entityTargetSubjects);
+                entityTargetSubjects.forEach(entityTargetSubject => this.insertSubjects.splice(this.insertSubjects.indexOf(entityTargetSubject), 1));
+            });
+            newInsertedSubjects.push(...this.insertSubjects);
+            this.insertSubjects = newInsertedSubjects;
+            // console.log("dependencies", dependencies);
+            // console.log("toposort", );
+        }
 
         await this.executeInsertOperations();
+
+        // recompute update operations since insertion can create updation operations for the properties it couldn't handle on its own (referenced columns)
+        this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
+
         await this.executeUpdateOperations();
         await this.executeRemoveOperations();
 
@@ -93,39 +139,197 @@ export class SubjectExecutor {
     // -------------------------------------------------------------------------
 
     /**
+     * Performs entity re-computations.
+     */
+    protected recompute(subject: Subject) {
+        if (subject.entity) {
+            this.computeDiffColumns(subject);
+            this.computeDiffRelationalColumns(subject);
+        }
+    }
+
+    /**
+     * Differentiate columns from the updated entity and entity stored in the database.
+     */
+    protected computeDiffColumns(subject: Subject): void {
+        const diffColumns = subject.metadata.columns.filter(column => {
+
+            // prepare both entity and database values to make comparision
+            let entityValue = column.getEntityValue(subject.entity!);
+            if (entityValue === undefined)
+                return false;
+            if (!subject.databaseEntity)
+                return true;
+
+            let databaseValue = column.getEntityValue(subject.databaseEntity);
+
+            // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
+            if (entityValue !== null && entityValue !== undefined) {
+                if (column.type === "date") {
+                    entityValue = DateUtils.mixedDateToDateString(entityValue);
+
+                } else if (column.type === "time") {
+                    entityValue = DateUtils.mixedDateToTimeString(entityValue);
+
+                } else if (column.type === "datetime" || column.type === Date) {
+                    entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
+                    databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
+
+                } else if (column.type === "json" || column.type === "jsonb") {
+                    entityValue = JSON.stringify(entityValue);
+                    if (databaseValue !== null && databaseValue !== undefined)
+                        databaseValue = JSON.stringify(databaseValue);
+
+                } else if (column.type === "sample-array") {
+                    entityValue = DateUtils.simpleArrayToString(entityValue);
+                    databaseValue = DateUtils.simpleArrayToString(databaseValue);
+                }
+            }
+
+            // if its a special column or value is not changed - then do nothing
+            if (column.isVirtual ||
+                column.isParentId ||
+                column.isDiscriminator ||
+                column.isUpdateDate ||
+                column.isVersion ||
+                column.isCreateDate ||
+                entityValue === databaseValue)
+                return false;
+
+            // filter out "relational columns" only in the case if there is a relation object in entity
+            if (column.relationMetadata) {
+                const value = column.relationMetadata.getEntityValue(subject.entity!);
+                if (value !== null && value !== undefined)
+                    return false;
+            }
+
+            return true;
+        });
+        diffColumns.forEach(column => {
+            let changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
+            if (changeMap) {
+                changeMap.value = column.getEntityValue(subject.entity!);
+
+            } else {
+                changeMap = {
+                    column: column,
+                    value: column.getEntityValue(subject.entity!)
+                };
+                subject.changeMaps.push(changeMap);
+            }
+        });
+    }
+
+    /**
+     * Difference columns of the owning one-to-one and many-to-one columns.
+     */
+    protected computeDiffRelationalColumns(subject: Subject): void {
+        const diffRelations = subject.metadata.relationsWithJoinColumns.filter(relation => {
+            if (!subject.databaseEntity)
+                return true;
+
+            // here we cover two scenarios:
+            // 1. related entity can be another entity which is natural way
+            // 2. related entity can be entity id which is hacked way of updating entity
+            // todo: what to do if there is a column with relationId? (cover this too?)
+            let relatedEntity = relation.getEntityValue(subject.entity!);
+
+            // we don't perform operation over undefined properties (but we DO need null properties!)
+            if (relatedEntity === undefined)
+                return false;
+
+            // if relation entity is just a relation id set (for example post.tag = 1)
+            // then we create an id map from it to make a proper compare
+            if (relatedEntity !== null && !(relatedEntity instanceof Object))
+                relatedEntity = relation.getRelationIdMap(relatedEntity);
+
+            const databaseRelatedEntity = relation.getEntityValue(subject.databaseEntity);
+
+            // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
+            // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
+            // todo:     return false;
+
+            // if relation ids aren't equal then we need to update them
+            return !relation.inverseEntityMetadata.compareIds(relatedEntity, databaseRelatedEntity);
+        });
+
+        diffRelations.forEach(relation => {
+            let value = relation.getEntityValue(subject.entity!);
+            if (value === undefined)
+                return;
+
+            let changeMap = subject.changeMaps.find(changeMap => changeMap.relation === relation);
+            const valueSubject = this.insertSubjects.find(subject => subject.entity === value);
+            if (valueSubject) // todo: what if value is an array? is it possible here?
+                value = valueSubject;
+
+            if (changeMap) {
+                changeMap.value = value;
+
+            } else {
+                changeMap = {
+                    relation: relation,
+                    value: value
+                };
+                subject.changeMaps.push(changeMap);
+            }
+        });
+    }
+
+    /**
      * Executes insert operations.
      */
     protected async executeInsertOperations(): Promise<void> {
 
-        // we are sorting entities for insertions before execute insert operation
-        // we put into first order entities with relations which do has non nullable relations
-        // then we put into order all other entities
-        // TODO: current ordering mechanism is bad. need to create a correct order in which entities should be persisted, need to build a dependency graph
-        // this is a trivial sorting mechanism and needs improvements in the future
-        const insertSubjects = this.insertSubjects.sort((subject1, subject2) => { // todo: check if it works later
-            const x = subject1.metadata.hasNonNullableRelations;
-            const y = subject2.metadata.hasNonNullableRelations;
-            return (x === y) ? 0 : x ? 1 : -1;
-        });
-
         // then we run insertion in the sequential order which is important since we have an ordered subjects
-        await PromiseUtils.runInSequence(insertSubjects, async subject => {
+        await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
-            const changeSet = subject.createChangeSet();
-            const [insertResult] = await this.queryRunner.manager
+            const returningColumns = [];
+            if (this.queryRunner.connection.driver instanceof PostgresDriver || this.queryRunner.connection.driver instanceof SqlServerDriver) {
+                returningColumns.push(...subject.metadata.generatedColumns.map(column => column.propertyPath));
+            }
+
+            // console.log("changeMaps", subject.changeMaps);
+            const changeSet = subject.popChangeSet();
+            const insertResult = await this.queryRunner.manager
                 .createQueryBuilder()
                 .insert()
                 .into(subject.metadata.target)
                 .values(changeSet)
-                .returning(subject.metadata.generatedColumns.map(column => column.propertyPath))
+                .returning(returningColumns)
                 .execute();
 
-            subject.generatedMap = insertResult;
+            // todo: implement selection for all drivers
+            // execute one another query for returning/output column for databases which does not support this statement inside INSERT query
+            // const returningColumns = this.getReturningColumns();
+            // if (returningColumns.length > 0 &&
+            //     !(queryRunner.connection.driver instanceof PostgresDriver) &&
+            //     !(queryRunner.connection.driver instanceof SqlServerDriver)) {
+            //     const valueSets = this.getValueSets();
+            //     if (valueSets.length > 1)
+            //         throw Error(`Returning / output can be used only when a single value / entity is inserted.`);
+
+                // const alias = this.expressionMap.mainAlias!.name;
+                // const returningResult = await this.createQueryBuilder()
+                //     .select(this.expressionMap.returning as string[])
+                //     .from(this.expressionMap.mainAlias!.target, alias)
+                //     .where(valueSets[0])
+                //     .getRawMany();
+
+            //     return returningResult;
+            // }
+
+            subject.generatedMap = this.queryRunner.connection.driver.createGeneratedMap(subject.metadata, insertResult);
 
             if (subject.entity) {
                 subject.identifier = subject.buildIdentifier();
             }
-            // todo: clear changeSet
+
+            // if there are changes left mark it for updation
+            if (subject.hasChanges()) {
+                subject.canBeUpdated = true;
+                // console.log("can be updated!", subject.mustBeUpdated);
+            }
         });
     }
 
@@ -134,7 +338,7 @@ export class SubjectExecutor {
      */
     protected async executeUpdateOperations(): Promise<void> {
         await Promise.all(this.updateSubjects.map(subject => {
-            const updateMap = subject.createChangeSet();
+            const updateMap = subject.popChangeSet();
             if (!subject.identifier)
                 throw new Error(`Subject does not have identifier`);
 
@@ -152,12 +356,14 @@ export class SubjectExecutor {
      */
     protected async executeRemoveOperations(): Promise<void> {
         await PromiseUtils.runInSequence(this.removeSubjects, async subject => {
+            if (!subject.identifier)
+                throw new Error(`Subject does not have identifier`);
 
             await this.queryRunner.manager
                 .createQueryBuilder()
                 .delete()
                 .from(subject.metadata.target)
-                .where(subject.identifier!) // todo: what if identified will be undefined?!
+                .where(subject.identifier)
                 .execute();
         });
     }
@@ -790,6 +996,7 @@ export class SubjectExecutor {
 
             return this.queryRunner.update(subject.metadata.tablePath, value, idMap);
         }
+/*
 
         // we group by table name, because metadata can have different table names
         // const valueMaps: { tablePath: string, metadata: EntityMetadata, values: ObjectLiteral }[] = [];
@@ -811,6 +1018,7 @@ export class SubjectExecutor {
             .set(updateMap)
             .where(subject.identifier)
             .execute();
+*/
 
         // console.log(subject.diffColumns);
         /*subject.diffColumns.forEach(column => {

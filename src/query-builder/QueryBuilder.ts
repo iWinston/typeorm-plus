@@ -18,6 +18,7 @@ import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOp
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {WhereExpression} from "./WhereExpression";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -560,21 +561,33 @@ export abstract class QueryBuilder<Entity> {
      * Creates "RETURNING" / "OUTPUT" expression.
      */
     protected createReturningExpression(): string {
-        if (this.expressionMap.returning instanceof Array) {
-            return (this.expressionMap.returning as string[]).map(columnName => {
-                if (this.expressionMap.mainAlias!.hasMetadata) {
-                    const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(columnName);
-                    if (column)
-                        return this.escape(column.databaseName);
-                }
-                return columnName;
-            }).join(", ");
+        const columns = this.getReturningColumns();
+        if (columns.length) {
+            return columns.map(column => "INSERTED." + this.escape(column.databaseName)).join(", ");
 
-        } else if (this.expressionMap.returning) {
+        } else if (typeof this.expressionMap.returning === "string") {
             return this.expressionMap.returning;
         }
 
         return "";
+    }
+
+    /**
+     * If returning / output cause is set to array of column names,
+     * then this method will return all column metadatas of those column names.
+     */
+    protected getReturningColumns(): ColumnMetadata[] {
+        const columns: ColumnMetadata[] = [];
+        if (this.expressionMap.returning instanceof Array) {
+            (this.expressionMap.returning as string[]).forEach(columnName => {
+                if (this.expressionMap.mainAlias!.hasMetadata) {
+                    const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(columnName);
+                    if (column)
+                        columns.push(column);
+                }
+            });
+        }
+        return columns;
     }
 
     /**

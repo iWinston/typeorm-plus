@@ -16,6 +16,7 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -553,6 +554,13 @@ export class PostgresDriver implements Driver {
                 err ? fail(err) : ok([connection, release]);
             });
         });
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        return insertResult[0];
     }
 
     // -------------------------------------------------------------------------

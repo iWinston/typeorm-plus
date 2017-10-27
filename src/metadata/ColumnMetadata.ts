@@ -364,7 +364,7 @@ export class ColumnMetadata {
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
      */
-    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral {
+    getEntityValueMap(entity: ObjectLiteral, returnIfEmpty: boolean = false): ObjectLiteral {
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -391,7 +391,9 @@ export class ColumnMetadata {
                 map[this.propertyName] = value ? value[this.propertyName] : undefined;
                 return map;
             };
-            return extractEmbeddedColumnValue(propertyNames, entity, {});
+            const map: ObjectLiteral = {};
+            extractEmbeddedColumnValue(propertyNames, entity, map);
+            return map;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
             if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {

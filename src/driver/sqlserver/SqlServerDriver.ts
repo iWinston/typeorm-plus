@@ -16,6 +16,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MssqlParameter} from "./MssqlParameter";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -462,6 +463,13 @@ export class SqlServerDriver implements Driver {
 
         const random = Math.floor(Math.random() * this.slaves.length);
         return Promise.resolve(this.slaves[random]);
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertionResult: any) {
+        return insertionResult[0];
     }
 
     // -------------------------------------------------------------------------
