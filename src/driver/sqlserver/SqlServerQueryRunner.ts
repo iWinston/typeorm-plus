@@ -508,6 +508,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (createIndices) {
             table.indices.forEach(index => {
+
+                // new index may be passed without name. In this case we generate index name manually.
+                if (!index.name)
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(table, index));
             });
@@ -866,6 +870,11 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new FK may be passed without name. In this case we generate FK name manually.
+        if (!foreignKey.name)
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
         await this.executeQueries(up, down);
@@ -908,6 +917,11 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      */
     async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name)
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
         await this.executeQueries(up, down);
@@ -1285,8 +1299,6 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(index.name, table.name, index.columnNames);
         return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)}(${columns})`;
     }
 
@@ -1321,11 +1333,8 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      */
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): string {
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
-        const fkName = foreignKey.name
-            ? foreignKey.name
-            : this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
-        let sql = `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${fkName}" FOREIGN KEY (${columnNames}) ` +
+        let sql = `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
             `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
         if (foreignKey.onDelete)
             sql += ` ON DELETE ${foreignKey.onDelete}`;

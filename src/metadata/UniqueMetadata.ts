@@ -28,7 +28,7 @@ export class UniqueMetadata {
     columns: ColumnMetadata[] = [];
 
     /**
-     * User specified index name.
+     * User specified unique constraint name.
      */
     givenName?: string;
 
@@ -38,14 +38,14 @@ export class UniqueMetadata {
     givenColumnNames?: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
 
     /**
-     * Final index name.
-     * If index name was given by a user then it stores normalized (by naming strategy) givenName.
-     * If index name was not given then its generated.
+     * Final unique constraint name.
+     * If unique constraint name was given by a user then it stores normalized (by naming strategy) givenName.
+     * If unique constraint name was not given then its generated.
      */
     name: string;
 
     /**
-     * Gets the table name on which index is applied.
+     * Gets the table name on which unique constraint is applied.
      */
     tableName: string;
 
@@ -74,7 +74,7 @@ export class UniqueMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds some depend index properties.
+     * Builds some depend unique constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
      */
     build(namingStrategy: NamingStrategyInterface): this {
@@ -109,11 +109,11 @@ export class UniqueMetadata {
                 if (relationWithSameName) {
                     return relationWithSameName.joinColumns;
                 }
-                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyName);
+                throw new Error(`Unique constraint ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyName);
             })
             .reduce((a, b) => a.concat(b));
         }
-        this.name = namingStrategy.indexName(this.givenName ? this.givenName : undefined, this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
+        this.name = this.givenName ? this.givenName : namingStrategy.uniqueConstraintName(this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
         return this;
     }
 

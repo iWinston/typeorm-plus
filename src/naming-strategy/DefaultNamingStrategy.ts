@@ -55,9 +55,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
-    indexName(customName: string|undefined, tableName: string, columnNames: string[]): string {
-        if (customName)
-            return customName;
+    indexName(tableName: string, columnNames: string[]): string {
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${columnNames.join("_")}`;
         return "IDX_" + RandomGenerator.sha1(key).substr(0, 26);

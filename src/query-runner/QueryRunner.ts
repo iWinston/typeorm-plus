@@ -312,7 +312,6 @@ export interface QueryRunner {
      */
     clearSqlMemory(): void;
 
-    // todo: remove TablePrimaryKey
     // todo: add methods: addPrimaryKey, dropPrimaryKey, addUniqueConstraint, dropUniqueConstraint, check...
 
     /**

@@ -52,7 +52,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the index - simple and compose index.
      */
-    indexName(customName: string|undefined, tableName: string, columns: string[]): string;
+    indexName(tableName: string, columns: string[]): string;
 
     /**
      * Gets the name of the join column used in the one-to-one and many-to-one relations.
