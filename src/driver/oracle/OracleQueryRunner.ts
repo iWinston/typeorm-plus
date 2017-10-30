@@ -483,8 +483,15 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new table schema.
      */
-    async createSchema(schemas: string): Promise<void> {
-        await Promise.resolve();
+    async createSchema(schemas: string, ifNotExist?: boolean): Promise<void> {
+        throw new Error(`Schema create queries are not supported by Oracle driver.`);
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Schema drop queries are not supported by Oracle driver.`);
     }
 
     /**
@@ -674,6 +681,20 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         const primaryColumnNames = dbTable.primaryKey.columnNames.map(columnName => "\"" + columnName + "\"");
         if (primaryColumnNames.length > 0)
             await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);*/
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
     }
 
     /**

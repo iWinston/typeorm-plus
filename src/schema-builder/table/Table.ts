@@ -51,11 +51,6 @@ export class Table {
     checks: TableCheck[] = [];
 
     /**
-     * Table primary key.
-     */
-    // primaryKey?: TablePrimaryKey;
-
-    /**
      * Indicates if table was just created.
      * This is needed, for example to check if we need to skip primary keys creation
      * for new tables.

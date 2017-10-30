@@ -400,8 +400,15 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      */
-    async createSchema(schema: string): Promise<void> {
-        await Promise.resolve();
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+        throw new Error(`Schema create queries are not supported by MySql driver.`);
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Schema drop queries are not supported by MySql driver.`);
     }
 
     /**
@@ -558,6 +565,20 @@ export class MysqlQueryRunner implements QueryRunner {
             const revertSql = `ALTER TABLE \`${this.escapeTablePath(table)}\` DROP PRIMARY KEY`;
             return this.schemaQuery(sql, revertSql);
         }
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
     }
 
     /**

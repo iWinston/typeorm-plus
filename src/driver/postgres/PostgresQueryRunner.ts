@@ -546,8 +546,15 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
     /**
      * Creates a new table schema.
      */
-    async createSchema(schema: string): Promise<void> {
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
         await this.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        // TODO
     }
 
     /**
@@ -797,6 +804,20 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
             const down3 = `ALTER TABLE ${this.escapeTablePath(table)} DROP PRIMARY KEY (${primaryColumnNames.join(", ")})`;
             await this.schemaQuery(up3, down3);
         }*/
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
     }
 
     /**

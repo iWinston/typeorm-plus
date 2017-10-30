@@ -175,7 +175,14 @@ export interface QueryRunner {
     /**
      * Creates a new table schema.
      */
-    createSchema(schemaPath: string): Promise<void>;
+    createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>;
+
+    /**
+     * Drops table schema.
+     * For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
+     * If schema path passed, it will drop schema in specified database.
+     */
+    dropSchema(schemaPath: string, ifExist?: boolean): Promise<void>;
 
     /**
      * Creates a new table.
@@ -238,6 +245,16 @@ export interface QueryRunner {
      * @deprecated todo: remove?
      */
     updatePrimaryKeys(table: Table): Promise<void>;
+
+    /**
+     * Creates a new primary key.
+     */
+    createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void>;
+
+    /**
+     * Drops a primary key.
+     */
+    dropPrimaryKey(tableOrName: Table|string): Promise<void>;
 
     /**
      * Creates a new foreign key.

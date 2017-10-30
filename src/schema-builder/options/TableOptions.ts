@@ -1,7 +1,6 @@
 import {TableColumnOptions} from "./TableColumnOptions";
 import {TableIndexOptions} from "./TableIndexOptions";
 import {TableForeignKeyOptions} from "./TableForeignKeyOptions";
-import {TablePrimaryKeyOptions} from "./TablePrimaryKeyOptions";
 import {TableUniqueOptions} from "./TableUniqueOptions";
 import {TableCheckOptions} from "./TableCheckOptions";
 
@@ -33,11 +32,6 @@ export interface TableOptions {
      * Table foreign keys.
      */
     foreignKeys?: TableForeignKeyOptions[];
-
-    /**
-     * Table primary key.
-     */
-    primaryKey?: TablePrimaryKeyOptions;
 
     /**
      * Table unique constraints.

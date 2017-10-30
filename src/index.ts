@@ -87,7 +87,6 @@ export * from "./repository/SaveOptions";
 export * from "./schema-builder/table/TableColumn";
 export * from "./schema-builder/table/TableForeignKey";
 export * from "./schema-builder/table/TableIndex";
-export * from "./schema-builder/table/TablePrimaryKey";
 export * from "./schema-builder/table/Table";
 export * from "./driver/mongodb/typings";
 export * from "./driver/types/DatabaseType";

@@ -410,8 +410,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        const up = ifNotExist ? `IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}` : `CREATE DATABASE ${database}`;
-        const down = ifNotExist ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE ${database}` : `DROP DATABASE ${database}`;
+        const up = ifNotExist ? `IF DB_ID('${database}') IS NULL CREATE DATABASE "${database}"` : `CREATE DATABASE "${database}"`;
+        const down = `DROP DATABASE "${database}"`;
         await this.executeQueries(up, down);
     }
 
@@ -419,27 +419,72 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops database.
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        const down = ifExist ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE ${database}` : `DROP DATABASE ${database}`;
-        const up = ifExist ? `IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}` : `CREATE DATABASE ${database}`;
+        const up = ifExist ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE "${database}"` : `DROP DATABASE "${database}"`;
+        const down = `CREATE DATABASE "${database}"`;
         await this.executeQueries(up, down);
     }
 
     /**
      * Creates table schema.
+     * If database name also specified (e.g. 'dbName.schemaName') schema will be created in specified database.
      */
-    async createSchema(schemaPath: string): Promise<void> {
+    async createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
         if (schemaPath.indexOf(".") === -1) {
-            const query = `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schemaPath}' END`;
-            await this.query(query);
+            const upQuery = ifNotExist ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schemaPath}"') END` : `CREATE SCHEMA "${schemaPath}"`;
+            upQueries.push(upQuery);
+            downQueries.push(`DROP SCHEMA "${schemaPath}"`);
+
         } else {
             const dbName = schemaPath.split(".")[0];
             const schema = schemaPath.split(".")[1];
             const currentDB = await this.getCurrentDatabase();
-            await this.query(`USE ${dbName}`);
-            const query = `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC sp_executesql N'CREATE SCHEMA ${schema}' END`;
-            await this.query(query);
-            await this.query(`USE ${currentDB}`);
+            upQueries.push(`USE "${dbName}"`);
+            downQueries.push(`USE "${currentDB}"`);
+
+            const upQuery = ifNotExist ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('CREATE SCHEMA "${schema}"') END` : `CREATE SCHEMA "${schema}"`;
+            upQueries.push(upQuery);
+            downQueries.push(`DROP SCHEMA "${schemaPath}"`);
+
+            upQueries.push(`USE "${currentDB}"`);
+            downQueries.push(`USE "${dbName}"`);
         }
+
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Drops table schema.
+     * If database name also specified (e.g. 'dbName.schemaName') schema will be dropped in specified database.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        if (schemaPath.indexOf(".") === -1) {
+            const upQuery = ifExist ? `IF SCHEMA_ID('${schemaPath}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schemaPath}"') END` : `DROP SCHEMA "${schemaPath}"`;
+            upQueries.push(upQuery);
+            downQueries.push(`CREATE SCHEMA "${schemaPath}"`);
+
+        } else {
+            const dbName = schemaPath.split(".")[0];
+            const schema = schemaPath.split(".")[1];
+            const currentDB = await this.getCurrentDatabase();
+            upQueries.push(`USE "${dbName}"`);
+            downQueries.push(`USE "${currentDB}"`);
+
+            const upQuery = ifExist ? `IF SCHEMA_ID('${schema}') IS NULL BEGIN EXEC ('DROP SCHEMA "${schema}"') END` : `DROP SCHEMA "${schema}"`;
+            upQueries.push(upQuery);
+            downQueries.push(`CREATE SCHEMA "${schema}"`);
+
+            upQueries.push(`USE "${currentDB}"`);
+            downQueries.push(`USE "${dbName}"`);
+        }
+
+        await this.executeQueries(upQueries, downQueries);
+
     }
 
     /**
@@ -503,7 +548,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Renames the given table.
+     * Renames the table.
      */
     async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
         const oldTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
@@ -516,7 +561,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Checks if column with the given name exist in the given table.
+     * Checks if column exist in the table.
      */
     async hasColumn(tablePath: string, columnName: string): Promise<boolean> {
         const parsedTablePath = this.parseTableName(tablePath);
@@ -573,7 +618,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         await this.executeQueries(upQueries, downQueries);
 
         clonedTable.addColumn(column);
-        this.replaceCachedTable(clonedTable);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
@@ -687,7 +732,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(clonedTable);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
@@ -748,7 +793,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         await this.executeQueries(upQueries, downQueries);
 
         table.removeColumn(column);
-        this.replaceCachedTable(clonedTable);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
@@ -788,13 +833,19 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const clonedTable = table.clone();
+
         const up = this.createPrimaryKeySql(table, columnNames);
-        const down = this.dropPrimaryKeySql(table);
-        await this.executeQueries(up, down);
-        table.columns.forEach(column => {
+
+        // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
+        clonedTable.columns.forEach(column => {
             if (columnNames.find(columnName => columnName === column.name))
                 column.isPrimary = true;
         });
+        const down = this.dropPrimaryKeySql(clonedTable);
+
+        await this.executeQueries(up, down);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
@@ -949,7 +1000,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
             }
         });
 
-        let schemaNames: string[] = [];
+        const schemaNames: string[] = [];
         const currentSchema = await this.getCurrentSchema();
         const currentDatabase = await this.getCurrentDatabase();
 

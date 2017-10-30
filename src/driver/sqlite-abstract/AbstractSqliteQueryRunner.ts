@@ -413,7 +413,14 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      */
-    async createSchema(schema: string): Promise<void> {
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
         return Promise.resolve();
     }
 
@@ -572,6 +579,20 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      */
     async updatePrimaryKeys(dbTable: Table): Promise<void> {
         await this.recreateTable(dbTable);
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
     }
 
     /**

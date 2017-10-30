@@ -513,8 +513,15 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      */
-    async createSchema(schema: string): Promise<void> {
+    async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
         throw new Error(`Schema create queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Schema drop queries are not supported by MongoDB driver.`);
     }
 
     /**
@@ -598,6 +605,20 @@ export class MongoQueryRunner implements QueryRunner {
      * Updates table's primary keys.
      */
     async updatePrimaryKeys(table: Table): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

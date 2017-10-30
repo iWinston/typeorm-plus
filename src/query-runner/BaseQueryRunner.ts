@@ -174,10 +174,10 @@ export abstract class BaseQueryRunner {
     /**
      * Replaces loaded table with given changed table.
      */
-    protected replaceCachedTable(table: Table): void {
+    protected replaceCachedTable(table: Table, changedTable: Table): void {
         const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
         if (foundTable)
-            this.loadedTables[this.loadedTables.indexOf(foundTable)] = table;
+            this.loadedTables[this.loadedTables.indexOf(foundTable)] = changedTable;
     }
 
     /**
