@@ -138,6 +138,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected createUpdateExpression() {
         const valuesSet = this.getValueSet();
+        // console.log("valuesSet", valuesSet);
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
 
         // prepare columns and values to be updated
@@ -145,32 +146,37 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (metadata) {
             EntityMetadataUtils.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
                 // todo: make this and other query builder to work with properly with tables without metadata
-                const column = metadata.findColumnWithPropertyPath(propertyPath);
+                const columns = metadata.findColumnsWithPropertyPath(propertyPath);
+                columns.forEach(column => {
+                    const paramName = "_updated_" + column.databaseName;
 
-                // we update an entity and entity can contain properties which aren't columns, so we just skip them
-                if (!column) return;
-
-                const paramName = "_updated_" + column.databaseName;
-
-                //
-                let value = column.getEntityValue(valuesSet);
-                if (column.referencedColumn && value instanceof Object) {
-                    value = column.referencedColumn.getEntityValue(value);
-                }
-                value = this.connection.driver.preparePersistentValue(value, column);
-
-                // todo: duplication zone
-                if (value instanceof Function) { // support for SQL expressions in update query
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
-                } else {
-                    if (this.connection.driver instanceof SqlServerDriver) {
-                        this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
-                    } else {
-                        this.setParameter(paramName, value);
+                    //
+                    let value = column.getEntityValue(valuesSet);
+                    if (column.referencedColumn && value instanceof Object) {
+                        value = column.referencedColumn.getEntityValue(value);
                     }
-                    updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
-                }
+                    value = this.connection.driver.preparePersistentValue(value, column);
+
+                    // todo: duplication zone
+                    if (value instanceof Function) { // support for SQL expressions in update query
+                        updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
+                    } else {
+                        if (this.connection.driver instanceof SqlServerDriver) {
+                            this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
+                        } else {
+                            this.setParameter(paramName, value);
+                        }
+                        updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
+                    }
+                });
             });
+
+
+            if (metadata.versionColumn)
+                updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
+            if (metadata.updateDateColumn)
+                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = NOW()");
+
         } else {
             Object.keys(valuesSet).map(key => {
                 const value = valuesSet[key];

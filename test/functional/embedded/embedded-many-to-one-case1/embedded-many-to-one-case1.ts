@@ -363,7 +363,7 @@ describe("embedded > embedded-many-to-one-case1", () => {
                 .where("post.id = :id", { id: 2 })
                 .getOne();
 
-            expect(loadedPost!.counters.likedUser).to.be.empty;
+            expect(loadedPost!.counters.likedUser).to.be.null;
         })));
 
     });

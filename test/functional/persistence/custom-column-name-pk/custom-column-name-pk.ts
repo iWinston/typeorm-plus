@@ -48,7 +48,8 @@ describe("persistence > cascade operations with custom name", () => {
 
             posts.should.be.eql([{
                 id: 1,
-                title: "Hello Post #1"
+                title: "Hello Post #1",
+                category: null
             }]);
         })));
 

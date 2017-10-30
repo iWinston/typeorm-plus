@@ -288,6 +288,9 @@ export class MysqlDriver implements Driver {
         if (columnMetadata.transformer)
             value = columnMetadata.transformer.to(value);
 
+        if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value)
+            return RandomGenerator.uuid4();
+
         if (value === null || value === undefined)
             return value;
 
@@ -305,9 +308,6 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value, true);
-
-        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
-            return RandomGenerator.uuid4();
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -484,13 +484,17 @@ export class MysqlDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertionResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertValue: ObjectLiteral, insertResult: any) {
+        console.log("insertValue", insertValue);
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
-            if (generatedColumn.generationStrategy === "increment" && insertionResult.insertId) {
-                value = insertionResult.insertId;
+            if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
+                value = insertResult.insertId;
+            } else if (generatedColumn.generationStrategy === "uuid") {
+                console.log("getting db value:", generatedColumn.databaseName);
+                value = insertValue[generatedColumn.databaseName];
             }
-            if (!value) return map;
+
             return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
         }, {} as ObjectLiteral);
 

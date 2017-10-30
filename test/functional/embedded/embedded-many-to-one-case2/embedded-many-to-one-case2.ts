@@ -335,7 +335,7 @@ describe("embedded > embedded-many-to-one-case2", () => {
                 .where("user.id = :id", { id: 2 })
                 .getOne();
 
-            expect(loadedUser!.likedPost).to.be.empty;
+            expect(loadedUser!.likedPost).to.be.null;
         })));
     });
 });

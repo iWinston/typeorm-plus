@@ -588,9 +588,7 @@ export abstract class QueryBuilder<Entity> {
         if (this.expressionMap.returning instanceof Array) {
             (this.expressionMap.returning as string[]).forEach(columnName => {
                 if (this.expressionMap.mainAlias!.hasMetadata) {
-                    const column = this.expressionMap.mainAlias!.metadata.findColumnWithPropertyPath(columnName);
-                    if (column)
-                        columns.push(column);
+                    columns.push(...this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(columnName));
                 }
             });
         }

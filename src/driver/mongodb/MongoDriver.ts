@@ -293,7 +293,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertionResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertValue: ObjectLiteral, insertResult: any) {
         return undefined;
     }
 

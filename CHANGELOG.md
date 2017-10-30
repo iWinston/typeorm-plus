@@ -5,12 +5,31 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.0
+
+* completely refactored, improved and optimized persistence process and performance
+* removed cascade remove functionality, refactored how cascades are working.
+* removed `cascadeRemove` and `cascadeAll` options from column options.
+* now when one-to-one or many-to-one relation is loaded and its not set (set to null) ORM returns you entity with relation set to `null` instead of `undefined property` as before.
+* now relation id can be set directly to relation, e.g. `Post { @ManyToOne(type => Tag) tag: Tag|number }` with `post.tag = 1` usage.
+* now you can disable persistence on any relation by setting `@OneToMany(type => Post, post => tag, { persistence: false })`. This can dramatically improve entity save performance.
+* `loadAllRelationIds` method of `QueryBuilder` now accepts list of relation paths that needs to be loaded, also `disableMixedMap` option is now by default set to false, but you can enable it via new method parameter `options`
+* lot of changes affect closure table pattern which is planned for fix in 0.3.0 
+* lot of changes affect table inheritance patterns which are planned for fix in 0.3.0 
+* now `returning` and `output` statements of `InsertQueryBuilder` support array of columns as argument
+* now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
+* fixed issues with relation updation from one-to-one non-owner side
+* now version column is updated on the database level, not by ORM anymore
+* now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `NOW()` sql function)
+
+
 ## 0.1.2 (next)
 
 * sqlite now supports relative database file paths (#798 and #799)
-* fixed bug with not properly working `update`  method (#1037, #1042)
+* fixed bug with not properly working `update` method (#1037, #1042)
 * fixed bug with replication support (#1035)
-* fixed bug with wrong embedded column names being generated (#969) 
+* fixed bug with wrong embedded column names being generated (#969)
+* fixed broken `typeorm version` command
 
 ## 0.1.1 (current)
 

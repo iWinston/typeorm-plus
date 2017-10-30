@@ -118,10 +118,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const columns = this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-                if (!this.expressionMap.insertColumns.length)
-                    return !column.isGenerated;
 
-                return this.expressionMap.insertColumns.indexOf(column.propertyPath);
+                // if user specified list of columns he wants to insert to, then we filter only them
+                if (this.expressionMap.insertColumns.length)
+                    return this.expressionMap.insertColumns.indexOf(column.propertyPath);
+
+                // if user did not specified such list then return all columns except generated one
+                if (column.isGenerated && column.generationStrategy === "increment")
+                    return false;
+
+                return true;
             });
 
             // get a table name and all column database names
@@ -137,6 +143,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         value = column.referencedColumn.getEntityValue(value);
                     }
                     value = this.connection.driver.preparePersistentValue(value, column);
+
+                    if (column.isVersion) {
+                        return "1";
+
+                    } else if (column.isCreateDate || column.isUpdateDate) {
+                        return "NOW()";
+                    }
 
                     if (value instanceof Function) { // support for SQL expressions in update query
                         return value();

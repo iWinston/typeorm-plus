@@ -308,6 +308,8 @@ export class Repository<Entity extends ObjectLiteral> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any);
     }
 
+    // todo: deprecate findOneById method, use findOne instead
+
     /**
      * Finds entity by given id.
      * Optionally find options can be applied.

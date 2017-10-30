@@ -416,12 +416,15 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertionResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertValue: ObjectLiteral, insertResult: any) {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
-            if (generatedColumn.generationStrategy === "increment" && insertionResult) {
-                value = insertionResult;
+            if (generatedColumn.generationStrategy === "increment" && insertResult) {
+                value = insertResult;
+            } else if (generatedColumn.generationStrategy === "uuid") {
+                value = insertValue[generatedColumn.databaseName];
             }
+
             if (!value) return map;
             return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
         }, {} as ObjectLiteral);

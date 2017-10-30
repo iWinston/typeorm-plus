@@ -383,12 +383,19 @@ export class ColumnMetadata {
             // this recursive function helps doing that
             const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral, map: ObjectLiteral): any => {
                 const propertyName = propertyNames.shift();
+                if (value === undefined)
+                    return map;
+
                 if (propertyName) {
-                    map[propertyName] = {};
-                    extractEmbeddedColumnValue(propertyNames, value ? value[propertyName] : undefined, map[propertyName]);
+                    const submap: ObjectLiteral = {};
+                    extractEmbeddedColumnValue(propertyNames, value[propertyName], submap);
+                    if (Object.keys(submap).length > 0) {
+                        map[propertyName] = submap;
+                    }
                     return map;
                 }
-                map[this.propertyName] = value ? value[this.propertyName] : undefined;
+                if (value[this.propertyName] !== undefined)
+                    map[this.propertyName] = value[this.propertyName];
                 return map;
             };
             const map: ObjectLiteral = {};
@@ -399,10 +406,13 @@ export class ColumnMetadata {
             if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
                     const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]);
-                    if (!value) return map;
+                    if (value === undefined) return map;
                     return OrmUtils.mergeDeep(map, value);
                 }, {});
-                return { [this.propertyName]: Object.keys(map).length > 0 ? map : undefined };
+                if (Object.keys(map).length > 0)
+                    return { [this.propertyName]: map };
+
+                return undefined;
             } else {
                 if (entity[this.propertyName] !== undefined)
                     return { [this.propertyName]: entity[this.propertyName] };

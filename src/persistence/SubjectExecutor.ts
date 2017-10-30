@@ -7,9 +7,10 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 import {DateUtils} from "../util/DateUtils";
-import {OrmUtils} from "../util/OrmUtils";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {InsertSubjectsSorter} from "./InsertSubjectsSorter";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -87,57 +88,12 @@ export class SubjectExecutor {
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
 
-        // console.log("insertSubjects", this.insertSubjects.map(subject => subject.entity));
-
-        const metadatas = this.insertSubjects
-            .map(subject => subject.metadata)
-            .filter((value, index, self) => self.indexOf(value) === index);
-
-        if (metadatas.length > 0) {
-
-            const dependencies: string[][] = [];
-            metadatas.forEach(metadata => {
-                metadata.relationsWithJoinColumns.forEach(relation => {
-                    if (relation.isNullable)
-                        return;
-
-                    dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
-                });
-            });
-
-            const sortedEntityTargets = OrmUtils.toposort(dependencies).reverse();
-
-            const newInsertedSubjects: Subject[] = [];
-            sortedEntityTargets.forEach(sortedEntityTarget => {
-                const entityTargetSubjects = this.insertSubjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
-                newInsertedSubjects.push(...entityTargetSubjects);
-                entityTargetSubjects.forEach(entityTargetSubject => this.insertSubjects.splice(this.insertSubjects.indexOf(entityTargetSubject), 1));
-            });
-
-            const dependencies2: string[][] = [];
-            metadatas.forEach(metadata => {
-                metadata.relationsWithJoinColumns.forEach(relation => {
-                    dependencies2.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
-                });
-            });
-
-            const sortedEntityTargets2 = OrmUtils.toposort(dependencies2).reverse();
-
-            const newInsertedSubjects2: Subject[] = [];
-            sortedEntityTargets2.forEach(sortedEntityTarget => {
-                const entityTargetSubjects = this.insertSubjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
-                newInsertedSubjects2.push(...entityTargetSubjects);
-                entityTargetSubjects.forEach(entityTargetSubject => this.insertSubjects.splice(this.insertSubjects.indexOf(entityTargetSubject), 1));
-            });
-
-            newInsertedSubjects.push(...newInsertedSubjects2);
-            newInsertedSubjects.push(...this.insertSubjects);
-            this.insertSubjects = newInsertedSubjects;
-        }
+        this.insertSubjects = new InsertSubjectsSorter().order(this.insertSubjects);
 
         await this.executeInsertOperations();
 
-        // recompute update operations since insertion can create updation operations for the properties it couldn't handle on its own (referenced columns)
+        // recompute update operations since insertion can create updation operations for the
+        // properties it wasn't able to handle on its own (referenced columns)
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
 
         await this.executeUpdateOperations();
@@ -306,45 +262,53 @@ export class SubjectExecutor {
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
-            const returningColumns = [];
+            // filter out the columns of which we need database inserted values to update our entity
+            const returningColumns: ColumnMetadata[] = subject.metadata.columns.filter(column => {
+                return column.default !== undefined ||
+                    column.isGenerated ||
+                    column.isCreateDate ||
+                    column.isUpdateDate ||
+                    column.isVersion;
+            });
+
+            // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
+            const returningColumnNames: string[] = [];
             if (this.queryRunner.connection.driver instanceof PostgresDriver || this.queryRunner.connection.driver instanceof SqlServerDriver) {
-                returningColumns.push(...subject.metadata.generatedColumns.map(column => column.propertyPath));
+                returningColumnNames.push(...returningColumns.map(column => column.propertyPath));
             }
 
-            // console.log("changeMaps", subject.changeMaps);
             const changeSet = subject.popChangeSet();
             const insertResult = await this.queryRunner.manager
                 .createQueryBuilder()
                 .insert()
                 .into(subject.metadata.target)
                 .values(changeSet)
-                .returning(returningColumns)
+                .returning(returningColumnNames) // todo: add "updateEntity(true)" option?
                 .execute();
 
-            // todo: implement selection for all drivers
-            // execute one another query for returning/output column for databases which does not support this statement inside INSERT query
-            // const returningColumns = this.getReturningColumns();
-            // if (returningColumns.length > 0 &&
-            //     !(queryRunner.connection.driver instanceof PostgresDriver) &&
-            //     !(queryRunner.connection.driver instanceof SqlServerDriver)) {
-            //     const valueSets = this.getValueSets();
-            //     if (valueSets.length > 1)
-            //         throw Error(`Returning / output can be used only when a single value / entity is inserted.`);
-                // const alias = this.expressionMap.mainAlias!.name;
-                // const returningResult = await this.createQueryBuilder()
-                //     .select(this.expressionMap.returning as string[])
-                //     .from(this.expressionMap.mainAlias!.target, alias)
-                //     .where(valueSets[0])
-                //     .getRawMany();
-
-            //     return returningResult;
-            // }
-
-            subject.generatedMap = this.queryRunner.connection.driver.createGeneratedMap(subject.metadata, insertResult);
+            subject.generatedMap = this.queryRunner.connection.driver.createGeneratedMap(subject.metadata, changeSet, insertResult);
 
             if (subject.entity) {
                 subject.identifier = subject.buildIdentifier();
-                // console.log(subject.identifier);
+            }
+
+            // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
+            // for other drivers we have to re-select this data from the database
+            if (!(this.queryRunner.connection.driver instanceof PostgresDriver) ||
+                !(this.queryRunner.connection.driver instanceof SqlServerDriver)) {
+                const returningResult = await this.queryRunner.manager
+                    .createQueryBuilder()
+                    .select(returningColumns.map(column => column.propertyPath))
+                    .from(subject.metadata.target, subject.metadata.targetName)
+                    .where(subject.identifier!)
+                    .getRawOne();
+
+                console.log("subject.identifier before", subject.identifier);
+                subject.identifier = returningColumns.reduce((map, column) => {
+                    return OrmUtils.mergeDeep(map, column.createValueMap(returningResult[column.databaseName]));
+                }, {} as ObjectLiteral);
+                console.log("subject.identifier after", subject.identifier);
+                console.log(returningResult);
             }
 
             // if there are changes left mark it for updation
