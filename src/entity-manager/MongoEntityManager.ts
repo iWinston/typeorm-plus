@@ -26,7 +26,7 @@ import {
     MongoCallback,
     MongoCountPreferences,
     MongodbIndexOptions,
-    MongoError,
+    MongoError, ObjectID,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -144,8 +144,14 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions);
+    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
+                          optionsOrConditions?: string|ObjectID|FindOneOptions<Entity>|Partial<Entity>,
+                          maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+        const id = optionsOrConditions instanceof ObjectID || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
+        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
+        if (id) {
+            query["_id"] = id;
+        }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
             if (optionsOrConditions.order)
@@ -162,17 +168,7 @@ export class MongoEntityManager extends EntityManager {
      * Optionally find options or conditions can be applied.
      */
     async findOneById<Entity>(entityClassOrName: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        query["_id"] = id;
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
-        }
-
-        // const result = await cursor.limit(1).next();
-        const result = await cursor.limit(1).toArray();
-        return result.length > 0 ? result[0] : undefined;
+        return this.findOne(entityClassOrName, id, optionsOrConditions);
     }
 
     // -------------------------------------------------------------------------

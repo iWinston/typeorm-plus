@@ -14,7 +14,6 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {RandomGenerator} from "../../util/RandomGenerator";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
@@ -288,9 +287,6 @@ export class MysqlDriver implements Driver {
         if (columnMetadata.transformer)
             value = columnMetadata.transformer.to(value);
 
-        if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value)
-            return RandomGenerator.uuid4();
-
         if (value === null || value === undefined)
             return value;
 
@@ -484,15 +480,15 @@ export class MysqlDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertValue: ObjectLiteral, insertResult: any) {
-        console.log("insertValue", insertValue);
+    createGeneratedMap(metadata: EntityMetadata, uuidMap: ObjectLiteral, insertResult: any) {
+        // console.log("uuidMap", uuidMap);
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
                 value = insertResult.insertId;
-            } else if (generatedColumn.generationStrategy === "uuid") {
-                console.log("getting db value:", generatedColumn.databaseName);
-                value = insertValue[generatedColumn.databaseName];
+            // } else if (generatedColumn.generationStrategy === "uuid") {
+            //     console.log("getting db value:", generatedColumn.databaseName);
+            //     value = generatedColumn.getEntityValue(uuidMap);
             }
 
             return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));

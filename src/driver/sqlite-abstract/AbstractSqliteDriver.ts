@@ -10,7 +10,6 @@ import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {RandomGenerator} from "../../util/RandomGenerator";
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
@@ -226,9 +225,6 @@ export class AbstractSqliteDriver implements Driver {
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
 
-        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
-            return RandomGenerator.uuid4();
-
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -416,13 +412,13 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertValue: ObjectLiteral, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, uuidMap: ObjectLiteral, insertResult: any) {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult) {
                 value = insertResult;
-            } else if (generatedColumn.generationStrategy === "uuid") {
-                value = insertValue[generatedColumn.databaseName];
+            // } else if (generatedColumn.generationStrategy === "uuid") {
+            //     value = insertValue[generatedColumn.databaseName];
             }
 
             if (!value) return map;

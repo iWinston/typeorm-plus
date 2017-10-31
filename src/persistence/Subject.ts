@@ -150,16 +150,6 @@ export class Subject {
         return changeSet;
     }
 
-    buildIdentifier() {
-        return this.metadata.primaryColumns.reduce((identifier, column) => {
-            if (column.isGenerated && this.generatedMap) {
-                return OrmUtils.mergeDeep(identifier, column.getEntityValueMap(this.generatedMap));
-            } else {
-                return OrmUtils.mergeDeep(identifier, column.getEntityValueMap(this.entity!));
-            }
-        }, {} as ObjectLiteral);
-    }
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

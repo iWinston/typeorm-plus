@@ -521,51 +521,76 @@ export class EntityManager {
     /**
      * Finds first entity that matches given find options.
      */
+    findOne<Entity>(entityClass: ObjectType<Entity>|string, id?: string|number|Date, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds first entity that matches given find options.
+     */
     findOne<Entity>(entityClass: ObjectType<Entity>|string, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+    findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions: string|number|Date|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
+        let alias: string = metadata.name;
+        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions) && idOrOptionsOrConditions.join) {
+            alias = idOrOptionsOrConditions.join.alias;
+
+        } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions) && maybeOptions.join) {
+            alias = maybeOptions.join.alias;
+        }
+        const qb = this.createQueryBuilder(entityClass, alias);
+
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
+
+        if (maybeOptions) {
+            FindOptionsUtils.applyOptionsToQueryBuilder(qb, maybeOptions);
+        }
+
+        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
+            FindOptionsUtils.applyOptionsToQueryBuilder(qb, idOrOptionsOrConditions);
+
+        } else if (idOrOptionsOrConditions instanceof Object) {
+            qb.where(idOrOptionsOrConditions as any);
+
+        } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date) {
+            qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));
+        }
+
+        return qb.getOne();
     }
 
     /**
      * Finds entity with given id.
      * Optionally find options can be applied.
+     *
+     * @deprecated Use findOne(id) instead
      */
     findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds entity with given id.
      * Optionally conditions can be applied.
+     *
+     * @deprecated Use findOne(id) instead
      */
     findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, conditions?: Partial<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds entity with given id.
      * Optionally find options or conditions can be applied.
+     *
+     * @deprecated Use findOne(id) instead
      */
     findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
-        if (metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
-            // const columnNames = this.metadata.getEntityIdMap({  });
-            throw new Error(`You have multiple primary keys in your entity, to use findOneById with multiple primary keys please provide ` +
-                `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
-        }
-
-        this.joinEagerRelations(qb, qb.alias, metadata);
-        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        return qb.andWhereInIds(metadata.ensureEntityIdMap(id)).getOne();
+        return (this.findOne as any)(entityClass, id, optionsOrConditions);
     }
 
     /**

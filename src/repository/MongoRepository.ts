@@ -97,13 +97,15 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    findOne(optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        return this.manager.findOne(this.metadata.target, optionsOrConditions);
+    findOne(optionsOrConditions?: string|number|Date|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+        return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions as any);
     }
 
     /**
      * Finds entity by given id.
      * Optionally find options or conditions can be applied.
+     *
+     * @deprecated use findOne method instead
      */
     findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         return this.manager.findOneById(this.metadata.target, id, optionsOrConditions);

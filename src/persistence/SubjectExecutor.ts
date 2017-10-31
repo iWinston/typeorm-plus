@@ -7,10 +7,7 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EmbeddedMetadata} from "../metadata/EmbeddedMetadata";
 import {DateUtils} from "../util/DateUtils";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {InsertSubjectsSorter} from "./InsertSubjectsSorter";
-import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -262,54 +259,21 @@ export class SubjectExecutor {
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
-            // filter out the columns of which we need database inserted values to update our entity
-            const returningColumns: ColumnMetadata[] = subject.metadata.columns.filter(column => {
-                return column.default !== undefined ||
-                    column.isGenerated ||
-                    column.isCreateDate ||
-                    column.isUpdateDate ||
-                    column.isVersion;
-            });
-
-            // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
-            const returningColumnNames: string[] = [];
-            if (this.queryRunner.connection.driver instanceof PostgresDriver || this.queryRunner.connection.driver instanceof SqlServerDriver) {
-                returningColumnNames.push(...returningColumns.map(column => column.propertyPath));
-            }
-
             const changeSet = subject.popChangeSet();
             const insertResult = await this.queryRunner.manager
                 .createQueryBuilder()
                 .insert()
                 .into(subject.metadata.target)
                 .values(changeSet)
-                .returning(returningColumnNames) // todo: add "updateEntity(true)" option?
+                // .returning(returningColumnNames) // todo: add "updateEntity(true)" option?
                 .execute();
 
-            subject.generatedMap = this.queryRunner.connection.driver.createGeneratedMap(subject.metadata, changeSet, insertResult);
+            subject.generatedMap = insertResult.generatedMaps[0]; // todo: do we really need it?
+            subject.identifier = insertResult.identifiers[0];
 
-            if (subject.entity) {
-                subject.identifier = subject.buildIdentifier();
-            }
-
-            // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
-            // for other drivers we have to re-select this data from the database
-            if (!(this.queryRunner.connection.driver instanceof PostgresDriver) ||
-                !(this.queryRunner.connection.driver instanceof SqlServerDriver)) {
-                const returningResult = await this.queryRunner.manager
-                    .createQueryBuilder()
-                    .select(returningColumns.map(column => column.propertyPath))
-                    .from(subject.metadata.target, subject.metadata.targetName)
-                    .where(subject.identifier!)
-                    .getRawOne();
-
-                console.log("subject.identifier before", subject.identifier);
-                subject.identifier = returningColumns.reduce((map, column) => {
-                    return OrmUtils.mergeDeep(map, column.createValueMap(returningResult[column.databaseName]));
-                }, {} as ObjectLiteral);
-                console.log("subject.identifier after", subject.identifier);
-                console.log(returningResult);
-            }
+            // if (subject.entity) {
+            //     subject.identifier = subject.buildIdentifier();
+            // }
 
             // if there are changes left mark it for updation
             if (subject.hasChanges()) {

@@ -207,6 +207,17 @@ export class QueryExpressionMap {
      */
     insertColumns: string[] = [];
 
+    /**
+     * Indicates if entity must be updated after insertion / updation.
+     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
+     */
+    updateEntity: boolean = true;
+
+    /**
+     * Indicates if subscribers must be called before and after query execution.
+     */
+    callSubscribers: boolean = true;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

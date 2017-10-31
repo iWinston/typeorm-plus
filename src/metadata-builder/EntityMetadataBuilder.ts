@@ -357,6 +357,7 @@ export class EntityMetadataBuilder {
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.isObjectId);
+        entityMetadata.hasUUIDGeneratedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
         entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.isCreateDate);
         entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.isUpdateDate);
         entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);

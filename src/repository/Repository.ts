@@ -294,6 +294,11 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given options.
      */
+    findOne(id?: string|number|Date): Promise<Entity|undefined>;
+
+    /**
+     * Finds first entity that matches given options.
+     */
     findOne(options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
@@ -304,7 +309,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: string|number|Date|FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any);
     }
 
@@ -313,18 +318,24 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entity by given id.
      * Optionally find options can be applied.
+     *
+     * @deprecated Use findOne(id) instead
      */
     findOneById(id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally conditions can be applied.
+     *
+     * @deprecated Use findOne(id) instead
      */
     findOneById(id: any, conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally find options or conditions can be applied.
+     *
+     * @deprecated Use findOne(id) instead
      */
     findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         return this.manager.findOneById(this.metadata.target, id, optionsOrConditions as any);

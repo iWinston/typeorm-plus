@@ -46,34 +46,11 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static extractFindOneOptionsAlias(object: any): string|undefined {
-        if (this.isFindOneOptions(object) && object.join)
-            return object.join.alias;
-
-        return undefined;
-    }
-
-    /**
-     * Checks if given object is really instance of FindOptions interface.
-     */
     static extractFindManyOptionsAlias(object: any): string|undefined {
         if (this.isFindManyOptions(object) && object.join)
             return object.join.alias;
 
         return undefined;
-    }
-
-    /**
-     * Applies give find one options to the given query builder.
-     */
-    static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
-        if (this.isFindOneOptions(options))
-            return this.applyOptionsToQueryBuilder(qb, options);
-
-        if (options)
-            return qb.where(options);
-
-        return qb;
     }
 
     /**

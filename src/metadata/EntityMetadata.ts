@@ -238,6 +238,11 @@ export class EntityMetadata {
     hasMultiplePrimaryKeys: boolean;
 
     /**
+     * Indicates if this entity metadata has uuid generated columns.
+     */
+    hasUUIDGeneratedColumns: boolean;
+
+    /**
      * Gets the column with generated flag.
      */
     generatedColumns: ColumnMetadata[] = [];
@@ -694,6 +699,7 @@ export class EntityMetadata {
         this.parentIdColumns = this.columns.filter(column => column.isParentId);
         this.primaryColumns = this.columns.filter(column => column.isPrimary);
         this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
+        this.hasUUIDGeneratedColumns = this.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
         this.propertiesMap = this.createPropertiesMap();
     }
 

@@ -266,18 +266,24 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Checks if given relation exists in the entity.
      * Returns true if relation exists, false otherwise.
+     *
+     * todo: move this method to manager? or create a shortcut?
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string): boolean;
 
     /**
      * Checks if given relations exist in the entity.
      * Returns true if relation exists, false otherwise.
+     *
+     * todo: move this method to manager? or create a shortcut?
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string[]): boolean;
 
     /**
      * Checks if given relation or relations exist in the entity.
      * Returns true if relation exists, false otherwise.
+     *
+     * todo: move this method to manager? or create a shortcut?
      */
     hasRelation<T>(target: ObjectType<T>|string, relation: string|string[]): boolean {
         const entityMetadata = this.connection.getMetadata(target);
@@ -562,6 +568,14 @@ export abstract class QueryBuilder<Entity> {
      */
     protected createReturningExpression(): string {
         const columns = this.getReturningColumns();
+
+        // also add columns we must auto-return to perform entity updation
+        if (this.isReturningSqlSupported()) {
+            columns.push(...this.getEntityUpdationReturningColumns().filter(column => {
+                return columns.indexOf(column) === -1;
+            }));
+        }
+
         if (columns.length) {
             return columns.map(column => {
                 const name = this.escape(column.databaseName);
@@ -593,6 +607,33 @@ export abstract class QueryBuilder<Entity> {
             });
         }
         return columns;
+    }
+
+    /**
+     * Gets columns required by
+     */
+    protected getEntityUpdationReturningColumns(): ColumnMetadata[] {
+
+        // if update entity mode is disabled or we aren't working with entity we don't need this functionality
+        if (!this.expressionMap.updateEntity || !this.expressionMap.mainAlias!.hasMetadata)
+            return [];
+
+        // filter out the columns of which we need database inserted values to update our entity
+        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+            return  column.default !== undefined ||
+                    column.isGenerated  ||
+                    column.isCreateDate ||
+                    column.isUpdateDate ||
+                    column.isVersion;
+        });
+    }
+
+    /**
+     * Checks if RETURNING / OUTPUT statement is supported by current driver.
+     */
+    protected isReturningSqlSupported() {
+        return  this.connection.driver instanceof PostgresDriver ||
+                this.connection.driver instanceof SqlServerDriver;
     }
 
     /**
