@@ -60,7 +60,7 @@ describe("basic-lazy-relations", () => {
 
         savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
-        const post = (await postRepository.findOneById(1))!;
+        const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
@@ -100,7 +100,7 @@ describe("basic-lazy-relations", () => {
 
         savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
-        const post = (await postRepository.findOneById(1))!;
+        const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
@@ -112,7 +112,7 @@ describe("basic-lazy-relations", () => {
         categories.should.contain(savedCategory2);
         categories.should.contain(savedCategory3);
 
-        const category = (await categoryRepository.findOneById(1))!;
+        const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
 
         const twoSidePosts = await category.twoSidePosts;
@@ -141,7 +141,7 @@ describe("basic-lazy-relations", () => {
         newUser.profile.should.eventually.be.eql(profile);
 
         // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
-        const loadedUser: any = await userRepository.findOneById(1);
+        const loadedUser: any = await userRepository.findOne(1);
         loadedUser.firstName.should.be.equal("Umed");
         loadedUser.secondName.should.be.equal("San");
         loadedUser.profile.should.be.instanceOf(Promise);

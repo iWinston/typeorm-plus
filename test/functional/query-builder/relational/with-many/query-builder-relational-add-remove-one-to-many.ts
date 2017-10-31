@@ -47,13 +47,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of(category1)
             .add(post1);
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.eql({ id: 1, name: "category #1" });
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.undefined;
 
         await connection
@@ -62,13 +62,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of(category1)
             .remove(post1);
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.undefined;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.undefined;
     })));
 
@@ -104,13 +104,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of(2) // category id
             .add(2); // post id
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.undefined;
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.undefined;
 
         await connection
@@ -119,13 +119,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of(2) // category id
             .remove(2); // post id
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.undefined;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.undefined;
     })));
 
@@ -161,13 +161,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of({ id: 3 }) // category id
             .add({ id: 3 }); // post id
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.undefined;
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.eql({ id: 3, name: "category #3" });
 
         await connection
@@ -176,13 +176,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of({ id: 3 }) // category id
             .remove({ id: 3 }); // post id
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.undefined;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.undefined;
     })));
 
@@ -218,13 +218,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of({ id: 3 }) // category
             .add([{ id: 1 }, { id: 3 }]); // posts
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
-        let loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        let loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.eql({ id: 3, name: "category #3" });
 
         await connection
@@ -233,13 +233,13 @@ describe("query builder > relational query builder > add operation > one to many
             .of({ id: 3 }) // category
             .remove([{ id: 1 }, { id: 3 }]); // posts
 
-        loadedPost1 = await connection.manager.findOneById(Post, 1, { relations: ["category"] });
+        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.undefined;
 
-        loadedPost2 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.undefined;
 
-        loadedPost3 = await connection.manager.findOneById(Post, 3, { relations: ["category"] });
+        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.undefined;
     })));
 
@@ -276,7 +276,7 @@ describe("query builder > relational query builder > add operation > one to many
             .of(category3) // category
             .add(post2); // post
 
-        let loadedPost1 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        let loadedPost1 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
         // when nothing is specified nothing should be performed
@@ -286,7 +286,7 @@ describe("query builder > relational query builder > add operation > one to many
             .of(category3) // category
             .addAndRemove([], []); // post
 
-        loadedPost1 = await connection.manager.findOneById(Post, 2, { relations: ["category"] });
+        loadedPost1 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
         // now add and remove =)
@@ -296,7 +296,7 @@ describe("query builder > relational query builder > add operation > one to many
             .of(category3) // category
             .addAndRemove([post1, post3], [post2]); // post
 
-        const loadedCategory = await connection.manager.findOneById(Category, 3, { relations: ["posts"] });
+        const loadedCategory = await connection.manager.findOne(Category, 3, { relations: ["posts"] });
         expect(loadedCategory!.posts).to.contain({ id: 1, title: "post #1" });
         expect(loadedCategory!.posts).to.not.contain({ id: 2, title: "post #2" });
         expect(loadedCategory!.posts).to.contain({ id: 3, title: "post #3" });

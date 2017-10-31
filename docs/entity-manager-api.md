@@ -173,16 +173,11 @@ const [timbers, timbersCount] = await manager.findAndCount(User, { firstName: "T
 const users = await manager.findByIds(User, [1, 2, 3]);
 ```
 
-* `findOne` - Finds first entity that matches given find options.
-
-```typescript
-const timber = await manager.findOne(User, { firstName: "Timber" });
-```
-
-* `findOneById` - Finds entity with given id.
+* `findOne` - Finds first entity that matches given id or find options.
 
 ```typescript
 const user = await manager.findOne(User, 1);
+const timber = await manager.findOne(User, { firstName: "Timber" });
 ```
 
 * `clear` - Clears all the data from the given table (truncates/drops it).

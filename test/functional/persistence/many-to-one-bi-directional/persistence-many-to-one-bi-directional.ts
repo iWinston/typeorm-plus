@@ -26,7 +26,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         category.post = post;
         await connection.manager.save(category);
 
-        const loadedCategory = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory).not.to.be.empty;
         loadedCategory!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
     })));
@@ -37,7 +37,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         category.post = post;
         await connection.manager.save(category);
 
-        const loadedCategory = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory).not.to.be.empty;
         loadedCategory!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
     })));
@@ -55,7 +55,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         // save once again, just for fun
         await connection.manager.save(category);
 
-        const loadedCategory1 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory1).not.to.be.empty;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Updated post" } });
 
@@ -63,7 +63,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         (loadedCategory1!.post as Post).title = "Again Updated post";
         await connection.manager.save(loadedCategory1);
 
-        const loadedCategory2 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory2).not.to.be.empty;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Again Updated post" } });
     })));
@@ -78,7 +78,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         // load and check if it was correctly saved
-        const loadedCategory1 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory1).not.to.be.empty;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
@@ -86,11 +86,11 @@ describe("persistence > many-to-one bi-directional relation", function() {
         loadedCategory1!.post = undefined;
         await connection.manager.save(loadedCategory1);
 
-        const loadedCategory2 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory2).not.to.be.empty;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         expect(loadedPost).not.to.be.empty;
         loadedPost!.should.be.eql({ id: 1, title: "Hello Post" });
     })));
@@ -104,7 +104,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         category.post = post;
         await connection.manager.save(category);
 
-        const loadedCategory1 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory1).not.to.be.empty;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
@@ -112,7 +112,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         loadedCategory1!.post = null;
         await connection.manager.save(loadedCategory1);
 
-        const loadedCategory2 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory2).not.to.be.empty;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: null });
     })));
@@ -126,7 +126,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         category.post = post;
         await connection.manager.save(category);
 
-        const loadedCategory1 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory1).not.to.be.empty;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
@@ -134,7 +134,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.remove(post);
 
         // now lets load category and make sure post isn't set there
-        const loadedCategory2 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory2).not.to.be.empty;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: null });
     })));
@@ -154,7 +154,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         // check if category is saved with post set
-        const loadedCategory1 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory1).not.to.be.empty;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post #1" } });
 
@@ -163,7 +163,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         // and check again if category is saved with new post
-        const loadedCategory2 = await connection.manager.findOneById(Category, 1, { relations: ["post"] });
+        const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
         expect(loadedCategory2).not.to.be.empty;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 2, title: "Hello Post #2" } });
     })));

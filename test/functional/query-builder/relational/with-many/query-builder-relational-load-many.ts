@@ -44,7 +44,7 @@ describe("query builder > relational query builder > add and remove operations >
         post3.images = [image1, image3];
         await connection.manager.save(post3);
 
-        const loadedPost1 = await connection.manager.findOneById(Post, 1);
+        const loadedPost1 = await connection.manager.findOne(Post, 1);
         loadedPost1!.images = await connection
             .createQueryBuilder()
             .relation(Post, "images")
@@ -85,7 +85,7 @@ describe("query builder > relational query builder > add and remove operations >
         post3.images = [image1, image3];
         await connection.manager.save(post3);
 
-        const loadedPost1 = await connection.manager.findOneById(Post, 1);
+        const loadedPost1 = await connection.manager.findOne(Post, 1);
         loadedPost1!.images = await connection
             .createQueryBuilder()
             .relation(Post, "images")
@@ -126,7 +126,7 @@ describe("query builder > relational query builder > add and remove operations >
         post3.images = [image1, image3];
         await connection.manager.save(post3);
 
-        const loadedPost1 = await connection.manager.findOneById(Post, 1);
+        const loadedPost1 = await connection.manager.findOne(Post, 1);
         loadedPost1!.images = await connection
             .createQueryBuilder()
             .relation(Post, "images")

@@ -28,7 +28,7 @@ describe("github issues > #966 Inheritance in embeddables", () => {
 
         await repository.save(user);
 
-        const loadedUser = await repository.findOneById(user.id);
+        const loadedUser = await repository.findOne(user.id);
 
         expect(info).to.deep.equal(loadedUser!.info);
     })));

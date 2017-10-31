@@ -27,6 +27,7 @@ import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupport
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
 import {EntityPersitor} from "../persistence/EntityPersitor";
+import {ObjectID} from "../driver/mongodb/typings";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -521,7 +522,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given find options.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, id?: string|number|Date, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>|string, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given find options.
@@ -536,7 +537,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions: string|number|Date|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions: string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
 
         const metadata = this.connection.getMetadata(entityClass);
         let alias: string = metadata.name;

@@ -43,7 +43,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       
       await connection.manager.save(post);
 
-      const storedPost = await connection.manager.findOneById(Post, post.id);
+      const storedPost = await connection.manager.findOne(Post, post.id);
       expect(storedPost).to.not.be.null;
       storedPost!.dateTimeColumn.toDateString().should.equal(now.toDateString());
     })));
@@ -73,7 +73,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
       
       await connection.manager.save(post);
 
-      const storedPost = await connection.manager.findOneById(Post, post.id);
+      const storedPost = await connection.manager.findOne(Post, post.id);
       expect(storedPost).to.not.be.null;
 
         const expectedTimeString = DateUtils.mixedTimeToString(now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds());

@@ -32,7 +32,7 @@ describe("columns > readonly functionality", () => {
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOneById(1);
+        const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.title).to.be.equal("About columns1");
         expect(loadedPost!.text).to.be.equal("Some text about columns1");
         expect(loadedPost!.authorName).to.be.equal("Umed1");

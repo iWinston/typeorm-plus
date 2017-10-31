@@ -25,7 +25,7 @@ describe("columns > no-selection functionality", () => {
         await postRepository.save(post);
 
         // check if all columns are updated except for readonly columns
-        const loadedPost = await postRepository.findOneById(1);
+        const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.title).to.be.equal("About columns");
         expect(loadedPost!.text).to.be.equal("Some text about columns");
         expect(loadedPost!.authorName).to.be.undefined;

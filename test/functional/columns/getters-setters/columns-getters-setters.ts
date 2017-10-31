@@ -24,7 +24,7 @@ describe("columns > getters and setters", () => {
         await postRepository.save(post);
 
         // check if title is a value applied by a setter
-        const loadedPost1 = await postRepository.findOneById(1);
+        const loadedPost1 = await postRepository.findOne(1);
         expect(loadedPost1!.title).to.be.equal("bye");
 
         // try to load a column by its value

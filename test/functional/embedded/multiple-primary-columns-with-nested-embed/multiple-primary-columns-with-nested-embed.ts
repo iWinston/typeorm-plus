@@ -85,7 +85,7 @@ describe("embedded > multiple-primary-columns-with-nested-embed", () => {
             }
         ));
 
-        const loadedPost = (await postRepository.findOneById({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
+        const loadedPost = (await postRepository.findOne({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
         expect(loadedPost.should.be.eql(
             {
                 id: 1,
@@ -107,7 +107,7 @@ describe("embedded > multiple-primary-columns-with-nested-embed", () => {
         loadedPost.counters.subcounters.watches += 1;
         await postRepository.save(loadedPost);
 
-        const loadedPost2 = (await postRepository.findOneById({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
+        const loadedPost2 = (await postRepository.findOne({ id: 1, counters: { code: 1, subcounters: { version: 1 } } }))!;
         expect(loadedPost2.should.be.eql(
             {
                 id: 1,

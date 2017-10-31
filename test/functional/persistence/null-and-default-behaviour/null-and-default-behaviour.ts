@@ -23,7 +23,7 @@ describe("persistence > null and default behaviour", () => {
         post.title = "Category saved!";
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         expect(loadedPost).to.exist;
         loadedPost!.should.be.eql({
             id: 1,
@@ -38,7 +38,7 @@ describe("persistence > null and default behaviour", () => {
         const post = new Post();
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         expect(loadedPost).to.exist;
         loadedPost!.should.be.eql({
             id: 1,
@@ -54,7 +54,7 @@ describe("persistence > null and default behaviour", () => {
         post.title = null;
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         expect(loadedPost).to.exist;
         loadedPost!.should.be.eql({
             id: 1,
@@ -73,7 +73,7 @@ describe("persistence > null and default behaviour", () => {
         post.title = undefined;
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         expect(loadedPost).to.exist;
         loadedPost!.should.be.eql({
             id: 1,
@@ -92,7 +92,7 @@ describe("persistence > null and default behaviour", () => {
         post.title = null;
         await connection.manager.save(post);
 
-        const loadedPost = await connection.manager.findOneById(Post, 1);
+        const loadedPost = await connection.manager.findOne(Post, 1);
         expect(loadedPost).to.exist;
         loadedPost!.should.be.eql({
             id: 1,

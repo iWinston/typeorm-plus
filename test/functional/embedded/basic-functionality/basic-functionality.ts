@@ -30,7 +30,7 @@ describe("embedded > basic functionality", () => {
         await postRepository.save(post);
 
         // now load it
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(1);
         loadedPost.title.should.be.equal("Hello post");
         loadedPost.text.should.be.equal("This is text about the post");
@@ -46,7 +46,7 @@ describe("embedded > basic functionality", () => {
         await postRepository.save(loadedPost);
 
         // now check it
-        const loadedPost2 = (await postRepository.findOneById(1))!;
+        const loadedPost2 = (await postRepository.findOne(1))!;
         loadedPost2.id.should.be.equal(1);
         loadedPost2.title.should.be.equal("Hello post");
         loadedPost2.text.should.be.equal("This is text about the post");
@@ -59,7 +59,7 @@ describe("embedded > basic functionality", () => {
         await postRepository.remove(loadedPost2);
 
         // now check it
-        const loadedPost3 = (await postRepository.findOneById(1))!;
+        const loadedPost3 = (await postRepository.findOne(1))!;
         expect(loadedPost3).to.be.undefined;
     })));
 

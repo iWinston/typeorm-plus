@@ -175,16 +175,11 @@ const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timb
 const users = await repository.findByIds([1, 2, 3]);
 ```
 
-* `findOne` - Finds first entity that matches given find options.
-
-```typescript
-const timber = await repository.findOne({ firstName: "Timber" });
-```
-
-* `findOneById` - Finds entity with given id.
+* `findOne` - Finds first entity that matches given id or find options.
 
 ```typescript
 const user = await repository.findOne(1);
+const timber = await repository.findOne({ firstName: "Timber" });
 ```
 
 * `query` - Executes a raw SQL query.

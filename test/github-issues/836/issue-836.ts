@@ -29,7 +29,7 @@ describe("github issues > #836 .save won't update entity when it contains OneToO
         credential.user = user;
         await connection.manager.save(credential);
 
-        // const loadedCredentials = await connection.manager.findOneById(UserCredential, 1, {
+        // const loadedCredentials = await connection.manager.findOne(UserCredential, 1, {
         //     alias: "user_credential",
         //     innerJoinAndSelect: {
         //         user: "user_credential.user",

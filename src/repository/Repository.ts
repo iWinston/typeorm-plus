@@ -8,6 +8,7 @@ import {RemoveOptions} from "./RemoveOptions";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {ObjectID} from "../driver/mongodb/typings";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -294,7 +295,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given options.
      */
-    findOne(id?: string|number|Date): Promise<Entity|undefined>;
+    findOne(id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given options.
@@ -304,16 +305,32 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
+    findOne(conditions?: DeepPartial<Entity>, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(optionsOrConditions?: string|number|Date|FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any);
     }
 
-    // todo: deprecate findOneById method, use findOne instead
+    /**
+     * Executes a raw SQL query and returns a raw database results.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     */
+    async query(query: string, parameters?: any[]): Promise<any> {
+        return this.manager.query(query, parameters);
+    }
+
+    /**
+     * Clears all the data from the given table/collection (truncates/drops it).
+     *
+     * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     * @see https://stackoverflow.com/a/5972738/925151
+     */
+    async clear(): Promise<void> {
+        return this.manager.clear(this.metadata.target);
+    }
 
     /**
      * Finds entity by given id.
@@ -339,24 +356,6 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
         return this.manager.findOneById(this.metadata.target, id, optionsOrConditions as any);
-    }
-
-    /**
-     * Executes a raw SQL query and returns a raw database results.
-     * Raw query execution is supported only by relational databases (MongoDB is not supported).
-     */
-    async query(query: string, parameters?: any[]): Promise<any> {
-        return this.manager.query(query, parameters);
-    }
-
-    /**
-     * Clears all the data from the given table/collection (truncates/drops it).
-     *
-     * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
-     * @see https://stackoverflow.com/a/5972738/925151
-     */
-    async clear(): Promise<void> {
-        return this.manager.clear(this.metadata.target);
     }
 
 }

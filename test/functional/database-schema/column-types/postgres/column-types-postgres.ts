@@ -82,7 +82,7 @@ describe("database schema > column types > postgres", () => {
         post.simpleArray = ["A", "B", "C"];
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
         loadedPost.integer.should.be.equal(post.integer);
@@ -220,7 +220,7 @@ describe("database schema > column types > postgres", () => {
         post.timeWithTimeZone = "15:30:13.27801+05";
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.numeric.should.be.equal(post.numeric);
         loadedPost.decimal.should.be.equal(post.decimal);
@@ -274,7 +274,7 @@ describe("database schema > column types > postgres", () => {
         post.datetime.setMilliseconds(0);
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
         loadedPost.bit.should.be.equal(post.bit);

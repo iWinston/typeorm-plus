@@ -23,7 +23,7 @@ describe("entity-model", () => {
         post.text = "Huge discussion how good or bad ActiveRecord is.";
         await post.save();
 
-        const loadedPost = await Post.findOneById(1);
+        const loadedPost = await Post.findOne(1);
 
         loadedPost!.should.be.instanceOf(Post);
         loadedPost!.id.should.be.eql(1);
