@@ -143,7 +143,7 @@ Thus you can operate with multiple entities inside them.
 
 Custom repositories cannot be services. 
 Because there isn't a single instance of a custom repository (just like regular repositories or entity manager) in the app.
-Besides then fact that there can be multiple connections in your app (where entity manager and repositories are different)
+Besides the fact that there can be multiple connections in your app (where entity manager and repositories are different)
 repositories and managers are different in transactions as well. 
 For example:
 
