@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
-describe("query runner > drop foreign key", () => {
+describe("query runner > drop unique constraint", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -16,22 +16,24 @@ describe("query runner > drop foreign key", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly drop foreign key and revert drop", () => Promise.all(connections.map(async connection => {
+    it("should correctly drop unique constraint and revert drop", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
 
-        let table = await queryRunner.getTable("student");
-        table!.foreignKeys.length.should.be.equal(2);
+        let table = await queryRunner.getTable("post");
+        table!.uniques.length.should.be.equal(2);
 
-        await queryRunner.dropForeignKey(table!, table!.foreignKeys[0]);
+        // find composite unique constraint to delete
+        const unique = table!.uniques.find(u => u.columnNames.length === 2);
+        await queryRunner.dropUniqueConstraint(table!, unique!);
 
-        table = await queryRunner.getTable("student");
-        table!.foreignKeys.length.should.be.equal(1);
+        table = await queryRunner.getTable("post");
+        table!.uniques.length.should.be.equal(1);
 
         await queryRunner.executeMemoryDownSql();
 
-        table = await queryRunner.getTable("student");
-        table!.foreignKeys.length.should.be.equal(2);
+        table = await queryRunner.getTable("post");
+        table!.uniques.length.should.be.equal(2);
 
         await queryRunner.release();
     })));

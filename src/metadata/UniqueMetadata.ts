@@ -1,7 +1,7 @@
 import {EntityMetadata} from "./EntityMetadata";
-import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
+import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
 
 /**
  * Unique metadata contains all information about table's unique constraints.
@@ -56,7 +56,7 @@ export class UniqueMetadata {
     constructor(options: {
         entityMetadata: EntityMetadata,
         columns?: ColumnMetadata[],
-        args?: IndexMetadataArgs
+        args?: UniqueMetadataArgs
     }) {
         this.entityMetadata = options.entityMetadata;
         if (options.columns)

@@ -3,7 +3,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 
-describe.only("query runner > create primary key", () => {
+describe("query runner > create primary key", () => {
 
     let connections: Connection[];
     before(async () => {

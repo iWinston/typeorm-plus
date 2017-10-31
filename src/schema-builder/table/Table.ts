@@ -156,6 +156,33 @@ export class Table {
     }
 
     /**
+     * Adds unique constraint.
+     */
+    addUniqueConstraint(uniqueConstraint: TableUnique): void {
+        this.uniques.push(uniqueConstraint);
+        if (uniqueConstraint.columnNames.length === 1) {
+            const uniqueColumn = this.columns.find(column => column.name === uniqueConstraint.columnNames[0]);
+            if (uniqueColumn)
+                uniqueColumn.isUnique = true;
+        }
+    }
+
+    /**
+     * Removes unique constraint.
+     */
+    removeUniqueConstraint(removedUnique: TableUnique): void {
+        const foundUnique = this.uniques.find(unique => unique.name === removedUnique.name);
+        if (foundUnique) {
+            this.uniques.splice(this.uniques.indexOf(foundUnique), 1);
+            if (foundUnique.columnNames.length === 1) {
+                const uniqueColumn = this.columns.find(column => column.name === foundUnique.columnNames[0]);
+                if (uniqueColumn)
+                    uniqueColumn.isUnique = false;
+            }
+        }
+    }
+
+    /**
      * Adds foreign keys.
      */
     addForeignKey(foreignKey: TableForeignKey): void {
@@ -283,6 +310,7 @@ export class Table {
                 .filter(column => column)
                 .map(column => TableUtils.createTableColumnOptions(column, driver)),
             indices: entityMetadata.indices.map(index => TableIndex.create(index)),
+            uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
         };
 
         return new Table(options);

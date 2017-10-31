@@ -5,6 +5,11 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.0 (in progress)
+
+* added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
+composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
+
 ## 0.1.2
 
 * sqlite now supports relative database file paths (#798 and #799)

@@ -16,6 +16,7 @@ import {InsertResult} from "../InsertResult";
 import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -592,6 +593,20 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Creates a new unique constraint.
+     */
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops an unique constraint.
+     */
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         // todo
     }
 

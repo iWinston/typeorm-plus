@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
-describe.only("query runner > rename table", () => {
+describe("query runner > rename table", () => {
 
     let connections: Connection[];
     before(async () => {

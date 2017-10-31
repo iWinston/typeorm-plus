@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableIndex} from "../../../src/schema-builder/table/TableIndex";
 
-describe.only("query runner > create index", () => {
+describe("query runner > create index", () => {
 
     let connections: Connection[];
     before(async () => {

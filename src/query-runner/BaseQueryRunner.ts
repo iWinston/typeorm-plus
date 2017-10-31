@@ -165,6 +165,7 @@ export abstract class BaseQueryRunner {
 
         const foundTables = await this.loadTables([tableName]);
         if (foundTables.length > 0) {
+            this.loadedTables.push(foundTables[0]);
             return foundTables[0];
         } else {
             throw new Error(`Table "${tableName}" does not exist.`);

@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 
-describe.only("query runner > drop primary key", () => {
+describe("query runner > drop primary key", () => {
 
     let connections: Connection[];
     before(async () => {

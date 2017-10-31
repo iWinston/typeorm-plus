@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
-describe.only("query runner > change column", () => {
+describe("query runner > change column", () => {
 
     let connections: Connection[];
     before(async () => {

@@ -18,6 +18,7 @@ import {SqlInMemory} from "../SqlInMemory";
 import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
 import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -578,6 +579,20 @@ export class MysqlQueryRunner implements QueryRunner {
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Creates a new unique constraint.
+     */
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops an unique constraint.
+     */
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         // todo
     }
 

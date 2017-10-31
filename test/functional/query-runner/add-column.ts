@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 
-describe.only("query runner > add column", () => {
+describe("query runner > add column", () => {
 
     let connections: Connection[];
     before(async () => {

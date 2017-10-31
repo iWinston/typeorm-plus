@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableForeignKey} from "../../../src/schema-builder/table/TableForeignKey";
 
-describe.only("query runner > create foreign key", () => {
+describe("query runner > create foreign key", () => {
 
     let connections: Connection[];
     before(async () => {

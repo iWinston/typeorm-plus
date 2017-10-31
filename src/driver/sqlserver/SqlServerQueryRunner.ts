@@ -865,6 +865,31 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
         });
     }
 
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        if (!uniqueConstraint.name)
+            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table.name, uniqueConstraint.columnNames);
+
+        const up = this.createUniqueConstraintSql(table, uniqueConstraint);
+        const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
+        await this.executeQueries(up, down);
+        table.addUniqueConstraint(uniqueConstraint);
+    }
+
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
+        if (!uniqueConstraint)
+            throw new Error(`Supplied unique constraint does not found in table ${table.name}`);
+
+        const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
+        const down = this.createUniqueConstraintSql(table, uniqueConstraint);
+        await this.executeQueries(up, down);
+        table.removeUniqueConstraint(uniqueConstraint);
+    }
+
     /**
      * Creates a new foreign key.
      */
@@ -892,7 +917,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableOrName: Table|string, foreignKeyOrName: TableForeignKey): Promise<void> {
+    async dropForeignKey(tableOrName: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
@@ -1121,8 +1146,15 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                             && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
                     });
 
+                    const uniqueConstraint = columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraint
+                        ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
+                            && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
+                            && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                        : false;
+                    const isUnique = !!uniqueConstraint && !isConstraintComposite;
+
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY");
-                    const isUnique = !!columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
                     const isGenerated = !!dbIdentityColumns.find(column => {
                         return this.driver.buildTableName(column["TABLE_NAME"], column["TABLE_SCHEMA"], column["TABLE_CATALOG"]) === tableFullName
                             && column["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
@@ -1326,6 +1358,22 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
         const columnNames = table.primaryColumns.map(column => column.name);
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
         return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${primaryKeyName}"`;
+    }
+
+    /**
+     * Builds create unique constraint sql.
+     */
+    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): string {
+        const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
+        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
+    }
+
+    /**
+     * Builds drop unique constraint sql.
+     */
+    protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): string {
+        const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
+        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`;
     }
 
     /**

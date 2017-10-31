@@ -39,6 +39,7 @@ import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
 import {SqlInMemory} from "../SqlInMemory";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -619,6 +620,20 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new unique constraint.
+     */
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops an unique constraint.
+     */
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

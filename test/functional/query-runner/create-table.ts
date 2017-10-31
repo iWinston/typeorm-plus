@@ -6,7 +6,7 @@ import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
 import {Post} from "./entity/Post";
 
-describe.only("query runner > create table", () => {
+describe("query runner > create table", () => {
 
     let connections: Connection[];
     before(async () => {

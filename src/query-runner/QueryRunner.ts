@@ -8,6 +8,7 @@ import {InsertResult} from "../driver/InsertResult";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlInMemory} from "../driver/SqlInMemory";
+import {TableUnique} from "../schema-builder/table/TableUnique";
 
 /**
  * Runs queries on a single database connection.
@@ -257,6 +258,16 @@ export interface QueryRunner {
     dropPrimaryKey(tableOrName: Table|string): Promise<void>;
 
     /**
+     * Creates a new unique constraint.
+     */
+    createUniqueConstraint(tableName: Table|string, uniqueConstraint: TableUnique): Promise<void>;
+
+    /**
+     * Drops an unique constraint.
+     */
+    dropUniqueConstraint(tableName: Table|string, uniqueOrName: TableUnique|string): Promise<void>;
+
+    /**
      * Creates a new foreign key.
      */
     createForeignKey(tableName: Table|string, foreignKey: TableForeignKey): Promise<void>;
@@ -269,7 +280,7 @@ export interface QueryRunner {
     /**
      * Drops a foreign key.
      */
-    dropForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>;
+    dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>;
 
     /**
      * Drops a foreign keys.
@@ -312,7 +323,7 @@ export interface QueryRunner {
      */
     clearSqlMemory(): void;
 
-    // todo: add methods: addPrimaryKey, dropPrimaryKey, addUniqueConstraint, dropUniqueConstraint, check...
+    // todo: add methods: addCheck, dropCheck
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
