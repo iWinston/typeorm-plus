@@ -27,7 +27,24 @@ export class PlainObjectToNewEntityTransformer {
     private groupAndTransform(entity: any, object: ObjectLiteral, metadata: EntityMetadata): void {
 
         // copy regular column properties from the given object
-        metadata.columns
+        metadata.columns.forEach(column => {
+            if (column.isVirtual) // we don't need to merge virtual columns
+                return;
+
+            const objectColumnValue = column.getEntityValue(object);
+            if (objectColumnValue !== undefined)
+                column.setEntityValue(entity, objectColumnValue);
+        });
+
+        // // copy relation properties from the given object
+        metadata.relations.forEach(relation => {
+            const objectRelationValue = relation.getEntityValue(object);
+            if (objectRelationValue !== undefined)
+                relation.setEntityValue(entity, objectRelationValue, true);
+        });
+
+        // copy regular column properties from the given object
+        /*metadata.columns
             .filter(column => object.hasOwnProperty(column.propertyName))
             .forEach(column => entity[column.propertyName] = object[column.propertyName]); // todo: also need to be sure that type is correct
 
@@ -70,7 +87,7 @@ export class PlainObjectToNewEntityTransformer {
                         entity[relation.propertyName] = object[relation.propertyName];
                     }
                 }
-            });
+            });*/
     }
 
 }

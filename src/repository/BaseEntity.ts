@@ -150,7 +150,7 @@ export class BaseEntity {
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends BaseEntity>(this: ObjectType<T>, conditions: Partial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
+    static update<T extends BaseEntity>(this: ObjectType<T>, conditions: DeepPartial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given find options.
@@ -160,7 +160,7 @@ export class BaseEntity {
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends BaseEntity>(this: ObjectType<T>, conditionsOrFindOptions: Partial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
+    static update<T extends BaseEntity>(this: ObjectType<T>, conditionsOrFindOptions: DeepPartial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
         return (this as any).getRepository().update(conditionsOrFindOptions as any, partialEntity, options);
     }
 

@@ -5,7 +5,7 @@ import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn"
 
 export class PostEmbedded {
 
-    @PrimaryColumn("uuid")
+    @PrimaryColumn()
     secondId: number;
 
     @CreateDateColumn()

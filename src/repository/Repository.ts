@@ -140,14 +140,14 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      */
-    async insert(entity: Partial<Entity>|Partial<Entity>[], options?: SaveOptions): Promise<void> {
+    async insert(entity: DeepPartial<Entity>|DeepPartial<Entity>[], options?: SaveOptions): Promise<void> {
         return this.manager.insert(this.metadata.target, entity, options);
     }
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+    async update(conditions: DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         return this.manager.update(this.metadata.target, conditions, partialEntity, options);
     }
 
@@ -182,7 +182,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    async delete(conditions: Partial<Entity>, options?: RemoveOptions): Promise<void> {
+    async delete(conditions: DeepPartial<Entity>, options?: RemoveOptions): Promise<void> {
         return this.manager.delete(this.metadata.target, conditions, options);
     }
 

@@ -618,14 +618,30 @@ export abstract class QueryBuilder<Entity> {
         if (!this.expressionMap.updateEntity || !this.expressionMap.mainAlias!.hasMetadata)
             return [];
 
-        // filter out the columns of which we need database inserted values to update our entity
-        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-            return  column.default !== undefined ||
-                    column.isGenerated  ||
-                    column.isCreateDate ||
-                    column.isUpdateDate ||
-                    column.isVersion;
-        });
+        // for databases which support returning statement we need to return extra columns like id
+        if (this.isReturningSqlSupported()) {
+
+            // filter out the columns of which we need database inserted values to update our entity
+            return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+                return  column.default !== undefined ||
+                        column.isGenerated  ||
+                        column.isCreateDate ||
+                        column.isUpdateDate ||
+                        column.isVersion;
+            });
+
+        } else { // for other databases we don't need to return id column since its returned by a driver already
+
+            // filter out the columns of which we need database inserted values to update our entity
+            return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+                return  column.default !== undefined ||
+                        column.isCreateDate ||
+                        column.isUpdateDate ||
+                        column.isVersion;
+            });
+
+        }
+
     }
 
     /**

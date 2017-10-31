@@ -11,7 +11,7 @@ export class PostMultiplePrimaryKeys {
     @PrimaryColumn()
     secondId: number;
 
-    @Column()
+    @Column({ default: "Hello Multi Ids" })
     text: string;
 
 }

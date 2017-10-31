@@ -18,6 +18,12 @@ export class InsertResult {
     generatedMaps: ObjectLiteral[] = [];
 
     /**
+     * Inserted values with updated values of special and default columns.
+     * Has entity-like structure (not just column database name and values).
+     */
+    valueSets: ObjectLiteral[] = [];
+
+    /**
      * Raw SQL result returned by executed query.
      */
     raw: any;

@@ -42,6 +42,7 @@ import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {PlatformTools} from "../platform/PlatformTools";
+import {DeepPartial} from "../common/DeepPartial";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -145,7 +146,7 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
-                          optionsOrConditions?: string|ObjectID|FindOneOptions<Entity>|Partial<Entity>,
+                          optionsOrConditions?: string|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const id = optionsOrConditions instanceof ObjectID || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};

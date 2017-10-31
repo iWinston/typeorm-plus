@@ -996,12 +996,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const metadata = this.expressionMap.mainAlias!.metadata;
 
             if (this.expressionMap.lockVersion instanceof Date) {
-                const actualVersion = result[metadata.updateDateColumn!.propertyName]; // what if columns arent set?
+                const actualVersion = metadata.updateDateColumn!.getEntityValue(result); // what if columns arent set?
                 if (actualVersion.getTime() !== this.expressionMap.lockVersion.getTime())
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
 
             } else {
-                const actualVersion = result[metadata.versionColumn!.propertyName]; // what if columns arent set?
+                const actualVersion = metadata.versionColumn!.getEntityValue(result); // what if columns arent set?
                 if (actualVersion !== this.expressionMap.lockVersion)
                     throw new OptimisticLockVersionMismatchError(metadata.name, this.expressionMap.lockVersion, actualVersion);
             }
@@ -1516,7 +1516,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             columns.push(...metadata.columns.filter(column => column.isSelect === true));
         }
         columns.push(...metadata.columns.filter(column => {
-            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyName);
+            return this.expressionMap.selects.some(select => select.selection === aliasName + "." + column.propertyPath);
         }));
 
         // if user used partial selection and did not select some primary columns which are required to be selected
@@ -1526,7 +1526,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const allColumns = [...columns, ...nonSelectedPrimaryColumns];
 
         return allColumns.map(column => {
-            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyName);
+            const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             return {
                 selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
                 aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
@@ -1542,7 +1542,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             return [mainSelect];
 
         return this.expressionMap.selects.filter(select => {
-            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyName);
+            return metadata.columns.some(column => select.selection === aliasName + "." + column.propertyPath);
         });
     }
 
@@ -1654,8 +1654,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (metadata.hasMultiplePrimaryKeys) {
                     condition = rawResults.map(result => {
                         return metadata.primaryColumns.map(primaryColumn => {
-                            parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.databaseName];
-                            return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.databaseName;
+                            parameters["ids_" + primaryColumn.databaseName] = result["ids_" + primaryColumn.databaseName];
+                            return mainAliasName + "." + primaryColumn.propertyPath + "=:ids_" + primaryColumn.databaseName;
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
@@ -1663,10 +1663,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter
-                        condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyName} IN (${ids.join(", ")})`;
+                        condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
                         parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyName + " IN (:ids)";
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:ids)";
                     }
                 }
                 rawResults = await this.clone()

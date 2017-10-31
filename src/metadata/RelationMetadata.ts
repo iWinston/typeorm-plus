@@ -347,8 +347,10 @@ export class RelationMetadata {
     /**
      * Sets given entity's relation's value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
+     *
+     * If merge is set to true, it merges given value into currently
      */
-    setEntityValue(entity: ObjectLiteral, value: any): void {
+    setEntityValue(entity: ObjectLiteral, value: any, merge = false): void {
         const propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
 
         if (this.embeddedMetadata) {
@@ -366,13 +368,23 @@ export class RelationMetadata {
                     extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
                     return map;
                 }
-                map[propertyName] = value;
+                if (merge && map[propertyName] instanceof Object) {
+                    map[propertyName] = Object.assign(map[propertyName], value);
+
+                } else {
+                    map[propertyName] = value;
+                }
                 return map;
             };
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[propertyName] = value;
+            if (merge && entity[propertyName] instanceof Object) {
+                entity[propertyName] = Object.assign(entity[propertyName], value);
+
+            } else {
+                entity[propertyName] = value;
+            }
         }
     }
 

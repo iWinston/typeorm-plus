@@ -9,6 +9,21 @@ export class PostDefaultValues {
     id: number;
 
     @Column()
+    title: string;
+
+    @Column({ default: "hello post" })
     text: string;
+
+    @Column({ default: true })
+    isActive: boolean;
+
+    @Column({ default: () => "NOW()" })
+    addDate: Date;
+
+    @Column({ default: 0 })
+    views: number;
+
+    @Column({ nullable: true })
+    description: string;
 
 }
