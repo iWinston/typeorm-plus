@@ -290,8 +290,8 @@ export class BaseEntity {
     /**
      * Finds first entity that matches given conditions.
      */
-    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
-        return (this as any).getRepository().findOne(optionsOrConditions as any);
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>, maybeOptions?: FindOneOptions<T>): Promise<T|undefined> {
+        return (this as any).getRepository().findOne(optionsOrConditions as any, maybeOptions);
     }
 
     /**
