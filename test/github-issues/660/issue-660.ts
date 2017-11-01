@@ -5,6 +5,7 @@ import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {expect} from "chai";
+import {ReturningStatementNotSupportedError} from "../../../src/error/ReturningStatementNotSupportedError";
 
 describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with QueryBuilder", () => {
 
@@ -36,7 +37,8 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
             else if (connection.driver instanceof PostgresDriver) {
                 expect(sql).to.equal("INSERT INTO user(name) VALUES ($1) RETURNING *"); }
         } catch (err) {
-            expect(err).to.eql(new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL")); }
+            expect(err).to.eql(new ReturningStatementNotSupportedError());
+        }
     })));
 
     it("should perform insert with RETURNING or OUTPUT clause (PostgreSQL and MSSQL only)", () => Promise.all(connections.map(async connection => {
@@ -78,7 +80,8 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 expect(sql).to.equal("UPDATE user SET name = $1 WHERE name = $2 RETURNING *");
             }
         } catch (err) {
-            expect(err).to.eql(new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL")); }
+            expect(err).to.eql(new ReturningStatementNotSupportedError());
+        }
     })));
 
     it("should perform update with RETURNING or OUTPUT clause (PostgreSQL and MSSQL only)", () => Promise.all(connections.map(async connection => {
@@ -122,7 +125,8 @@ describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with Quer
                 expect(sql).to.equal("DELETE FROM user WHERE name = $1 RETURNING *");
             }
         } catch (err) {
-            expect(err).to.eql(new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL")); }
+            expect(err).to.eql(new ReturningStatementNotSupportedError());
+        }
     })));
 
     it("should perform delete with RETURNING or OUTPUT clause (PostgreSQL and MSSQL only)", () => Promise.all(connections.map(async connection => {

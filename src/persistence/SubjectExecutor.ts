@@ -369,11 +369,12 @@ export class SubjectExecutor {
         const changeSet = subject.changeMaps.reduce((updateMap, changeMap) => {
             let value = changeMap.value;
             if (value instanceof Subject) {
-                // console.log(value);
-                // console.log(value.insertResult!.valueSets[0]);
-                value = this.queryRunner.manager.merge(value.metadata.target, {}, value.entity as any, value.insertResult ? value.insertResult.valueSets[0] : value.identifier as any);
-                // console.log(value);
-                // value = Object.assign({}, value.entity, value.insertResult ? value.insertResult.valueSets[0] : value.identifier); // we need entity with all its properties and newly generated values as well
+
+                // referenced columns can refer on values both which were just inserted and which were present in the model
+                // if entity was just inserted valueSets must contain all values from the entity and values just inserted in the database
+                // so, here we check if we have a value set then we simply use it as value to get our reference column values
+                // otherwise simply use an entity which cannot be just inserted at the moment and have all necessary data
+                value = value.insertResult ? value.insertResult.valueSets[0] : value.entity;
                 if (value === undefined) {
                     changeMapsWithoutValues.push(changeMap);
                     return updateMap;

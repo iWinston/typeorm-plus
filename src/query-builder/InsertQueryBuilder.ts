@@ -264,7 +264,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const valueSets = this.getValueSets();
         const columns = this.getInsertedColumns();
 
-        if (this.expressionMap.mainAlias!.hasMetadata) {
+        // if columns are given
+        if (columns.length > 0) {
 
             // get values needs to be inserted
             return valueSets.map((valueSet, insertionIndex) => {
