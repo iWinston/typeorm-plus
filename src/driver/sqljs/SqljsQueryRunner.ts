@@ -43,28 +43,33 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
-            const statement = databaseConnection.prepare(query);
-            statement.bind(parameters);
-            
-            // log slow queries if maxQueryExecution time is set
-            const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-            const queryEndTime = +new Date();
-            const queryExecutionTime = queryEndTime - queryStartTime;
-            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+            try {
+                const statement = databaseConnection.prepare(query);
+                statement.bind(parameters);
+                
+                // log slow queries if maxQueryExecution time is set
+                const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                const queryEndTime = +new Date();
+                const queryExecutionTime = queryEndTime - queryStartTime;
+                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-            const result: any[] = [];
+                const result: any[] = [];
 
-            while (statement.step()) {
-                result.push(statement.getAsObject());
+                while (statement.step()) {
+                    result.push(statement.getAsObject());
+                }
+                
+                if (query.toUpperCase().match(/(COMMIT)/)) {
+                    this.driver.autoSave();
+                }
+                
+                statement.free();
+                ok(result);
             }
-
-            if (query.toUpperCase().match(/(COMMIT)/)) {
-                this.driver.autoSave();
+            catch (e) {
+                fail(e);
             }
-            
-            statement.free();
-            ok(result);
         });
     }
 
@@ -83,25 +88,30 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         return new Promise<InsertResult>(async (ok, fail) => {
             this.driver.connection.logger.logQuery(sql, parameters, this);
             const databaseConnection = await this.connect();
-            const statement = databaseConnection.prepare(sql);
-            statement.bind(parameters);
-            statement.step();
-            
-            const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
-                let value = keyValues[generatedColumn.databaseName];
-                // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
-                if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
-                    value = databaseConnection.exec("SELECT last_insert_rowid()")[0].values[0][0];
-                }
+            try {
+                const statement = databaseConnection.prepare(sql);
+                statement.bind(parameters);
+                statement.step();
                 
-                if (!value) return map;
-                return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
-            }, {} as ObjectLiteral);
+                const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
+                    let value = keyValues[generatedColumn.databaseName];
+                    // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
+                    if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
+                        value = databaseConnection.exec("SELECT last_insert_rowid()")[0].values[0][0];
+                    }
+                    
+                    if (!value) return map;
+                    return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
+                }, {} as ObjectLiteral);
 
-            ok({
-                result: undefined,
-                generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
-            });
+                ok({
+                    result: undefined,
+                    generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
+                });
+            }
+            catch (e) {
+                fail(e);
+            }
         });
     }
 }
