@@ -30,12 +30,12 @@ describe("sqljs driver > autosave", () => {
         if (savedPost) {
             savedPost.title = "A updated post";
             await repository.save(savedPost);
-            repository.remove(savedPost);
+            await repository.remove(savedPost);
         }
 
         connection.close();
 
-        expect(saves).to.be.equal(3);
+        expect(saves).to.be.equal(4);
     });
 
     it("should not call autoSaveCallback when autoSave is disabled", async () => {
