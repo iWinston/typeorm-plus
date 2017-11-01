@@ -168,6 +168,9 @@ export class ManyToManySubjectBuilder {
                     // valueFactory: (value) => column.referencedColumn!.getEntityValue(value) // column.referencedColumn!.getEntityValue(inverseEntityMap),
                 });
             });
+
+            // console.log("inverseValue", inverseValue);
+            // console.log(junctionSubject.changeMaps);
         });
 
         // get all inverse entities relation ids that are "bind" to the currently persisted entity

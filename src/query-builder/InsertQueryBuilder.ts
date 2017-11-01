@@ -10,6 +10,8 @@ import {RandomGenerator} from "../util/RandomGenerator";
 import {OrmUtils} from "../util/OrmUtils";
 import {InsertResult} from "./result/InsertResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
+import {InsertValuesMissingError} from "../error/InsertValuesMissingError";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -180,29 +182,92 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Creates INSERT express used to perform insert query.
      */
-    protected createInsertExpression() { // todo: insertion into custom tables wont work because of binding to columns. fix it
+    protected createInsertExpression() {
+
+        const tableName = this.getTableName(this.getMainTableName());
+        const returningExpression = this.createReturningExpression();
+        const columnsExpression = this.createColumnNamesExpression();
+        const valuesExpression = this.createValuesExpression();
+
+        // generate INSERT query
+        let query = `INSERT INTO ${tableName}`;
+
+        // add columns expression
+        if (columnsExpression) {
+            query += `(${columnsExpression})`;
+        } else {
+            if (!valuesExpression && this.connection.driver instanceof MysqlDriver) // special syntax for mysql DEFAULT VALUES insertion
+                query += "()";
+        }
+
+        // add OUTPUT expression
+        if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
+            query += ` OUTPUT ${returningExpression}`;
+        }
+
+        // add VALUES expression
+        if (valuesExpression) {
+            query += ` VALUES ${valuesExpression}`;
+        } else {
+            if (this.connection.driver instanceof MysqlDriver) { // special syntax for mysql DEFAULT VALUES insertion
+                query += " VALUES ()";
+            } else {
+                query += ` DEFAULT VALUES`;
+            }
+        }
+
+        // add RETURNING expression
+        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+            query += ` RETURNING ${returningExpression}`;
+        }
+
+        return query;
+    }
+
+    /**
+     * Gets list of columns where values must be inserted to.
+     */
+    protected getInsertedColumns(): ColumnMetadata[] {
+        if (!this.expressionMap.mainAlias!.hasMetadata)
+            return [];
+
+        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+
+            // if user specified list of columns he wants to insert to, then we filter only them
+            if (this.expressionMap.insertColumns.length)
+                return this.expressionMap.insertColumns.indexOf(column.propertyPath);
+
+            // if user did not specified such list then return all columns except auto-increment one
+            if (column.isGenerated && column.generationStrategy === "increment")
+                return false;
+
+            return true;
+        });
+    }
+
+    /**
+     * Creates a columns string where values must be inserted to for INSERT INTO expression.
+     */
+    protected createColumnNamesExpression(): string {
+        const columns = this.getInsertedColumns();
+        if (columns.length > 0)
+            return columns.map(column => this.escape(column.databaseName)).join(", ");
+
+        // get a table name and all column database names
+        return this.expressionMap.insertColumns.map(columnName => this.escape(columnName)).join(", ");
+    }
+
+    /**
+     * Creates list of values needs to be inserted in the VALUES expression.
+     */
+    protected createValuesExpression(): string {
         const valueSets = this.getValueSets();
-        let values: string, columnNames: string;
+        const columns = this.getInsertedColumns();
 
         if (this.expressionMap.mainAlias!.hasMetadata) {
-            const columns = this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-
-                // if user specified list of columns he wants to insert to, then we filter only them
-                if (this.expressionMap.insertColumns.length)
-                    return this.expressionMap.insertColumns.indexOf(column.propertyPath);
-
-                // if user did not specified such list then return all columns except generated one
-                if (column.isGenerated && column.generationStrategy === "increment")
-                    return false;
-
-                return true;
-            });
-
-            // get a table name and all column database names
-            columnNames = columns.map(column => this.escape(column.databaseName)).join(", ");
 
             // get values needs to be inserted
-            values = valueSets.map((valueSet, insertionIndex) => {
+            return valueSets.map((valueSet, insertionIndex) => {
                 const columnValues = columns.map(column => {
                     const paramName = "_inserted_" + insertionIndex + "_" + column.databaseName;
 
@@ -248,11 +313,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         } else { // for tables without metadata
 
-            // get a table name and all column database names
-            columnNames = this.expressionMap.insertColumns.join(", ");
-
             // get values needs to be inserted
-            values = valueSets.map((valueSet, insertionIndex) => {
+            return valueSets.map((valueSet, insertionIndex) => {
                 const columnValues = Object.keys(valueSet).map(columnName => {
                     const paramName = "_inserted_" + insertionIndex + "_" + columnName;
                     const value = valueSet[columnName];
@@ -276,39 +338,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 return columnValues ? "(" + columnValues + ")" : "";
             }).join(", ");
         }
-
-        const tableName = this.getTableName(this.getMainTableName());
-        const returningExpression = this.createReturningExpression();
-
-        // generate sql query
-        let query = `INSERT INTO ${tableName}`;
-
-        if (columnNames) {
-            query += `(${columnNames})`;
-        } else {
-            if (!values && this.connection.driver instanceof MysqlDriver) // special syntax for mysql DEFAULT VALUES insertion
-                query += "()";
-        }
-
-        if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            query += ` OUTPUT ${returningExpression}`;
-        }
-
-        if (values) {
-            query += ` VALUES ${values}`;
-        } else {
-            if (this.connection.driver instanceof MysqlDriver) { // special syntax for mysql DEFAULT VALUES insertion
-                query += " VALUES ()";
-            } else {
-                query += ` DEFAULT VALUES`;
-            }
-        }
-
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
-            query += ` RETURNING ${returningExpression}`;
-        }
-
-        return query;
     }
 
     /**
@@ -321,7 +350,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (this.expressionMap.valuesSet instanceof Object)
             return [this.expressionMap.valuesSet];
 
-        throw new Error(`Cannot perform insert query because values are not defined. Call "qb.values(...)" method to specify inserted values.`);
+        throw new InsertValuesMissingError();
     }
 
 }

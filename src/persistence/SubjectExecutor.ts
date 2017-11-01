@@ -3,6 +3,9 @@ import {Subject} from "./Subject";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {DateUtils} from "../util/DateUtils";
 import {InsertSubjectsSorter} from "./InsertSubjectsSorter";
+import {SubjectChangeMap} from "./SubjectChangeMap";
+import {OrmUtils} from "../util/OrmUtils";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -254,7 +257,8 @@ export class SubjectExecutor {
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
-            const changeSet = subject.popChangeSet();
+            const changeSet = this.popChangeSet(subject);
+            // console.log("changeSet:", changeSet);
             subject.insertResult = await this.queryRunner.manager
                 .createQueryBuilder()
                 .insert()
@@ -281,7 +285,7 @@ export class SubjectExecutor {
      */
     protected async executeUpdateOperations(): Promise<void> {
         await Promise.all(this.updateSubjects.map(subject => {
-            const updateMap = subject.popChangeSet();
+            const updateMap = this.popChangeSet(subject);
             if (!subject.identifier)
                 throw new Error(`Subject does not have identifier`);
 
@@ -359,5 +363,44 @@ export class SubjectExecutor {
             });
         });
     }
+
+    protected popChangeSet(subject: Subject) {
+        const changeMapsWithoutValues: SubjectChangeMap[] = [];
+        const changeSet = subject.changeMaps.reduce((updateMap, changeMap) => {
+            let value = changeMap.value;
+            if (value instanceof Subject) {
+                // console.log(value);
+                // console.log(value.insertResult!.valueSets[0]);
+                value = this.queryRunner.manager.merge(value.metadata.target, {}, value.entity as any, value.insertResult ? value.insertResult.valueSets[0] : value.identifier as any);
+                // console.log(value);
+                // value = Object.assign({}, value.entity, value.insertResult ? value.insertResult.valueSets[0] : value.identifier); // we need entity with all its properties and newly generated values as well
+                if (value === undefined) {
+                    changeMapsWithoutValues.push(changeMap);
+                    return updateMap;
+                }
+            }
+
+            // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
+
+            if (subject.metadata.isJunction && changeMap.column) {
+
+                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value)));
+
+            } else if (changeMap.column) {
+                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(value));
+
+            } else if (changeMap.relation) {
+                OrmUtils.mergeDeep(updateMap, changeMap.relation!.createValueMap(value));
+                // changeMap.relation!.joinColumns.forEach(column => {
+                //     OrmUtils.mergeDeep(updateMap, column.createValueMap(value));
+                // });
+            }
+            return updateMap;
+        }, {} as ObjectLiteral);
+        // console.log(changeSet);
+        subject.changeMaps = changeMapsWithoutValues;
+        return changeSet;
+    }
+
 
 }

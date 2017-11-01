@@ -1,6 +1,5 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
-import {OrmUtils} from "../util/OrmUtils";
 import {SubjectChangeMap} from "./SubjectChangeMap";
 import {InsertResult} from "../query-builder/result/InsertResult";
 
@@ -115,39 +114,6 @@ export class Subject {
      */
     get mustBeUpdated() {
         return this.canBeUpdated && this.identifier && this.hasChanges();
-    }
-
-    popChangeSet() {
-        const changeMapsWithoutValues: SubjectChangeMap[] = [];
-        const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
-            let value = changeMap.value;
-            if (value instanceof Subject) {
-                value = value.identifier;
-                if (!value) {
-                    changeMapsWithoutValues.push(changeMap);
-                    return updateMap;
-                }
-            }
-
-            // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
-
-            if (this.metadata.isJunction && changeMap.column) {
-                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value)));
-
-            } else if (changeMap.column) {
-                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(value));
-
-            } else if (changeMap.relation) {
-                OrmUtils.mergeDeep(updateMap, changeMap.relation!.createValueMap(value));
-                // changeMap.relation!.joinColumns.forEach(column => {
-                //     OrmUtils.mergeDeep(updateMap, column.createValueMap(value));
-                // });
-            }
-            return updateMap;
-        }, {} as ObjectLiteral);
-        // console.log(changeSet);
-        this.changeMaps = changeMapsWithoutValues;
-        return changeSet;
     }
 
 }
