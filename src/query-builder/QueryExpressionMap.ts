@@ -214,9 +214,9 @@ export class QueryExpressionMap {
     updateEntity: boolean = true;
 
     /**
-     * Indicates if subscribers must be called before and after query execution.
+     * Indicates if listeners and subscribers must be called before and after query execution.
      */
-    callSubscribers: boolean = true;
+    callListeners: boolean = true;
 
     // -------------------------------------------------------------------------
     // Constructor

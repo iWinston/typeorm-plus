@@ -3,6 +3,6 @@
  */
 export class DeleteResult {
 
-    result: any;
+    raw: any;
 
 }

@@ -68,7 +68,7 @@ export class OrmUtils {
                 //     propertyKey = "__" + key + "__";
                 // }
 
-                if (this.isObject(source[propertyKey]) && !(source[propertyKey] instanceof Date)) {
+                if (this.isObject(source[propertyKey]) && !(source[propertyKey] instanceof Date) && !(source[propertyKey] instanceof Buffer)) {
                     if (!target[key]) Object.assign(target, { [key]: {} });
                     this.mergeDeep(target[key], source[propertyKey]);
                 } else {

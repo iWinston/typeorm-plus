@@ -3,6 +3,6 @@
  */
 export class UpdateResult {
 
-    result: any;
+    raw: any;
 
 }

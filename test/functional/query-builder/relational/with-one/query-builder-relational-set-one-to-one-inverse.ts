@@ -51,10 +51,10 @@ describe("query builder > relational query builder > set operation > one-to-one 
         expect(loadedPost1!.image).to.be.eql({ id: 1, url: "image #1" });
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
 
         await connection
             .createQueryBuilder()
@@ -63,13 +63,13 @@ describe("query builder > relational query builder > set operation > one-to-one 
             .set(null);
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
     })));
 
     it("should set entity relation of a given entity by entity id", () => Promise.all(connections.map(async connection => {
@@ -105,13 +105,13 @@ describe("query builder > relational query builder > set operation > one-to-one 
             .set(2);
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
         expect(loadedPost2!.image).to.be.eql({ id: 2, url: "image #2" });
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
 
         await connection
             .createQueryBuilder()
@@ -120,13 +120,13 @@ describe("query builder > relational query builder > set operation > one-to-one 
             .set(null);
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
     })));
 
     it("should set entity relation of a given entity by entity id map", () => Promise.all(connections.map(async connection => {
@@ -162,10 +162,10 @@ describe("query builder > relational query builder > set operation > one-to-one 
             .set({ id: 3 });
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
         expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" });
@@ -177,13 +177,13 @@ describe("query builder > relational query builder > set operation > one-to-one 
             .set(null);
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
     })));
 
     it("should set entity relation of a multiple entities", () => Promise.all(connections.map(async connection => {
@@ -222,7 +222,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
         expect(loadedPost1!.image).to.be.eql({ id: 3, url: "image #3" });
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
         expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" });
@@ -234,13 +234,13 @@ describe("query builder > relational query builder > set operation > one-to-one 
             .set(null);
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.undefined;
+        expect(loadedPost1!.image).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.undefined;
+        expect(loadedPost2!.image).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.undefined;
+        expect(loadedPost3!.image).to.be.null;
     })));
 
 });

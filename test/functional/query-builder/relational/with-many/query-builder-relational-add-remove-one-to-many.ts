@@ -51,10 +51,10 @@ describe("query builder > relational query builder > add operation > one to many
         expect(loadedPost1!.category).to.be.eql({ id: 1, name: "category #1" });
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
-        expect(loadedPost3!.category).to.be.undefined;
+        expect(loadedPost3!.category).to.be.null;
 
         await connection
             .createQueryBuilder()
@@ -63,13 +63,13 @@ describe("query builder > relational query builder > add operation > one to many
             .remove(post1);
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
-        expect(loadedPost1!.category).to.be.undefined;
+        expect(loadedPost1!.category).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
-        expect(loadedPost3!.category).to.be.undefined;
+        expect(loadedPost3!.category).to.be.null;
     })));
 
     it("should add entity relation of a given entity by entity id", () => Promise.all(connections.map(async connection => {
@@ -105,13 +105,13 @@ describe("query builder > relational query builder > add operation > one to many
             .add(2); // post id
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
-        expect(loadedPost1!.category).to.be.undefined;
+        expect(loadedPost1!.category).to.be.null;
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
         expect(loadedPost2!.category).to.be.eql({ id: 2, name: "category #2" });
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
-        expect(loadedPost3!.category).to.be.undefined;
+        expect(loadedPost3!.category).to.be.null;
 
         await connection
             .createQueryBuilder()
@@ -120,13 +120,13 @@ describe("query builder > relational query builder > add operation > one to many
             .remove(2); // post id
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
-        expect(loadedPost1!.category).to.be.undefined;
+        expect(loadedPost1!.category).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
-        expect(loadedPost3!.category).to.be.undefined;
+        expect(loadedPost3!.category).to.be.null;
     })));
 
     it("should add entity relation of a given entity by entity id map", () => Promise.all(connections.map(async connection => {
@@ -162,10 +162,10 @@ describe("query builder > relational query builder > add operation > one to many
             .add({ id: 3 }); // post id
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
-        expect(loadedPost1!.category).to.be.undefined;
+        expect(loadedPost1!.category).to.be.null;
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.eql({ id: 3, name: "category #3" });
@@ -177,13 +177,13 @@ describe("query builder > relational query builder > add operation > one to many
             .remove({ id: 3 }); // post id
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
-        expect(loadedPost1!.category).to.be.undefined;
+        expect(loadedPost1!.category).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
-        expect(loadedPost3!.category).to.be.undefined;
+        expect(loadedPost3!.category).to.be.null;
     })));
 
     it("should add multiple entities into relation of a multiple entities", () => Promise.all(connections.map(async connection => {
@@ -222,7 +222,7 @@ describe("query builder > relational query builder > add operation > one to many
         expect(loadedPost1!.category).to.be.eql({ id: 3, name: "category #3" });
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
         expect(loadedPost3!.category).to.be.eql({ id: 3, name: "category #3" });
@@ -234,13 +234,13 @@ describe("query builder > relational query builder > add operation > one to many
             .remove([{ id: 1 }, { id: 3 }]); // posts
 
         loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["category"] });
-        expect(loadedPost1!.category).to.be.undefined;
+        expect(loadedPost1!.category).to.be.null;
 
         loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["category"] });
-        expect(loadedPost2!.category).to.be.undefined;
+        expect(loadedPost2!.category).to.be.null;
 
         loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["category"] });
-        expect(loadedPost3!.category).to.be.undefined;
+        expect(loadedPost3!.category).to.be.null;
     })));
 
     it("should handle addAndRemove method as well", () => Promise.all(connections.map(async connection => {

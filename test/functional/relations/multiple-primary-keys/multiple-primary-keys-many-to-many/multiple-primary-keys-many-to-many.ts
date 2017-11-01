@@ -6,7 +6,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Tag} from "./entity/Tag";
 
-describe("relations > multiple-primary-keys > many-to-many", () => {
+describe.only("relations > multiple-primary-keys > many-to-many", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

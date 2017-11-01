@@ -9,6 +9,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {RandomGenerator} from "../util/RandomGenerator";
 import {OrmUtils} from "../util/OrmUtils";
 import {InsertResult} from "./result/InsertResult";
+import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -35,12 +36,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const queryRunner = this.obtainQueryRunner();
         try {
             const insertResult = new InsertResult();
-            insertResult.raw = await queryRunner.query(sql, parameters);  // await is needed here because we are using finally
+            insertResult.raw = await queryRunner.query(sql, parameters);
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 const metadata = this.expressionMap.mainAlias!.metadata;
 
                 await Promise.all(this.getValueSets().map(async (valueSet, valueSetIndex) => {
-                    const generatedMap = this.connection.driver.createGeneratedMap(metadata, {}, insertResult.raw) || {};
+                    const generatedMap = this.connection.driver.createGeneratedMap(metadata, insertResult.raw) || {};
 
                     metadata.generatedColumns.forEach(generatedColumn => {
                         if (generatedColumn.generationStrategy === "uuid") {
@@ -166,7 +167,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // not all databases support returning/output cause
         if (!this.isReturningSqlSupported())
-            throw new Error("OUTPUT or RETURNING clause only supported by Microsoft SQL Server or PostgreSQL. But you can specify array of columns you want to return.");
+            throw new ReturningStatementNotSupportedError();
 
         this.expressionMap.returning = returning;
         return this;

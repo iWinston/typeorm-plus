@@ -418,6 +418,23 @@ export abstract class QueryBuilder<Entity> {
         this.queryRunner = queryRunner;
     }
 
+    /**
+     * Indicates if entity must be updated after insertion / updation / remove operations.
+     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
+     * Enabled by default.
+     */
+    updateEntity(enabled: boolean) {
+        this.expressionMap.updateEntity = enabled;
+    }
+
+    /**
+     * Indicates if listeners and subscribers must be called before and after query execution.
+     * Enabled by default.
+     */
+    callListeners(enabled: boolean) {
+        this.expressionMap.callListeners = enabled;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

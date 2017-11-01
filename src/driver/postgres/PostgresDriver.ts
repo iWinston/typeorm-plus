@@ -560,7 +560,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, uuidMap: ObjectLiteral, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
         if (!insertResult || !insertResult[0])
             return undefined;
 
