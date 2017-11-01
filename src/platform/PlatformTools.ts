@@ -82,8 +82,13 @@ export class PlatformTools {
         fs.appendFileSync(filename, data);
     }
 
-    static writeFileSync(path: string, data: any): void {
-        fs.writeFileSync(path, data);
+    static async writeFile(path: string, data: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            fs.writeFile(path, data, (err) => {
+                if (err) fail(err);
+                ok();
+            });
+        });
     }
 
     /**

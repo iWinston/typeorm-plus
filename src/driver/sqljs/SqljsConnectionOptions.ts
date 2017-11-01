@@ -21,9 +21,9 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
     readonly autoSave?: boolean;
 
     /**
-     * The interval in milliseconds
+     * A function that gets called instead of the internal autoSave function
      */
-    readonly autoSaveInterval?: number;
+    readonly autoSaveCallback?: Function;
 
     /**
      * file path or local storage key to load and save database

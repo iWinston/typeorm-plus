@@ -27,8 +27,8 @@ export class SqljsEntityManager extends EntityManager {
      * Saves the current database to a file (node) or localstorage (browser)
      * if fileNameOrLocalStorage is not set options.location is used
      */
-    saveDatabase(fileNameOrLocalStorage?: string) {
-        this.driver.save(fileNameOrLocalStorage);
+    async saveDatabase(fileNameOrLocalStorage?: string): Promise<void> {
+        await this.driver.save(fileNameOrLocalStorage);
     }
 
     /**

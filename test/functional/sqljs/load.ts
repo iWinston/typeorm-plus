@@ -23,11 +23,11 @@ describe("sqljs driver > load", () => {
         manager.loadDatabase("test/functional/sqljs/sqlite/test.sqlite");
 
         const repository = connection.getRepository(Post);
-        const post = await repository.findOne({title: "The title"});
+        const post = await repository.findOne({title: "A post"});
 
         expect(post).not.to.be.undefined;
         if (post) {
-            expect(post.title).to.be.equal("The title");
+            expect(post.title).to.be.equal("A post");
         }
 
         const exportedDatabase = manager.exportDatabase();

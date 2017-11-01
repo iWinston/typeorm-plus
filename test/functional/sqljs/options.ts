@@ -10,7 +10,8 @@ describe("sqljs driver > options", () => {
         let connection = await createConnection({
             type: "sqljs",
             entities: [Post],
-            location: "test/functional/sqljs/sqlite/test.sqlite"
+            location: "test/functional/sqljs/sqlite/options.sqlite",
+            synchronize: true
         });
 
         const driver = connection.driver as SqljsDriver;
@@ -20,7 +21,7 @@ describe("sqljs driver > options", () => {
         post.title = "A post";
         await repository.save(post);
 
-        driver.save();
+        await driver.save();
 
         await connection.dropDatabase();
         await driver.connect();

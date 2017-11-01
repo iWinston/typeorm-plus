@@ -58,6 +58,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             while (statement.step()) {
                 result.push(statement.getAsObject());
             }
+
+            if (query.toUpperCase().match(/(COMMIT)/)) {
+                this.driver.autoSave();
+            }
             
             statement.free();
             ok(result);

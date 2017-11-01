@@ -17,8 +17,6 @@ declare var window: Window;
 export class SqljsDriver extends AbstractSqliteDriver {
     options: SqljsConnectionOptions;
 
-    private timer: any;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -26,12 +24,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     constructor(connection: Connection) {
         super(connection);
 
-        if (this.options.autoSave && !this.options.location) {
-            throw new DriverOptionNotSetError(`location is required when using autoSave`);
-        }
-
-        if (this.options.autoSave && !this.options.autoSaveInterval) {
-            throw new DriverOptionNotSetError(`autoSaveInterval is required when using autoSave`);
+        if (this.options.autoSave && !this.options.location && !this.options.autoSaveCallback) {
+            throw new DriverOptionNotSetError(`location or autoSaveCallback`);
         }
 
         // load sql.js package
@@ -103,7 +97,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * saved the current database to the given file (node.js) or local storage key (browser)
      */
-    save(location?: string) {
+    async save(location?: string) {
         if (!location && !this.options.location) {
             throw new Error(`No location is set, specify a location parameter or add the location option to your configuration`);
         }
@@ -119,7 +113,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
         if (PlatformTools.type === "node") {
             try {
                 const content = new Buffer(this.databaseConnection.export());
-                PlatformTools.writeFileSync(path, content);
+                await PlatformTools.writeFile(path, content);
             }
             catch (e) {
                 throw new Error(`Could not save database, error: ${e}`);
@@ -128,6 +122,17 @@ export class SqljsDriver extends AbstractSqliteDriver {
         else {
             const content = JSON.stringify(this.databaseConnection.export());
             PlatformTools.getGlobalVariable().localStorage.setItem(path, content);
+        }
+    }
+
+    autoSave() {
+        if (this.options.autoSave) {
+            if (this.options.autoSaveCallback) {
+                this.options.autoSaveCallback(this.export());
+            }
+            else {
+                this.save();
+            }
         }
     }
     
@@ -161,7 +166,6 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new this.sqlite.Database();
         }
 
-        this.startTimer();
         return Promise.resolve(this.databaseConnection);
     }
 
@@ -179,29 +183,6 @@ export class SqljsDriver extends AbstractSqliteDriver {
             } catch (e) {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js");
             }
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Starts a new interval timer, that calls save every options.autoSaveInterval milliseconds
-     */
-    private startTimer() {
-        if (this.options.autoSave && this.options.autoSaveInterval) {
-            this.stopTimer();
-            this.timer = setInterval(this.save, this.options.autoSaveInterval);
-        }
-    }
-
-    /**
-     * Stops the internal timer if it was started
-     */
-    private stopTimer() {
-        if (this.timer) {
-            clearInterval(this.timer);
         }
     }
 }

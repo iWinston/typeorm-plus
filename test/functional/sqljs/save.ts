@@ -32,7 +32,7 @@ describe("sqljs driver > save", () => {
         await repository.save(post);
         const manager = getSqljsManager("sqljs");
 
-        manager.saveDatabase(pathToSqlite);
+        await manager.saveDatabase(pathToSqlite);
         expect(fs.existsSync(pathToSqlite)).to.be.true;
     })));
 
