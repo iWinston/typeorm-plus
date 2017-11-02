@@ -20,8 +20,8 @@ export class FindOptionsUtils {
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
                     (possibleOptions.cache instanceof Object ||
-                        typeof possibleOptions.cache === "boolean" || 
-                        typeof possibleOptions.cache === "number")
+                    typeof possibleOptions.cache === "boolean" ||
+                    typeof possibleOptions.cache === "number")
                 );
     }
 
@@ -108,7 +108,7 @@ export class FindOptionsUtils {
 
         if (options.order)
             Object.keys(options.order).forEach(key => {
-                const order = (options as FindOneOptions<T>).order![key as any];
+                const order = ((options as FindOneOptions<T>).order as any)[key as any];
                 switch (order) {
                     case 1:
                         qb.addOrderBy(qb.alias + "." + key, "ASC");
@@ -152,8 +152,14 @@ export class FindOptionsUtils {
                 });
         }
 
-        if (options.cache)
-            qb.cache(options.cache);
+        if (options.cache) {
+            if (options.cache instanceof Object) {
+                const cache = options.cache as { id: any, milliseconds: number };
+                qb.cache(cache.id, cache.milliseconds);
+            } else {
+                qb.cache(options.cache);
+            }
+        }
 
         return qb;
     }
