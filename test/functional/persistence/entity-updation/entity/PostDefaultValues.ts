@@ -17,7 +17,7 @@ export class PostDefaultValues {
     @Column({ default: true })
     isActive: boolean;
 
-    @Column({ default: () => "NOW()" })
+    @Column({ default: () => "CURRENT_TIMESTAMP" })
     addDate: Date;
 
     @Column({ default: 0 })

@@ -231,7 +231,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (metadata.versionColumn)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
             if (metadata.updateDateColumn)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = NOW()");
+                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP");
 
         } else {
             Object.keys(valuesSet).map(key => {
