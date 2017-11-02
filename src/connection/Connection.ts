@@ -107,7 +107,7 @@ export class Connection {
         this.options = options;
         this.logger = new LoggerFactory().create(this.options.logger, this.options.logging);
         this.driver = new DriverFactory().create(this);
-        this.manager = this.createEntityManager(this);
+        this.manager = this.createEntityManager();
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
     }
@@ -129,6 +129,11 @@ export class Connection {
         return this.manager as MongoEntityManager;
     }
 
+    /**
+     * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
+     * 
+     * Available only in connection with the sqljs driver
+     */
     get sqljsManager(): SqljsEntityManager {
         if (!(this.manager instanceof SqljsEntityManager))
             throw new Error(`SqljsEntityManager is only available for Sqljs databases.`);
@@ -396,7 +401,7 @@ export class Connection {
      */
     createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode);
-        const manager = this.createEntityManager(this, queryRunner);
+        const manager = this.createEntityManager(queryRunner);
         Object.assign(queryRunner, { manager: manager });
         return queryRunner;
     }
@@ -415,16 +420,16 @@ export class Connection {
         return relationMetadata.junctionEntityMetadata;
     }
 
-    /**
-     * creates an Entity Manager with the help of the EntityManagerFactory
-     */
-    createEntityManager(connection: Connection, queryRunner?: QueryRunner): EntityManager {
-        return new EntityManagerFactory().create(connection, queryRunner);
-    }
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
+     */
+    protected createEntityManager(queryRunner?: QueryRunner): EntityManager {
+        return new EntityManagerFactory().create(this, queryRunner);
+    }
 
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.

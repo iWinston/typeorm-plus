@@ -67,7 +67,7 @@ Some of TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL
+* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL / sql.js
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / Electron platforms
 * TypeScript and JavaScript support
@@ -191,6 +191,10 @@ await timber.remove();
     * for **Microsoft SQL Server**
     
         `npm install mssql --save`
+
+    * for **sql.js**
+    
+        `npm install sql.js --save`
     
     * for **Oracle** (experimental)
     

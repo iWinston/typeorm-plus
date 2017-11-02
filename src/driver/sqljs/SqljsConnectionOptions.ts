@@ -1,7 +1,7 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 
 /**
- * Sqlite-specific connection options.
+ * Sql.js-specific connection options.
  */
 export interface SqljsConnectionOptions extends BaseConnectionOptions {
 
@@ -11,22 +11,27 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
     readonly type: "sqljs";
 
     /**
-     * The database definition and data to import
+     * A Uint8Array that gets importet when the connection is opened.
      */
     readonly database?: Uint8Array;
 
     /**
-     * True if file or localStorage should be updated automatically
+     * Enables the autoSave mechanism which either saves to location
+     * or callls autoSaveCallback every time a change to the database is made.
      */
     readonly autoSave?: boolean;
 
     /**
-     * A function that gets called instead of the internal autoSave function
+     * A function that gets called on every change instead of the internal autoSave function.
+     * autoSave has to be enabled for this to work.
      */
     readonly autoSaveCallback?: Function;
 
     /**
-     * file path or local storage key to load and save database
+     * File path (Node.js) or local storage key (browser) to load and save database from
+     * If this is specified without autoSave, the database is loaded from the location
+     * and can be saved manually via the SqljsEntityManager. If autoSave is enabled,
+     * location is used to automatically save the database
      */
     readonly location?: string;
 }

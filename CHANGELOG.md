@@ -11,6 +11,7 @@ feel free to ask us and community.
 * fixed bug with not properly working `update`  method (#1037, #1042)
 * fixed bug with replication support (#1035)
 * fixed bug with wrong embedded column names being generated (#969) 
+* added support for `sql.js` (#894). To use it you just need to install `npm i sql.js` and use `sqljs` as driver type.
 
 ## 0.1.1 (current)
 

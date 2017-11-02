@@ -1,20 +1,20 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
-import { SqljsConnectionOptions } from "./SqljsConnectionOptions";
-import { SqljsQueryRunner } from "./SqljsQueryRunner";
-import { QueryRunner } from "../../query-runner/QueryRunner";
-import { Connection } from "../../connection/Connection";
-import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
-import { PlatformTools } from "../../platform/PlatformTools";
+import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
+import {SqljsConnectionOptions} from "./SqljsConnectionOptions";
+import {SqljsQueryRunner} from "./SqljsQueryRunner";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {Connection} from "../../connection/Connection";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
+import {PlatformTools} from "../../platform/PlatformTools";
 
-// needed for typescript compiler
+// This is needed to satisfy the typescript compiler.
 interface Window {
     SQL: any;
 }
-
 declare var window: Window;
 
 export class SqljsDriver extends AbstractSqliteDriver {
+    // The driver specific options.
     options: SqljsConnectionOptions;
 
     // -------------------------------------------------------------------------
@@ -24,6 +24,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     constructor(connection: Connection) {
         super(connection);
 
+        // If autoSave is enabled by user, location or autoSaveCallback have to be set
+        // because either autoSave saves to location or calls autoSaveCallback.
         if (this.options.autoSave && !this.options.location && !this.options.autoSaveCallback) {
             throw new DriverOptionNotSetError(`location or autoSaveCallback`);
         }
@@ -66,7 +68,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     }
     
     /**
-     * loads a database from a given file, local storage key or array
+     * Loads a database from a given file (Node.js), local storage key (browser) or array.
+     * This will delete the current database!
      */
     load(fileNameOrLocalStorageOrData: string | Uint8Array): Promise<any> {
         if (typeof fileNameOrLocalStorageOrData === "string") {
@@ -95,7 +98,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     }
 
     /**
-     * saved the current database to the given file (node.js) or local storage key (browser)
+     * Saved the current database to the given file (Node.js) or local storage key (browser).
+     * If no location path is given, the location path in the options (if specified) will be used.
      */
     async save(location?: string) {
         if (!location && !this.options.location) {
@@ -125,6 +129,11 @@ export class SqljsDriver extends AbstractSqliteDriver {
         }
     }
 
+    /**
+     * This gets called by the QueryRunner when a change to the database is made.
+     * If a custom autoSaveCallback is specified, it get's called with the database as Uint8Array,
+     * otherwise the save method is called which saves it to file (Node.js) or localstorage (browser)
+     */
     autoSave() {
         if (this.options.autoSave) {
             if (this.options.autoSaveCallback) {
@@ -137,7 +146,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     }
     
     /**
-     * returns the current database as Uint8Array
+     * Returns the current database as Uint8Array.
      */
     export(): Uint8Array {
         return this.databaseConnection.export();
@@ -149,6 +158,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates connection with the database.
+     * If the location option is set, the database is loaded first.
      */
     protected createDatabaseConnection(): Promise<any> {
         if (this.options.location) {
@@ -158,6 +168,10 @@ export class SqljsDriver extends AbstractSqliteDriver {
         return this.createDatabaseConnectionWithImport(this.options.database);
     }
 
+    /**
+     * Creates connection with an optional database.
+     * If database is specified it is loaded, otherwise a new empty database is created.
+     */
     protected createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
         if (database && database.length > 0) {
             this.databaseConnection = new this.sqlite.Database(database);
