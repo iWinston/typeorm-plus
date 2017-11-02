@@ -8,60 +8,60 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 export class InsertSubjectsSorter {
 
     // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Insert subjects needs to be sorted.
+     */
+    subjects: Subject[];
+
+    /**
+     * Unique list of entity metadatas of this subject.
+     */
+    metadatas: EntityMetadata[];
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(insertSubjects: Subject[]) {
+        this.subjects = [...insertSubjects]; // copy insert subjects to prevent changing of sent array
+        this.metadatas = this.getUniqueMetadatas(this.subjects);
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    order(insertSubjects: Subject[]): Subject[] {
-
-        // extract unique metadatas from the given subjects
-        const metadatas: EntityMetadata[] = [];
-        insertSubjects.forEach(subject => {
-            if (metadatas.indexOf(subject.metadata) === -1)
-                metadatas.push(subject.metadata);
-        });
+    order(): Subject[] {
 
         // if there are no metadatas it probably mean there is no subjects... we don't have to do anything here
-        if (!metadatas.length)
-            return insertSubjects;
+        if (!this.metadatas.length)
+            return this.subjects;
 
-
-        const dependencies: string[][] = [];
-        metadatas.forEach(metadata => {
-            metadata.relationsWithJoinColumns.forEach(relation => {
-                if (relation.isNullable)
-                    return;
-
-                dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
-            });
-        });
-
-        const sortedEntityTargets = this.toposort(dependencies).reverse();
+        const nonNullableDependencies = this.getNonNullableDependencies();
+        const sortedNonNullableEntityTargets = this.toposort(nonNullableDependencies).reverse();
 
         const newInsertedSubjects: Subject[] = [];
-        sortedEntityTargets.forEach(sortedEntityTarget => {
-            const entityTargetSubjects = insertSubjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
+        sortedNonNullableEntityTargets.forEach(sortedEntityTarget => {
+            const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
             newInsertedSubjects.push(...entityTargetSubjects);
-            entityTargetSubjects.forEach(entityTargetSubject => insertSubjects.splice(insertSubjects.indexOf(entityTargetSubject), 1));
+            entityTargetSubjects.forEach(entityTargetSubject => this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1));
         });
 
-        const dependencies2: string[][] = [];
-        metadatas.forEach(metadata => {
-            metadata.relationsWithJoinColumns.forEach(relation => {
-                dependencies2.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
-            });
-        });
-
-        const sortedEntityTargets2 = this.toposort(dependencies2).reverse();
+        const otherDependencies: string[][] = this.getDependencies();
+        const sortedOtherEntityTargets = this.toposort(otherDependencies).reverse();
 
         const newInsertedSubjects2: Subject[] = [];
-        sortedEntityTargets2.forEach(sortedEntityTarget => {
-            const entityTargetSubjects = insertSubjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
+        sortedOtherEntityTargets.forEach(sortedEntityTarget => {
+            const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
             newInsertedSubjects2.push(...entityTargetSubjects);
-            entityTargetSubjects.forEach(entityTargetSubject => insertSubjects.splice(insertSubjects.indexOf(entityTargetSubject), 1));
+            entityTargetSubjects.forEach(entityTargetSubject => this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1));
         });
 
         newInsertedSubjects.push(...newInsertedSubjects2);
-        newInsertedSubjects.push(...insertSubjects);
+        newInsertedSubjects.push(...this.subjects);
 
         return newInsertedSubjects;
     }
@@ -69,6 +69,52 @@ export class InsertSubjectsSorter {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Extracts all unique metadatas from the given subjects.
+     */
+    protected getUniqueMetadatas(subjects: Subject[]) {
+        const metadatas: EntityMetadata[] = [];
+        subjects.forEach(subject => {
+            if (metadatas.indexOf(subject.metadata) === -1)
+                metadatas.push(subject.metadata);
+        });
+        return metadatas;
+    }
+
+    /**
+     * Gets dependency tree for all entity metadatas with non-nullable relations.
+     * We need to execute insertions first for entities which non-nullable relations.
+     */
+    protected getNonNullableDependencies(): string[][] {
+        return this.metadatas.reduce((dependencies, metadata) => {
+            metadata.relationsWithJoinColumns.forEach(relation => {
+                if (relation.isNullable)
+                    return;
+
+                dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
+            });
+            return dependencies;
+        }, [] as string[][]);
+    }
+
+    /**
+     * Gets dependency tree for all entity metadatas with non-nullable relations.
+     * We need to execute insertions first for entities which non-nullable relations.
+     */
+    protected getDependencies(): string[][] {
+        return this.metadatas.reduce((dependencies, metadata) => {
+            metadata.relationsWithJoinColumns.forEach(relation => {
+
+                // if relation is self-referenced we skip it
+                if (relation.inverseEntityMetadata === metadata)
+                    return;
+
+                dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
+            });
+            return dependencies;
+        }, [] as string[][]);
+    }
 
     /**
      * Implements topological sort.

@@ -83,7 +83,7 @@ export class SubjectExecutor {
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
 
-        this.insertSubjects = new InsertSubjectsSorter().order(this.insertSubjects);
+        this.insertSubjects = new InsertSubjectsSorter(this.insertSubjects).order();
 
         await this.executeInsertOperations();
 

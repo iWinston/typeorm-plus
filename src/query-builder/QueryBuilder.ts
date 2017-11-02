@@ -587,7 +587,8 @@ export abstract class QueryBuilder<Entity> {
         const columns = this.getReturningColumns();
 
         // also add columns we must auto-return to perform entity updation
-        if (this.connection.driver.isReturningSqlSupported()) {
+        // if user gave his own returning
+        if (typeof this.expressionMap.returning !== "string" && this.connection.driver.isReturningSqlSupported()) {
             columns.push(...this.getEntityUpdationReturningColumns().filter(column => {
                 return columns.indexOf(column) === -1;
             }));

@@ -20,7 +20,19 @@ feel free to ask us and community.
 * now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
 * fixed issues with relation updation from one-to-one non-owner side
 * now version column is updated on the database level, not by ORM anymore
-* now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `NOW()` sql function)
+* now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `CURRENT_TIMESTAMP` as a default value)
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` automatically update entities after execution.
+This only happens if real entity objects are passed. 
+Some databases (like mysql and sqlite) requires a separate query to perform this operation.
+If you want to disable this behavior use `queryBuilder.updateEntity(false)` method.
+This feature is convenient for users who have uuid, create/update date, version columns or columns with DEFAULT value set.
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners. 
+You can disable this behavior by setting `queryBuilder.callListeners(false)` method. 
+* `Repository` and `EntityManager` method `.findOne` is deprecated and will be removed in next 0.3.0 version.
+Use `findOne(id)` method instead now.
+* `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
+* `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
+* `DeleteQueryBuilder` now returns `DeleteResult` which contains extended information and metadata about runned query
 
 
 ## 0.1.2 (next)
@@ -263,7 +275,7 @@ from two sides of `@OneToOne` relationship now.
     `addParameters` now is deprecated
     * `getOne` returns `Promise<Entity|undefined>`
 * breaking changes in `Repository` and `EntityManager`:
-    * `findOne` and `findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
+    * `findOne` and .findOne` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
 * now typeorm is compiled into `ES5` instead of `ES6` - this allows to run it on older versions of node.js
 * fixed multiple issues with dates and utc-related stuff
 * multiple bugfixes

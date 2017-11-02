@@ -110,7 +110,7 @@ user.age = 25;
 await repository.save(user);
 
 const allUsers = await repository.find();
-const firstUser = await repository.findOne(1);
+const firstUser = await repository.findOne(1); // find by id
 const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" });
 
 await repository.remove(timber);
