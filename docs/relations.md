@@ -140,7 +140,7 @@ category: Category;
 ```
 
 The relation now refers to `name` of the `Category` entity, instead of `id`.
-Column name for such relation will become `categoryId`
+Column name for such relation will become `categoryName`
 
 ## `@JoinTable` options
 
