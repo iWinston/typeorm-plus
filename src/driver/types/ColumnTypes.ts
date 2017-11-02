@@ -90,6 +90,7 @@ export type SimpleColumnType =
     |"blob" // mysql, oracle, sqlite
     |"text" // mysql, postgres, mssql, sqlite
     |"ntext" // mssql
+    |"citext" // postgres
     |"longblob" // mysql
     |"longtext" // mysql
     |"bytea" // postgres
