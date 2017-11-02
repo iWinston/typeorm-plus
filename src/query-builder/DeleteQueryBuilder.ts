@@ -180,7 +180,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.isReturningSqlSupported())
+        if (!this.connection.driver.isReturningSqlSupported())
             throw new ReturningStatementNotSupportedError();
 
         this.expressionMap.returning = returning;

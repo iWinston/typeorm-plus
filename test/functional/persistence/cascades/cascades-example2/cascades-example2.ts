@@ -35,7 +35,7 @@ describe("persistence > cascades > example 2", () => {
         await connection.manager.save(question);
 
         const loadedQuestion = await connection.manager
-            .createQueryBuilder(Question,"question")
+            .createQueryBuilder(Question, "question")
             .leftJoinAndSelect("question.answers", "answer")
             .leftJoinAndSelect("answer.photo", "answerPhoto")
             .leftJoinAndSelect("answer.user", "answerUser")

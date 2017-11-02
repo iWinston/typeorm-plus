@@ -39,6 +39,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         try {
             const insertResult = new InsertResult();
             insertResult.raw = await queryRunner.query(sql, parameters);
+
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 const metadata = this.expressionMap.mainAlias!.metadata;
 
@@ -50,7 +51,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             // uuid can be defined by user in a model, that's why first we get it
                             let uuid = generatedColumn.getEntityValue(valueSet);
                             if (!uuid) // if it was not defined by a user then InsertQueryBuilder generates it by its own, get this generated uuid value
-                                uuid = this.expressionMap.parameters[generatedColumn.databaseName + valueSetIndex + "uuid"];
+                                uuid = this.expressionMap.parameters["_uuid_" + generatedColumn.databaseName + valueSetIndex];
 
                             OrmUtils.mergeDeep(generatedMap, generatedColumn.createValueMap(uuid));
                         }
@@ -65,7 +66,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
                     // for other drivers we have to re-select this data from the database
                     const returningColumns = this.getEntityUpdationReturningColumns();
-                    if (returningColumns.length && !this.isReturningSqlSupported()) {
+                    if (returningColumns.length && !this.connection.driver.isReturningSqlSupported()) {
 
                         // to select just inserted entity we need a criteria to select by.
                         // for newly inserted entities in drivers which do not support returning statement
@@ -82,6 +83,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             .getOne();
 
                         queryRunner.manager.merge(metadata.target, valueSet, returningResult);
+                        queryRunner.manager.merge(metadata.target, generatedMap, returningResult);
                     }
 
                     insertResult.generatedMaps.push(generatedMap);
@@ -168,7 +170,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.isReturningSqlSupported())
+        if (!this.connection.driver.isReturningSqlSupported())
             throw new ReturningStatementNotSupportedError();
 
         this.expressionMap.returning = returning;
@@ -264,42 +266,54 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const valueSets = this.getValueSets();
         const columns = this.getInsertedColumns();
 
-        // if columns are given
+        // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
 
-            // get values needs to be inserted
-            return valueSets.map((valueSet, insertionIndex) => {
+            return valueSets.map((valueSet, valueSetIndex) => {
                 const columnValues = columns.map(column => {
-                    const paramName = "_inserted_" + insertionIndex + "_" + column.databaseName;
+                    const paramName = "_inserted_" + valueSetIndex + "_" + column.databaseName;
 
+                    // extract real value from the entity
                     let value = column.getEntityValue(valueSet);
+
+                    // if column is relational and value is an object then get real referenced column value from this object
+                    // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
+                    // and we extract "1" from this object
                     if (column.referencedColumn && value instanceof Object) {
                         value = column.referencedColumn.getEntityValue(value);
                     }
+
+                    // make sure our value is normalized by a driver
                     value = this.connection.driver.preparePersistentValue(value, column);
 
+                    // newly inserted entities always have a version equal to 1 (first version)
                     if (column.isVersion) {
                         return "1";
 
+                    // for create and update dates we insert current date
                     } else if (column.isCreateDate || column.isUpdateDate) {
                         return "NOW()";
 
-                    } else if (value === undefined && column.isGenerated && column.generationStrategy === "uuid") {
-                        const paramName = column.databaseName + insertionIndex + "uuid";
+                    // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
+                    } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
+                        const paramName = "_uuid_" + column.databaseName + valueSetIndex;
                         this.setParameter(paramName, RandomGenerator.uuid4());
                         return ":" + paramName;
 
+                    // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) {
+                        if (this.connection.driver instanceof SqliteDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             return "NULL";
 
                         } else {
                             return "DEFAULT";
                         }
 
-                    } else if (value instanceof Function) { // support for SQL expressions in update query
+                    // support for SQL expressions in queries
+                    } else if (value instanceof Function) {
                         return value();
 
+                    // just any other regular value
                     } else {
                         if (this.connection.driver instanceof SqlServerDriver) {
                             this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
@@ -308,6 +322,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         }
                         return ":" + paramName;
                     }
+
                 }).join(", ").trim();
                 return columnValues ? "(" + columnValues + ")" : "";
             }).join(", ");
@@ -320,9 +335,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     const paramName = "_inserted_" + insertionIndex + "_" + columnName;
                     const value = valueSet[columnName];
 
-                    if (value instanceof Function) { // support for SQL expressions in update query
+                    // support for SQL expressions in queries
+                    if (value instanceof Function) {
                         return value();
 
+                    // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (this.connection.driver instanceof SqliteDriver) {
                             return "NULL";
@@ -331,10 +348,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             return "DEFAULT";
                         }
 
+                    // just any other regular value
                     } else {
                         this.setParameter(paramName, value);
                         return ":" + paramName;
                     }
+
                 }).join(", ").trim();
                 return columnValues ? "(" + columnValues + ")" : "";
             }).join(", ");

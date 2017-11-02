@@ -332,7 +332,13 @@ export class RelationMetadata {
             // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
             const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral): any => {
                 const propertyName = propertyNames.shift();
-                return propertyName ? extractEmbeddedColumnValue(propertyNames, value[propertyName]) : value;
+                if (propertyName) {
+                    if (value[propertyName]) {
+                        return extractEmbeddedColumnValue(propertyNames, value[propertyName]);
+                    }
+                    return undefined;
+                }
+                return value;
             };
 
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]

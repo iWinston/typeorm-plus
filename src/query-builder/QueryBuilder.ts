@@ -587,7 +587,7 @@ export abstract class QueryBuilder<Entity> {
         const columns = this.getReturningColumns();
 
         // also add columns we must auto-return to perform entity updation
-        if (this.isReturningSqlSupported()) {
+        if (this.connection.driver.isReturningSqlSupported()) {
             columns.push(...this.getEntityUpdationReturningColumns().filter(column => {
                 return columns.indexOf(column) === -1;
             }));
@@ -636,7 +636,7 @@ export abstract class QueryBuilder<Entity> {
             return [];
 
         // for databases which support returning statement we need to return extra columns like id
-        if (this.isReturningSqlSupported()) {
+        if (this.connection.driver.isReturningSqlSupported()) {
 
             // filter out the columns of which we need database inserted values to update our entity
             return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
@@ -659,14 +659,6 @@ export abstract class QueryBuilder<Entity> {
 
         }
 
-    }
-
-    /**
-     * Checks if RETURNING / OUTPUT statement is supported by current driver.
-     */
-    protected isReturningSqlSupported() {
-        return  this.connection.driver instanceof PostgresDriver ||
-                this.connection.driver instanceof SqlServerDriver;
     }
 
     /**

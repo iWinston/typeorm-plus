@@ -448,7 +448,7 @@ export class ColumnMetadata {
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
             const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
             if (embeddedObject) {
-                if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
+                if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
                     if (relatedEntity && relatedEntity instanceof Object)
                         return this.referencedColumn.getEntityValue(relatedEntity);
@@ -458,7 +458,7 @@ export class ColumnMetadata {
             return undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
-            if (this.relationMetadata && this.referencedColumn/* && this.isVirtual*/) { // todo: do we really need isVirtual?
+            if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 if (relatedEntity && relatedEntity instanceof Object)
                     return this.referencedColumn.getEntityValue(relatedEntity);

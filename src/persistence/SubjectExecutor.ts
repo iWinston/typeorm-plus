@@ -121,12 +121,22 @@ export class SubjectExecutor {
     protected computeDiffColumns(subject: Subject): void {
         const diffColumns = subject.metadata.columns.filter(column => {
 
+            // if its a special column - then do nothing
+            if (column.isVirtual ||
+                column.isParentId ||
+                column.isDiscriminator ||
+                column.isUpdateDate ||
+                column.isVersion ||
+                column.isCreateDate)
+                return false;
+
             // prepare both entity and database values to make comparision
             let entityValue = column.getEntityValue(subject.entity!);
             if (entityValue === undefined)
                 return false;
-            if (!subject.databaseEntity)
+            if (!subject.databaseEntity) {
                 return true;
+            }
 
             let databaseValue = column.getEntityValue(subject.databaseEntity);
 
@@ -153,14 +163,8 @@ export class SubjectExecutor {
                 }
             }
 
-            // if its a special column or value is not changed - then do nothing
-            if (column.isVirtual ||
-                column.isParentId ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate ||
-                entityValue === databaseValue)
+            // if value is not changed - then do nothing
+            if (entityValue === databaseValue)
                 return false;
 
             // filter out "relational columns" only in the case if there is a relation object in entity
@@ -264,7 +268,6 @@ export class SubjectExecutor {
                 .insert()
                 .into(subject.metadata.target)
                 .values(changeSet)
-                // .returning(returningColumnNames) // todo: add "updateEntity(true)" option?
                 .execute();
 
             subject.identifier = subject.insertResult.identifiers[0];
@@ -274,9 +277,9 @@ export class SubjectExecutor {
             // }
 
             // if there are changes left mark it for updation
-            if (subject.hasChanges()) {
-                subject.canBeUpdated = true;
-            }
+            // if (subject.hasChanges()) {
+            //     subject.canBeUpdated = true;
+            // }
         });
     }
 
@@ -324,7 +327,11 @@ export class SubjectExecutor {
         this.insertSubjects.forEach(subject => {
 
             // merge into entity all values returned by a database
-            this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.insertResult!.valueSets[0]);
+            // console.log("merging...");
+            // console.log(JSON.stringify(subject.insertResult!.valueSets[0]));
+            // this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.insertResult!.valueSets[0]);
+            this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.insertResult!.generatedMaps[0]);
+            // console.log("finish merging...");
 
             // set values to "null" for nullable columns that did not have values
             subject.metadata.columns.forEach(column => {
@@ -375,30 +382,48 @@ export class SubjectExecutor {
                 // so, here we check if we have a value set then we simply use it as value to get our reference column values
                 // otherwise simply use an entity which cannot be just inserted at the moment and have all necessary data
                 value = value.insertResult ? value.insertResult.valueSets[0] : value.entity;
-                if (value === undefined) {
-                    changeMapsWithoutValues.push(changeMap);
-                    return updateMap;
-                }
             }
 
             // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
 
+            let valueMap: ObjectLiteral|undefined;
             if (subject.metadata.isJunction && changeMap.column) {
-
-                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value)));
+                valueMap = changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value));
 
             } else if (changeMap.column) {
-                OrmUtils.mergeDeep(updateMap, changeMap.column.createValueMap(value));
+                valueMap = changeMap.column.createValueMap(value);
 
             } else if (changeMap.relation) {
-                OrmUtils.mergeDeep(updateMap, changeMap.relation!.createValueMap(value));
-                // changeMap.relation!.joinColumns.forEach(column => {
-                //     OrmUtils.mergeDeep(updateMap, column.createValueMap(value));
-                // });
+
+                // value can be a related object, for example: post.question = { id: 1 }
+                // or value can be a null or direct relation id, e.g. post.question = 1
+                // if its a direction relation id then we just set it to the valueMap,
+                // however if its an object then we need to extract its relation id map and set it to the valueMap
+                if (value instanceof Object) {
+
+                    // get relation id, e.g. referenced column name and its value,
+                    // for example: { id: 1 } which then will be set to relation, e.g. post.category = { id: 1 }
+                    const relationId = changeMap.relation!.getRelationIdMap(value);
+
+                    // but relation id can be empty, for example in the case when you insert a new post with category
+                    // and both post and category are newly inserted objects (by cascades) and in this case category will not have id
+                    // this means we need to insert post without question id and update post's questionId once question be inserted
+                    // that's why we create a new changeMap operation for future updation of the post entity
+                    if (relationId === undefined) {
+                        changeMapsWithoutValues.push(changeMap);
+                        subject.canBeUpdated = true;
+                        return updateMap;
+                    }
+                    valueMap = changeMap.relation!.createValueMap(relationId);
+
+                } else { // value can be "null" or direct relation id here
+                    valueMap = changeMap.relation!.createValueMap(value);
+                }
             }
+
+            OrmUtils.mergeDeep(updateMap, valueMap);
             return updateMap;
         }, {} as ObjectLiteral);
-        // console.log(changeSet);
         subject.changeMaps = changeMapsWithoutValues;
         return changeSet;
     }

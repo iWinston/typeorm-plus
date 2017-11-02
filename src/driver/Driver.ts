@@ -149,4 +149,14 @@ export interface Driver {
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any): ObjectLiteral|undefined;
 
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean;
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean;
+
 }
