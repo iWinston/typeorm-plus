@@ -229,12 +229,12 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.fifo` - if true the oldest resources will be first to be allocated. If false the most recently released resources
  will be the first to be allocated. This in effect turns the pool's behaviour from a queue into a stack. boolean,
- (default `true`)
+ (default `true`).
  
 * `pool.priorityRange` - int between 1 and x - if set, borrowers can specify their relative priority in the queue if no
- resources are available. see example. (default `1`)
+ resources are available. see example. (default `1`).
  
-* `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`)
+* `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`).
 
 * `pool.victionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
 
@@ -446,13 +446,13 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## `sql.js` connection options
 
-* `database`: The raw UInt8Array database that should be imported
+* `database`: The raw UInt8Array database that should be imported.
 
-* `autoSave`: Whether or not autoSave should be disabled. If set to true the database will be saved to the given file location (Node.js) or LocalStorage element (browser) when a change happens and `location` is specified. Otherwise `autoSaveCallback` can be used
+* `autoSave`: Whether or not autoSave should be disabled. If set to true the database will be saved to the given file location (Node.js) or LocalStorage element (browser) when a change happens and `location` is specified. Otherwise `autoSaveCallback` can be used.
 
 * `autoSaveCallback`: A function that get's called when changes to the database are made and `autoSave` is enabled. The function gets a `UInt8Array` that represents the database.
 
-* `location`: The file location to load and save the database to 
+* `location`: The file location to load and save the database to.
 
 ## Connection options example
 
