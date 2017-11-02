@@ -21,7 +21,7 @@ export class BaseEntity {
     /**
      * Connection used in all static methods of the BaseEntity.
      */
-        // @ts-ignore: Unused variable which is actually used
+    // @ts-ignore: Unused variable which is actually used
     private static usedConnection?: Connection;
 
     // -------------------------------------------------------------------------
