@@ -723,22 +723,13 @@ export abstract class QueryBuilder<Entity> {
 
         } else if (where instanceof Object) {
             if (this.expressionMap.mainAlias!.metadata) {
-                const metadata = this.expressionMap.mainAlias!.metadata;
-                const propertyPaths = EntityMetadataUtils.createPropertyPath(metadata, where);
+                const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
                 propertyPaths.forEach((propertyPath, index) => {
-                    const columns: ColumnMetadata[] = [];
-                    if (metadata.isJunction) {
-                        const column = metadata.findColumnWithPropertyName(propertyPath);
-                        if (column)
-                            columns.push(column);
-                    } else {
-                        columns.push(...metadata.findColumnsWithPropertyPath(propertyPath));
-                    }
+                    const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
                     columns.forEach((column, columnIndex) => {
-                        const path = metadata.isJunction ? column.propertyName : column.propertyPath;
 
-                        const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), path);
-                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : path;
+                        const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), column.propertyPath);
+                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                         if (parameterValue === null) {
                             ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
 

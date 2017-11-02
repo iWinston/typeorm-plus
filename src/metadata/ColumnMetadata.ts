@@ -522,7 +522,8 @@ export class ColumnMetadata {
 
         // we add reference column to property path only if this column is virtual
         // because if its not virtual it means user defined a real column for this relation
-        if (this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+        // also we don't do it if column is inside a junction table
+        if (!    this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
             path += "." + this.referencedColumn.propertyName;
 
         return path;
