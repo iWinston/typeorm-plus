@@ -33,6 +33,6 @@ export interface FindOneOptions<Entity> {
     /**
      * Enables or disables query result caching.
      */
-    cache?: boolean | number | {id: any, milisseconds: number};
+    cache?: boolean | number | { id: any, milliseconds: number };
 
 }
