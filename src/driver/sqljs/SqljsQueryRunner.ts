@@ -31,6 +31,15 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
+    
+    /**
+     * Commits transaction.
+     * Error will be thrown if transaction was not started.
+     */
+    async commitTransaction(): Promise<void> {
+        await super.commitTransaction();
+        this.driver.autoSave();
+    }
 
     /**
      * Executes a given SQL query.
@@ -58,10 +67,6 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
                 while (statement.step()) {
                     result.push(statement.getAsObject());
-                }
-                
-                if (query.toUpperCase().match(/(COMMIT)/)) {
-                    this.driver.autoSave();
                 }
                 
                 statement.free();
@@ -104,6 +109,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                     return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
                 }, {} as ObjectLiteral);
 
+                if (!this.isTransactionActive) {
+                    this.driver.autoSave();
+                }
+                
                 ok({
                     result: undefined,
                     generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
@@ -113,5 +122,21 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 fail(e);
             }
         });
+    }
+
+    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+        await super.update(tableName, valuesMap, conditions);
+        
+        if (!this.isTransactionActive) {
+            this.driver.autoSave();
+        }
+    }
+
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
+        await super.delete(tableName, conditions, maybeParameters);
+        
+        if (!this.isTransactionActive) {
+            this.driver.autoSave();
+        }
     }
 }

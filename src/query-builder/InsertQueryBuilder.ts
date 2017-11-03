@@ -4,7 +4,7 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -94,7 +94,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         return value();
 
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver) {
                             return "NULL";
 
                         } else {
@@ -128,7 +128,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         return value();
 
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver) {
                             return "NULL";
 
                         } else {

@@ -419,17 +419,17 @@ export class Connection {
 
         return relationMetadata.junctionEntityMetadata;
     }
+    
+    /**
+     * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
+     */
+    createEntityManager(queryRunner?: QueryRunner): EntityManager {
+        return new EntityManagerFactory().create(this, queryRunner);
+    }
 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
-
-    /**
-     * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
-     */
-    protected createEntityManager(queryRunner?: QueryRunner): EntityManager {
-        return new EntityManagerFactory().create(this, queryRunner);
-    }
 
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.

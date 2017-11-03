@@ -92,7 +92,7 @@ export class EntityManager {
             throw new Error(`Cannot start transaction because its already started`);
 
         const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-        const transactionEntityManager = this.connection.createEntityManager(this.connection, usedQueryRunner);
+        const transactionEntityManager = this.connection.createEntityManager(usedQueryRunner);
 
         try {
             await usedQueryRunner.startTransaction();
@@ -283,7 +283,7 @@ export class EntityManager {
             // });
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = this.connection.createEntityManager(this.connection, queryRunner);
+            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
 
@@ -444,7 +444,7 @@ export class EntityManager {
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = this.connection.createEntityManager(this.connection, queryRunner);
+            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
 
