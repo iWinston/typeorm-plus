@@ -1265,7 +1265,7 @@ Learn about contribution [here](https://github.com/typeorm/typeorm/blob/master/C
 
 This project exists thanks to all the people who contribute:
 
-<a href="graphs/contributors"><img src="https://opencollective.com/typeorm/contributors.svg?width=890" /></a>
+<a href="https://github.com/typeorm/typeorm/graphs/contributors"><img src="https://opencollective.com/typeorm/contributors.svg?width=890" /></a>
 
 
 ## Backers 🙏

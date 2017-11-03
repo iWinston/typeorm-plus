@@ -19,6 +19,10 @@ export class FindOptionsUtils {
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
+                    possibleOptions.cache instanceof Object ||
+                    typeof possibleOptions.cache === "boolean" ||
+                    typeof possibleOptions.cache === "number" ||
+                    possibleOptions.order instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
                     possibleOptions.loadRelationIds instanceof Object
                 );
@@ -29,18 +33,11 @@ export class FindOptionsUtils {
      */
     static isFindManyOptions(obj: any): obj is FindManyOptions<any> {
         const possibleOptions: FindManyOptions<any> = obj;
-        return possibleOptions &&
-                (
-                    possibleOptions.select instanceof Array ||
-                    possibleOptions.where instanceof Object ||
-                    possibleOptions.relations instanceof Array ||
-                    possibleOptions.join instanceof Object ||
-                    possibleOptions.order instanceof Object ||
-                    typeof possibleOptions.skip === "number" ||
-                    typeof possibleOptions.take === "number" ||
-                    typeof possibleOptions.loadRelationIds === "boolean" ||
-                    possibleOptions.loadRelationIds instanceof Object
-                );
+        return possibleOptions && (
+            this.isFindOneOptions(possibleOptions) ||
+            typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||
+            typeof (possibleOptions as FindManyOptions<any>).take === "number"
+        );
     }
 
     /**
@@ -91,7 +88,7 @@ export class FindOptionsUtils {
 
         if (options.order)
             Object.keys(options.order).forEach(key => {
-                const order = (options as FindOneOptions<T>).order![key as any];
+                const order = ((options as FindOneOptions<T>).order as any)[key as any];
                 switch (order) {
                     case 1:
                         qb.addOrderBy(qb.alias + "." + key, "ASC");
@@ -133,6 +130,15 @@ export class FindOptionsUtils {
                 Object.keys(options.join.innerJoinAndSelect).forEach(key => {
                     qb.innerJoinAndSelect(options.join!.innerJoinAndSelect![key], key);
                 });
+        }
+
+        if (options.cache) {
+            if (options.cache instanceof Object) {
+                const cache = options.cache as { id: any, milliseconds: number };
+                qb.cache(cache.id, cache.milliseconds);
+            } else {
+                qb.cache(options.cache);
+            }
         }
 
         if (options.loadRelationIds === true) {

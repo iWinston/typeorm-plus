@@ -1,6 +1,9 @@
 # Caching queries
 
 You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount`.
+
+ You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
+
 To enable caching you need to explicitly enable it in your connection options:
 
 ```typescript
@@ -26,6 +29,16 @@ const users = await connection
     .getMany();
 ```
 
+Equivalent `Repository` query:
+```typescript
+const users = await connection
+    .getRepository(User)
+    .find({
+        where: { isAdmin: true },
+        cache: true
+    });
+```
+
 This will execute a query to fetch all admin users and cache its result.
 Next time when you execute same code it will get admin users from the cache.
 Default cache time is equal to `1000 ms`, e.g. 1 second.
@@ -33,7 +46,7 @@ This means cache will be invalid 1 second after you called the query builder cod
 In practice, it means that if users open user page 150 times within 3 seconds only three queries will be executed during this period.
 All users instered during the 1 second of caching won't be returned to the user.
 
-You can change cache time manually:
+You can change cache time manually via `QueryBuilder`:
 
 ```typescript
 const users = await connection
@@ -41,6 +54,17 @@ const users = await connection
     .where("user.isAdmin = :isAdmin", { isAdmin: true })
     .cache(60000) // 1 minute
     .getMany();
+```
+
+Or via `Repository`:
+
+```typescript
+const users = await connection
+    .getRepository(User)
+    .find({
+        where: { isAdmin: true },
+        cache: 60000
+    });
 ```
 
 Or globally in connection options:
@@ -57,7 +81,7 @@ Or globally in connection options:
 }
 ```
 
-Also, you can set a "cache id":
+Also, you can set a "cache id" via `QueryBuilder`:
 
 ```typescript
 const users = await connection
@@ -65,6 +89,19 @@ const users = await connection
     .where("user.isAdmin = :isAdmin", { isAdmin: true })
     .cache("users_admins", 25000)
     .getMany();
+```
+
+Or with `Repository`:
+```typescript
+const users = await connection
+    .getRepository(User)
+    .find({
+        where: { isAdmin: true },
+        cache: { 
+            id: "users_admins",
+            milisseconds: 25000
+        }
+    });
 ```
 
 It will allow you to granular control your cache,

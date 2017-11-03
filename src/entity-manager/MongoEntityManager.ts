@@ -151,7 +151,8 @@ export class MongoEntityManager extends EntityManager {
         const id = optionsOrConditions instanceof ObjectID || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
         if (id) {
-            query["_id"] = id;
+            const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+            query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {

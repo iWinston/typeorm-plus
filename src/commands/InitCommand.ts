@@ -108,6 +108,7 @@ export class InitCommand {
                 break;
             case "sqlite":
                 Object.assign(options, {
+                    type: "sqlite",
                     "database": "database.db",
                 });
                 break;
