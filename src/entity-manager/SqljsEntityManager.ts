@@ -5,7 +5,7 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 
 /**
  * A special EntityManager that includes import/export and load/save function
- * that are unique to Sql.js
+ * that are unique to Sql.js.
  */
 export class SqljsEntityManager extends EntityManager {
     private driver: SqljsDriver;
@@ -33,7 +33,7 @@ export class SqljsEntityManager extends EntityManager {
     
     /**
      * Saves the current database to a file (Node.js) or localstorage (browser)
-     * if fileNameOrLocalStorage is not set options.location is used
+     * if fileNameOrLocalStorage is not set options.location is used.
      */
     async saveDatabase(fileNameOrLocalStorage?: string): Promise<void> {
         await this.driver.save(fileNameOrLocalStorage);

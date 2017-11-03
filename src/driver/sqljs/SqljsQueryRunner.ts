@@ -124,6 +124,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         });
     }
 
+    /**
+     * Updates rows that match given conditions in the given table.
+     * Calls AbstractSqliteQueryRunner.update() and runs autoSave if update() was not called in a transaction.
+     */
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         await super.update(tableName, valuesMap, conditions);
         
@@ -132,6 +136,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         }
     }
 
+    /**
+     * Deletes from the given table by a given conditions.
+     * Calls AbstractSqliteQueryRunner.delete() and runs autoSave if delete() was not called in a transaction.
+     */
     async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         await super.delete(tableName, conditions, maybeParameters);
         

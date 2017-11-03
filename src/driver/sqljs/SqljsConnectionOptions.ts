@@ -31,7 +31,7 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
      * File path (Node.js) or local storage key (browser) to load and save database from
      * If this is specified without autoSave, the database is loaded from the location
      * and can be saved manually via the SqljsEntityManager. If autoSave is enabled,
-     * location is used to automatically save the database
+     * location is used to automatically save the database.
      */
     readonly location?: string;
 }

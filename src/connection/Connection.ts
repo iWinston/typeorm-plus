@@ -132,7 +132,7 @@ export class Connection {
     /**
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
      * 
-     * Available only in connection with the sqljs driver
+     * Available only in connection with the sqljs driver.
      */
     get sqljsManager(): SqljsEntityManager {
         if (!(this.manager instanceof SqljsEntityManager))
