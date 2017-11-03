@@ -124,8 +124,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
             }
         }
         else {
-            const content = JSON.stringify(this.databaseConnection.export());
-            PlatformTools.getGlobalVariable().localStorage.setItem(path, content);
+            const database: Uint8Array = this.databaseConnection.export();
+            const databaseArray = [].slice.call(database);
+            PlatformTools.getGlobalVariable().localStorage.setItem(path, JSON.stringify(databaseArray));
         }
     }
 
