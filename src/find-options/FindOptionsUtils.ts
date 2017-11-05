@@ -22,9 +22,8 @@ export class FindOptionsUtils {
                     possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number" ||
-                    possibleOptions.order instanceof Object ||
-                    typeof possibleOptions.loadRelationIds === "boolean" ||
-                    possibleOptions.loadRelationIds instanceof Object
+                    possibleOptions.loadRelationIds instanceof Object ||
+                    typeof possibleOptions.loadRelationIds === "boolean"
                 );
     }
 

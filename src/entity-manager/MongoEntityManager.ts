@@ -146,7 +146,7 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
-                          optionsOrConditions?: string|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>,
+                          optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const id = optionsOrConditions instanceof ObjectID || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};

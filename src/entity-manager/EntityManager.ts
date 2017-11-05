@@ -537,7 +537,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
 
         const metadata = this.connection.getMetadata(entityClass);
         let alias: string = metadata.name;
