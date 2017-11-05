@@ -18,6 +18,7 @@ import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -246,7 +247,7 @@ export class SqlServerDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Array) {
                 return value.map((v: any) => {
                     escapedParameters.push(v);
@@ -256,6 +257,7 @@ export class SqlServerDriver implements Driver {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return "@" + (escapedParameters.length - 1);
             }

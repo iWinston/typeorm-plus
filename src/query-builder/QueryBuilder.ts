@@ -338,19 +338,19 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Gets generated sql that will be executed.
-     * Parameters in the query are escaped for the currently used driver.
-     */
-    getSql(): string {
-        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.getParameters())[0];
-    }
-
-    /**
      * Prints sql to stdout using console.log.
      */
     printSql(): this {
         console.log(this.getSql());
         return this;
+    }
+
+    /**
+     * Gets generated sql that will be executed.
+     * Parameters in the query are escaped for the currently used driver.
+     */
+    getSql(): string {
+        return this.getQueryAndParameters()[0];
     }
 
     /**

@@ -13,6 +13,7 @@ import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -272,7 +273,7 @@ export class AbstractSqliteDriver implements Driver {
         const builtParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Array) {
                 return value.map((v: any) => {
                     builtParameters.push(v);
@@ -283,6 +284,7 @@ export class AbstractSqliteDriver implements Driver {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 builtParameters.push(value);
                 return "$" + builtParameters.length;
             }

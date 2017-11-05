@@ -9,6 +9,7 @@ import {Brackets} from "./Brackets";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
+import {ArrayParameter} from "./ArrayParameter";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -220,6 +221,11 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         if (this.connection.driver instanceof SqlServerDriver) {
                             this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
                         } else {
+
+                            // we need to store array values in a special class to make sure parameter replacement will work correctly
+                            if (value instanceof Array)
+                                value = new ArrayParameter(value);
+
                             this.setParameter(paramName, value);
                         }
                         updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
@@ -235,12 +241,17 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         } else {
             Object.keys(valuesSet).map(key => {
-                const value = valuesSet[key];
+                let value = valuesSet[key];
 
                 // todo: duplication zone
                 if (value instanceof Function) { // support for SQL expressions in update query
                     updateColumnAndValues.push(this.escape(key) + " = " + value());
                 } else {
+
+                    // we need to store array values in a special class to make sure parameter replacement will work correctly
+                    if (value instanceof Array)
+                        value = new ArrayParameter(value);
+
                     updateColumnAndValues.push(this.escape(key) + " = :" + key);
                     this.setParameter(key, value);
                 }

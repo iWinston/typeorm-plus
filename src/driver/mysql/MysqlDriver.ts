@@ -17,6 +17,7 @@ import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -261,11 +262,12 @@ export class MysqlDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Function) {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(parameters[key.substr(1)]);
                 return "?";
             }

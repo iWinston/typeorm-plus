@@ -1,4 +1,5 @@
 import {QueryBuilder} from "./QueryBuilder";
+import {ArrayParameter} from "./ArrayParameter";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
@@ -275,6 +276,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         if (this.connection.driver instanceof SqlServerDriver) {
                             this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
                         } else {
+
+                            // we need to store array values in a special class to make sure parameter replacement will work correctly
+                            if (value instanceof Array)
+                                value = new ArrayParameter(value);
+
                             this.setParameter(paramName, value);
                         }
                         return ":" + paramName;

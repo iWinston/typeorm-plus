@@ -16,6 +16,7 @@ import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsOptions";
 import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -240,11 +241,12 @@ export class OracleDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Function) {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return key;
             }
