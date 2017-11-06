@@ -221,20 +221,25 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        if (this.connection.entityMetadatas.some(metadata => metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0)) {
+        const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
+        });
+        const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "citext").length > 0;
+        });
 
+        if (hasUuidColumns || hasCitextColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
-                    pool.connect((err: any, connection: any, release: Function) => {
+                    pool.connect(async (err: any, connection: any, release: Function) => {
                         if (err) return fail(err);
-                        connection.query(`CREATE extension IF NOT EXISTS "uuid-ossp"`, (err: any) => {
-                            if (err)  {
-                                release();
-                                return fail(err);
-                            }
-                            release();
-                            ok();
-                        });
+                        if (hasUuidColumns)
+                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
+                        if (hasCitextColumns)
+                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
+
+                        release();
+                        ok();
                     });
                 });
             }));
@@ -667,6 +672,18 @@ export class PostgresDriver implements Driver {
         await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => err ? fail(err) : ok());
+        });
+    }
+
+    /**
+     * Executes given query.
+     */
+    protected executeQuery(connection: any, query: string) {
+        return new Promise((ok, fail) => {
+            connection.query(query, (err: any, result: any) => {
+                if (err) return fail(err);
+                ok(result);
+            });
         });
     }
 
