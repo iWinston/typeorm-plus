@@ -1653,10 +1653,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 let condition = "";
                 const parameters: ObjectLiteral = {};
                 if (metadata.hasMultiplePrimaryKeys) {
-                    condition = rawResults.map(result => {
+                    condition = rawResults.map((result, index) => {
                         return metadata.primaryColumns.map(primaryColumn => {
-                            parameters["ids_" + primaryColumn.propertyName] = result["ids_" + primaryColumn.databaseName];
-                            return mainAliasName + "." + primaryColumn.propertyName + "=:ids_" + primaryColumn.databaseName;
+                            parameters[`ids_${index}_${primaryColumn.propertyName}`] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
+                            return mainAliasName + "." + primaryColumn.propertyName + `=:ids_${index}_${primaryColumn.databaseName}`;
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
