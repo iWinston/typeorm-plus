@@ -1656,7 +1656,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     condition = rawResults.map((result, index) => {
                         return metadata.primaryColumns.map(primaryColumn => {
                             parameters[`ids_${index}_${primaryColumn.propertyName}`] = result[`ids_${mainAliasName}_${primaryColumn.databaseName}`];
-                            return mainAliasName + "." + primaryColumn.propertyName + `=:ids_${index}_${primaryColumn.databaseName}`;
+                            return `${mainAliasName}.${primaryColumn.propertyName}=:ids_${index}_${primaryColumn.databaseName}`;
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
