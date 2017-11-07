@@ -27,7 +27,6 @@ describe("basic-lazy-relations", () => {
             Category,
         ],
         entitySchemas: [ userSchema, profileSchema ],
-        schemaCreate: true,
         dropSchema: true,
         enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));

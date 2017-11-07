@@ -26,7 +26,7 @@ import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
-import {EntityPersitor} from "../persistence/EntityPersitor";
+import {EntityPersistExecutor} from "../persistence/EntityPersistExecutor";
 import {ObjectID} from "../driver/mongodb/typings";
 
 /**
@@ -276,7 +276,7 @@ export class EntityManager {
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         // execute save operation
-        return new EntityPersitor(this.connection, this.queryRunner, "save", target, entity, options)
+        return new EntityPersistExecutor(this.connection, this.queryRunner, "save", target, entity, options)
             .execute()
             .then(() => entity);
     }
@@ -367,7 +367,7 @@ export class EntityManager {
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
         // execute save operation
-        return new EntityPersitor(this.connection, this.queryRunner, "remove", target, entity, options)
+        return new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options)
             .execute()
             .then(() => entity);
     }

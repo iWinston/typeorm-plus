@@ -11,7 +11,6 @@ describe("database schema > column types > sqlite", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
-            schemaCreate: true,
             dropSchema: true,
         });
     });

@@ -137,7 +137,7 @@ export class SubjectExecutor {
                 .createQueryBuilder()
                 .insert()
                 .into(subject.metadata.target)
-                .values(subject.createValueSet())
+                .values(subject.createValueSetAndPopChangeMap())
                 .execute();
 
             subject.identifier = insertResult.identifiers[0];
@@ -158,7 +158,7 @@ export class SubjectExecutor {
             return this.queryRunner.manager
                 .createQueryBuilder()
                 .update(subject.metadata.target)
-                .set(subject.createValueSet())
+                .set(subject.createValueSetAndPopChangeMap())
                 .where(subject.identifier)
                 .execute();
         }));

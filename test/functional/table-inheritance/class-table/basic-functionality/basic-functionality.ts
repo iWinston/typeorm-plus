@@ -10,7 +10,6 @@ describe.skip("table-inheritance > class-table > basic-functionality", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
         dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));

@@ -9,7 +9,6 @@ describe("github issues > #703.findOne does not return an empty array on OneToMa
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
         dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));

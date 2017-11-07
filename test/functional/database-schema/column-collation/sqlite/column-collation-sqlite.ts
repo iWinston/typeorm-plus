@@ -11,7 +11,6 @@ describe.skip("database schema > column collation > sqlite", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
-            schemaCreate: true,
             dropSchema: true,
         });
     });

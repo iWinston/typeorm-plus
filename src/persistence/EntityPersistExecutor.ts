@@ -17,7 +17,7 @@ import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 /**
  * Persists a single entity or multiple entities - saves or removes them.
  */
-export class EntityPersitor {
+export class EntityPersistExecutor {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -145,6 +145,7 @@ export class EntityPersitor {
         // next step is to load database entities of all operate subjects
         await new SubjectDatabaseEntityLoader(queryRunner, subjects).load();
 
+        // build all related subjects and change maps
         new OneToManySubjectBuilder(subjects).build();
         new OneToOneInverseSideSubjectBuilder(subjects).build();
         new ManyToManySubjectBuilder(subjects).build();
@@ -156,7 +157,6 @@ export class EntityPersitor {
      * Builds only remove operations for entity that is being removed.
      */
     protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
-        const subjects: Subject[] = [];
 
         // create subject for currently removed entity and mark that it must be removed
         const mainSubject = new Subject({
@@ -164,7 +164,7 @@ export class EntityPersitor {
             entity: entity,
             mustBeRemoved: true,
         });
-        subjects.push(mainSubject);
+        const subjects: Subject[] = [mainSubject];
 
         // next step is to load database entities for all operate subjects
         await new SubjectDatabaseEntityLoader(queryRunner, subjects).load();

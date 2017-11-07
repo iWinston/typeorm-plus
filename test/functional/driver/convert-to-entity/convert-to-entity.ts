@@ -9,7 +9,6 @@ describe("driver > convert raw results to entity", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Post],
-        schemaCreate: true,
         dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));

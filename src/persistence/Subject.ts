@@ -146,8 +146,9 @@ export class Subject {
     /**
      * Creates a value set needs to be inserted / updated in the database.
      * Value set is based on the entity and change maps of the subject.
+     * Important note: this method pops data from this subject's change maps.
      */
-    createValueSet(): ObjectLiteral {
+    createValueSetAndPopChangeMap(): ObjectLiteral {
         const changeMapsWithoutValues: SubjectChangeMap[] = [];
         const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
             let value = changeMap.value;
@@ -159,7 +160,6 @@ export class Subject {
                 // otherwise simply use an entity which cannot be just inserted at the moment and have all necessary data
                 value = value.insertedValueSet ? value.insertedValueSet : value.entity;
             }
-
             // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
 
             let valueMap: ObjectLiteral|undefined;

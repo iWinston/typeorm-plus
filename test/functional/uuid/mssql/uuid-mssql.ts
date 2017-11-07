@@ -12,7 +12,6 @@ describe("uuid-mssql", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
-            schemaCreate: true,
             dropSchema: true,
         });
     });

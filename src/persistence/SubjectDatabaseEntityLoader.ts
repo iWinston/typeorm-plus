@@ -14,7 +14,8 @@ export class SubjectDatabaseEntityLoader {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(protected queryRunner: QueryRunner, protected subjects: Subject[]) {
+    constructor(protected queryRunner: QueryRunner,
+                protected subjects: Subject[]) {
     }
 
     // ---------------------------------------------------------------------

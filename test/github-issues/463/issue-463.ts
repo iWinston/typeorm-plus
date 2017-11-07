@@ -9,7 +9,6 @@ describe("github issues > #463 saving empty string array", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         enabledDrivers: ["postgres"],
-        schemaCreate: true,
         dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
