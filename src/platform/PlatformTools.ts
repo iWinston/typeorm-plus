@@ -36,32 +36,34 @@ export class PlatformTools {
 
         try {
 
+            // switch case to explicit require statements for webpack compatability.
+
             switch (name) {
 
-            	/**
-            	*mongodb
-            	*/
-            	case "mongodb":
-            		return require("mongodb");
+                /**
+                *mongodb
+                */
+                case "mongodb":
+                    return require("mongodb");
 
-            	/**
-            	*mysql
-            	*/
-            	case "mysql":
-            		return require("mysql");
+                /**
+                *mysql
+                */
+                case "mysql":
+                    return require("mysql");
 
-            	case "mysql2":
-            		return require("mysql2");
+                case "mysql2":
+                    return require("mysql2");
 
-            	/**
-            	*oracle
-            	*/
-            	case "oracledb":
-            		return require("oracledb");
+                /**
+                *oracle
+                */
+                case "oracledb":
+                    return require("oracledb");
 
-            	/**
-            	*postgres
-            	*/
+                /**
+                *postgres
+                */
                 case "pg":
                     return require("pg");
 
@@ -75,28 +77,34 @@ export class PlatformTools {
                 *redis
                 */
                 case "redis":
-                	return require("redis");
+                    return require("redis");
 
-            	/**
-            	*sqlite
-            	*/
-            	case "sqlite3":
-            		return require("sqlite3");
+                /**
+                *sqlite
+                */
+                case "sqlite3":
+                    return require("sqlite3");
 
-            	case "mkdirp":
-            		return require("mkdirp");
+                /**
+                *sqlserver
+                */
+                case "mssql":
+                    return require("mssql");
 
-            	case "path":
-            		return require("path");
+                /**
+                *other modules
+                */
+                case "mkdirp":
+                    return require("mkdirp");
 
-            	/**
-            	*sqlserver
-            	*/
-            	case "mssql":
-            		return require("mssql");
+                case "path":
+                    return require("path");
 
-            	default:
-            		return require(name);
+                /**
+                *default
+                */
+                default:
+                    return require(name);
 
             }
 
