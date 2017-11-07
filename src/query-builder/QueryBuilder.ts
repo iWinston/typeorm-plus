@@ -414,8 +414,9 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets or overrides query builder's QueryRunner.
      */
-    setQueryRunner(queryRunner: QueryRunner) {
+    setQueryRunner(queryRunner: QueryRunner): this {
         this.queryRunner = queryRunner;
+        return this;
     }
 
     /**
@@ -423,16 +424,26 @@ export abstract class QueryBuilder<Entity> {
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
      */
-    updateEntity(enabled: boolean) {
+    updateEntity(enabled: boolean): this {
         this.expressionMap.updateEntity = enabled;
+        return this;
     }
 
     /**
      * Indicates if listeners and subscribers must be called before and after query execution.
      * Enabled by default.
      */
-    callListeners(enabled: boolean) {
+    callListeners(enabled: boolean): this {
         this.expressionMap.callListeners = enabled;
+        return this;
+    }
+
+    /**
+     * If set to true the query will be wrapped into a transaction.
+     */
+    useTransaction(enabled: boolean): this {
+        this.expressionMap.useTransaction = enabled;
+        return this;
     }
 
     // -------------------------------------------------------------------------

@@ -5,7 +5,7 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
-## 0.2.0
+`## 0.2.0 (next: `npm i typeorm@next`)
 
 * completely refactored, improved and optimized persistence process and performance
 * removed cascade remove functionality, refactored how cascades are working.
@@ -33,8 +33,9 @@ Use `findOne(id)` method instead now.
 * `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
 * `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
 * `DeleteQueryBuilder` now returns `DeleteResult` which contains extended information and metadata about runned query
+* now insert / update / delete queries built with QueryBuilder can be wrapped into a transaction using `useTransaction(true)` method of the QueryBuilder.
 
-## 0.1.2 (next)
+## 0.1.2 (latest)
 
 * sqlite now supports relative database file paths (#798 and #799)
 * fixed bug with not properly working `update` method (#1037, #1042)
@@ -44,7 +45,7 @@ Use `findOne(id)` method instead now.
 * added support for caching in respositories [#1057](https://github.com/typeorm/typeorm/issues/1057)
 * added support for the `citext` column type for postgres [#1075](https://github.com/typeorm/typeorm/pull/1075)
 
-## 0.1.1 (current)
+## 0.1.1
 
 * added support for `pg-native` for postgres (#975). To use it you just need to install `npm i pg-native` and it will be picked up automatically.
 * now Find Options support `-1` and `1` for `DESC` and `ASC` values. This is better user experience for MongoDB users. 

@@ -72,8 +72,6 @@ export class SubjectExecutor {
     async execute(): Promise<void> {
 
         // broadcast "before" events before we start insert / update / remove operations
-        // todo: do we really want to call subscribers at bulk before all operations, or we call it before each operation?
-        // todo: what if we change / update objects inside listeners? Listeners aren't called for them, it must be a recursion
         await this.queryRunner.connection.broadcaster.broadcastBeforeEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         // since event listeners and subscribers can call save methods and/or trigger entity changes we need to recompute operational subjects
@@ -138,6 +136,7 @@ export class SubjectExecutor {
                 .insert()
                 .into(subject.metadata.target)
                 .values(subject.createValueSetAndPopChangeMap())
+                .callListeners(false)
                 .execute();
 
             subject.identifier = insertResult.identifiers[0];
@@ -160,6 +159,7 @@ export class SubjectExecutor {
                 .update(subject.metadata.target)
                 .set(subject.createValueSetAndPopChangeMap())
                 .where(subject.identifier)
+                .callListeners(false)
                 .execute();
         }));
     }
@@ -178,6 +178,7 @@ export class SubjectExecutor {
                 .delete()
                 .from(subject.metadata.target)
                 .where(subject.identifier)
+                .callListeners(false)
                 .execute();
         });
     }

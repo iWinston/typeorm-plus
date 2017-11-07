@@ -110,10 +110,10 @@ export class Subject {
             this.changeMaps.push(...options.changeMaps);
 
         if (this.entity) {
-            this.identifier = this.metadata.isEntityIdMapEmpty(this.entity) ? undefined : this.metadata.getEntityIdMap(this.entity); // todo: try to change
+            this.identifier = this.metadata.getEntityIdMap(this.entity);
 
         } else if (this.databaseEntity) {
-            this.identifier = this.metadata.isEntityIdMapEmpty(this.databaseEntity) ? undefined : this.metadata.getEntityIdMap(this.databaseEntity); // todo: try to change
+            this.identifier = this.metadata.getEntityIdMap(this.databaseEntity);
         }
     }
 
