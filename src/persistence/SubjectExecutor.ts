@@ -1,11 +1,14 @@
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./Subject";
 import {PromiseUtils} from "../util/PromiseUtils";
-import {DateUtils} from "../util/DateUtils";
 import {InsertSubjectsSorter} from "./InsertSubjectsSorter";
 import {SubjectChangeMap} from "./SubjectChangeMap";
 import {OrmUtils} from "../util/OrmUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {InsertSubjectsOptimizer} from "./InsertSubjectsOptimizer";
+import {RemoveSubjectsOptimizer} from "./RemoveSubjectsOptimizer";
+import {SubjectChangedColumnsComputer} from "./SubjectChangedColumnsComputer";
+import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierError";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -80,6 +83,9 @@ export class SubjectExecutor {
         // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
         this.insertSubjects = new InsertSubjectsSorter(this.insertSubjects).order();
 
+        // optimize inserted subjects (group insertions to make bulk insertions for efficiency)
+        this.insertSubjects = new InsertSubjectsOptimizer(this.insertSubjects).optimize();
+
         // execute all insert operations
         await this.executeInsertOperations();
 
@@ -87,8 +93,13 @@ export class SubjectExecutor {
         // properties it wasn't able to handle on its own (referenced columns)
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
 
-        // execute update and remove operations
+        // execute update operations
         await this.executeUpdateOperations();
+
+        // optimize remove subjects (group removes to make bulk removal for efficiency)
+        this.removeSubjects = new RemoveSubjectsOptimizer(this.removeSubjects).optimize();
+
+        // execute remove operations
         await this.executeRemoveOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
@@ -103,156 +114,14 @@ export class SubjectExecutor {
     // -------------------------------------------------------------------------
 
     /**
-     * Performs entity re-computations.
+     * Performs entity re-computations - finds changed columns, re-builds insert/update/remove subjects.
      */
     protected recompute() {
-        this.allSubjects.forEach(subject => {
-            if (subject.entity) {
-                this.computeDiffColumns(subject);
-                this.computeDiffRelationalColumns(subject);
-            }
-        });
-
+        new SubjectChangedColumnsComputer().build(this.allSubjects);
         this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
         this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0;
-    }
-
-    /**
-     * Differentiate columns from the updated entity and entity stored in the database.
-     */
-    protected computeDiffColumns(subject: Subject): void {
-        const diffColumns = subject.metadata.columns.filter(column => {
-
-            // if its a special column - then do nothing
-            if (column.isVirtual ||
-                column.isParentId ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate)
-                return false;
-
-            // prepare both entity and database values to make comparision
-            let entityValue = column.getEntityValue(subject.entity!);
-            if (entityValue === undefined)
-                return false;
-            if (!subject.databaseEntity) {
-                return true;
-            }
-
-            let databaseValue = column.getEntityValue(subject.databaseEntity);
-
-            // normalize special values to make proper comparision (todo: arent they already normalized at this point?!)
-            if (entityValue !== null && entityValue !== undefined) {
-                if (column.type === "date") {
-                    entityValue = DateUtils.mixedDateToDateString(entityValue);
-
-                } else if (column.type === "time") {
-                    entityValue = DateUtils.mixedDateToTimeString(entityValue);
-
-                } else if (column.type === "datetime" || column.type === Date) {
-                    entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
-                    databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
-
-                } else if (column.type === "json" || column.type === "jsonb") {
-                    entityValue = JSON.stringify(entityValue);
-                    if (databaseValue !== null && databaseValue !== undefined)
-                        databaseValue = JSON.stringify(databaseValue);
-
-                } else if (column.type === "sample-array") {
-                    entityValue = DateUtils.simpleArrayToString(entityValue);
-                    databaseValue = DateUtils.simpleArrayToString(databaseValue);
-                }
-            }
-
-            // if value is not changed - then do nothing
-            if (entityValue === databaseValue)
-                return false;
-
-            // filter out "relational columns" only in the case if there is a relation object in entity
-            if (column.relationMetadata) {
-                const value = column.relationMetadata.getEntityValue(subject.entity!);
-                if (value !== null && value !== undefined)
-                    return false;
-            }
-
-            // if (column.referencedColumn) {
-            //
-            // }
-
-            return true;
-        });
-        diffColumns.forEach(column => {
-            let changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
-            if (changeMap) {
-                changeMap.value = column.getEntityValue(subject.entity!);
-
-            } else {
-                changeMap = {
-                    column: column,
-                    value: column.getEntityValue(subject.entity!)
-                };
-                subject.changeMaps.push(changeMap);
-            }
-        });
-    }
-
-    /**
-     * Difference columns of the owning one-to-one and many-to-one columns.
-     */
-    protected computeDiffRelationalColumns(subject: Subject): void {
-        const diffRelations = subject.metadata.relationsWithJoinColumns.filter(relation => {
-            if (!subject.databaseEntity)
-                return true;
-
-            // here we cover two scenarios:
-            // 1. related entity can be another entity which is natural way
-            // 2. related entity can be entity id which is hacked way of updating entity
-            // todo: what to do if there is a column with relationId? (cover this too?)
-            let relatedEntity = relation.getEntityValue(subject.entity!);
-
-            // we don't perform operation over undefined properties (but we DO need null properties!)
-            if (relatedEntity === undefined)
-                return false;
-
-            // if relation entity is just a relation id set (for example post.tag = 1)
-            // then we create an id map from it to make a proper compare
-            if (relatedEntity !== null && !(relatedEntity instanceof Object))
-                relatedEntity = relation.getRelationIdMap(relatedEntity);
-
-            const databaseRelatedEntity = relation.getEntityValue(subject.databaseEntity);
-
-            // todo: try to find if there is update by relation operation - we dont need to generate update relation operation for this
-            // todo: if (updatesByRelations.find(operation => operation.targetEntity === this && operation.updatedRelation === relation))
-            // todo:     return false;
-
-            // if relation ids aren't equal then we need to update them
-            return !relation.inverseEntityMetadata.compareIds(relatedEntity, databaseRelatedEntity);
-        });
-
-        diffRelations.forEach(relation => {
-            let value = relation.getEntityValue(subject.entity!);
-            if (value === undefined)
-                return;
-
-            let changeMap = subject.changeMaps.find(changeMap => changeMap.relation === relation);
-            const valueSubject = this.insertSubjects.find(subject => subject.entity === value);
-            if (valueSubject) // todo: what if value is an array? is it possible here?
-                value = valueSubject;
-
-            if (changeMap) {
-                changeMap.value = value;
-
-            } else {
-                changeMap = {
-                    relation: relation,
-                    value: value
-                };
-                subject.changeMaps.push(changeMap);
-            }
-        });
     }
 
     /**
@@ -282,7 +151,7 @@ export class SubjectExecutor {
         await Promise.all(this.updateSubjects.map(subject => {
 
             if (!subject.identifier)
-                throw new Error(`Subject does not have identifier`);
+                throw new SubjectWithoutIdentifierError(subject);
 
             const updateMap = this.popChangeSet(subject);
             return this.queryRunner.manager
@@ -299,8 +168,9 @@ export class SubjectExecutor {
      */
     protected async executeRemoveOperations(): Promise<void> {
         await PromiseUtils.runInSequence(this.removeSubjects, async subject => {
+
             if (!subject.identifier)
-                throw new Error(`Subject does not have identifier`);
+                throw new SubjectWithoutIdentifierError(subject);
 
             await this.queryRunner.manager
                 .createQueryBuilder()
@@ -420,6 +290,5 @@ export class SubjectExecutor {
         subject.changeMaps = changeMapsWithoutValues;
         return changeSet;
     }
-
 
 }
