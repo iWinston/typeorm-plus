@@ -12,7 +12,6 @@ describe("indices > reading index from entity schema and updating database", () 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entitySchemas: [<any>PersonSchema],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

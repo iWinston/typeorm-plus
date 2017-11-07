@@ -9,7 +9,6 @@ describe("persistence > null and default behaviour", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
 
     }));
     beforeEach(() => reloadTestingDatabases(connections));

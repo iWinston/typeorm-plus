@@ -20,7 +20,6 @@ describe("named-tables-and-columns-lazy-relations", () => {
             Post,
             Category,
         ],
-        dropSchema: true,
         enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));

@@ -13,7 +13,6 @@ describe("database schema > column types > mysql", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

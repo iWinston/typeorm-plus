@@ -20,7 +20,6 @@ describe("repository > find methods", () => {
     before(async () => connections = await createTestingConnections({
         entities: [Post],
         entitySchemas: [userSchema],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

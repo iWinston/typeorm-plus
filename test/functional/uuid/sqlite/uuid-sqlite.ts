@@ -12,7 +12,6 @@ describe("uuid-sqlite", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

@@ -11,7 +11,6 @@ describe("sequences > creating a sequence and marking the column as generated", 
     before(async () => connections = await createTestingConnections({
         entities: [Person],
         enabledDrivers: ["postgres"],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

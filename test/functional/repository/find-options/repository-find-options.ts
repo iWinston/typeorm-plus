@@ -12,7 +12,6 @@ describe("repository > find options", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -125,7 +124,6 @@ describe("repository > find options > cache", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true,
         cache: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));

@@ -13,7 +13,6 @@ describe("database schema > column types > mssql", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

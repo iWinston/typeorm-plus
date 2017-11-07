@@ -11,7 +11,6 @@ describe("database schema > mssql-parameters", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
