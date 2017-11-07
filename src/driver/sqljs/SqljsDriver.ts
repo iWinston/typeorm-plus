@@ -125,6 +125,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
         }
         else {
             const database: Uint8Array = this.databaseConnection.export();
+            // convert Uint8Array to number array to improve local-storage storage
             const databaseArray = [].slice.call(database);
             PlatformTools.getGlobalVariable().localStorage.setItem(path, JSON.stringify(databaseArray));
         }
