@@ -74,7 +74,7 @@ export class SubjectExecutor {
     async execute(): Promise<void> {
 
         // broadcast "before" events before we start updating
-        await this.queryRunner.connection.broadcaster.broadcastBeforeEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.queryRunner.connection.broadcaster.broadcastBeforeEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
         // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
         // todo: recompute things only if at least one subscriber or listener was really executed ?
@@ -98,7 +98,7 @@ export class SubjectExecutor {
         await this.updateSpecialColumnsInPersistedEntities();
 
         // finally broadcast "after" events
-        await this.queryRunner.connection.broadcaster.broadcastAfterEventsForAll(this.queryRunner.manager, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.queryRunner.connection.broadcaster.broadcastAfterEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
     }
 
     // -------------------------------------------------------------------------
@@ -256,13 +256,10 @@ export class SubjectExecutor {
      */
     protected async executeInsertOperations(): Promise<void> {
 
-        // console.log(this.insertSubjects.map(subject => subject.entity));
-
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
             const changeSet = this.popChangeSet(subject);
-            // console.log("changeSet:", changeSet);
             subject.insertResult = await this.queryRunner.manager
                 .createQueryBuilder()
                 .insert()
@@ -271,15 +268,6 @@ export class SubjectExecutor {
                 .execute();
 
             subject.identifier = subject.insertResult.identifiers[0];
-
-            // if (subject.entity) {
-            //     subject.identifier = subject.buildIdentifier();
-            // }
-
-            // if there are changes left mark it for updation
-            // if (subject.hasChanges()) {
-            //     subject.canBeUpdated = true;
-            // }
         });
     }
 
@@ -288,10 +276,11 @@ export class SubjectExecutor {
      */
     protected async executeUpdateOperations(): Promise<void> {
         await Promise.all(this.updateSubjects.map(subject => {
-            const updateMap = this.popChangeSet(subject);
+
             if (!subject.identifier)
                 throw new Error(`Subject does not have identifier`);
 
+            const updateMap = this.popChangeSet(subject);
             return this.queryRunner.manager
                 .createQueryBuilder()
                 .update(subject.metadata.target)
