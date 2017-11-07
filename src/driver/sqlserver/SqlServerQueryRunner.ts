@@ -18,6 +18,7 @@ import {PromiseUtils} from "../../util/PromiseUtils";
 import {DeleteResult} from "../../query-builder/result/DeleteResult";
 import {UpdateResult} from "../../query-builder/result/UpdateResult";
 import {InsertResult} from "../../query-builder/result/InsertResult";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -37,6 +38,11 @@ export class SqlServerQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -102,6 +108,7 @@ export class SqlServerQueryRunner implements QueryRunner {
     constructor(driver: SqlServerDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
         this.mode = mode;
     }
 

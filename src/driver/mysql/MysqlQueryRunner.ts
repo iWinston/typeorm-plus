@@ -16,6 +16,7 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {InsertResult} from "../../query-builder/result/InsertResult";
 import {UpdateResult} from "../../query-builder/result/UpdateResult";
 import {DeleteResult} from "../../query-builder/result/DeleteResult";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -35,6 +36,11 @@ export class MysqlQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -96,6 +102,7 @@ export class MysqlQueryRunner implements QueryRunner {
     constructor(driver: MysqlDriver, mode: "master"|"slave" = "master") {
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
         this.mode = mode;
     }
 

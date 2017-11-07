@@ -128,9 +128,9 @@ export class SubjectExecutor {
      */
     protected async broadcastBeforeEventsForAll(): Promise<void> {
         await Promise.all([
-            ...this.insertSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastBeforeInsertEvent(this.queryRunner, subject.metadata, subject.entity!)),
-            ...this.updateSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastBeforeUpdateEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity)),
-            ...this.removeSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastBeforeRemoveEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity))
+            ...this.insertSubjects.map(subject => this.queryRunner.broadcaster.broadcastBeforeInsertEvent(subject.metadata, subject.entity!)),
+            ...this.updateSubjects.map(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(subject.metadata, subject.entity!, subject.databaseEntity)),
+            ...this.removeSubjects.map(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(subject.metadata, subject.entity!, subject.databaseEntity))
         ]);
     }
 
@@ -139,9 +139,9 @@ export class SubjectExecutor {
      */
     protected async broadcastAfterEventsForAll(): Promise<void> {
         await Promise.all([
-            ...this.insertSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastAfterInsertEvent(this.queryRunner, subject.metadata, subject.entity!)),
-            ...this.updateSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastAfterUpdateEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity)),
-            ...this.removeSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastAfterRemoveEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity))
+            ...this.insertSubjects.map(subject => this.queryRunner.broadcaster.broadcastAfterInsertEvent(subject.metadata, subject.entity!)),
+            ...this.updateSubjects.map(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(subject.metadata, subject.entity!, subject.databaseEntity)),
+            ...this.removeSubjects.map(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(subject.metadata, subject.entity!, subject.databaseEntity))
         ]);
     }
 

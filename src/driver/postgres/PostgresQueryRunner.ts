@@ -16,6 +16,7 @@ import {QueryFailedError} from "../../error/QueryFailedError";
 import {DeleteResult} from "../../query-builder/result/DeleteResult";
 import {UpdateResult} from "../../query-builder/result/UpdateResult";
 import {InsertResult} from "../../query-builder/result/InsertResult";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -35,6 +36,11 @@ export class PostgresQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -102,6 +108,7 @@ export class PostgresQueryRunner implements QueryRunner {
         this.driver = driver;
         this.connection = driver.connection;
         this.mode = mode;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------

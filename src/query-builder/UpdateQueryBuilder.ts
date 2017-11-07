@@ -47,7 +47,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // call before updation methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                await this.connection.broadcaster.broadcastBeforeUpdateEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+                await queryRunner.broadcaster.broadcastBeforeUpdateEvent(this.expressionMap.mainAlias!.metadata);
             }
 
             const updateResult = new UpdateResult();
@@ -55,7 +55,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // call after updation methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                await this.connection.broadcaster.broadcastAfterUpdateEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+                await queryRunner.broadcaster.broadcastAfterUpdateEvent(this.expressionMap.mainAlias!.metadata);
             }
 
             return updateResult;

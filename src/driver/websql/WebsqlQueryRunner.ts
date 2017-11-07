@@ -6,6 +6,7 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {WebsqlDriver} from "./WebsqlDriver";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Declare a global function that is only available in browsers that support WebSQL.
@@ -16,6 +17,7 @@ declare function openDatabase(...params: any[]): any;
  * Runs queries on a single websql database connection.
  */
 export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
+
     /**
      * Real database connection from a connection pool used to perform queries.
      */
@@ -40,6 +42,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         this.driver = driver;
         this.connection = driver.connection;
+        this.broadcaster = new Broadcaster(this);
     }
 
     // -------------------------------------------------------------------------

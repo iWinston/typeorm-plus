@@ -41,7 +41,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // call before insertion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                await this.connection.broadcaster.broadcastBeforeInsertEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+                await queryRunner.broadcaster.broadcastBeforeInsertEvent(this.expressionMap.mainAlias!.metadata);
             }
 
             // execute query
@@ -57,7 +57,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // call after insertion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                await this.connection.broadcaster.broadcastAfterInsertEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+                await queryRunner.broadcaster.broadcastAfterInsertEvent(this.expressionMap.mainAlias!.metadata);
             }
 
             return insertResult;

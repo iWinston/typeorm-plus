@@ -1607,7 +1607,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 throw new NoVersionOrUpdateDateColumnError(metadata.name);
         }
 
-        const broadcaster = this.connection.broadcaster;
         const relationIdLoader = new RelationIdLoader(this.connection, queryRunner, this.expressionMap.relationIdAttributes);
         const relationCountLoader = new RelationCountLoader(this.connection, queryRunner, this.expressionMap.relationCountAttributes);
         const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);
@@ -1688,8 +1687,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
 
             // broadcast all "after load" events
-            if (this.expressionMap.mainAlias.hasMetadata)
-                await broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata)
+                await this.queryRunner.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
         }
 
         return {

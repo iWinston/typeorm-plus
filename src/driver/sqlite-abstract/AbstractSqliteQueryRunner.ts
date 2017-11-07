@@ -16,6 +16,7 @@ import {EntityManager} from "../../entity-manager/EntityManager";
 import {DeleteResult} from "../../query-builder/result/DeleteResult";
 import {UpdateResult} from "../../query-builder/result/UpdateResult";
 import {InsertResult} from "../../query-builder/result/InsertResult";
+import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -38,6 +39,11 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Connection used by this query runner.
      */
     connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.
@@ -79,7 +85,8 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AbstractSqliteDriver) {}
+    constructor(driver: AbstractSqliteDriver) {
+    }
 
     // -------------------------------------------------------------------------
     // Public Methods

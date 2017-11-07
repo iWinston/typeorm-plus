@@ -9,6 +9,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {InsertResult} from "../query-builder/result/InsertResult";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single database connection.
@@ -24,6 +25,11 @@ export interface QueryRunner {
      * Connection used by this query runner.
      */
     readonly connection: Connection;
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    readonly broadcaster: Broadcaster;
 
     /**
      * Isolated entity manager working only with current query runner.

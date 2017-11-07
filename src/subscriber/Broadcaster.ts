@@ -1,7 +1,6 @@
 import {EntitySubscriberInterface} from "./EntitySubscriberInterface";
 import {EventListenerTypes} from "../metadata/types/EventListenerTypes";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 
@@ -14,7 +13,7 @@ export class Broadcaster {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
+    constructor(private queryRunner: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -27,7 +26,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeInsertEvent(queryRunner: QueryRunner, metadata: EntityMetadata, entity?: ObjectLiteral): Promise<void> {
+    async broadcastBeforeInsertEvent(metadata: EntityMetadata, entity?: ObjectLiteral): Promise<void> {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(entity)) {
@@ -35,12 +34,12 @@ export class Broadcaster {
             }
         });
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert)
             .map(subscriber => subscriber.beforeInsert!({
-                connection: queryRunner.connection,
-                queryRunner: queryRunner,
-                manager: queryRunner.manager,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
                 entity: entity
             }));
 
@@ -53,7 +52,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeUpdateEvent(queryRunner: QueryRunner, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> { // todo: send relations too?
+    async broadcastBeforeUpdateEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> { // todo: send relations too?
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(entity)) {
@@ -61,12 +60,12 @@ export class Broadcaster {
             }
         });
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate)
             .map(subscriber => subscriber.beforeUpdate!({
-                connection: queryRunner.connection,
-                queryRunner: queryRunner,
-                manager: queryRunner.manager,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
                 entity: entity,
                 databaseEntity: databaseEntity,
                 updatedColumns: [], // todo: subject.diffColumns,
@@ -82,7 +81,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastBeforeRemoveEvent(queryRunner: QueryRunner, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
+    async broadcastBeforeRemoveEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(entity)) {
@@ -90,12 +89,12 @@ export class Broadcaster {
             }
         });
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove)
             .map(subscriber => subscriber.beforeRemove!({
-                connection: queryRunner.connection,
-                queryRunner: queryRunner,
-                manager: queryRunner.manager,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
                 entity: entity,
                 databaseEntity: databaseEntity,
                 entityId: metadata.getEntityIdMixedMap(databaseEntity)
@@ -110,7 +109,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterInsertEvent(queryRunner: QueryRunner, metadata: EntityMetadata, entity?: ObjectLiteral): Promise<void> {
+    async broadcastAfterInsertEvent(metadata: EntityMetadata, entity?: ObjectLiteral): Promise<void> {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(entity)) {
@@ -118,12 +117,12 @@ export class Broadcaster {
             }
         });
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert)
             .map(subscriber => subscriber.afterInsert!({
-                connection: queryRunner.connection,
-                queryRunner: queryRunner,
-                manager: queryRunner.manager,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
                 entity: entity
             }));
 
@@ -136,7 +135,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterUpdateEvent(queryRunner: QueryRunner, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
+    async broadcastAfterUpdateEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(entity)) {
@@ -144,12 +143,12 @@ export class Broadcaster {
             }
         });
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate)
             .map(subscriber => subscriber.afterUpdate!({
-                connection: queryRunner.connection,
-                queryRunner: queryRunner,
-                manager: queryRunner.manager,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
                 entity: entity,
                 databaseEntity: databaseEntity,
                 updatedColumns: [], // todo: subject.diffColumns,
@@ -165,7 +164,7 @@ export class Broadcaster {
      * All subscribers and entity listeners who listened to this event will be executed at this point.
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      */
-    async broadcastAfterRemoveEvent(queryRunner: QueryRunner, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
+    async broadcastAfterRemoveEvent(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): Promise<void> {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(entity)) {
@@ -173,12 +172,12 @@ export class Broadcaster {
             }
         });
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove)
             .map(subscriber => subscriber.afterRemove!({
-                connection: queryRunner.connection,
-                queryRunner: queryRunner,
-                manager: queryRunner.manager,
+                connection: this.queryRunner.connection,
+                queryRunner: this.queryRunner,
+                manager: this.queryRunner.manager,
                 entity: entity,
                 databaseEntity: databaseEntity,
                 entityId: metadata.getEntityIdMixedMap(databaseEntity)
@@ -208,7 +207,7 @@ export class Broadcaster {
             return;
 
         // collect load events for all children entities that were loaded with the main entity
-        const children = this.connection.getMetadata(target).relations.reduce((promises, relation) => {
+        const children = this.queryRunner.connection.getMetadata(target).relations.reduce((promises, relation) => {
             if (!entity.hasOwnProperty(relation.propertyName))
                 return promises;
 
@@ -222,11 +221,11 @@ export class Broadcaster {
             return promises;
         }, [] as Promise<void>[]);
 
-        const listeners = this.connection.getMetadata(target).listeners
+        const listeners = this.queryRunner.connection.getMetadata(target).listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_LOAD && listener.isAllowed(entity))
             .map(listener => entity[listener.propertyName]());
 
-        const subscribers = this.connection.subscribers
+        const subscribers = this.queryRunner.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, target) && subscriber.afterLoad)
             .map(subscriber => subscriber.afterLoad!(entity));
 
