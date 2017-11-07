@@ -1,7 +1,7 @@
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SubjectChangeMap} from "./SubjectChangeMap";
-import {InsertResult} from "../query-builder/result/InsertResult";
+import {OrmUtils} from "../util/OrmUtils";
 
 /**
  * Subject is a subject of persistence.
@@ -26,6 +26,7 @@ export class Subject {
 
     /**
      * Subject identifier.
+     * This identifier is not limited to table entity primary columns.
      * This can be entity id or ids as well as some unique entity properties, like name or title.
      * Insert / Update / Remove operation will be executed by a given identifier.
      */
@@ -33,7 +34,8 @@ export class Subject {
 
     /**
      * Gets entity sent to the persistence (e.g. changed entity).
-     * Throws error if persisted entity was not set.
+     * If entity is not set then this subject is created only for the entity loaded from the database,
+     * or this subject is used for the junction operation (junction operations are relying only on identifier).
      */
     entity?: ObjectLiteral;
 
@@ -47,6 +49,19 @@ export class Subject {
      * Changes needs to be applied in the database for the given subject.
      */
     changeMaps: SubjectChangeMap[] = [];
+
+    /**
+     * Generated values returned by a database (for example generated id or default values).
+     * Used in insert and update operations.
+     * Has entity-like structure (not just column database name and values).
+     */
+    generatedMap?: ObjectLiteral;
+
+    /**
+     * Inserted values with updated values of special and default columns.
+     * Has entity-like structure (not just column database name and values).
+     */
+    insertedValueSet?: ObjectLiteral;
 
     /**
      * Indicates if this subject can be inserted into the database.
@@ -66,39 +81,45 @@ export class Subject {
      */
     mustBeRemoved: boolean = false;
 
-    /**
-     * Generated values returned by a database (for example generated id or default values).
-     * Used in insert and update operations.
-     * Has entity-like structure (not just column database name and values).
-     */
-    generatedMap?: ObjectLiteral;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) {
-        this.metadata = metadata;
-        this.entity = entity;
-        this.databaseEntity = databaseEntity;
-        if (entity) {
-            this.identifier = this.metadata.isEntityIdMapEmpty(entity) ? undefined : this.metadata.getEntityIdMap(entity);
+    constructor(options: {
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+        canBeInserted?: boolean,
+        canBeUpdated?: boolean,
+        mustBeRemoved?: boolean,
+        identifier?: ObjectLiteral,
+        changeMaps?: SubjectChangeMap[]
+    }) {
+        this.metadata = options.metadata;
+        this.entity = options.entity;
+        this.databaseEntity = options.databaseEntity;
+        if (options.canBeInserted !== undefined)
+            this.canBeInserted = options.canBeInserted;
+        if (options.canBeUpdated !== undefined)
+            this.canBeUpdated = options.canBeUpdated;
+        if (options.mustBeRemoved !== undefined)
+            this.mustBeRemoved = options.mustBeRemoved;
+        if (options.identifier !== undefined)
+            this.identifier = options.identifier;
+        if (options.changeMaps !== undefined)
+            this.changeMaps.push(...options.changeMaps);
 
-        } else if (databaseEntity) {
-            this.identifier = this.metadata.isEntityIdMapEmpty(databaseEntity) ? undefined : this.metadata.getEntityIdMap(databaseEntity);
+        if (this.entity) {
+            this.identifier = this.metadata.isEntityIdMapEmpty(this.entity) ? undefined : this.metadata.getEntityIdMap(this.entity); // todo: try to change
+
+        } else if (this.databaseEntity) {
+            this.identifier = this.metadata.isEntityIdMapEmpty(this.databaseEntity) ? undefined : this.metadata.getEntityIdMap(this.databaseEntity); // todo: try to change
         }
     }
 
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Accessors
     // -------------------------------------------------------------------------
-
-    /**
-     * Indicates if this subject has some changes needs to be inserted or updated.
-     */
-    hasChanges() {
-        return this.changeMaps.length > 0;
-    }
 
     /**
      * Checks if this subject must be inserted into the database.
@@ -115,7 +136,72 @@ export class Subject {
      * and if it does have differentiated columns or relations.
      */
     get mustBeUpdated() {
-        return this.canBeUpdated && this.identifier && this.hasChanges();
+        return this.canBeUpdated && this.identifier && this.changeMaps.length > 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a value set needs to be inserted / updated in the database.
+     * Value set is based on the entity and change maps of the subject.
+     */
+    createValueSet(): ObjectLiteral {
+        const changeMapsWithoutValues: SubjectChangeMap[] = [];
+        const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
+            let value = changeMap.value;
+            if (value instanceof Subject) {
+
+                // referenced columns can refer on values both which were just inserted and which were present in the model
+                // if entity was just inserted valueSets must contain all values from the entity and values just inserted in the database
+                // so, here we check if we have a value set then we simply use it as value to get our reference column values
+                // otherwise simply use an entity which cannot be just inserted at the moment and have all necessary data
+                value = value.insertedValueSet ? value.insertedValueSet : value.entity;
+            }
+
+            // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
+
+            let valueMap: ObjectLiteral|undefined;
+            if (this.metadata.isJunction && changeMap.column) {
+                valueMap = changeMap.column.createValueMap(changeMap.column.referencedColumn!.getEntityValue(value));
+
+            } else if (changeMap.column) {
+                valueMap = changeMap.column.createValueMap(value);
+
+            } else if (changeMap.relation) {
+
+                // value can be a related object, for example: post.question = { id: 1 }
+                // or value can be a null or direct relation id, e.g. post.question = 1
+                // if its a direction relation id then we just set it to the valueMap,
+                // however if its an object then we need to extract its relation id map and set it to the valueMap
+                if (value instanceof Object) {
+
+                    // get relation id, e.g. referenced column name and its value,
+                    // for example: { id: 1 } which then will be set to relation, e.g. post.category = { id: 1 }
+                    const relationId = changeMap.relation!.getRelationIdMap(value);
+
+                    // but relation id can be empty, for example in the case when you insert a new post with category
+                    // and both post and category are newly inserted objects (by cascades) and in this case category will not have id
+                    // this means we need to insert post without question id and update post's questionId once question be inserted
+                    // that's why we create a new changeMap operation for future updation of the post entity
+                    if (relationId === undefined) {
+                        changeMapsWithoutValues.push(changeMap);
+                        this.canBeUpdated = true;
+                        return updateMap;
+                    }
+                    valueMap = changeMap.relation!.createValueMap(relationId);
+
+                } else { // value can be "null" or direct relation id here
+                    valueMap = changeMap.relation!.createValueMap(value);
+                }
+            }
+
+            OrmUtils.mergeDeep(updateMap, valueMap);
+            return updateMap;
+        }, {} as ObjectLiteral);
+        this.changeMaps = changeMapsWithoutValues;
+        return changeSet;
     }
 
 }

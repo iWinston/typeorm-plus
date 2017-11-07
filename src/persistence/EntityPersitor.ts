@@ -13,7 +13,6 @@ import {OneToOneInverseSideSubjectBuilder} from "./subject-builder/OneToOneInver
 import {ManyToManySubjectBuilder} from "./subject-builder/ManyToManySubjectBuilder";
 import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
 import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
-import {SubjectValidator} from "./SubjectValidator";
 
 /**
  * To be able to execute persistence operations we need to load all entities from the database we need.
@@ -184,9 +183,6 @@ export class EntityPersitor {
             subjects = await this.remove(queryRunner, metadata, entity);
         }
 
-        // validate all subjects
-        new SubjectValidator().validate(subjects);
-
         return new SubjectExecutor(queryRunner, subjects);
     }
 
@@ -197,9 +193,12 @@ export class EntityPersitor {
         const operateSubjects: Subject[] = [];
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
-        const mainSubject = new Subject(metadata, entity);
-        mainSubject.canBeInserted = true;
-        mainSubject.canBeUpdated = true;
+        const mainSubject = new Subject({
+            metadata: metadata,
+            entity: entity,
+            canBeInserted: true,
+            canBeUpdated: true,
+        });
         operateSubjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
@@ -223,8 +222,11 @@ export class EntityPersitor {
         const operateSubjects: Subject[] = [];
 
         // create subject for currently removed entity and mark that it must be removed
-        const mainSubject = new Subject(metadata, entity);
-        mainSubject.mustBeRemoved = true;
+        const mainSubject = new Subject({
+            metadata: metadata,
+            entity: entity,
+            mustBeRemoved: true,
+        });
         operateSubjects.push(mainSubject);
 
         // next step is to load database entities for all operate subjects

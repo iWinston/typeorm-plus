@@ -3,8 +3,7 @@ import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
- * Executes all database operations (inserts, updated, deletes) that must be executed
- * with given persistence subjects.
+ * Finds what columns are changed in the subject entities.
  */
 export class SubjectChangedColumnsComputer {
 
@@ -13,9 +12,9 @@ export class SubjectChangedColumnsComputer {
     // -------------------------------------------------------------------------
 
     /**
-     * Performs entity re-computations.
+     * Finds what columns are changed in the subject entities.
      */
-    build(subjects: Subject[]) {
+    compute(subjects: Subject[]) {
         subjects.forEach(subject => {
             this.computeDiffColumns(subject);
             this.computeDiffRelationalColumns(subjects, subject);

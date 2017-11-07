@@ -69,9 +69,11 @@ export class ManyToManySubjectBuilder {
 
             // go through all related entities and create a new junction subject for each row in junction table
             relatedEntityRelationIdsInDatabase.forEach(relationId => {
-                const junctionSubject = new Subject(relation.junctionEntityMetadata!);
-                junctionSubject.mustBeRemoved = true;
-                junctionSubject.identifier = this.buildJunctionIdentifier(subject, relation, relationId);
+                const junctionSubject = new Subject({
+                    metadata: relation.junctionEntityMetadata!,
+                    mustBeRemoved: true,
+                    identifier: this.buildJunctionIdentifier(subject, relation, relationId)
+                });
 
                 // we use unshift because we need to perform those operations before post deletion is performed
                 // but post deletion was already added as an subject
@@ -149,8 +151,10 @@ export class ManyToManySubjectBuilder {
             const inverseValue = relation.isOwning ? (relatedEntitySubject || relatedEntity) : subject; // by example: inverseEntityMap is category from categories array here
 
             // create a new subject for insert operation of junction rows
-            const junctionSubject = new Subject(relation.junctionEntityMetadata!);
-            junctionSubject.canBeInserted = true;
+            const junctionSubject = new Subject({
+                metadata: relation.junctionEntityMetadata!,
+                canBeInserted: true,
+            });
             this.subjects.push(junctionSubject);
 
             relation.junctionEntityMetadata!.ownerColumns.forEach(column => {
@@ -168,9 +172,6 @@ export class ManyToManySubjectBuilder {
                     // valueFactory: (value) => column.referencedColumn!.getEntityValue(value) // column.referencedColumn!.getEntityValue(inverseEntityMap),
                 });
             });
-
-            // console.log("inverseValue", inverseValue);
-            // console.log(junctionSubject.changeMaps);
         });
 
         // get all inverse entities relation ids that are "bind" to the currently persisted entity
@@ -187,9 +188,11 @@ export class ManyToManySubjectBuilder {
 
         // finally create a new junction remove operations for missing related entities
         removedJunctionEntityIds.forEach(removedEntityRelationId => {
-            const junctionSubject = new Subject(relation.junctionEntityMetadata!);
-            junctionSubject.mustBeRemoved = true;
-            junctionSubject.identifier = this.buildJunctionIdentifier(subject, relation, removedEntityRelationId);
+            const junctionSubject = new Subject({
+                metadata: relation.junctionEntityMetadata!,
+                mustBeRemoved: true,
+                identifier: this.buildJunctionIdentifier(subject, relation, removedEntityRelationId)
+            });
             this.subjects.unshift(junctionSubject);
         });
     }

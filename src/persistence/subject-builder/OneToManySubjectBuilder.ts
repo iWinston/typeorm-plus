@@ -127,9 +127,11 @@ export class OneToManySubjectBuilder {
                 // but since we are going to update "category" table (since its an owning side of relation with join column)
                 // we create a new subject here:
                 if (!relatedEntitySubject) {
-                    relatedEntitySubject = new Subject(relation.inverseEntityMetadata);
-                    relatedEntitySubject.canBeUpdated = true;
-                    relatedEntitySubject.identifier = relationIdMap;
+                    relatedEntitySubject = new Subject({
+                        metadata: relation.inverseEntityMetadata,
+                        canBeUpdated: true,
+                        identifier: relationIdMap
+                    });
                     this.subjects.push(relatedEntitySubject);
                 }
 
@@ -155,12 +157,14 @@ export class OneToManySubjectBuilder {
                 // todo: probably we can improve this in the future by finding entity with column those values,
                 // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
                 // we create a new subject which operations will be executed in subject operation executor
-                const removedRelatedEntitySubject = new Subject(relation.inverseEntityMetadata);
-                removedRelatedEntitySubject.canBeUpdated = true;
-                removedRelatedEntitySubject.identifier = removedRelatedEntityRelationId;
-                removedRelatedEntitySubject.changeMaps.push({
-                    relation: relation.inverseRelation!,
-                    value: null
+                const removedRelatedEntitySubject = new Subject({
+                    metadata: relation.inverseEntityMetadata,
+                    canBeUpdated: true,
+                    identifier: removedRelatedEntityRelationId,
+                    changeMaps: [{
+                        relation: relation.inverseRelation!,
+                        value: null
+                    }]
                 });
                 this.subjects.push(removedRelatedEntitySubject);
             });

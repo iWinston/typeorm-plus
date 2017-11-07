@@ -2,14 +2,8 @@ import {Subject} from "../Subject";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 /**
- * Builds and pushes to array of operate entities all entities that we will work with.
- * These are only relational entities which has insert and update cascades.
- * All such entities will be loaded from the database, because they can be inserted or updated.
- * That's why we load them - to understand if they should be inserted or updated, or which columns we need to update.
- * We can't add removed entities here, because to know which entity was removed we need first to
- * load original entity (particularly its id) from the database.
- * That's why we first need to load all changed entities, then extract ids of the removed entities from them,
- * and only then load removed entities by extracted ids.
+ * Finds all cascade operations of the given subject and cascade operations of the found cascaded subjects,
+ * e.g. builds a cascade tree and creates a subjects for them.
  */
 export class CascadesSubjectBuilder {
 
@@ -25,6 +19,7 @@ export class CascadesSubjectBuilder {
     // ---------------------------------------------------------------------
 
     /**
+     * Builds a cascade subjects tree and pushes them in into the given array of subjects.
      */
     build(subject: Subject): void {
         subject.metadata
@@ -54,9 +49,12 @@ export class CascadesSubjectBuilder {
 
                 // mark subject with what we can do with it
                 // and add to the array of subjects to load only if there is no same entity there already
-                const relationEntitySubject = new Subject(relationEntityMetadata, relationEntity);
-                relationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
-                relationEntitySubject.canBeUpdated = relation.isCascadeUpdate === true;
+                const relationEntitySubject = new Subject({
+                    metadata: relationEntityMetadata,
+                    entity: relationEntity,
+                    canBeInserted: relation.isCascadeInsert === true,
+                    canBeUpdated: relation.isCascadeUpdate === true
+                });
                 this.subjects.push(relationEntitySubject);
 
                 // go recursively and find other entities we need to insert/update

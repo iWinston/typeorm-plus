@@ -34,36 +34,48 @@ export class InsertSubjectsSorter {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    order(): Subject[] {
+    /**
+     * Sorts (orders) subjects in their topological order.
+     */
+    sort(): Subject[] {
 
         // if there are no metadatas it probably mean there is no subjects... we don't have to do anything here
         if (!this.metadatas.length)
             return this.subjects;
 
+        const sortedSubjects: Subject[] = [];
+
+        // first we always insert entities with non-nullable relations, sort them first
         const nonNullableDependencies = this.getNonNullableDependencies();
         const sortedNonNullableEntityTargets = this.toposort(nonNullableDependencies).reverse();
 
-        const newInsertedSubjects: Subject[] = [];
+        // so we have a sorted entity targets
+        // go thought each of them and find all subjects with sorted entity target
+        // add those sorted targets and remove them from original array of targets
         sortedNonNullableEntityTargets.forEach(sortedEntityTarget => {
             const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
-            newInsertedSubjects.push(...entityTargetSubjects);
-            entityTargetSubjects.forEach(entityTargetSubject => this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1));
+            sortedSubjects.push(...entityTargetSubjects);
+            entityTargetSubjects.forEach(entityTargetSubject => {
+                this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1);
+            });
         });
 
+        // next sort all other entities
+        // same process as in above but with other entities
         const otherDependencies: string[][] = this.getDependencies();
         const sortedOtherEntityTargets = this.toposort(otherDependencies).reverse();
 
-        const newInsertedSubjects2: Subject[] = [];
         sortedOtherEntityTargets.forEach(sortedEntityTarget => {
             const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
-            newInsertedSubjects2.push(...entityTargetSubjects);
-            entityTargetSubjects.forEach(entityTargetSubject => this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1));
+            sortedSubjects.push(...entityTargetSubjects);
+            entityTargetSubjects.forEach(entityTargetSubject => {
+                this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1);
+            });
         });
 
-        newInsertedSubjects.push(...newInsertedSubjects2);
-        newInsertedSubjects.push(...this.subjects);
-
-        return newInsertedSubjects;
+        // if we have something left in the subjects add them as well
+        sortedSubjects.push(...this.subjects);
+        return sortedSubjects;
     }
 
     // -------------------------------------------------------------------------
@@ -117,8 +129,7 @@ export class InsertSubjectsSorter {
     }
 
     /**
-     * Implements topological sort.
-     * Sorts given graph.
+     * Sorts given graph using topological sorting algorithm.
      *
      * Algorithm is kindly taken from https://github.com/marcelklehr/toposort repository.
      */
