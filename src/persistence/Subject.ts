@@ -39,7 +39,7 @@ export class Subject {
 
     /**
      * Database entity.
-     * THIS IS NOT RAW ENTITY DATA.
+     * THIS IS NOT RAW ENTITY DATA, its a real entity.
      */
     databaseEntity?: ObjectLiteral;
 
@@ -67,9 +67,11 @@ export class Subject {
     mustBeRemoved: boolean = false;
 
     /**
-     * If subject was just inserted, its insert result stored here.
+     * Generated values returned by a database (for example generated id or default values).
+     * Used in insert and update operations.
+     * Has entity-like structure (not just column database name and values).
      */
-    insertResult?: InsertResult;
+    generatedMap?: ObjectLiteral;
 
     // -------------------------------------------------------------------------
     // Constructor

@@ -116,7 +116,7 @@ export class SubjectExecutor {
     /**
      * Performs entity re-computations - finds changed columns, re-builds insert/update/remove subjects.
      */
-    protected recompute() {
+    protected recompute(): void {
         new SubjectChangedColumnsComputer().build(this.allSubjects);
         this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
@@ -133,14 +133,15 @@ export class SubjectExecutor {
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
 
             const changeSet = this.popChangeSet(subject);
-            subject.insertResult = await this.queryRunner.manager
+            const insertResult = await this.queryRunner.manager
                 .createQueryBuilder()
                 .insert()
                 .into(subject.metadata.target)
                 .values(changeSet)
                 .execute();
 
-            subject.identifier = subject.insertResult.identifiers[0];
+            subject.identifier = insertResult.identifiers[0];
+            subject.generatedMap = insertResult.generatedMaps[0];
         });
     }
 
@@ -182,19 +183,12 @@ export class SubjectExecutor {
     }
 
     /**
-     * Updates all special columns of the saving entities (create date, update date, versioning).
+     * Updates all special columns of the saving entities (create date, update date, version, etc.).
      */
-    protected updateSpecialColumnsInPersistedEntities() {
+    protected updateSpecialColumnsInPersistedEntities(): void {
 
-        // update entity columns that gets updated on each entity insert
-        this.insertSubjects.forEach(subject => {
-
-            // merge into entity all values returned by a database
-            // console.log("merging...");
-            // console.log(JSON.stringify(subject.insertResult!.valueSets[0]));
-            // this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.insertResult!.valueSets[0]);
-            this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.insertResult!.generatedMaps[0]);
-            // console.log("finish merging...");
+        // update inserted and updated entity properties
+        [...this.insertSubjects, ...this.updateSubjects].forEach(subject => {
 
             // set values to "null" for nullable columns that did not have values
             subject.metadata.columns.forEach(column => {
@@ -205,36 +199,32 @@ export class SubjectExecutor {
                 if (columnValue === undefined)
                     column.setEntityValue(subject.entity!, null);
             });
-        });
 
-        // update special columns that gets updated on each entity update
-        this.updateSubjects.forEach(subject => {
-            if (!subject.entity)
-                return;
-
-            // if (subject.metadata.updateDateColumn)
-            //     subject.metadata.updateDateColumn.setEntityValue(subject.entity, subject.date);
-            // if (subject.metadata.versionColumn)
-            //     subject.metadata.versionColumn.setEntityValue(subject.entity, subject.metadata.versionColumn.getEntityValue(subject.entity) + 1);
+            // merge into entity all generated values returned by a database
+            this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
         });
 
         // remove ids from the entities that were removed
         this.removeSubjects.forEach(subject => {
+            if (!subject.entity) return;
             subject.metadata.primaryColumns.forEach(primaryColumn => {
-                if (!subject.entity) return;
                 primaryColumn.setEntityValue(subject.entity!, undefined);
             });
         });
 
+        // other post-persist updations
         this.allSubjects.forEach(subject => {
+            if (!subject.entity) return;
             subject.metadata.relationIds.forEach(relationId => {
-                if (!subject.entity) return;
-                relationId.setValue(subject.entity);
+                relationId.setValue(subject.entity!);
             });
         });
     }
 
-    protected popChangeSet(subject: Subject) {
+    /**
+     *
+     */
+    protected popChangeSet(subject: Subject): ObjectLiteral {
         const changeMapsWithoutValues: SubjectChangeMap[] = [];
         const changeSet = subject.changeMaps.reduce((updateMap, changeMap) => {
             let value = changeMap.value;
