@@ -17,7 +17,6 @@ describe("other issues > using take with multiple primary keys", () => {
     async () =>
       (connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true
       }))
   );
   beforeEach(() => reloadTestingDatabases(connections));

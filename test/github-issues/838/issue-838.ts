@@ -14,7 +14,6 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            dropSchema: true,
             enabledDrivers: [
                 "postgres"
             ]

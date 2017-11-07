@@ -9,7 +9,6 @@ describe("columns > getters and setters", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Post],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

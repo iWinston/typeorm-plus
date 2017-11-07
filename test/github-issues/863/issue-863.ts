@@ -10,7 +10,6 @@ describe("indices > create schema", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [Master, Detail],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

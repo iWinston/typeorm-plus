@@ -11,7 +11,6 @@ describe("github issues > #485 If I set the datatype of PrimaryGeneratedColumn t
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

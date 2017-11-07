@@ -249,7 +249,6 @@ describe("repository > basic methods", () => {
             // and preload it
             const plainBlogWithId = { id: 1, categories: [{ id: 1 }] };
             const preloadedBlog = await blogRepository.preload(plainBlogWithId);
-            console.log(preloadedBlog);
             preloadedBlog!.should.be.instanceOf(Blog);
             preloadedBlog!.id.should.be.equal(1);
             preloadedBlog!.title.should.be.equal("About people");
