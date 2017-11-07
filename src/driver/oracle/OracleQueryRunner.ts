@@ -237,6 +237,8 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
+     *
+     * todo: reimplement, use QueryBuilder
      */
     async insert(tableName: string, keyValues: ObjectLiteral): Promise<any> {
         // todo: fix generated columns
@@ -266,8 +268,10 @@ export class OracleQueryRunner implements QueryRunner {
 
     /**
      * Updates rows that match given conditions in the given table.
+     *
+     * todo: reimplement, use QueryBuilder
      */
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> {
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
         const sql = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
@@ -279,8 +283,10 @@ export class OracleQueryRunner implements QueryRunner {
 
     /**
      * Deletes from the given table by a given conditions.
+     *
+     * todo: reimplement, use QueryBuilder
      */
-    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<any> {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 

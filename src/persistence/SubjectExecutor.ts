@@ -130,14 +130,8 @@ export class SubjectExecutor {
 
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
-
-            const insertResult = await this.queryRunner.manager
-                .createQueryBuilder()
-                .insert()
-                .into(subject.metadata.target)
-                .values(subject.createValueSetAndPopChangeMap())
-                .callListeners(false)
-                .execute();
+            const insertMap = subject.createValueSetAndPopChangeMap();
+            const insertResult = await this.queryRunner.insert(subject.metadata.target, insertMap);
 
             subject.identifier = insertResult.identifiers[0];
             subject.generatedMap = insertResult.generatedMaps[0];
@@ -154,13 +148,8 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
-            return this.queryRunner.manager
-                .createQueryBuilder()
-                .update(subject.metadata.target)
-                .set(subject.createValueSetAndPopChangeMap())
-                .where(subject.identifier)
-                .callListeners(false)
-                .execute();
+            const updateMap = subject.createValueSetAndPopChangeMap();
+            return this.queryRunner.update(subject.metadata.target, updateMap, subject.identifier);
         }));
     }
 
@@ -173,13 +162,7 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
-            await this.queryRunner.manager
-                .createQueryBuilder()
-                .delete()
-                .from(subject.metadata.target)
-                .where(subject.identifier)
-                .callListeners(false)
-                .execute();
+            return this.queryRunner.delete(subject.metadata.target, subject.identifier);
         });
     }
 

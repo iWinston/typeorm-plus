@@ -5,7 +5,7 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
-`## 0.2.0 (next: `npm i typeorm@next`)
+## 0.2.0 (next: `npm i typeorm@next`)
 
 * completely refactored, improved and optimized persistence process and performance
 * removed cascade remove functionality, refactored how cascades are working.
@@ -34,6 +34,7 @@ Use `findOne(id)` method instead now.
 * `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
 * `DeleteQueryBuilder` now returns `DeleteResult` which contains extended information and metadata about runned query
 * now insert / update / delete queries built with QueryBuilder can be wrapped into a transaction using `useTransaction(true)` method of the QueryBuilder.
+* `insert`, `update` and `delete` methods of `QueryRunner` now use `InsertQueryRunner`, `UpdateQueryRunner` and `DeleteQueryRunner` inside
 
 ## 0.1.2 (latest)
 

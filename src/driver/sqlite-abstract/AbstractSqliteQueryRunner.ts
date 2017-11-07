@@ -13,7 +13,9 @@ import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
-import {InsertResult} from "../InsertResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
+import {UpdateResult} from "../../query-builder/result/UpdateResult";
+import {InsertResult} from "../../query-builder/result/InsertResult";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -152,32 +154,42 @@ export class AbstractSqliteQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
-        throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
+    async insert(target: Function|string, values: ObjectLiteral|ObjectLiteral[]): Promise<InsertResult> {
+        return await this.manager
+            .createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(values)
+            .callListeners(false)
+            .execute();
     }
 
     /**
      * Updates rows that match given conditions in the given table.
      */
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
-        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const allParameters = updateParams.concat(conditionParams);
-        await this.query(query, allParameters);
+    async update(target: Function|string, values: ObjectLiteral, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<UpdateResult> {
+        return this.manager
+            .createQueryBuilder()
+            .update(target)
+            .set(values)
+            .where(condition)
+            .setParameters(parameters || {})
+            .callListeners(false)
+            .execute();
     }
 
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
-        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
-
-        const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(sql, parameters);
+    async delete(target: Function|string, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<DeleteResult> {
+        return this.manager
+            .createQueryBuilder()
+            .delete()
+            .from(target)
+            .where(condition)
+            .setParameters(parameters || {})
+            .callListeners(false)
+            .execute();
     }
 
     /**

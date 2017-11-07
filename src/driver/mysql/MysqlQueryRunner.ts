@@ -12,9 +12,10 @@ import {MysqlDriver} from "./MysqlDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
-import {OrmUtils} from "../../util/OrmUtils";
-import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {InsertResult} from "../../query-builder/result/InsertResult";
+import {UpdateResult} from "../../query-builder/result/UpdateResult";
+import {DeleteResult} from "../../query-builder/result/DeleteResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -237,49 +238,42 @@ export class MysqlQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    async insert(tablePath: string, keyValues: ObjectLiteral): Promise<InsertResult> {
-        const keys = Object.keys(keyValues);
-        const columns = keys.map(key => `\`${key}\``).join(", ");
-        const values = keys.map(key => "?").join(",");
-        const parameters = keys.map(key => keyValues[key]);
-        const generatedColumns = this.connection.hasMetadata(tablePath) ? this.connection.getMetadata(tablePath).generatedColumns : [];
-        const sql = `INSERT INTO \`${this.escapeTablePath(tablePath)}\`(${columns}) VALUES (${values})`;
-        const result = await this.query(sql, parameters);
-
-        const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
-            const value = generatedColumn.isPrimary && result.insertId ? result.insertId : keyValues[generatedColumn.databaseName];
-            if (!value) return map;
-            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
-        }, {} as ObjectLiteral);
-
-        return {
-            result: result,
-            generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
-        };
+    async insert(target: Function|string, values: ObjectLiteral|ObjectLiteral[]): Promise<InsertResult> {
+        return await this.manager
+            .createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(values)
+            .callListeners(false)
+            .execute();
     }
 
     /**
      * Updates rows that match given conditions in the given table.
      */
-    async update(tablePath: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions).join(" AND ");
-        const sql = `UPDATE \`${this.escapeTablePath(tablePath)}\` SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
-        const allParameters = updateParams.concat(conditionParams);
-        await this.query(sql, allParameters);
+    async update(target: Function|string, values: ObjectLiteral, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<UpdateResult> {
+        return this.manager
+            .createQueryBuilder()
+            .update(target)
+            .set(values)
+            .where(condition)
+            .setParameters(parameters || {})
+            .callListeners(false)
+            .execute();
     }
 
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tablePath: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
-        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
-        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
-
-        const sql = `DELETE FROM \`${this.escapeTablePath(tablePath)}\` WHERE ${conditionString}`;
-        await this.query(sql, parameters);
+    async delete(target: Function|string, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<DeleteResult> {
+        return this.manager
+            .createQueryBuilder()
+            .delete()
+            .from(target)
+            .where(condition)
+            .setParameters(parameters || {})
+            .callListeners(false)
+            .execute();
     }
 
     /**

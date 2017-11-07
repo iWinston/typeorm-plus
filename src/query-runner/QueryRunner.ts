@@ -4,9 +4,11 @@ import {TableForeignKey} from "../schema-builder/schema/TableForeignKey";
 import {TableIndex} from "../schema-builder/schema/TableIndex";
 import {Connection} from "../connection/Connection";
 import {ReadStream} from "../platform/PlatformTools";
-import {InsertResult} from "../driver/InsertResult";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {UpdateResult} from "../query-builder/result/UpdateResult";
+import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {InsertResult} from "../query-builder/result/InsertResult";
 
 /**
  * Runs queries on a single database connection.
@@ -95,22 +97,17 @@ export interface QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    insert(tablePath: string, valuesMap: Object): Promise<InsertResult>;
+    insert(target: Function|string, values: ObjectLiteral|ObjectLiteral[]): Promise<InsertResult>;
 
     /**
      * Updates rows that match given simple conditions in the given table.
      */
-    update(tablePath: string, valuesMap: Object, conditions: Object): Promise<void>;
+    update(target: Function|string, values: ObjectLiteral, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<UpdateResult>;
 
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
-    delete(tablePath: string, condition: string, parameters?: any[]): Promise<void>;
-
-    /**
-     * Performs a simple DELETE query by a given conditions in a given table.
-     */
-    delete(tablePath: string, conditions: Object): Promise<void>;
+    delete(target: Function|string, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<DeleteResult>;
 
     /**
      * Inserts new values into closure table.

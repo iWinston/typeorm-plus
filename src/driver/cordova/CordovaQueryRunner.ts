@@ -1,7 +1,5 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {OrmUtils} from "../../util/OrmUtils";
-import {InsertResult} from "../InsertResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
 import {CordovaDriver} from "./CordovaDriver";
@@ -69,7 +67,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
-     */
+     // todo: implement new syntax
     async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `"${key}"`).join(", ");
@@ -98,7 +96,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 fail(err);
             });
         });
-    }
+    }*/
 
     // -------------------------------------------------------------------------
     // Protected Methods
