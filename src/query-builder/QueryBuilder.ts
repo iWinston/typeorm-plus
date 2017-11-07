@@ -588,7 +588,9 @@ export abstract class QueryBuilder<Entity> {
 
         // also add columns we must auto-return to perform entity updation
         // if user gave his own returning
-        if (typeof this.expressionMap.returning !== "string" && this.connection.driver.isReturningSqlSupported()) {
+        if (this.expressionMap.queryType !== "delete" &&
+            typeof this.expressionMap.returning !== "string" &&
+            this.connection.driver.isReturningSqlSupported()) {
             columns.push(...this.getEntityUpdationReturningColumns().filter(column => {
                 return columns.indexOf(column) === -1;
             }));
@@ -598,7 +600,11 @@ export abstract class QueryBuilder<Entity> {
             return columns.map(column => {
                 const name = this.escape(column.databaseName);
                 if (this.connection.driver instanceof SqlServerDriver) {
-                    return "INSERTED." + name;
+                    if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
+                        return "INSERTED." + name;
+                    } else {
+                        return this.escape(this.getMainTableName()) + "." + name;
+                    }
                 } else {
                     return name;
                 }
@@ -637,29 +643,17 @@ export abstract class QueryBuilder<Entity> {
             return [];
 
         // for databases which support returning statement we need to return extra columns like id
-        if (this.connection.driver.isReturningSqlSupported()) {
+        // for other databases we don't need to return id column since its returned by a driver already
+        const needToCheckGenerated = this.connection.driver.isReturningSqlSupported() && this.expressionMap.queryType === "insert";
 
-            // filter out the columns of which we need database inserted values to update our entity
-            return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-                return  column.default !== undefined ||
-                        column.isGenerated  ||
-                        column.isCreateDate ||
-                        column.isUpdateDate ||
-                        column.isVersion;
-            });
-
-        } else { // for other databases we don't need to return id column since its returned by a driver already
-
-            // filter out the columns of which we need database inserted values to update our entity
-            return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-                return  column.default !== undefined ||
-                        column.isCreateDate ||
-                        column.isUpdateDate ||
-                        column.isVersion;
-            });
-
-        }
-
+        // filter out the columns of which we need database inserted values to update our entity
+        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+            return  column.default !== undefined ||
+                    (needToCheckGenerated && column.isGenerated)  ||
+                    column.isCreateDate ||
+                    column.isUpdateDate ||
+                    column.isVersion;
+        });
     }
 
     /**

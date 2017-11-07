@@ -14,6 +14,15 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 export class SubjectExecutor {
 
     // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates if executor has any operations to execute (e.g. has insert / update / delete operations to be executed).
+     */
+    hasExecutableOperations: boolean = false;
+
+    // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
@@ -49,23 +58,12 @@ export class SubjectExecutor {
     constructor(queryRunner: QueryRunner, subjects: Subject[]) {
         this.queryRunner = queryRunner;
         this.allSubjects = subjects;
-        this.allSubjects.forEach(subject => this.recompute(subject));
-        this.insertSubjects = subjects.filter(subject => subject.mustBeInserted);
-        this.updateSubjects = subjects.filter(subject => subject.mustBeUpdated);
-        this.removeSubjects = subjects.filter(subject => subject.mustBeRemoved);
-
-        //
+        this.recompute();
     }
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-
-    areExecutableOperations(): boolean {
-        return  this.insertSubjects.length > 0 ||
-                this.updateSubjects.length > 0 ||
-                this.removeSubjects.length > 0;
-    }
 
     /**
      * Executes all operations over given array of subjects.
@@ -73,31 +71,30 @@ export class SubjectExecutor {
      */
     async execute(): Promise<void> {
 
-        // broadcast "before" events before we start updating
+        // broadcast "before" events before we start insert / update / remove operations
         await this.queryRunner.connection.broadcaster.broadcastBeforeEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
 
-        // since events can trigger some internal changes (for example update depend property) we need to perform some re-computations here
-        // todo: recompute things only if at least one subscriber or listener was really executed ?
-        this.allSubjects.forEach(subject => this.recompute(subject));
-        this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
-        this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
-        this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
+        // since event listeners and subscribers can call save methods and/or trigger entity changes we need to recompute operational subjects
+        this.recompute();
 
+        // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
         this.insertSubjects = new InsertSubjectsSorter(this.insertSubjects).order();
 
+        // execute all insert operations
         await this.executeInsertOperations();
 
         // recompute update operations since insertion can create updation operations for the
         // properties it wasn't able to handle on its own (referenced columns)
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
 
+        // execute update and remove operations
         await this.executeUpdateOperations();
         await this.executeRemoveOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         await this.updateSpecialColumnsInPersistedEntities();
 
-        // finally broadcast "after" events
+        // finally broadcast "after" events after we finish insert / update / remove operations
         await this.queryRunner.connection.broadcaster.broadcastAfterEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
     }
 
@@ -108,11 +105,18 @@ export class SubjectExecutor {
     /**
      * Performs entity re-computations.
      */
-    protected recompute(subject: Subject) {
-        if (subject.entity) {
-            this.computeDiffColumns(subject);
-            this.computeDiffRelationalColumns(subject);
-        }
+    protected recompute() {
+        this.allSubjects.forEach(subject => {
+            if (subject.entity) {
+                this.computeDiffColumns(subject);
+                this.computeDiffRelationalColumns(subject);
+            }
+        });
+
+        this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
+        this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
+        this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
+        this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0;
     }
 
     /**

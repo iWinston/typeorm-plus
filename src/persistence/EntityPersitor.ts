@@ -119,7 +119,7 @@ export class EntityPersitor {
 
                 // make sure we have at least one executable operation before we create a transaction and proceed
                 // if we don't have operations it means we don't really need to update something
-                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
+                const executorsNeedsToBeExecuted = executors.filter(executor => executor.hasExecutableOperations);
                 if (!executorsNeedsToBeExecuted.length)
                     return;
 
