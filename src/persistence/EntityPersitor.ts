@@ -23,7 +23,10 @@ export class EntityPersitor {
     // Private Properties
     // -------------------------------------------------------------------------
 
-    private operateSubjects: Subject[] = [];
+    /**
+     * List of subjects collected from the persisted entity;
+     */
+    private subjects: Subject[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -65,17 +68,25 @@ export class EntityPersitor {
             try {
 
                 // collect all operate subjects
-                if (this.entity instanceof Array) {
-                    await Promise.all(this.entity.map(entity => this.createOperateSubjects(queryRunner, entity)));
-                } else {
-                    await this.createOperateSubjects(queryRunner, this.entity);
-                }
+                const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
+                await Promise.all(entities.map(entity => {
+                    const entityTarget = this.target ? this.target : entity.constructor;
+                    if (entityTarget === Object)
+                        throw new CannotDetermineEntityError(this.mode);
+
+                    const metadata = this.connection.getMetadata(entityTarget);
+                    if (this.mode === "save") {
+                        return this.save(queryRunner, metadata, entity);
+                    } else { // remove
+                        return this.remove(queryRunner, metadata, entity);
+                    }
+                }));
 
                 // create a subject executor
-                const executor = new SubjectExecutor(queryRunner, this.operateSubjects);
+                const executor = new SubjectExecutor(queryRunner, this.subjects);
 
                 // make sure we have at least one executable operation before we create a transaction and proceed
-                // if we don't have operations it means we don't really need to update something
+                // if we don't have operations it means we don't really need to update or remove something
                 if (!executor.hasExecutableOperations)
                     return;
 
@@ -123,22 +134,6 @@ export class EntityPersitor {
     // -------------------------------------------------------------------------
 
     /**
-     *
-     */
-    protected async createOperateSubjects(queryRunner: QueryRunner, entity: ObjectLiteral): Promise<void> {
-        const entityTarget = this.target ? this.target : entity.constructor;
-        if (entityTarget === Object)
-            throw new CannotDetermineEntityError(this.mode);
-
-        const metadata = this.connection.getMetadata(entityTarget);
-        if (this.mode === "save") {
-            await this.save(queryRunner, metadata, entity);
-        } else { // remove
-            await this.remove(queryRunner, metadata, entity);
-        }
-    }
-
-    /**
      * Builds operations for entity that is being inserted/updated.
      */
     protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<void> {
@@ -150,18 +145,18 @@ export class EntityPersitor {
             canBeInserted: true,
             canBeUpdated: true,
         });
-        this.operateSubjects.push(mainSubject);
+        this.subjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        await new CascadesSubjectBuilder(this.operateSubjects).build(mainSubject);
+        await new CascadesSubjectBuilder(this.subjects).build(mainSubject);
 
         // next step is to load database entities of all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, this.operateSubjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load();
 
-        new OneToManySubjectBuilder(this.operateSubjects).build();
-        new OneToOneInverseSideSubjectBuilder(this.operateSubjects).build();
-        new ManyToManySubjectBuilder(this.operateSubjects).build();
+        new OneToManySubjectBuilder(this.subjects).build();
+        new OneToOneInverseSideSubjectBuilder(this.subjects).build();
+        new ManyToManySubjectBuilder(this.subjects).build();
     }
 
     /**
@@ -175,13 +170,13 @@ export class EntityPersitor {
             entity: entity,
             mustBeRemoved: true,
         });
-        this.operateSubjects.push(mainSubject);
+        this.subjects.push(mainSubject);
 
         // next step is to load database entities for all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, this.operateSubjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load();
 
         // build subjects for junction tables
-        new ManyToManySubjectBuilder(this.operateSubjects).buildForAllRemoval(mainSubject);
+        new ManyToManySubjectBuilder(this.subjects).buildForAllRemoval(mainSubject);
     }
 
 }
