@@ -43,8 +43,20 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
         try {
+
+            // call before deletion methods in listeners and subscribers
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                await this.connection.broadcaster.broadcastBeforeRemoveEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+            }
+
             const deleteResult = new DeleteResult();
             deleteResult.raw = await queryRunner.query(sql, parameters);
+
+            // call after deletion methods in listeners and subscribers
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                await this.connection.broadcaster.broadcastAfterRemoveEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+            }
+
             return deleteResult;
 
         } finally {

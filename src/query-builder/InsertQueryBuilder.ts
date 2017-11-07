@@ -38,13 +38,26 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
         try {
+
+            // call before insertion methods in listeners and subscribers
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                await this.connection.broadcaster.broadcastBeforeInsertEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+            }
+
+            // execute query
             const insertResult = new InsertResult();
             insertResult.raw = await queryRunner.query(sql, parameters);
             insertResult.valueSets = this.getValueSets();
 
+            // load returning results
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 const returningResultsLoader = new ReturningResultsLoader(queryRunner, this.expressionMap, this.getEntityUpdationReturningColumns());
                 [insertResult.identifiers, insertResult.generatedMaps] = await returningResultsLoader.load(insertResult.valueSets, insertResult.raw);
+            }
+
+            // call after insertion methods in listeners and subscribers
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                await this.connection.broadcaster.broadcastAfterInsertEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
             }
 
             return insertResult;

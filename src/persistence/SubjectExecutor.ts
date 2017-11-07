@@ -72,7 +72,7 @@ export class SubjectExecutor {
     async execute(): Promise<void> {
 
         // broadcast "before" events before we start insert / update / remove operations
-        await this.queryRunner.connection.broadcaster.broadcastBeforeEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.broadcastBeforeEventsForAll();
 
         // since event listeners and subscribers can call save methods and/or trigger entity changes we need to recompute operational subjects
         this.recompute();
@@ -95,7 +95,7 @@ export class SubjectExecutor {
         await this.updateSpecialColumnsInPersistedEntities();
 
         // finally broadcast "after" events after we finish insert / update / remove operations
-        await this.queryRunner.connection.broadcaster.broadcastAfterEventsForAll(this.queryRunner, this.insertSubjects, this.updateSubjects, this.removeSubjects);
+        await this.broadcastAfterEventsForAll();
     }
 
     // -------------------------------------------------------------------------
@@ -121,6 +121,28 @@ export class SubjectExecutor {
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
         this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
         this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0;
+    }
+
+    /**
+     * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
+     */
+    protected async broadcastBeforeEventsForAll(): Promise<void> {
+        await Promise.all([
+            ...this.insertSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastBeforeInsertEvent(this.queryRunner, subject.metadata, subject.entity!)),
+            ...this.updateSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastBeforeUpdateEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity)),
+            ...this.removeSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastBeforeRemoveEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity))
+        ]);
+    }
+
+    /**
+     * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
+     */
+    protected async broadcastAfterEventsForAll(): Promise<void> {
+        await Promise.all([
+            ...this.insertSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastAfterInsertEvent(this.queryRunner, subject.metadata, subject.entity!)),
+            ...this.updateSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastAfterUpdateEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity)),
+            ...this.removeSubjects.map(subject => this.queryRunner.connection.broadcaster.broadcastAfterRemoveEvent(this.queryRunner, subject.metadata, subject.entity!, subject.databaseEntity))
+        ]);
     }
 
     /**

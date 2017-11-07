@@ -44,8 +44,20 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
         try {
+
+            // call before updation methods in listeners and subscribers
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                await this.connection.broadcaster.broadcastBeforeUpdateEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+            }
+
             const updateResult = new UpdateResult();
             updateResult.raw = await queryRunner.query(sql, parameters);
+
+            // call after updation methods in listeners and subscribers
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                await this.connection.broadcaster.broadcastAfterUpdateEvent(queryRunner, this.expressionMap.mainAlias!.metadata);
+            }
+
             return updateResult;
 
         } finally {
