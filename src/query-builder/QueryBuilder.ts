@@ -728,7 +728,7 @@ export abstract class QueryBuilder<Entity> {
             return where(this);
 
         } else if (where instanceof Object) {
-            if (this.expressionMap.mainAlias!.metadata) {
+            if (this.expressionMap.mainAlias!.hasMetadata) {
                 const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
                 propertyPaths.forEach((propertyPath, index) => {
                     const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);

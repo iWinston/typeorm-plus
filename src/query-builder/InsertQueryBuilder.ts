@@ -210,6 +210,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (columns.length > 0)
             return columns.map(column => this.escape(column.databaseName)).join(", ");
 
+        // in the case if there are no insert columns specified and table without metadata used
+        // we get columns from the inserted value map, in the case if only one inserted map is specified
+        if (!this.expressionMap.mainAlias!.hasMetadata && !this.expressionMap.insertColumns.length) {
+            const valueSets = this.getValueSets();
+            if (valueSets.length === 1)
+                return Object.keys(valueSets[0]).map(columnName => this.escape(columnName)).join(", ");
+        }
+
         // get a table name and all column database names
         return this.expressionMap.insertColumns.map(columnName => this.escape(columnName)).join(", ");
     }
