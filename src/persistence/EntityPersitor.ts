@@ -15,62 +15,15 @@ import {SubjectDatabaseEntityLoader} from "./SubjectDatabaseEntityLoader";
 import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 
 /**
- * To be able to execute persistence operations we need to load all entities from the database we need.
- * Loading should be efficient - we need to load entities in as few queries as possible + load as less data as we can.
- * This is how we determine which entities needs to be loaded from db:
- *
- * 1. example with cascade updates and inserts:
- *
- * [Y] - means "yes, we load"
- * [N] - means "no, we don't load"
- * in {} braces we specify what cascade options are set between relations
- *
- * if Post is new, author is not set in the post
- *
- * [Y] Post -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
- *   [Y] Author -> {all} // no because author is not set
- *     [Y] Photo -> {all} // no because author and its photo are not set
- *       [Y] Tag -> {all} // no because author and its photo and its tag are not set
- *
- * if Post is new, author is new (or anything else is new)
- * if Post is updated
- * if Post and/or Author are updated
- *
- * [Y] Post -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
- *   [Y] Author -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
- *     [Y] Photo -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
- *       [Y] Tag -> {all} // yes because of "update" and "insert" cascades, no because of "remove"
- *
- * Here we load post, author, photo, tag to check if they are new or not to persist insert or update operation.
- * We load post, author, photo, tag only if they exist in the relation.
- * From these examples we can see that we always load entity relations when it has "update" or "insert" cascades.
- *
- * 2. example with cascade removes
- *
- * if entity is new its remove operations by cascades should not be executed
- * if entity is updated then values that are null or missing in array (not undefined!, undefined means skip - don't do anything) are treated as removed
- * if entity is removed then all its downside relations which has cascade remove should be removed
- *
- * Once we find removed entity - we load it, and every downside entity which has "remove" cascade set.
- *
- * At the end we have all entities we need to operate with.
- * Next step is to store all loaded entities to manipulate them efficiently.
- *
- * Rules of updating by cascades.
- * Insert operation can lead to:
- *  - insert operations
- *  - update operations
- * Update operation can lead to:
- *  - insert operations
- *  - update operations
- *  - remove operations
- * Remove operation can lead to:
- *  - remove operation
-
- // todo: make this method to accept multiple instances of entities
- // this will optimize multiple entities save
+ * Persists a single entity or multiple entities - saves or removes them.
  */
 export class EntityPersitor {
+
+    // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    private operateSubjects: Subject[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -88,6 +41,9 @@ export class EntityPersitor {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Executes persistence operation ob given entity or entities.
+     */
     execute(): Promise<void> {
 
         // check if entity we are going to save is valid and is an object
@@ -108,18 +64,19 @@ export class EntityPersitor {
 
             try {
 
-                // we create subject operation executors for all passed entities
-                const executors: SubjectExecutor[] = [];
+                // collect all operate subjects
                 if (this.entity instanceof Array) {
-                    executors.push(...await Promise.all(this.entity.map(entity => this.createSubjectExecutor(queryRunner, entity))));
+                    await Promise.all(this.entity.map(entity => this.createOperateSubjects(queryRunner, entity)));
                 } else {
-                    executors.push(await this.createSubjectExecutor(queryRunner, this.entity));
+                    await this.createOperateSubjects(queryRunner, this.entity);
                 }
+
+                // create a subject executor
+                const executor = new SubjectExecutor(queryRunner, this.operateSubjects);
 
                 // make sure we have at least one executable operation before we create a transaction and proceed
                 // if we don't have operations it means we don't really need to update something
-                const executorsNeedsToBeExecuted = executors.filter(executor => executor.hasExecutableOperations);
-                if (!executorsNeedsToBeExecuted.length)
+                if (!executor.hasExecutableOperations)
                     return;
 
                 // start execute queries in a transaction
@@ -135,9 +92,7 @@ export class EntityPersitor {
                     }
 
                     // execute all persistence operations for all entities we have
-                    await Promise.all(executorsNeedsToBeExecuted.map(executor => {
-                        return executor.execute();
-                    }));
+                    await executor.execute();
 
                     // commit transaction if it was started by us
                     if (isTransactionStartedByUs === true)
@@ -170,27 +125,23 @@ export class EntityPersitor {
     /**
      *
      */
-    protected async createSubjectExecutor(queryRunner: QueryRunner, entity: ObjectLiteral) {
+    protected async createOperateSubjects(queryRunner: QueryRunner, entity: ObjectLiteral): Promise<void> {
         const entityTarget = this.target ? this.target : entity.constructor;
         if (entityTarget === Object)
             throw new CannotDetermineEntityError(this.mode);
 
         const metadata = this.connection.getMetadata(entityTarget);
-        let subjects: Subject[] = [];
         if (this.mode === "save") {
-            subjects = await this.save(queryRunner, metadata, entity);
+            await this.save(queryRunner, metadata, entity);
         } else { // remove
-            subjects = await this.remove(queryRunner, metadata, entity);
+            await this.remove(queryRunner, metadata, entity);
         }
-
-        return new SubjectExecutor(queryRunner, subjects);
     }
 
     /**
      * Builds operations for entity that is being inserted/updated.
      */
-    protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
-        const operateSubjects: Subject[] = [];
+    protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<void> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
         const mainSubject = new Subject({
@@ -199,27 +150,24 @@ export class EntityPersitor {
             canBeInserted: true,
             canBeUpdated: true,
         });
-        operateSubjects.push(mainSubject);
+        this.operateSubjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        await new CascadesSubjectBuilder(operateSubjects).build(mainSubject);
+        await new CascadesSubjectBuilder(this.operateSubjects).build(mainSubject);
 
         // next step is to load database entities of all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, this.operateSubjects).load();
 
-        new OneToManySubjectBuilder(operateSubjects).build();
-        new OneToOneInverseSideSubjectBuilder(operateSubjects).build();
-        new ManyToManySubjectBuilder(operateSubjects).build();
-
-        return operateSubjects;
+        new OneToManySubjectBuilder(this.operateSubjects).build();
+        new OneToOneInverseSideSubjectBuilder(this.operateSubjects).build();
+        new ManyToManySubjectBuilder(this.operateSubjects).build();
     }
 
     /**
      * Builds only remove operations for entity that is being removed.
      */
-    protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
-        const operateSubjects: Subject[] = [];
+    protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<void> {
 
         // create subject for currently removed entity and mark that it must be removed
         const mainSubject = new Subject({
@@ -227,15 +175,13 @@ export class EntityPersitor {
             entity: entity,
             mustBeRemoved: true,
         });
-        operateSubjects.push(mainSubject);
+        this.operateSubjects.push(mainSubject);
 
         // next step is to load database entities for all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, operateSubjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, this.operateSubjects).load();
 
-        new ManyToManySubjectBuilder(operateSubjects).buildForAllRemoval(mainSubject);
-
-        return operateSubjects;
+        // build subjects for junction tables
+        new ManyToManySubjectBuilder(this.operateSubjects).buildForAllRemoval(mainSubject);
     }
-
 
 }

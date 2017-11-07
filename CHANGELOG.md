@@ -34,7 +34,6 @@ Use `findOne(id)` method instead now.
 * `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
 * `DeleteQueryBuilder` now returns `DeleteResult` which contains extended information and metadata about runned query
 
-
 ## 0.1.2 (next)
 
 * sqlite now supports relative database file paths (#798 and #799)
