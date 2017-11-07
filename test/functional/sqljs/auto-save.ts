@@ -17,11 +17,6 @@ describe("sqljs driver > autosave", () => {
             autoSaveCallback: callback,
             autoSave: true
         });
-        
-        const repository = connection.getRepository(Post);
-        let post = new Post();
-        post.title = "A post";
-        await repository.save(post);
 
         let posts = [
             {
@@ -32,7 +27,14 @@ describe("sqljs driver > autosave", () => {
             }
         ];
 
-        repository.createQueryBuilder("api").insert().into(Post).values(posts).execute();
+        await connection.createQueryBuilder().insert().into(Post).values(posts).execute();
+        await connection.createQueryBuilder().update(Post).set({title: "Many posts"}).execute();
+        await connection.createQueryBuilder().delete().from(Post).where("title = ?", {title: "third post"}).execute();
+        
+        const repository = connection.getRepository(Post);
+        let post = new Post();
+        post.title = "A post";
+        await repository.save(post);
 
         let savedPost = await repository.findOne({title: "A post"});
 
@@ -46,7 +48,7 @@ describe("sqljs driver > autosave", () => {
 
         connection.close();
 
-        expect(saves).to.be.equal(5);
+        expect(saves).to.be.equal(7);
     });
 
     it("should not call autoSaveCallback when autoSave is disabled", async () => {

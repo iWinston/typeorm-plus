@@ -135,13 +135,13 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * If a custom autoSaveCallback is specified, it get's called with the database as Uint8Array,
      * otherwise the save method is called which saves it to file (Node.js) or localstorage (browser).
      */
-    autoSave() {
+    async autoSave() {
         if (this.options.autoSave) {
             if (this.options.autoSaveCallback) {
-                this.options.autoSaveCallback(this.export());
+                await this.options.autoSaveCallback(this.export());
             }
             else {
-                this.save();
+                await this.save();
             }
         }
     }

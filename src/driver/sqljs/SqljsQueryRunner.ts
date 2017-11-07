@@ -38,7 +38,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
      */
     async commitTransaction(): Promise<void> {
         await super.commitTransaction();
-        this.driver.autoSave();
+        await this.driver.autoSave();
     }
 
     /**
@@ -110,7 +110,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 }, {} as ObjectLiteral);
 
                 if (!this.isTransactionActive) {
-                    this.driver.autoSave();
+                    await this.driver.autoSave();
                 }
                 
                 ok({
@@ -132,7 +132,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         await super.update(tableName, valuesMap, conditions);
         
         if (!this.isTransactionActive) {
-            this.driver.autoSave();
+            await this.driver.autoSave();
         }
     }
 
@@ -144,7 +144,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         await super.delete(tableName, conditions, maybeParameters);
         
         if (!this.isTransactionActive) {
-            this.driver.autoSave();
+            await this.driver.autoSave();
         }
     }
 }
