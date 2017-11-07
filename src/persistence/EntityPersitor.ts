@@ -20,15 +20,6 @@ import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
 export class EntityPersitor {
 
     // -------------------------------------------------------------------------
-    // Private Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * List of subjects collected from the persisted entity;
-     */
-    private subjects: Subject[] = [];
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
@@ -68,22 +59,23 @@ export class EntityPersitor {
             try {
 
                 // collect all operate subjects
+                const subjects: Subject[] = [];
                 const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
-                await Promise.all(entities.map(entity => {
+                await Promise.all(entities.map(async entity => {
                     const entityTarget = this.target ? this.target : entity.constructor;
                     if (entityTarget === Object)
                         throw new CannotDetermineEntityError(this.mode);
 
                     const metadata = this.connection.getMetadata(entityTarget);
                     if (this.mode === "save") {
-                        return this.save(queryRunner, metadata, entity);
+                        subjects.push(... await this.save(queryRunner, metadata, entity));
                     } else { // remove
-                        return this.remove(queryRunner, metadata, entity);
+                        subjects.push(... await this.remove(queryRunner, metadata, entity));
                     }
                 }));
 
                 // create a subject executor
-                const executor = new SubjectExecutor(queryRunner, this.subjects);
+                const executor = new SubjectExecutor(queryRunner, subjects);
 
                 // make sure we have at least one executable operation before we create a transaction and proceed
                 // if we don't have operations it means we don't really need to update or remove something
@@ -136,7 +128,7 @@ export class EntityPersitor {
     /**
      * Builds operations for entity that is being inserted/updated.
      */
-    protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<void> {
+    protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
 
         // create subject for currently persisted entity and mark that it can be inserted and updated
         const mainSubject = new Subject({
@@ -145,24 +137,26 @@ export class EntityPersitor {
             canBeInserted: true,
             canBeUpdated: true,
         });
-        this.subjects.push(mainSubject);
 
         // next step we build list of subjects we will operate with
         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        await new CascadesSubjectBuilder(this.subjects).build(mainSubject);
+        const subjects = await new CascadesSubjectBuilder(mainSubject).build();
 
         // next step is to load database entities of all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load();
 
-        new OneToManySubjectBuilder(this.subjects).build();
-        new OneToOneInverseSideSubjectBuilder(this.subjects).build();
-        new ManyToManySubjectBuilder(this.subjects).build();
+        new OneToManySubjectBuilder(subjects).build();
+        new OneToOneInverseSideSubjectBuilder(subjects).build();
+        new ManyToManySubjectBuilder(subjects).build();
+
+        return subjects;
     }
 
     /**
      * Builds only remove operations for entity that is being removed.
      */
-    protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<void> {
+    protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
+        const subjects: Subject[] = [];
 
         // create subject for currently removed entity and mark that it must be removed
         const mainSubject = new Subject({
@@ -170,13 +164,15 @@ export class EntityPersitor {
             entity: entity,
             mustBeRemoved: true,
         });
-        this.subjects.push(mainSubject);
+        subjects.push(mainSubject);
 
         // next step is to load database entities for all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load();
 
         // build subjects for junction tables
-        new ManyToManySubjectBuilder(this.subjects).buildForAllRemoval(mainSubject);
+        new ManyToManySubjectBuilder(subjects).buildForAllRemoval(mainSubject);
+
+        return subjects;
     }
 
 }

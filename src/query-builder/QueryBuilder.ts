@@ -693,7 +693,7 @@ export abstract class QueryBuilder<Entity> {
                 parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
             });
             return whereSubStrings.join(" AND ");
-        });
+        }).map(whereString => "(" + whereString + ")");
 
         const whereString = whereStrings.length > 1 ? "(" + whereStrings.join(" OR ") + ")" : whereStrings[0];
         return [whereString, parameters];

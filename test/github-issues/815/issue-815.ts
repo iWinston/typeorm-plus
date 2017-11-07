@@ -112,7 +112,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
 
     })));
 
-    it.only("should work perfectly with many-to-many relation", () => Promise.all(connections.map(async connection => {
+    it("should work perfectly with many-to-many relation", () => Promise.all(connections.map(async connection => {
 
         const post1 = new Post();
         post1.title = "About relation id1";
