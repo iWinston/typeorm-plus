@@ -5,16 +5,16 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
-## 0.1.2 (next)
+## 0.1.2
 
 * sqlite now supports relative database file paths (#798 and #799)
-* fixed bug with not properly working `update`  method (#1037, #1042)
+* fixed bug with not properly working `update` method (#1037, #1042)
 * fixed bug with replication support (#1035)
 * fixed bug with wrong embedded column names being generated (#969) 
 * added support for caching in respositories [#1057](https://github.com/typeorm/typeorm/issues/1057)
 * added support for the `citext` column type for postgres [#1075](https://github.com/typeorm/typeorm/pull/1075)
 
-## 0.1.1 (current)
+## 0.1.1
 
 * added support for `pg-native` for postgres (#975). To use it you just need to install `npm i pg-native` and it will be picked up automatically.
 * now Find Options support `-1` and `1` for `DESC` and `ASC` values. This is better user experience for MongoDB users. 
