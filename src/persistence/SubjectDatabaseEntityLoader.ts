@@ -29,7 +29,7 @@ export class SubjectDatabaseEntityLoader {
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
      */
-    async load(loadAllRelationIds = false): Promise<void> {
+    async load(operationType: "save"|"remove"): Promise<void> {
 
         // we are grouping subjects by target to perform more optimized queries using WHERE IN operator
         // go through the groups and perform loading of database entities of each subject in the group
@@ -54,26 +54,35 @@ export class SubjectDatabaseEntityLoader {
             if (!allIds.length)
                 return;
 
+            const loadRelationPropertyPaths: string[] = [];
+
+            // for the save operation
             // extract all property paths of the relations we need to load relation ids for
             // this is for optimization purpose - this way we don't load relation ids for entities
             // whose relations are undefined, and since they are undefined its really pointless to
             // load something for them, since undefined properties are skipped by the orm
-            const allPropertyPaths: string[] = [];
-            subjectGroup.subjects.forEach(subject => {
+            if (operationType === "save") {
+                subjectGroup.subjects.forEach(subject => {
 
-                // gets all relation property paths that exist in the persisted entity.
-                subject.metadata.relations
-                    .filter(relation => relation.getEntityValue(subject.entity!) !== undefined)
-                    .map(relation => relation.propertyPath)
-                    .forEach(propertyPath => {
-                        if (allPropertyPaths.indexOf(propertyPath) === -1)
-                            allPropertyPaths.push(propertyPath);
-                    });
-            });
+                    // gets all relation property paths that exist in the persisted entity.
+                    subject.metadata.relations
+                        .filter(relation => relation.getEntityValue(subject.entity!) !== undefined)
+                        .map(relation => relation.propertyPath)
+                        .forEach(propertyPath => {
+                            if (loadRelationPropertyPaths.indexOf(propertyPath) === -1)
+                                loadRelationPropertyPaths.push(propertyPath);
+                        });
+                });
+            } else { // remove
+
+                // for remove operation
+                // we only need to load junction relation ids since only they are removed by cascades
+                loadRelationPropertyPaths.push(...subjectGroup.subjects[0].metadata.manyToManyRelations.map(relation => relation.propertyPath));
+            }
 
             const findOptions: FindManyOptions<any> = {
                 loadRelationIds: {
-                    relations: loadAllRelationIds === false ? allPropertyPaths : undefined,
+                    relations: loadRelationPropertyPaths,
                     disableMixedMap: true
                 }
             };

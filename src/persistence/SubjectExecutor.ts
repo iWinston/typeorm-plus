@@ -1,7 +1,7 @@
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./Subject";
 import {PromiseUtils} from "../util/PromiseUtils";
-import {InsertSubjectsSorter} from "./InsertSubjectsSorter";
+import {SubjectTopoligicalSorter} from "./SubjectTopoligicalSorter";
 import {SubjectChangedColumnsComputer} from "./SubjectChangedColumnsComputer";
 import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierError";
 import {SubjectRemovedAndUpdatedError} from "../error/SubjectRemovedAndUpdatedError";
@@ -78,7 +78,7 @@ export class SubjectExecutor {
         this.recompute();
 
         // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
-        this.insertSubjects = new InsertSubjectsSorter(this.insertSubjects).sort();
+        this.insertSubjects = new SubjectTopoligicalSorter(this.insertSubjects).sort();
 
         // execute all insert operations
         await this.executeInsertOperations();
@@ -87,8 +87,11 @@ export class SubjectExecutor {
         // properties it wasn't able to handle on its own (referenced columns)
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
 
-        // execute update and remove operations
+        // execute update operations
         await this.executeUpdateOperations();
+
+        // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
+        this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort().reverse();
         await this.executeRemoveOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
@@ -188,7 +191,6 @@ export class SubjectExecutor {
      * todo: we need to apply topological sort here as well
      */
     protected async executeRemoveOperations(): Promise<void> {
-
         // group insertion subjects to make bulk insertions
         const groupedRemoveSubjects = this.groupBulkSubjects(this.removeSubjects, "delete");
 

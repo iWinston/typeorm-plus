@@ -2,10 +2,10 @@ import {Subject} from "./Subject";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
- * Orders insert subjects in proper order (using topological sorting) to make sure insert operations are executed
- * in a proper order.
+ * Orders insert or remove subjects in proper order (using topological sorting)
+ * to make sure insert or remove operations are executed in a proper order.
  */
-export class InsertSubjectsSorter {
+export class SubjectTopoligicalSorter {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -25,8 +25,8 @@ export class InsertSubjectsSorter {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(insertSubjects: Subject[]) {
-        this.subjects = [...insertSubjects]; // copy insert subjects to prevent changing of sent array
+    constructor(subjects: Subject[]) {
+        this.subjects = [...subjects]; // copy subjects to prevent changing of sent array
         this.metadatas = this.getUniqueMetadatas(this.subjects);
     }
 

@@ -61,6 +61,7 @@ export class EntityPersistExecutor {
                 // collect all operate subjects
                 const subjects: Subject[] = [];
                 const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
+                // console.log("entities", entities);
                 await Promise.all(entities.map(async entity => {
                     const entityTarget = this.target ? this.target : entity.constructor;
                     if (entityTarget === Object)
@@ -68,11 +69,12 @@ export class EntityPersistExecutor {
 
                     const metadata = this.connection.getMetadata(entityTarget);
                     if (this.mode === "save") {
-                        subjects.push(... await this.save(queryRunner, metadata, entity));
+                        subjects.push(...await this.save(queryRunner, metadata, entity));
                     } else { // remove
-                        subjects.push(... await this.remove(queryRunner, metadata, entity));
+                        subjects.push(...await this.remove(queryRunner, metadata, entity));
                     }
                 }));
+                // console.log("subjects", subjects);
 
                 // create a subject executor
                 const executor = new SubjectExecutor(queryRunner, subjects);
@@ -143,7 +145,7 @@ export class EntityPersistExecutor {
         const subjects = await new CascadesSubjectBuilder(mainSubject).build();
 
         // next step is to load database entities of all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load("save");
 
         // build all related subjects and change maps
         new OneToManySubjectBuilder(subjects).build();
@@ -167,7 +169,7 @@ export class EntityPersistExecutor {
         const subjects: Subject[] = [mainSubject];
 
         // next step is to load database entities for all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load(true);
+        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load("remove");
 
         // build subjects for junction tables
         new ManyToManySubjectBuilder(subjects).buildForAllRemoval(mainSubject);
