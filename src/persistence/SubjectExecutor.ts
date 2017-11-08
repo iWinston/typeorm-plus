@@ -150,14 +150,21 @@ export class SubjectExecutor {
      */
     protected async executeInsertOperations(): Promise<void> {
 
-        // then we run insertion in the sequential order which is important since we have an ordered subjects
-        await PromiseUtils.runInSequence(this.insertSubjects, async subject => {
-            const insertMap = subject.createValueSetAndPopChangeMap();
-            const insertResult = await this.queryRunner.insert(subject.metadata.target, insertMap);
+        // group insertion subjects to make bulk insertions
+        const groupedInsertSubjects = this.groupBulkSubjects(this.insertSubjects, "insert");
 
-            subject.identifier = insertResult.identifiers[0];
-            subject.generatedMap = insertResult.generatedMaps[0];
-            subject.insertedValueSet = insertResult.valueSets[0];
+        // then we run insertion in the sequential order which is important since we have an ordered subjects
+        await PromiseUtils.runInSequence(Object.keys(groupedInsertSubjects), async groupName => {
+            const subjects = groupedInsertSubjects[groupName];
+
+            const insertMaps = subjects.map(subject => subject.createValueSetAndPopChangeMap());
+            const insertResult = await this.queryRunner.insert(subjects[0].metadata.target, insertMaps);
+
+            subjects.forEach((subject, index) => {
+                subject.identifier = insertResult.identifiers[index];
+                subject.generatedMap = insertResult.generatedMaps[index];
+                subject.insertedValueSet = insertResult.valueSets[index];
+            });
         });
     }
 
@@ -177,14 +184,24 @@ export class SubjectExecutor {
 
     /**
      * Removes all given subjects from the database.
+     *
+     * todo: we need to apply topological sort here as well
      */
     protected async executeRemoveOperations(): Promise<void> {
-        await PromiseUtils.runInSequence(this.removeSubjects, async subject => {
 
-            if (!subject.identifier)
-                throw new SubjectWithoutIdentifierError(subject);
+        // group insertion subjects to make bulk insertions
+        const groupedRemoveSubjects = this.groupBulkSubjects(this.removeSubjects, "delete");
 
-            return this.queryRunner.delete(subject.metadata.target, subject.identifier);
+        await PromiseUtils.runInSequence(Object.keys(groupedRemoveSubjects), async groupName => {
+            const subjects = groupedRemoveSubjects[groupName];
+            const deleteMaps = subjects.map(subject => {
+                if (!subject.identifier)
+                    throw new SubjectWithoutIdentifierError(subject);
+
+                return subject.identifier;
+            });
+
+            return this.queryRunner.delete(subjects[0].metadata.target, deleteMaps);
         });
     }
 
@@ -230,6 +247,32 @@ export class SubjectExecutor {
                 relationId.setValue(subject.entity!);
             });
         });
+    }
+
+    /**
+     * Groups subjects by metadata names (by tables) to make bulk insertions and deletions possible.
+     * However there are some limitations with bulk insertions of data into tables with generated (increment) columns
+     * in some drivers. Some drivers like mysql and sqlite does not support returning multiple generated columns
+     * after insertion and can only return a single generated column value, that's why its not possible to do bulk insertion,
+     * because it breaks insertion result's generatedMap and leads to problems when this subject is used in other subjects saves.
+     * That's why we only support bulking in junction tables for those drivers.
+     *
+     * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
+     * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     */
+    protected groupBulkSubjects(subjects: Subject[], type: "insert"|"delete"): { [key: string]: Subject[] } {
+        return subjects.reduce((group, subject, index) => {
+
+            const key = type === "delete" || this.queryRunner.connection.driver.isReturningSqlSupported() || subject.metadata.isJunction
+                ? subject.metadata.name
+                : subject.metadata.name + "_" + index;
+
+            if (!group[key])
+                group[key] = [];
+
+            group[key].push(subject);
+            return group;
+        }, {} as { [key: string]: Subject[] });
     }
 
 }

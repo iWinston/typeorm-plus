@@ -113,7 +113,7 @@ export interface QueryRunner {
     /**
      * Performs a simple DELETE query by a given conditions in a given table.
      */
-    delete(target: Function|string, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<DeleteResult>;
+    delete(target: Function|string, condition: ObjectLiteral|ObjectLiteral[]|string, parameters?: ObjectLiteral): Promise<DeleteResult>;
 
     /**
      * Inserts new values into closure table.

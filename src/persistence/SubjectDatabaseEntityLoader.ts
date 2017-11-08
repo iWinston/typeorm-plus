@@ -1,6 +1,7 @@
 import {Subject} from "./Subject";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import {FindManyOptions} from "../find-options/FindManyOptions";
 
 /**
  * Loads database entities for all operate subjects which do not have database entity set.
@@ -24,8 +25,11 @@ export class SubjectDatabaseEntityLoader {
 
     /**
      * Loads database entities for all subjects.
+     *
+     * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
+     * This option is used for deletion.
      */
-    async load(): Promise<void> {
+    async load(loadAllRelationIds = false): Promise<void> {
 
         // we are grouping subjects by target to perform more optimized queries using WHERE IN operator
         // go through the groups and perform loading of database entities of each subject in the group
@@ -67,10 +71,17 @@ export class SubjectDatabaseEntityLoader {
                     });
             });
 
+            const findOptions: FindManyOptions<any> = {
+                loadRelationIds: {
+                    relations: loadAllRelationIds === false ? allPropertyPaths : undefined,
+                    disableMixedMap: true
+                }
+            };
+
             // load database entities for all given ids
             const entities = await this.queryRunner.manager
                 .getRepository<ObjectLiteral>(subjectGroup.target)
-                .findByIds(allIds, { loadRelationIds: { relations: allPropertyPaths, disableMixedMap: true } });
+                .findByIds(allIds, findOptions);
 
             // now when we have entities we need to find subject of each entity
             // and insert that entity into database entity of the found subject

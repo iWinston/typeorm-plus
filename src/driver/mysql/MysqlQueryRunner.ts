@@ -272,7 +272,7 @@ export class MysqlQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(target: Function|string, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<DeleteResult> {
+    async delete(target: Function|string, condition: ObjectLiteral|ObjectLiteral[]|string, parameters?: ObjectLiteral): Promise<DeleteResult> {
         return this.manager
             .createQueryBuilder()
             .delete()

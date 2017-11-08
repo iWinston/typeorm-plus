@@ -571,15 +571,14 @@ export class PostgresDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
-        if (!insertResult || !insertResult[0])
+    createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
+        if (!insertResult)
             return undefined;
 
-        const result: ObjectLiteral = insertResult[0];
-        return Object.keys(result).reduce((map, key) => {
+        return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(result[key]));
+                OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
             }
             return map;
         }, {} as ObjectLiteral);

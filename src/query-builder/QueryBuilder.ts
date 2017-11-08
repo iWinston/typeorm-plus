@@ -16,7 +16,6 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {WhereExpression} from "./WhereExpression";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
@@ -713,7 +712,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral) {
+    protected computeWhereParameter(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]) {
         if (typeof where === "string")
             return where;
 
@@ -728,40 +727,52 @@ export abstract class QueryBuilder<Entity> {
             return where(this);
 
         } else if (where instanceof Object) {
+            const wheres: ObjectLiteral[] = where instanceof Array ? where : [where];
+            let andConditions: string[];
+
             if (this.expressionMap.mainAlias!.hasMetadata) {
-                const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
-                propertyPaths.forEach((propertyPath, index) => {
-                    const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
-                    columns.forEach((column, columnIndex) => {
+                andConditions = wheres.map((where, whereIndex) => {
+                    const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
 
-                        const parameterValue = EntityMetadataUtils.getPropertyPathValue((where as ObjectLiteral), column.propertyPath);
-                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
-                        if (parameterValue === null) {
-                            ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+                    return propertyPaths.map((propertyPath, propertyIndex) => {
+                        const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
+                        return columns.map((column, columnIndex) => {
 
-                        } else {
-                            const parameterName = "where_" + index + "_" + columnIndex;
-                            ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
-                            this.setParameter(parameterName, parameterValue);
-                        }
-                    });
+                            const parameterValue = EntityMetadataUtils.getPropertyPathValue(where, column.propertyPath);
+                            const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
+                            if (parameterValue === null) {
+                                return `${aliasPath} IS NULL`;
+
+                            } else {
+                                const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
+                                this.setParameter(parameterName, parameterValue);
+                                return `${aliasPath} = :${parameterName}`;
+                            }
+                        }).join(" AND ");
+                    }).join(" AND ");
                 });
 
             } else {
-                Object.keys(where).forEach((key, index) => {
-                    const parameterValue = (where as ObjectLiteral)[key];
-                    const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
-                    if (parameterValue === null) {
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath} IS NULL`);
+                andConditions = wheres.map((where, whereIndex) => {
+                    return Object.keys(where).map((key, parameterIndex) => {
+                        const parameterValue = where[key];
+                        const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${key}` : key;
+                        if (parameterValue === null) {
+                            return `${aliasPath} IS NULL`;
 
-                    } else {
-                        const parameterName = "where_" + index;
-                        ((this as any) as WhereExpression).andWhere(`${aliasPath}=:${parameterName}`);
-                        this.setParameter(parameterName, parameterValue);
-                    }
+                        } else {
+                            const parameterName = "where_" + whereIndex + "_" + parameterIndex;
+                            this.setParameter(parameterName, parameterValue);
+                            return `${aliasPath} = :${parameterName}`;
+                        }
+                    }).join(" AND ");
                 });
-
             }
+
+            if (andConditions.length > 1)
+                return andConditions.map(where => "(" + where + ")").join(" OR ");
+
+            return andConditions.join("");
         }
 
         return "";

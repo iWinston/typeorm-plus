@@ -167,7 +167,7 @@ export class EntityPersistExecutor {
         const subjects: Subject[] = [mainSubject];
 
         // next step is to load database entities for all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load();
+        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load(true);
 
         // build subjects for junction tables
         new ManyToManySubjectBuilder(subjects).buildForAllRemoval(mainSubject);

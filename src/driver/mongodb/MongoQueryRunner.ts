@@ -430,7 +430,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(collectionName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
+    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
         if (typeof conditions === "string")
             throw new Error(`String condition is not supported by MongoDB driver.`);
 
