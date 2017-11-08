@@ -1134,7 +1134,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             const count = await this.executeCountQuery(queryRunner);
-            const results = [entitiesAndRaw.entities, count];
+            const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 
             // close transaction if we started it
             if (transactionStartedByUs) {
