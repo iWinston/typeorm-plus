@@ -78,7 +78,7 @@ export class SubjectExecutor {
         this.recompute();
 
         // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
-        this.insertSubjects = new SubjectTopoligicalSorter(this.insertSubjects).sort();
+        this.insertSubjects = new SubjectTopoligicalSorter(this.insertSubjects).sort("insert");
 
         // execute all insert operations
         await this.executeInsertOperations();
@@ -91,7 +91,7 @@ export class SubjectExecutor {
         await this.executeUpdateOperations();
 
         // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
-        this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort().reverse();
+        this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
         await this.executeRemoveOperations();
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities

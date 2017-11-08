@@ -37,7 +37,7 @@ export class SubjectTopoligicalSorter {
     /**
      * Sorts (orders) subjects in their topological order.
      */
-    sort(): Subject[] {
+    sort(direction: "insert"|"delete"): Subject[] {
 
         // if there are no metadatas it probably mean there is no subjects... we don't have to do anything here
         if (!this.metadatas.length)
@@ -47,7 +47,9 @@ export class SubjectTopoligicalSorter {
 
         // first we always insert entities with non-nullable relations, sort them first
         const nonNullableDependencies = this.getNonNullableDependencies();
-        const sortedNonNullableEntityTargets = this.toposort(nonNullableDependencies).reverse();
+        let sortedNonNullableEntityTargets = this.toposort(nonNullableDependencies);
+        if (direction === "insert")
+            sortedNonNullableEntityTargets = sortedNonNullableEntityTargets.reverse();
 
         // so we have a sorted entity targets
         // go thought each of them and find all subjects with sorted entity target
@@ -63,7 +65,9 @@ export class SubjectTopoligicalSorter {
         // next sort all other entities
         // same process as in above but with other entities
         const otherDependencies: string[][] = this.getDependencies();
-        const sortedOtherEntityTargets = this.toposort(otherDependencies).reverse();
+        let sortedOtherEntityTargets = this.toposort(otherDependencies);
+        if (direction === "insert")
+            sortedOtherEntityTargets = sortedOtherEntityTargets.reverse();
 
         sortedOtherEntityTargets.forEach(sortedEntityTarget => {
             const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);

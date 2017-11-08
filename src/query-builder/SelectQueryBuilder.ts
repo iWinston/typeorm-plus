@@ -960,8 +960,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         this.expressionMap.queryEntity = false;
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
-            return await this.loadRawResults(queryRunner);
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
+            const results = await this.loadRawResults(queryRunner);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
@@ -975,9 +1000,34 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     async getRawAndEntities(): Promise<{ entities: Entity[], raw: any[] }> {
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
             this.expressionMap.queryEntity = true;
-            return await this.executeEntitiesAndRawResults(queryRunner);
+            const results = await this.executeEntitiesAndRawResults(queryRunner);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1030,8 +1080,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new OptimisticLockCanNotBeUsedError();
 
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
-            return await this.executeCountQuery(queryRunner);
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
+            const results = await this.executeCountQuery(queryRunner);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1048,10 +1123,35 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             throw new OptimisticLockCanNotBeUsedError();
 
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             const count = await this.executeCountQuery(queryRunner);
-            return [entitiesAndRaw.entities, count];
+            const results = [entitiesAndRaw.entities, count];
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner
@@ -1066,13 +1166,38 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         this.expressionMap.queryEntity = false;
         const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
+
             const releaseFn = () => {
                 if (queryRunner !== this.queryRunner) // means we created our own query runner
                     return queryRunner.release();
                 return;
             };
-            return queryRunner.stream(sql, parameters, releaseFn, releaseFn);
+            const results = queryRunner.stream(sql, parameters, releaseFn, releaseFn);
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
+            return results;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) // means we created our own query runner

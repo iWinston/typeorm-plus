@@ -43,7 +43,15 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     async execute(): Promise<UpdateResult> {
         const [sql, parameters] = this.getQueryAndParameters();
         const queryRunner = this.obtainQueryRunner();
+        let transactionStartedByUs: boolean = false;
+
         try {
+
+            // start transaction if it was enabled
+            if (this.expressionMap.useTransaction === true && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction();
+                transactionStartedByUs = true;
+            }
 
             // call before updation methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
@@ -58,7 +66,22 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 await queryRunner.broadcaster.broadcastAfterUpdateEvent(this.expressionMap.mainAlias!.metadata);
             }
 
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction();
+            }
+
             return updateResult;
+
+        } catch (error) {
+
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
+            throw error;
 
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
