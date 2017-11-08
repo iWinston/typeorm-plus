@@ -120,7 +120,7 @@ export class PlatformTools {
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    static pathNormilize(pathStr: string): string {
+    static pathNormalize(pathStr: string): string {
         return path.normalize(pathStr);
     }
 
