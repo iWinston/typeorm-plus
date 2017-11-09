@@ -25,7 +25,6 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
-import {EntityManagerFactory} from "./EntityManagerFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
@@ -93,7 +92,7 @@ export class EntityManager {
             throw new Error(`Cannot start transaction because its already started`);
 
         const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-        const transactionEntityManager = new EntityManagerFactory().create(this.connection, usedQueryRunner);
+        const transactionEntityManager = this.connection.createEntityManager(usedQueryRunner);
 
         try {
             await usedQueryRunner.startTransaction();
@@ -284,7 +283,7 @@ export class EntityManager {
             // });
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
+            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
 
@@ -445,7 +444,7 @@ export class EntityManager {
         return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
 
             const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = new EntityManagerFactory().create(this.connection, queryRunner);
+            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
             if (options && options.data)
                 Object.assign(queryRunner.data, options.data);
 

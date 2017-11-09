@@ -153,6 +153,15 @@ export class PlatformTools {
         fs.appendFileSync(filename, data);
     }
 
+    static async writeFile(path: string, data: any): Promise<void> {
+        return new Promise<void>((ok, fail) => {
+            fs.writeFile(path, data, (err) => {
+                if (err) fail(err);
+                ok();
+            });
+        });
+    }
+
     /**
      * Gets environment variable.
      */
