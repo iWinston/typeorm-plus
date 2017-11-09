@@ -33,7 +33,7 @@ export class PlatformTools {
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    static pathNormilize(pathStr: string): string {
+    static pathNormalize(pathStr: string): string {
         if (this.type === "browser")
             throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.normalize("${pathStr}").`);
 
