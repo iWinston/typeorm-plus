@@ -134,17 +134,11 @@ await manager.remove([
 ]);
 ```
 
-* `removeById` - Removes entity by entity id.
+* `removeById` - Deletes entities by entity id or ids.
 
 ```typescript
-await manager.removeById(User, 1);
-```
-
-
-* `removeByIds` - Removes entity by entity ids.
-
-```typescript
-await manager.removeByIds(User, [1, 2, 3]);
+await manager.deleteById(User, 1);
+await manager.deleteById(User, [1, 2, 3]);
 ```
 
 * `count` - Counts entities that match given options. Useful for pagination.
@@ -173,16 +167,11 @@ const [timbers, timbersCount] = await manager.findAndCount(User, { firstName: "T
 const users = await manager.findByIds(User, [1, 2, 3]);
 ```
 
-* `findOne` - Finds first entity that matches given find options.
-
-```typescript
-const timber = await manager.findOne(User, { firstName: "Timber" });
-```
-
-* `findOneById` - Finds entity with given id.
+* `findOne` - Finds first entity that matches given id or find options.
 
 ```typescript
 const user = await manager.findOne(User, 1);
+const timber = await manager.findOne(User, { firstName: "Timber" });
 ```
 
 * `clear` - Clears all the data from the given table (truncates/drops it).

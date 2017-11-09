@@ -59,7 +59,12 @@ export class QueryExpressionMap {
     /**
      * Optional returning (or output) clause for insert, update or delete queries.
      */
-    returning: string = "";
+    returning: string|string[];
+
+    /**
+     * Extra returning columns to be added to the returning statement if driver supports it.
+     */
+    extraReturningColumns: ColumnMetadata[] = [];
 
     /**
      * JOIN queries.
@@ -206,6 +211,27 @@ export class QueryExpressionMap {
      * Used in INSERT query.
      */
     insertColumns: string[] = [];
+
+    /**
+     * Used if user wants to update or delete a specific entities.
+     */
+    whereEntities: ObjectLiteral[] = [];
+
+    /**
+     * Indicates if entity must be updated after insertion / updation.
+     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
+     */
+    updateEntity: boolean = true;
+
+    /**
+     * Indicates if listeners and subscribers must be called before and after query execution.
+     */
+    callListeners: boolean = true;
+
+    /**
+     * Indicates if query must be wrapped into transaction.
+     */
+    useTransaction: boolean = false;
 
     // -------------------------------------------------------------------------
     // Constructor

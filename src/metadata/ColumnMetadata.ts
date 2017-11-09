@@ -364,7 +364,7 @@ export class ColumnMetadata {
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
      */
-    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral {
+    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral|undefined {
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -383,24 +383,41 @@ export class ColumnMetadata {
             // this recursive function helps doing that
             const extractEmbeddedColumnValue = (propertyNames: string[], value: ObjectLiteral, map: ObjectLiteral): any => {
                 const propertyName = propertyNames.shift();
+                if (value === undefined)
+                    return map;
+
                 if (propertyName) {
-                    map[propertyName] = {};
-                    extractEmbeddedColumnValue(propertyNames, value ? value[propertyName] : undefined, map[propertyName]);
+                    const submap: ObjectLiteral = {};
+                    extractEmbeddedColumnValue(propertyNames, value[propertyName], submap);
+                    if (Object.keys(submap).length > 0) {
+                        map[propertyName] = submap;
+                    }
                     return map;
                 }
-                map[this.propertyName] = value ? value[this.propertyName] : undefined;
+                if (value[this.propertyName] !== undefined)
+                    map[this.propertyName] = value[this.propertyName];
                 return map;
             };
-            return extractEmbeddedColumnValue(propertyNames, entity, {});
+            const map: ObjectLiteral = {};
+            extractEmbeddedColumnValue(propertyNames, entity, map);
+            return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
             if (this.relationMetadata && entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
-                    return OrmUtils.mergeDeep(map, joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]));
+                    const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.propertyName]);
+                    if (value === undefined) return map;
+                    return OrmUtils.mergeDeep(map, value);
                 }, {});
-                return { [this.propertyName]: map };
+                if (Object.keys(map).length > 0)
+                    return { [this.propertyName]: map };
+
+                return undefined;
             } else {
-                return { [this.propertyName]: entity[this.propertyName] };
+                if (entity[this.propertyName] !== undefined)
+                    return { [this.propertyName]: entity[this.propertyName] };
+
+                return undefined;
             }
         }
     }
@@ -431,7 +448,7 @@ export class ColumnMetadata {
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
             const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
             if (embeddedObject) {
-                if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
+                if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
                     if (relatedEntity && relatedEntity instanceof Object)
                         return this.referencedColumn.getEntityValue(relatedEntity);
@@ -441,11 +458,12 @@ export class ColumnMetadata {
             return undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
-            if (this.relationMetadata && this.referencedColumn && this.isVirtual) {
+            if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 if (relatedEntity && relatedEntity instanceof Object)
                     return this.referencedColumn.getEntityValue(relatedEntity);
             }
+
             return entity[this.propertyName];
         }
     }
@@ -504,7 +522,8 @@ export class ColumnMetadata {
 
         // we add reference column to property path only if this column is virtual
         // because if its not virtual it means user defined a real column for this relation
-        if (this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+        // also we don't do it if column is inside a junction table
+        if (!    this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
             path += "." + this.referencedColumn.propertyName;
 
         return path;

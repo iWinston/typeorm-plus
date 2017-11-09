@@ -26,7 +26,7 @@ import {
     MongoCallback,
     MongoCountPreferences,
     MongodbIndexOptions,
-    MongoError,
+    MongoError, ObjectID,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -42,6 +42,7 @@ import {FindManyOptions} from "../find-options/FindManyOptions";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {PlatformTools} from "../platform/PlatformTools";
+import {DeepPartial} from "../common/DeepPartial";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -144,8 +145,15 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions);
+    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
+                          optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>,
+                          maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+        const id = optionsOrConditions instanceof ObjectID || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
+        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
+        if (id) {
+            const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+            query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
+        }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
             if (optionsOrConditions.order)
@@ -162,20 +170,7 @@ export class MongoEntityManager extends EntityManager {
      * Optionally find options or conditions can be applied.
      */
     async findOneById<Entity>(entityClassOrName: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
-        query["_id"] = (id instanceof objectIdInstance)
-            ? id
-            : new objectIdInstance(id);
-        const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
-        }
-
-        // const result = await cursor.limit(1).next();
-        const result = await cursor.limit(1).toArray();
-        return result.length > 0 ? result[0] : undefined;
+        return this.findOne(entityClassOrName, id, optionsOrConditions);
     }
 
     // -------------------------------------------------------------------------

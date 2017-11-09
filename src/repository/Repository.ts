@@ -8,6 +8,7 @@ import {RemoveOptions} from "./RemoveOptions";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {ObjectID} from "../driver/mongodb/typings";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -139,19 +140,21 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      */
-    async insert(entity: Partial<Entity>|Partial<Entity>[], options?: SaveOptions): Promise<void> {
+    async insert(entity: DeepPartial<Entity>|DeepPartial<Entity>[], options?: SaveOptions): Promise<void> {
         return this.manager.insert(this.metadata.target, entity, options);
     }
 
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    async update(conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
+    async update(conditions: DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         return this.manager.update(this.metadata.target, conditions, partialEntity, options);
     }
 
     /**
      * Updates entity partially. Entity will be found by a given id.
+     *
+     * todo: merge it with update method
      */
     async updateById(id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         return this.manager.updateById(this.metadata.target, id, partialEntity, options);
@@ -181,7 +184,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    async delete(conditions: Partial<Entity>, options?: RemoveOptions): Promise<void> {
+    async delete(conditions: DeepPartial<Entity>, options?: RemoveOptions): Promise<void> {
         return this.manager.delete(this.metadata.target, conditions, options);
     }
 
@@ -191,27 +194,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not modify source entity and does not execute listeners and subscribers.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     *
+     * todo: merge it with delete method
      */
     async deleteById(id: any, options?: RemoveOptions): Promise<void> {
         return this.manager.deleteById(this.metadata.target, id, options);
-    }
-
-    /**
-     * Removes entity by a given entity id.
-     *
-     * @deprecated use deleteById method instead.
-     */
-    async removeById(id: any, options?: RemoveOptions): Promise<void> {
-        return this.manager.deleteById(this.metadata.target, id, options);
-    }
-
-    /**
-     * Removes entity by a given entity id.
-     *
-     * @deprecated use deleteById method instead.
-     */
-    async removeByIds(ids: any[], options?: RemoveOptions): Promise<void> {
-        return this.manager.removeByIds(this.metadata.target, ids, options);
     }
 
     /**
@@ -294,38 +281,23 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given options.
      */
+    findOne(id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds first entity that matches given options.
+     */
     findOne(options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
+    findOne(conditions?: DeepPartial<Entity>, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne(optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
-        return this.manager.findOne(this.metadata.target, optionsOrConditions as any);
-    }
-
-    /**
-     * Finds entity by given id.
-     * Optionally find options can be applied.
-     */
-    findOneById(id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
-
-    /**
-     * Finds entity by given id.
-     * Optionally conditions can be applied.
-     */
-    findOneById(id: any, conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
-
-    /**
-     * Finds entity by given id.
-     * Optionally find options or conditions can be applied.
-     */
-    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
-        return this.manager.findOneById(this.metadata.target, id, optionsOrConditions as any);
+    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+        return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions);
     }
 
     /**
@@ -344,6 +316,32 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async clear(): Promise<void> {
         return this.manager.clear(this.metadata.target);
+    }
+
+    /**
+     * Finds entity by given id.
+     * Optionally find options can be applied.
+     *
+     * @deprecated Use findOne(id) instead
+     */
+    findOneById(id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds entity by given id.
+     * Optionally conditions can be applied.
+     *
+     * @deprecated Use findOne(id) instead
+     */
+    findOneById(id: any, conditions?: DeepPartial<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds entity by given id.
+     * Optionally find options or conditions can be applied.
+     *
+     * @deprecated Use findOne(id) instead
+     */
+    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|DeepPartial<Entity>): Promise<Entity|undefined> {
+        return this.manager.findOneById(this.metadata.target, id, optionsOrConditions as any);
     }
 
 }

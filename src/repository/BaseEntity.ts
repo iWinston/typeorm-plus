@@ -8,6 +8,7 @@ import {FindManyOptions} from "../find-options/FindManyOptions";
 import {Connection} from "../connection/Connection";
 import {ObjectType} from "../common/ObjectType";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {ObjectID} from "../driver/mongodb/typings";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -162,7 +163,7 @@ export class BaseEntity {
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends BaseEntity>(this: ObjectType<T>, conditions: Partial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
+    static update<T extends BaseEntity>(this: ObjectType<T>, conditions: DeepPartial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void>;
 
     /**
      * Updates entity partially. Entity can be found by a given find options.
@@ -172,7 +173,7 @@ export class BaseEntity {
     /**
      * Updates entity partially. Entity can be found by a given conditions.
      */
-    static update<T extends BaseEntity>(this: ObjectType<T>, conditionsOrFindOptions: Partial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
+    static update<T extends BaseEntity>(this: ObjectType<T>, conditionsOrFindOptions: DeepPartial<T>|FindOneOptions<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<void> {
         return (this as any).getRepository().update(conditionsOrFindOptions as any, partialEntity, options);
     }
 
@@ -287,35 +288,46 @@ export class BaseEntity {
     /**
      * Finds first entity that matches given options.
      */
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, id?: string|number|Date|ObjectID, options?: FindOneOptions<T>): Promise<T|undefined>;
+
+    /**
+     * Finds first entity that matches given options.
+     */
     static findOne<T extends BaseEntity>(this: ObjectType<T>, options?: FindOneOptions<T>): Promise<T|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    static findOne<T extends BaseEntity>(this: ObjectType<T>, conditions?: DeepPartial<T>): Promise<T|undefined>;
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, conditions?: DeepPartial<T>, options?: FindOneOptions<T>): Promise<T|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
-        return (this as any).getRepository().findOne(optionsOrConditions as any);
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<T>|DeepPartial<T>, maybeOptions?: FindOneOptions<T>): Promise<T|undefined> {
+        return (this as any).getRepository().findOne(optionsOrConditions as any, maybeOptions);
     }
 
     /**
      * Finds entity by given id.
      * Optionally find options can be applied.
+     *
+     * @deprecated use findOne instead
      */
     static findOneById<T extends BaseEntity>(this: ObjectType<T>, id: any, options?: FindOneOptions<T>): Promise<T|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally conditions can be applied.
+     *
+     * @deprecated use findOne instead
      */
     static findOneById<T extends BaseEntity>(this: ObjectType<T>, id: any, conditions?: DeepPartial<T>): Promise<T|undefined>;
 
     /**
      * Finds entity by given id.
      * Optionally find options or conditions can be applied.
+     *
+     * @deprecated use findOne instead
      */
     static findOneById<T extends BaseEntity>(this: ObjectType<T>, id: any, optionsOrConditions?: FindOneOptions<T>|DeepPartial<T>): Promise<T|undefined> {
         return (this as any).getRepository().findOneById(id, optionsOrConditions as any);

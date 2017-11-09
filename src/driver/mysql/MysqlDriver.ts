@@ -14,8 +14,10 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {RandomGenerator} from "../../util/RandomGenerator";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
+import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -260,11 +262,12 @@ export class MysqlDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            const value = parameters[key.substr(1)];
+            let value = parameters[key.substr(1)];
             if (value instanceof Function) {
                 return value();
 
             } else {
+                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(parameters[key.substr(1)]);
                 return "?";
             }
@@ -303,9 +306,6 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value, true);
-
-        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
-            return RandomGenerator.uuid4();
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -477,6 +477,40 @@ export class MysqlDriver implements Driver {
                 err ? fail(err) : ok(dbConnection);
             });
         });
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        // console.log("uuidMap", uuidMap);
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            let value: any;
+            if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
+                value = insertResult.insertId;
+            // } else if (generatedColumn.generationStrategy === "uuid") {
+            //     console.log("getting db value:", generatedColumn.databaseName);
+            //     value = generatedColumn.getEntityValue(uuidMap);
+            }
+
+            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
+        }, {} as ObjectLiteral);
+
+        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return false;
     }
 
     // -------------------------------------------------------------------------

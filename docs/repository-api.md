@@ -136,17 +136,11 @@ await repository.remove([
 ]);
 ```
 
-* `removeById` - Removes entity by entity id.
+* `deleteById` - Deletes entity by entity id or ids.
 
 ```typescript
-await repository.removeById(1);
-```
-
-
-* `removeByIds` - Removes entity by entity ids.
-
-```typescript
-await repository.removeByIds([1, 2, 3]);
+await repository.deleteById(1);
+await repository.deleteById([1, 2, 3]);
 ```
 
 * `count` - Counts entities that match given options. Useful for pagination.
@@ -175,16 +169,11 @@ const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timb
 const users = await repository.findByIds([1, 2, 3]);
 ```
 
-* `findOne` - Finds first entity that matches given find options.
-
-```typescript
-const timber = await repository.findOne({ firstName: "Timber" });
-```
-
-* `findOneById` - Finds entity with given id.
+* `findOne` - Finds first entity that matches given id or find options.
 
 ```typescript
 const user = await repository.findOne(1);
+const timber = await repository.findOne({ firstName: "Timber" });
 ```
 
 * `query` - Executes a raw SQL query.

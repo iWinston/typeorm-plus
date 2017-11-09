@@ -13,6 +13,7 @@ import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with MongoDB.
@@ -287,6 +288,27 @@ export class MongoDriver implements Driver {
      */
     obtainSlaveConnection(): Promise<any> {
         return Promise.resolve();
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        return undefined;
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return false;
     }
 
     // -------------------------------------------------------------------------
