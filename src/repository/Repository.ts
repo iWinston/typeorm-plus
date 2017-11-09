@@ -153,6 +153,8 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Updates entity partially. Entity will be found by a given id.
+     *
+     * todo: merge it with update method
      */
     async updateById(id: any, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
         return this.manager.updateById(this.metadata.target, id, partialEntity, options);
@@ -192,27 +194,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not modify source entity and does not execute listeners and subscribers.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     *
+     * todo: merge it with delete method
      */
     async deleteById(id: any, options?: RemoveOptions): Promise<void> {
         return this.manager.deleteById(this.metadata.target, id, options);
-    }
-
-    /**
-     * Removes entity by a given entity id.
-     *
-     * @deprecated use deleteById method instead.
-     */
-    async removeById(id: any, options?: RemoveOptions): Promise<void> {
-        return this.manager.deleteById(this.metadata.target, id, options);
-    }
-
-    /**
-     * Removes entity by a given entity id.
-     *
-     * @deprecated use deleteById method instead.
-     */
-    async removeByIds(ids: any[], options?: RemoveOptions): Promise<void> {
-        return this.manager.removeByIds(this.metadata.target, ids, options);
     }
 
     /**

@@ -159,14 +159,26 @@ export class SubjectExecutor {
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(Object.keys(groupedInsertSubjects), async groupName => {
             const subjects = groupedInsertSubjects[groupName];
-
             const insertMaps = subjects.map(subject => subject.createValueSetAndPopChangeMap());
-            const insertResult = await this.queryRunner.insert(subjects[0].metadata.target, insertMaps);
+
+            // here we execute our insertion query
+            // we need to enable entity updation because we DO need to have updated insertedMap
+            // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+            // also, we disable listeners because we call them on our own in persistence layer
+            const insertResult = await this.queryRunner
+                .manager
+                .createQueryBuilder()
+                .insert()
+                .into(subjects[0].metadata.target)
+                .values(insertMaps)
+                .updateEntity(true)
+                .callListeners(false)
+                .execute();
 
             subjects.forEach((subject, index) => {
                 subject.identifier = insertResult.identifiers[index];
                 subject.generatedMap = insertResult.generatedMaps[index];
-                subject.insertedValueSet = insertResult.valueSets[index];
+                subject.insertedValueSet = insertMaps[index];
             });
         });
     }
@@ -175,13 +187,34 @@ export class SubjectExecutor {
      * Updates all given subjects in the database.
      */
     protected async executeUpdateOperations(): Promise<void> {
-        await Promise.all(this.updateSubjects.map(subject => {
+        await Promise.all(this.updateSubjects.map(async subject => {
 
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
             const updateMap = subject.createValueSetAndPopChangeMap();
-            return this.queryRunner.update(subject.metadata.target, updateMap, subject.identifier);
+
+            // here we execute our updation query
+            // we need to enable entity updation because we update a subject identifier
+            // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+            // also, we disable listeners because we call them on our own in persistence layer
+            const updateQueryBuilder = this.queryRunner
+                .manager
+                .createQueryBuilder()
+                .update(subject.metadata.target)
+                .set(updateMap)
+                .updateEntity(true)
+                .callListeners(false);
+
+            if (subject.entity) {
+                updateQueryBuilder.whereEntity(subject.identifier);
+
+            } else { // in this case identifier is just conditions object to update by
+                updateQueryBuilder.where(subject.identifier); // todo: do we really have such cases?!
+            }
+
+            const updateResult = await updateQueryBuilder.execute();
+            subject.generatedMap = updateResult.generatedMaps[0];
         }));
     }
 
@@ -203,7 +236,18 @@ export class SubjectExecutor {
                 return subject.identifier;
             });
 
-            return this.queryRunner.delete(subjects[0].metadata.target, deleteMaps);
+            // here we execute our deletion query
+            // we don't need to specify entities and set update entity to true since the only thing query builder
+            // will do for use is a primary keys deletion which is handled by us later once persistence is finished
+            // also, we disable listeners because we call them on our own in persistence layer
+            return this.queryRunner
+                .manager
+                .createQueryBuilder()
+                .delete()
+                .from(subjects[0].metadata.target)
+                .where(deleteMaps)
+                .callListeners(false)
+                .execute();
         });
     }
 

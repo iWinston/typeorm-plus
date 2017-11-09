@@ -79,7 +79,7 @@ describe("persistence > entity updation", () => {
         post!.embed.version.should.be.equal(1);
         post!.text.should.be.equal("Hello Complexity");
 
-        const loadedPost = await connection.manager.findOne(PostComplex, { firstId: 1, embed: { secondId: 3 }})
+        const loadedPost = await connection.manager.findOne(PostComplex, { firstId: 1, embed: { secondId: 3 }});
         loadedPost!.firstId.should.be.equal(1);
         loadedPost!.embed.secondId.should.be.equal(3);
         loadedPost!.embed.createDate.should.be.instanceof(Date);

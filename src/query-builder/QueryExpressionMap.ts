@@ -62,6 +62,11 @@ export class QueryExpressionMap {
     returning: string|string[];
 
     /**
+     * Extra returning columns to be added to the returning statement if driver supports it.
+     */
+    extraReturningColumns: ColumnMetadata[] = [];
+
+    /**
      * JOIN queries.
      */
     joinAttributes: JoinAttribute[] = [];
@@ -206,6 +211,11 @@ export class QueryExpressionMap {
      * Used in INSERT query.
      */
     insertColumns: string[] = [];
+
+    /**
+     * Used if user wants to update or delete a specific entities.
+     */
+    whereEntities: ObjectLiteral[] = [];
 
     /**
      * Indicates if entity must be updated after insertion / updation.

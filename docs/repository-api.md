@@ -136,17 +136,11 @@ await repository.remove([
 ]);
 ```
 
-* `removeById` - Removes entity by entity id.
+* `deleteById` - Deletes entity by entity id or ids.
 
 ```typescript
-await repository.removeById(1);
-```
-
-
-* `removeByIds` - Removes entity by entity ids.
-
-```typescript
-await repository.removeByIds([1, 2, 3]);
+await repository.deleteById(1);
+await repository.deleteById([1, 2, 3]);
 ```
 
 * `count` - Counts entities that match given options. Useful for pagination.

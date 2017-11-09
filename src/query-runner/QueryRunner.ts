@@ -6,9 +6,6 @@ import {Connection} from "../connection/Connection";
 import {ReadStream} from "../platform/PlatformTools";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {UpdateResult} from "../query-builder/result/UpdateResult";
-import {DeleteResult} from "../query-builder/result/DeleteResult";
-import {InsertResult} from "../query-builder/result/InsertResult";
 import {Broadcaster} from "../subscriber/Broadcaster";
 
 /**
@@ -98,22 +95,6 @@ export interface QueryRunner {
      * Returns raw data stream.
      */
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>; // todo: ReadStream gonna bring problems in websql driver
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     */
-    insert(target: Function|string, values: ObjectLiteral|ObjectLiteral[]): Promise<InsertResult>;
-
-    /**
-     * Updates rows that match given simple conditions in the given table.
-     */
-    update(target: Function|string, values: ObjectLiteral, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<UpdateResult>;
-
-    /**
-     * Performs a simple DELETE query by a given conditions in a given table.
-     */
-    delete(target: Function|string, condition: ObjectLiteral|ObjectLiteral[]|string, parameters?: ObjectLiteral): Promise<DeleteResult>;
 
     /**
      * Inserts new values into closure table.

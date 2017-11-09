@@ -134,17 +134,11 @@ await manager.remove([
 ]);
 ```
 
-* `removeById` - Removes entity by entity id.
+* `removeById` - Deletes entities by entity id or ids.
 
 ```typescript
-await manager.removeById(User, 1);
-```
-
-
-* `removeByIds` - Removes entity by entity ids.
-
-```typescript
-await manager.removeByIds(User, [1, 2, 3]);
+await manager.deleteById(User, 1);
+await manager.deleteById(User, [1, 2, 3]);
 ```
 
 * `count` - Counts entities that match given options. Useful for pagination.

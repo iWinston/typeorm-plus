@@ -419,16 +419,6 @@ export abstract class QueryBuilder<Entity> {
     }
 
     /**
-     * Indicates if entity must be updated after insertion / updation / remove operations.
-     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
-     * Enabled by default.
-     */
-    updateEntity(enabled: boolean): this {
-        this.expressionMap.updateEntity = enabled;
-        return this;
-    }
-
-    /**
      * Indicates if listeners and subscribers must be called before and after query execution.
      * Enabled by default.
      */
@@ -598,10 +588,10 @@ export abstract class QueryBuilder<Entity> {
 
         // also add columns we must auto-return to perform entity updation
         // if user gave his own returning
-        if (this.expressionMap.queryType !== "delete" &&
-            typeof this.expressionMap.returning !== "string" &&
+        if (typeof this.expressionMap.returning !== "string" &&
+            this.expressionMap.extraReturningColumns.length > 0 &&
             this.connection.driver.isReturningSqlSupported()) {
-            columns.push(...this.getEntityUpdationReturningColumns().filter(column => {
+            columns.push(...this.expressionMap.extraReturningColumns.filter(column => {
                 return columns.indexOf(column) === -1;
             }));
         }
@@ -641,29 +631,6 @@ export abstract class QueryBuilder<Entity> {
             });
         }
         return columns;
-    }
-
-    /**
-     * Gets columns required by
-     */
-    protected getEntityUpdationReturningColumns(): ColumnMetadata[] {
-
-        // if update entity mode is disabled or we aren't working with entity we don't need this functionality
-        if (!this.expressionMap.updateEntity || !this.expressionMap.mainAlias!.hasMetadata)
-            return [];
-
-        // for databases which support returning statement we need to return extra columns like id
-        // for other databases we don't need to return id column since its returned by a driver already
-        const needToCheckGenerated = this.connection.driver.isReturningSqlSupported() && this.expressionMap.queryType === "insert";
-
-        // filter out the columns of which we need database inserted values to update our entity
-        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
-            return  column.default !== undefined ||
-                    (needToCheckGenerated && column.isGenerated)  ||
-                    column.isCreateDate ||
-                    column.isUpdateDate ||
-                    column.isVersion;
-        });
     }
 
     /**

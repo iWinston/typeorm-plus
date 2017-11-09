@@ -13,9 +13,6 @@ import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
-import {InsertResult} from "../../query-builder/result/InsertResult";
-import {UpdateResult} from "../../query-builder/result/UpdateResult";
-import {DeleteResult} from "../../query-builder/result/DeleteResult";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
@@ -239,48 +236,6 @@ export class MysqlQueryRunner implements QueryRunner {
                 fail(err);
             }
         });
-    }
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     */
-    async insert(target: Function|string, values: ObjectLiteral|ObjectLiteral[]): Promise<InsertResult> {
-        return await this.manager
-            .createQueryBuilder()
-            .insert()
-            .into(target)
-            .values(values)
-            .callListeners(false)
-            .execute();
-    }
-
-    /**
-     * Updates rows that match given conditions in the given table.
-     */
-    async update(target: Function|string, values: ObjectLiteral, condition: ObjectLiteral|string, parameters?: ObjectLiteral): Promise<UpdateResult> {
-        return this.manager
-            .createQueryBuilder()
-            .update(target)
-            .set(values)
-            .where(condition)
-            .setParameters(parameters || {})
-            .callListeners(false)
-            .execute();
-    }
-
-    /**
-     * Deletes from the given table by a given conditions.
-     */
-    async delete(target: Function|string, condition: ObjectLiteral|ObjectLiteral[]|string, parameters?: ObjectLiteral): Promise<DeleteResult> {
-        return this.manager
-            .createQueryBuilder()
-            .delete()
-            .from(target)
-            .where(condition)
-            .setParameters(parameters || {})
-            .callListeners(false)
-            .execute();
     }
 
     /**

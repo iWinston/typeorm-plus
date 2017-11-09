@@ -3,7 +3,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/schema/Table";
 import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
 import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
@@ -246,7 +245,7 @@ export class OracleQueryRunner implements QueryRunner {
      * Returns value of the generated column if given and generate column exist in the table.
      *
      * todo: reimplement, use QueryBuilder
-     */
+
     async insert(tableName: string, keyValues: ObjectLiteral): Promise<any> {
         // todo: fix generated columns
         let generatedColumn: ColumnMetadata|undefined;
@@ -271,13 +270,13 @@ export class OracleQueryRunner implements QueryRunner {
         } else {
             return this.query(insertSql, parameters);
         }
-    }
+    } */
 
     /**
      * Updates rows that match given conditions in the given table.
      *
      * todo: reimplement, use QueryBuilder
-     */
+
     async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> {
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
@@ -286,20 +285,20 @@ export class OracleQueryRunner implements QueryRunner {
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
         await this.query(sql, allParameters);
-    }
+    }*/
 
     /**
      * Deletes from the given table by a given conditions.
      *
      * todo: reimplement, use QueryBuilder
-     */
+
     async delete(tableName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
         const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
         await this.query(sql, parameters);
-    }
+    }*/
 
     /**
      * Inserts rows into the closure table.
