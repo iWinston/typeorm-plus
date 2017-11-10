@@ -24,7 +24,7 @@ import {
     InsertWriteOpResult,
     MapReduceOptions,
     MongoCountPreferences,
-    MongodbIndexOptions, ObjectID,
+    MongodbIndexOptions,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -35,6 +35,7 @@ import {
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {EntityId} from "./EntityId";
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -97,18 +98,8 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: EntityId|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions as any);
-    }
-
-    /**
-     * Finds entity by given id.
-     * Optionally find options or conditions can be applied.
-     *
-     * @deprecated use findOne method instead
-     */
-    findOneById(id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        return this.manager.findOneById(this.metadata.target, id, optionsOrConditions);
     }
 
     /**

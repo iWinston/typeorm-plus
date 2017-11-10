@@ -621,6 +621,19 @@ export class EntityMetadata {
     }
 
     /**
+     * Replaces in a new object all property name of the given entity into their database names.
+     */
+    convertPropertiesMapToDatabaseMap(entity: ObjectLiteral) {
+        const map: ObjectLiteral = {};
+        this.columns.forEach(column => {
+            if (column.isVirtual) return;
+
+            OrmUtils.mergeDeep(map, column.createValueMap(column.getEntityValue(entity)));
+        });
+        return map;
+    }
+
+    /**
      * Same as getEntityIdMap, but instead of id column property names it returns database column names.
      */
     getDatabaseEntityIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {

@@ -4,7 +4,7 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe("mongodb > basic repository actions", () => {
+describe.only("mongodb > basic repository actions", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {MongoRepository} from "../../../../../src/repository/MongoRepository";
 
-describe("mongodb > MongoRepository", () => {
+describe.only("mongodb > MongoRepository", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

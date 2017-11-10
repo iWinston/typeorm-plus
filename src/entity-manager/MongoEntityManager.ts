@@ -26,7 +26,7 @@ import {
     MongoCallback,
     MongoCountPreferences,
     MongodbIndexOptions,
-    MongoError, ObjectID,
+    MongoError,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -43,6 +43,13 @@ import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {DeepPartial} from "../common/DeepPartial";
+import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
+import {SaveOptions} from "../repository/SaveOptions";
+import {InsertResult} from "../query-builder/result/InsertResult";
+import {UpdateResult} from "../query-builder/result/UpdateResult";
+import {RemoveOptions} from "../repository/RemoveOptions";
+import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {EntityId} from "../repository/EntityId";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -146,12 +153,12 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
-                          optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>,
+                          optionsOrConditions?: EntityId|FindOneOptions<Entity>|DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
-        const id = optionsOrConditions instanceof ObjectID || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
         if (id) {
-            const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
             query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
@@ -166,11 +173,53 @@ export class MongoEntityManager extends EntityManager {
     }
 
     /**
-     * Finds entity by given id.
-     * Optionally find options or conditions can be applied.
+     * Inserts a given entity into the database.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient INSERT query.
+     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     * You can execute bulk inserts using this method.
      */
-    async findOneById<Entity>(entityClassOrName: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        return this.findOne(entityClassOrName, id, optionsOrConditions);
+    async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<InsertResult> {
+        const result = new InsertResult();
+        if (entity instanceof Array) {
+            result.raw = await this.insertMany(target, entity);
+            result.raw.insertedIds.forEach((insertedId: any) => {
+                result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
+                result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
+            });
+
+        } else {
+            result.raw = await this.insertOne(target, entity);
+            result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), result.raw.insertedId)!);
+            result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), result.raw.insertedId)!);
+        }
+
+        return result;
+    }
+
+    /**
+     * Updates entity partially. Entity can be found by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
+     */
+    async update<Entity>(target: ObjectType<Entity>|string, criteria: EntityId|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+        await this.updateMany(target, this.convertMixedIdToQueryId(criteria), partialEntity);
+
+        return new UpdateResult();
+    }
+
+    /**
+     * Deletes entities by a given conditions.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    async delete<Entity>(target: ObjectType<Entity>|string, criteria: EntityId|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+        console.log(this.convertMixedIdToQueryId(criteria));
+        await this.deleteMany(target, this.convertMixedIdToQueryId(criteria));
+
+        return new DeleteResult();
     }
 
     // -------------------------------------------------------------------------
@@ -542,6 +591,19 @@ export class MongoEntityManager extends EntityManager {
             }
             return orderCriteria;
         }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Ensures given id is an id for query.
+     */
+    protected convertMixedIdToQueryId(idMap: any): ObjectLiteral {
+        if (idMap instanceof Object)
+            return idMap;
+
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        return {
+            "_id": (idMap instanceof objectIdInstance) ? idMap : new objectIdInstance(idMap)
+        };
     }
 
 }

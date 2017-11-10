@@ -36,6 +36,8 @@ Use `findOne(id)` method instead now.
 * now insert / update / delete queries built with QueryBuilder can be wrapped into a transaction using `useTransaction(true)` method of the QueryBuilder.
 * `insert`, `update` and `delete` methods of `QueryRunner` now use `InsertQueryRunner`, `UpdateQueryRunner` and `DeleteQueryRunner` inside
 * removed deprecated `removeById`, `removeByIds` methods
+* removed `deleteById` method - use `delete(id)` method instead now
+* removed `updateById` method - use `update(id)` method instead now
 
 ## 0.1.2 (latest)
 

@@ -5,6 +5,9 @@ import {SubjectTopoligicalSorter} from "./SubjectTopoligicalSorter";
 import {SubjectChangedColumnsComputer} from "./SubjectChangedColumnsComputer";
 import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierError";
 import {SubjectRemovedAndUpdatedError} from "../error/SubjectRemovedAndUpdatedError";
+import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
+import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
+import {InsertResult} from "../query-builder/result/InsertResult";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -160,20 +163,30 @@ export class SubjectExecutor {
         await PromiseUtils.runInSequence(Object.keys(groupedInsertSubjects), async groupName => {
             const subjects = groupedInsertSubjects[groupName];
             const insertMaps = subjects.map(subject => subject.createValueSetAndPopChangeMap());
+            let insertResult: InsertResult;
 
-            // here we execute our insertion query
-            // we need to enable entity updation because we DO need to have updated insertedMap
-            // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
-            // also, we disable listeners because we call them on our own in persistence layer
-            const insertResult = await this.queryRunner
-                .manager
-                .createQueryBuilder()
-                .insert()
-                .into(subjects[0].metadata.target)
-                .values(insertMaps)
-                .updateEntity(true)
-                .callListeners(false)
-                .execute();
+            // for mongodb we have a bit different insertion logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+
+                const manager = this.queryRunner.manager as MongoEntityManager;
+                insertResult = await manager.insert(subjects[0].metadata.target, insertMaps);
+
+            } else {
+
+                // here we execute our insertion query
+                // we need to enable entity updation because we DO need to have updated insertedMap
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                insertResult = await this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(subjects[0].metadata.target)
+                    .values(insertMaps)
+                    .updateEntity(true)
+                    .callListeners(false)
+                    .execute();
+            }
 
             subjects.forEach((subject, index) => {
                 subject.identifier = insertResult.identifiers[index];
@@ -194,27 +207,35 @@ export class SubjectExecutor {
 
             const updateMap = subject.createValueSetAndPopChangeMap();
 
-            // here we execute our updation query
-            // we need to enable entity updation because we update a subject identifier
-            // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
-            // also, we disable listeners because we call them on our own in persistence layer
-            const updateQueryBuilder = this.queryRunner
-                .manager
-                .createQueryBuilder()
-                .update(subject.metadata.target)
-                .set(updateMap)
-                .updateEntity(true)
-                .callListeners(false);
+            // for mongodb we have a bit different updation logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                const manager = this.queryRunner.manager as MongoEntityManager;
+                await manager.update(subject.metadata.target, subject.identifier, updateMap);
 
-            if (subject.entity) {
-                updateQueryBuilder.whereEntity(subject.identifier);
+            } else {
 
-            } else { // in this case identifier is just conditions object to update by
-                updateQueryBuilder.where(subject.identifier); // todo: do we really have such cases?!
+                // here we execute our updation query
+                // we need to enable entity updation because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                const updateQueryBuilder = this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .update(subject.metadata.target)
+                    .set(updateMap)
+                    .updateEntity(true)
+                    .callListeners(false);
+
+                if (subject.entity) {
+                    updateQueryBuilder.whereEntity(subject.identifier);
+
+                } else { // in this case identifier is just conditions object to update by
+                    updateQueryBuilder.where(subject.identifier);
+                }
+
+                const updateResult = await updateQueryBuilder.execute();
+                subject.generatedMap = updateResult.generatedMaps[0];
             }
-
-            const updateResult = await updateQueryBuilder.execute();
-            subject.generatedMap = updateResult.generatedMaps[0];
         }));
     }
 
@@ -236,18 +257,26 @@ export class SubjectExecutor {
                 return subject.identifier;
             });
 
-            // here we execute our deletion query
-            // we don't need to specify entities and set update entity to true since the only thing query builder
-            // will do for use is a primary keys deletion which is handled by us later once persistence is finished
-            // also, we disable listeners because we call them on our own in persistence layer
-            return this.queryRunner
-                .manager
-                .createQueryBuilder()
-                .delete()
-                .from(subjects[0].metadata.target)
-                .where(deleteMaps)
-                .callListeners(false)
-                .execute();
+            // for mongodb we have a bit different updation logic
+            if (this.queryRunner instanceof MongoQueryRunner) {
+                const manager = this.queryRunner.manager as MongoEntityManager;
+                await manager.delete(subjects[0].metadata.target, deleteMaps);
+
+            } else {
+
+                // here we execute our deletion query
+                // we don't need to specify entities and set update entity to true since the only thing query builder
+                // will do for use is a primary keys deletion which is handled by us later once persistence is finished
+                // also, we disable listeners because we call them on our own in persistence layer
+                await this.queryRunner
+                    .manager
+                    .createQueryBuilder()
+                    .delete()
+                    .from(subjects[0].metadata.target)
+                    .where(deleteMaps)
+                    .callListeners(false)
+                    .execute();
+            }
         });
     }
 

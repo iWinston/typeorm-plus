@@ -313,7 +313,7 @@ export class ColumnMetadata {
     /**
      * Creates entity id map from the given entity ids array.
      */
-    createValueMap(value: any) {
+    createValueMap(value: any, useDatabaseName = false) {
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -323,7 +323,12 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
+            const propertyNames = [];
+            if (useDatabaseName) {
+                propertyNames.push(...this.embeddedMetadata.parentDatabaseNames);
+            } else {
+                propertyNames.push(...this.embeddedMetadata.parentPropertyNames);
+            }
 
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
@@ -342,7 +347,7 @@ export class ColumnMetadata {
                 if (this.generationStrategy === "increment" && this.type === "bigint")
                     value = String(value);
 
-                map[this.propertyName] = value;
+                map[useDatabaseName ? this.databaseName : this.propertyName] = value;
                 return map;
             };
             return extractEmbeddedColumnValue(propertyNames, {});
@@ -353,7 +358,7 @@ export class ColumnMetadata {
             if (this.generationStrategy === "increment" && this.type === "bigint")
                 value = String(value);
 
-            return { [this.propertyName]: value };
+            return { [useDatabaseName ? this.databaseName : this.propertyName]: value };
         }
     }
 

@@ -42,7 +42,7 @@ describe("repository > deleteById methods", function() {
         ]);
 
         // remove one
-        await postRepository.deleteById(1);
+        await postRepository.delete(1);
 
         // load to check
         const loadedPosts = await postRepository.find();
@@ -76,7 +76,7 @@ describe("repository > deleteById methods", function() {
         ]);
 
         // remove multiple
-        await postRepository.deleteById([2, 3]);
+        await postRepository.delete([2, 3]);
 
         // load to check
         const loadedPosts = await postRepository.find();
