@@ -2,6 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
 describe("query runner > change column", () => {
 
@@ -9,7 +10,7 @@ describe("query runner > change column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mssql", "mysql"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -19,44 +20,110 @@ describe("query runner > change column", () => {
     it("should correctly change column and revert change", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-
         let table = await queryRunner.getTable("post");
-        table!.findColumnByName("text")!.length!.should.be.equal("255");
+
+        const nameColumn = table!.findColumnByName("name")!;
+        nameColumn!.default!.should.exist;
+        nameColumn!.isUnique.should.be.false;
+
+        const changedNameColumn = nameColumn.clone();
+        changedNameColumn.default = undefined;
+        changedNameColumn.isUnique = true;
+        await queryRunner.changeColumn(table!, nameColumn, changedNameColumn);
+
+        table = await queryRunner.getTable("post");
+        expect(table!.findColumnByName("name")!.default).to.be.undefined;
+        table!.findColumnByName("name")!.isUnique.should.be.true;
 
         const textColumn = table!.findColumnByName("text")!;
+        textColumn!.length!.should.be.equal("255");
+
         const changedTextColumn = textColumn.clone();
+        changedTextColumn.name = "description";
         changedTextColumn.isPrimary = true;
         changedTextColumn.length = "500";
         changedTextColumn.default = "'default text'";
         await queryRunner.changeColumn(table!, textColumn, changedTextColumn);
 
+        // column name was changed to 'description'
         table = await queryRunner.getTable("post");
-        table!.findColumnByName("text")!.isPrimary.should.be.true;
-        table!.findColumnByName("text")!.length!.should.be.equal("500");
-        table!.findColumnByName("text")!.default!.should.exist;
+        table!.findColumnByName("description")!.isPrimary.should.be.true;
+        table!.findColumnByName("description")!.length!.should.be.equal("500");
+        table!.findColumnByName("description")!.default!.should.exist;
 
-        const idColumn = table!.findColumnByName("id")!;
-        const changedIdColumn = idColumn.clone();
-        changedIdColumn!.isUnique = false;
-
+        let idColumn = table!.findColumnByName("id")!;
+        let changedIdColumn = idColumn.clone();
+        changedIdColumn!.isPrimary = false;
         await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
+
         table = await queryRunner.getTable("post");
-        table!.findColumnByName("id")!.isUnique.should.be.false;
+        table!.findColumnByName("id")!.isPrimary.should.be.false;
 
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isPrimary.should.be.true;
+        table!.findColumnByName("name")!.default!.should.exist;
+        table!.findColumnByName("name")!.isUnique.should.be.false;
         table!.findColumnByName("text")!.isPrimary.should.be.false;
         table!.findColumnByName("text")!.length!.should.be.equal("255");
         expect(table!.findColumnByName("text")!.default).to.be.undefined;
-        table!.findColumnByName("id")!.isUnique.should.be.true;
-        table!.findColumnByName("text")!.length!.should.be.equal("255");
+
+        await queryRunner.release();
+    })));
+
+    it("should correctly change column 'isGenerated' property and revert change", () => Promise.all(connections.map(async connection => {
+
+        // SqlServer does not support changing of isGenerated property.
+        if (connection.driver instanceof SqlServerDriver)
+            return;
+
+        const queryRunner = connection.createQueryRunner();
+        let table = await queryRunner.getTable("post");
+        let idColumn = table!.findColumnByName("id")!;
+        let changedIdColumn = idColumn.clone();
 
         changedIdColumn.isGenerated = true;
         changedIdColumn.generationStrategy = "increment";
-        await queryRunner.changeColumn(table!, idColumn, changedIdColumn).should.be.rejected;
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
 
-        await queryRunner.release();
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.true;
+        table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
+
+        await queryRunner.executeMemoryDownSql();
+        queryRunner.clearSqlMemory();
+
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.false;
+        expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
+
+        table = await queryRunner.getTable("post");
+        idColumn = table!.findColumnByName("id")!;
+        changedIdColumn = idColumn.clone();
+        changedIdColumn.isPrimary = false;
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
+
+        // check case when both primary and generated properties set to true
+        table = await queryRunner.getTable("post");
+        idColumn = table!.findColumnByName("id")!;
+        changedIdColumn = idColumn.clone();
+        changedIdColumn.isPrimary = true;
+        changedIdColumn.isGenerated = true;
+        changedIdColumn.generationStrategy = "increment";
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
+
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.true;
+        table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
+
+        await queryRunner.executeMemoryDownSql();
+        queryRunner.clearSqlMemory();
+
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.false;
+        expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
+
     })));
 
 });

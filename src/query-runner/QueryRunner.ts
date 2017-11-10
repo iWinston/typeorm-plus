@@ -188,12 +188,12 @@ export interface QueryRunner {
     /**
      * Creates a new table.
      */
-    createTable(table: Table, ifNotExist?: boolean): Promise<void>;
+    createTable(table: Table, ifNotExist?: boolean, createForeignKeys?: boolean, createIndices?: boolean): Promise<void>;
 
     /**
      * Drops a table.
      */
-    dropTable(table: Table|string, ifExist?: boolean): Promise<void>;
+    dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>;
 
     /**
      * Renames a table.
@@ -218,7 +218,7 @@ export interface QueryRunner {
     /**
      * Renames a column.
      */
-    renameColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn|string): Promise<void>;
+    renameColumn(table: Table|string, oldColumnOrName: TableColumn|string, newColumnOrName: TableColumn|string): Promise<void>;
 
     /**
      * Changes a column in the table.
@@ -293,7 +293,7 @@ export interface QueryRunner {
     createIndex(table: Table|string, index: TableIndex): Promise<void>;
 
     /**
-     * Drops an index from the table.
+     * Drops an index.
      */
     dropIndex(table: Table|string, index: TableIndex|string): Promise<void>;
 

@@ -3,6 +3,7 @@ import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {TableColumn} from "../schema-builder/table/TableColumn";
 
 export abstract class BaseQueryRunner {
 
@@ -179,6 +180,22 @@ export abstract class BaseQueryRunner {
         const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
         if (foundTable)
             this.loadedTables[this.loadedTables.indexOf(foundTable)] = changedTable;
+    }
+
+    /**
+     * Checks if at least one of column properties was changed.
+     */
+    protected isColumnChanged(oldColumn: TableColumn, newColumn: TableColumn, checkDefault?: boolean): boolean {
+        return oldColumn.type !== newColumn.type
+            || oldColumn.length !== newColumn.length
+            || oldColumn.charset !== newColumn.charset
+            || oldColumn.collation !== newColumn.collation
+            || oldColumn.precision !== newColumn.precision
+            || oldColumn.scale !== newColumn.scale
+            || (checkDefault && oldColumn.default !== newColumn.default)
+            || oldColumn.isNullable !== newColumn.isNullable
+            || oldColumn.comment !== newColumn.comment
+            || oldColumn.enum !== newColumn.enum;
     }
 
     /**

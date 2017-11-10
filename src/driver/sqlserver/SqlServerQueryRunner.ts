@@ -501,7 +501,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
 
-        // if skipForeignKeys is true, we just drop the table, otherwise we also drop table foreign keys.
+        // if createForeignKeys is true, we must drop created foreign keys in down query.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
         if (createForeignKeys)
             table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
@@ -540,7 +540,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             });
         }
 
-        // if skipForeignKeys is true, we just drop the table, otherwise we also drop table foreign keys.
+        // if dropForeignKeys is true, we just drop the table, otherwise we also drop table foreign keys.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
         if (dropForeignKeys)
             table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
@@ -552,7 +552,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Renames the table.
+     * Renames a table.
      */
     async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
         const oldTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
@@ -637,14 +637,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Renames column in the given table.
      */
     async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const oldColumnName = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName.name : oldTableColumnOrName;
-        const newColumnName = newTableColumnOrName instanceof TableColumn ? newTableColumnOrName.name : newTableColumnOrName;
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
+        if (!oldColumn)
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        const up = `EXEC sp_rename '${this.escapeTableName(tableName, true)}.${oldColumnName}', '${newColumnName}', 'COLUMN'`;
-        const down = `EXEC sp_rename '${this.escapeTableName(tableName, true)}.${newColumnName}', '${oldColumnName}', 'COLUMN'`;
+        let newColumn;
+        if (newTableColumnOrName instanceof TableColumn) {
+            newColumn = newTableColumnOrName;
+        } else {
+            newColumn = oldColumn.clone();
+            newColumn.name = newTableColumnOrName;
+        }
 
-        await this.executeQueries(up, down);
+        await this.changeColumn(table, oldColumn, newColumn);
     }
 
     /**
@@ -663,11 +669,105 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
-            throw new Error(`Changing column's "isGenerated" property is not supported. Drop column and recreate it with a new "isGenerated" property instead.`);
+            throw new Error(`Changing column's "isGenerated" property is not supported in SqlServer driver. Drop column and recreate it with a new "isGenerated" property instead.`);
 
         } else {
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, newColumn, true, false)}`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, oldColumn, true, false)}`);
+            if (newColumn.name !== oldColumn.name) {
+
+                // we need database name and schema name to rename FK constraints
+                let dbName: string|undefined = undefined;
+                let schemaName: string|undefined = undefined;
+                const splittedName = table.name.split(".");
+                if (splittedName.length === 3) {
+                    dbName = splittedName[0];
+                    if (splittedName[1] !== "")
+                        schemaName = splittedName[1];
+
+                } else if (splittedName.length === 2) {
+                    schemaName = splittedName[0];
+                }
+
+                // rename the column
+                upQueries.push(`EXEC sp_rename "${this.escapeTableName(table, true)}.${oldColumn.name}", "${newColumn.name}", "COLUMN"`);
+                downQueries.push(`EXEC sp_rename "${this.escapeTableName(table, true)}.${newColumn.name}", "${oldColumn.name}", "COLUMN"`);
+
+                if (oldColumn.isPrimary === true) {
+                    const primaryColumns = clonedTable.primaryColumns;
+
+                    // build old primary constraint name
+                    const columnNames = primaryColumns.map(column => column.name);
+                    const oldPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+
+                    // replace old column name with new column name
+                    columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
+                    columnNames.push(newColumn.name);
+
+                    // build new primary constraint name
+                    const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+
+                    // rename primary constraint
+                    upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${oldPkName}", "${newPkName}"`);
+                    downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newPkName}", "${oldPkName}"`);
+                }
+
+                // rename index constraints
+                clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                    index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
+                    index.columnNames.push(newColumn.name);
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+                    upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${index.name}", "${newIndexName}", "INDEX"`);
+                    downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newIndexName}", "${index.name}", "INDEX"`);
+                });
+
+                // this function concat database name and schema name to the foreign key.
+                // needs because FK name is relevant to the schema and database.
+                const buildForeignKeyName = (fkName: string): string => {
+                    let joinedFkName = fkName;
+                    if (schemaName)
+                        joinedFkName = schemaName + "." + joinedFkName;
+                    if (dbName)
+                        joinedFkName = dbName + "." + joinedFkName;
+
+                    return joinedFkName;
+                };
+
+                // rename foreign key constraints
+                clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                    foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
+                    foreignKey.columnNames.push(newColumn.name);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+                    upQueries.push(`EXEC sp_rename "${buildForeignKeyName(foreignKey.name!)}", "${newForeignKeyName}"`);
+                    downQueries.push(`EXEC sp_rename "secondDB.dbo.${buildForeignKeyName(newForeignKeyName)}", "${foreignKey.name}"`);
+                });
+
+                // rename check constraints
+                clonedTable.findColumnChecks(oldColumn).forEach(check => {
+                    check.columnNames.splice(check.columnNames.indexOf(oldColumn.name), 1);
+                    check.columnNames.push(newColumn.name);
+                    const newCheckName = this.connection.namingStrategy.checkConstraintName(clonedTable, check.columnNames);
+                    upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${check.name}", "${newCheckName}"`);
+                    downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newCheckName}", "${check.name}"`);
+                });
+
+                // rename unique constraints
+                clonedTable.findColumnUniques(oldColumn).forEach(unique => {
+                    unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
+                    unique.columnNames.push(newColumn.name);
+                    const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
+                    upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${unique.name}", "${newUniqueName}"`);
+                    downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newUniqueName}", "${unique.name}"`);
+                });
+
+                // rename old column in the Table object
+                const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
+                clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
+                oldColumn.name = newColumn.name;
+            }
+
+            if (this.isColumnChanged(newColumn, oldColumn)) {
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, newColumn, true, false)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, oldColumn, true, false)}`);
+            }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
                 const primaryColumns = clonedTable.primaryColumns;
@@ -688,7 +788,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
 
                 } else if (newColumn.isPrimary === false) {
-                    primaryColumns.splice(primaryColumns.indexOf(newColumn), 1);
+                    const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
+                    primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
+
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
                         const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
@@ -722,13 +824,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             if (newColumn.default !== oldColumn.default) {
                 if (newColumn.default !== null && newColumn.default !== undefined) {
                     const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
-                    // const normalizedDefault = this.connection.driver.normalizeDefault(newColumn.default);
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${defaultName}"`);
 
                 } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
                     const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
-                    // const normalizedDefault = this.connection.driver.normalizeDefault(oldColumn.default);
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${defaultName}"`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`);
                 }
@@ -782,7 +882,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             if (foundUnique)
                 clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueName}" UNIQUE (${column.name})`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueName}" UNIQUE ("${column.name}")`);
         }
 
         if (column.default !== null && column.default !== undefined) {
@@ -898,7 +998,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -954,7 +1054,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     }
 
     /**
-     * Drops an index from the table.
+     * Drops an index.
      */
     async dropIndex(tableOrName: Table|string, indexOrName: TableIndex|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
@@ -1010,11 +1110,17 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     // Protected Methods
     // -------------------------------------------------------------------------
 
+    /**
+     * Return current database.
+     */
     protected async getCurrentDatabase(): Promise<string> {
         const currentDBQuery = await this.query(`SELECT DB_NAME() AS db_name`);
         return currentDBQuery[0]["db_name"];
     }
 
+    /**
+     * Return current schema.
+     */
     protected async getCurrentSchema(): Promise<string> {
         const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS schema_name`);
         return currentSchemaQuery[0]["schema_name"];
@@ -1172,6 +1278,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                         tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
                         tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
+
                     tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
@@ -1183,6 +1290,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                         tableColumn.generationStrategy = "uuid";
                         tableColumn.default = undefined;
                     }
+
                     tableColumn.isUnique = isUnique;
                     tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"];
@@ -1292,7 +1400,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
                 let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapeTableName(fk.referencedTableName)} (${referencedColumnNames})`;

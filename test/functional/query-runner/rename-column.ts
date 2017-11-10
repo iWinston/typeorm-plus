@@ -2,6 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Table} from "../../../src/schema-builder/table/Table";
 
 describe("query runner > rename column", () => {
 
@@ -36,6 +37,7 @@ describe("query runner > rename column", () => {
         table!.findColumnByName("title")!.should.be.exist;
         table!.findColumnByName("description")!.should.be.exist;
 
+        console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
@@ -43,6 +45,98 @@ describe("query runner > rename column", () => {
         table!.findColumnByName("text")!.should.be.exist;
         expect(table!.findColumnByName("title")).to.be.undefined;
         expect(table!.findColumnByName("description")).to.be.undefined;
+
+        await queryRunner.release();
+    })));
+
+    it("should correctly rename column with all constraints and revert rename", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+
+        let table = await queryRunner.getTable("post");
+        const idColumn = table!.findColumnByName("id")!;
+        await queryRunner.renameColumn(table!, idColumn, "id2");
+
+        // should successfully drop pk if pk constraint was correctly renamed.
+        await queryRunner.dropPrimaryKey(table!);
+
+        table = await queryRunner.getTable("post");
+        expect(table!.findColumnByName("id")).to.be.undefined;
+        table!.findColumnByName("id2")!.should.be.exist;
+
+        const oldUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
+        let tableUnique = table!.uniques.find(unique => {
+            return !!unique.columnNames.find(columnName => columnName === "tag");
+        });
+        tableUnique!.name!.should.be.equal(oldUniqueConstraintName);
+
+        await queryRunner.renameColumn(table!, "text", "text2");
+
+        table = await queryRunner.getTable("post");
+        const newUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text2", "tag"]);
+        tableUnique = table!.uniques.find(unique => {
+            return !!unique.columnNames.find(columnName => columnName === "tag");
+        });
+        tableUnique!.name!.should.be.equal(newUniqueConstraintName);
+
+        await queryRunner.createTable(new Table({
+            name: "question",
+            columns: [
+                {
+                    name: "id",
+                    type: "int",
+                    isPrimary: true,
+                    isGenerated: true,
+                    generationStrategy: "increment"
+                },
+                {
+                    name: "name",
+                    type: "varchar",
+                }
+            ],
+            indices: [{ columnNames: ["name"] }]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "category",
+            columns: [
+                {
+                    name: "id",
+                    type: "int",
+                    isPrimary: true,
+                    isGenerated: true,
+                    generationStrategy: "increment"
+                },
+                {
+                    name: "questionId",
+                    type: "int",
+                    isUnique: true
+                }
+            ],
+            foreignKeys: [
+                {
+                    columnNames: ["questionId"],
+                    referencedTableName: "question",
+                    referencedColumnNames: ["id"]
+                }
+            ]
+        }));
+
+        await queryRunner.renameColumn("question", "name", "name2");
+        table = await queryRunner.getTable("question");
+        const newIndexName = connection.namingStrategy.indexName(table!, ["name2"]);
+        table!.indices[0].name!.should.be.equal(newIndexName);
+
+        await queryRunner.renameColumn("category", "questionId", "questionId2");
+        table = await queryRunner.getTable("category");
+        const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId2"]);
+        table!.foreignKeys[0].name!.should.be.equal(newForeignKeyName);
+
+        await queryRunner.executeMemoryDownSql();
+
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.should.be.exist;
+        expect(table!.findColumnByName("id2")).to.be.undefined;
 
         await queryRunner.release();
     })));

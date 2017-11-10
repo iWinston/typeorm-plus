@@ -10,7 +10,7 @@ describe("query runner > create index", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mssql", "mysql"],
             schemaCreate: true,
             dropSchema: true,
         });

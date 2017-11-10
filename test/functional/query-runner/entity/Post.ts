@@ -3,7 +3,7 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {Unique} from "../../../../src/decorator/Unique";
 
 @Entity()
-@Unique(["name", "text"])
+@Unique(["text", "tag"])
 export class Post {
 
     @Column({ primary: true, unique: true })
@@ -14,5 +14,8 @@ export class Post {
 
     @Column()
     text: string;
+
+    @Column()
+    tag: string;
 
 }

@@ -5,6 +5,7 @@ import {closeTestingConnections, createTestingConnections} from "../../utils/tes
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
 import {Post} from "./entity/Post";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
 describe("query runner > create table", () => {
 
@@ -12,7 +13,7 @@ describe("query runner > create table", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mssql", "mysql"],
             dropSchema: true,
         });
     });
@@ -76,35 +77,25 @@ describe("query runner > create table", () => {
     it("should correctly create table with all dependencies and revert creation", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
+
         await queryRunner.createTable(new Table({
-            name: "category",
+            name: "person",
             columns: [
                 {
                     name: "id",
                     type: "int",
-                    isPrimary: true,
-                    isGenerated: true,
-                    generationStrategy: "increment"
+                    isPrimary: true
+                },
+                {
+                    name: "userId",
+                    type: "int",
+                    isPrimary: true
                 },
                 {
                     name: "name",
                     type: "varchar",
-                    default: "'default category'",
-                    isUnique: true,
-                    isNullable: false
-                },
-                {
-                    name: "alternativeName",
-                    type: "varchar",
-                },
-                {
-                    name: "questionId",
-                    type: "int",
-                    isUnique: true
                 }
-            ],
-            uniques: [{ columnNames: ["name", "alternativeName"] }],
-            indices: [{ columnNames: ["questionId"] }]
+            ]
         }));
 
         await queryRunner.createTable(new Table({
@@ -139,39 +130,83 @@ describe("query runner > create table", () => {
             indices: [{ columnNames: ["authorId", "authorUserId"], isUnique: true }],
             foreignKeys: [
                 {
-                    columnNames: ["id"],
-                    referencedTableName: "category",
-                    referencedColumnNames: ["questionId"]
+                    columnNames: ["authorId", "authorUserId"],
+                    referencedTableName: "person",
+                    referencedColumnNames: ["id", "userId"]
                 }
             ]
         }));
-
-        await queryRunner.createTable(new Table({
-            name: "person",
+        const categoryTableOptions = <TableOptions>{
+            name: "category",
             columns: [
                 {
                     name: "id",
                     type: "int",
-                    isPrimary: true
-                },
-                {
-                    name: "userId",
-                    type: "int",
-                    isPrimary: true
+                    isPrimary: true,
+                    isGenerated: true,
+                    generationStrategy: "increment"
                 },
                 {
                     name: "name",
                     type: "varchar",
+                    default: "'default category'",
+                    isUnique: true,
+                    isNullable: false
+                },
+                {
+                    name: "alternativeName",
+                    type: "varchar",
+                },
+                {
+                    name: "questionId",
+                    type: "int",
+                    isUnique: true
                 }
             ],
+            uniques: [{ columnNames: ["name", "alternativeName"] }],
             foreignKeys: [
                 {
-                    columnNames: ["id", "userId"],
+                    columnNames: ["questionId"],
                     referencedTableName: "question",
-                    referencedColumnNames: ["authorId", "authorUserId"]
+                    referencedColumnNames: ["id"]
                 }
             ]
-        }));
+        };
+        // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
+        if (!(connection.driver instanceof MysqlDriver))
+            categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
+
+        await queryRunner.createTable(new Table(categoryTableOptions));
+
+        let personTable = await queryRunner.getTable("person");
+        const personIdColumn = personTable!.findColumnByName("id");
+        const personUserIdColumn = personTable!.findColumnByName("id");
+        personIdColumn!.isPrimary.should.be.true;
+        personUserIdColumn!.isPrimary.should.be.true;
+        personTable!.should.exist;
+
+        let questionTable = await queryRunner.getTable("question");
+        const questionIdColumn = questionTable!.findColumnByName("id");
+        questionIdColumn!.isPrimary.should.be.true;
+        questionIdColumn!.isGenerated.should.be.true;
+        questionIdColumn!.generationStrategy!.should.be.equal("increment");
+        questionTable!.should.exist;
+
+        // MySql driver does not have unique constraints. All unique constraints is unique indexes.
+        // Also we store unique indexes as TableUniques.
+        if (connection.driver instanceof MysqlDriver) {
+            questionTable!.uniques.length.should.be.equal(2);
+            questionTable!.indices.length.should.be.equal(2);
+        } else {
+            questionTable!.uniques.length.should.be.equal(1);
+            questionTable!.uniques[0].columnNames.length.should.be.equal(2);
+            questionTable!.indices.length.should.be.equal(1);
+            questionTable!.indices[0].columnNames.length.should.be.equal(2);
+        }
+
+        questionTable!.foreignKeys.length.should.be.equal(1);
+        questionTable!.foreignKeys[0].columnNames.length.should.be.equal(2);
+        questionTable!.foreignKeys[0].referencedColumnNames.length.should.be.equal(2);
 
         let categoryTable = await queryRunner.getTable("category");
         const categoryTableIdColumn = categoryTable!.findColumnByName("id");
@@ -180,31 +215,17 @@ describe("query runner > create table", () => {
         categoryTableIdColumn!.generationStrategy!.should.be.equal("increment");
         categoryTable!.should.exist;
         categoryTable!.uniques.length.should.be.equal(3);
-        categoryTable!.indices.length.should.be.equal(1);
+        categoryTable!.foreignKeys.length.should.be.equal(1);
 
-        let questionTable = await queryRunner.getTable("question");
-        const questionIdColumn = questionTable!.findColumnByName("id");
-        questionIdColumn!.isPrimary.should.be.true;
-        questionIdColumn!.isGenerated.should.be.true;
-        questionIdColumn!.generationStrategy!.should.be.equal("increment");
-        questionTable!.should.exist;
-        questionTable!.uniques.length.should.be.equal(1);
-        questionTable!.uniques[0].columnNames.length.should.be.equal(2);
-        questionTable!.indices.length.should.be.equal(1);
-        questionTable!.indices[0].columnNames.length.should.be.equal(2);
-        questionTable!.foreignKeys.length.should.be.equal(1);
-
-        let personTable = await queryRunner.getTable("person");
-        const personIdColumn = personTable!.findColumnByName("id");
-        const personUserIdColumn = personTable!.findColumnByName("id");
-        personIdColumn!.isPrimary.should.be.true;
-        personUserIdColumn!.isPrimary.should.be.true;
-        personTable!.should.exist;
-        personTable!.foreignKeys.length.should.be.equal(1);
-        personTable!.foreignKeys[0].columnNames.length.should.be.equal(2);
-        personTable!.foreignKeys[0].referencedColumnNames.length.should.be.equal(2);
+        // MySql driver does not have unique constraints. All unique constraints is unique indexes.
+        if (connection.driver instanceof MysqlDriver) {
+            categoryTable!.indices.length.should.be.equal(3);
+        } else {
+            categoryTable!.indices.length.should.be.equal(1);
+        }
 
         await queryRunner.executeMemoryDownSql();
+
         questionTable = await queryRunner.getTable("question");
         categoryTable = await queryRunner.getTable("category");
         personTable = await queryRunner.getTable("person");

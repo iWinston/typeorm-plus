@@ -55,14 +55,4 @@ export interface TableOptions {
      */
     engine?: string;
 
-    /**
-     * Database name.
-     */
-    database?: string;
-
-    /**
-     * Schema name. Used in Postgres and Sql Server.
-     */
-    schema?: string;
-
 }

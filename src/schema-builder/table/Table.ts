@@ -96,20 +96,8 @@ export class Table {
     // Accessors
     // -------------------------------------------------------------------------
 
-    /**
-     * Gets only those primary keys that does not generated.
-     */
-    /*get primaryKeyWithoutGenerated(): TablePrimaryKey|undefined {
-        const primaryGeneratedColumns = this.columns.filter(column => column.isPrimary && column.isGenerated);
-        return  primaryGeneratedColumns.length === 0 ? this.primaryKey : undefined;
-    }*/
-
     get primaryColumns(): TableColumn[] {
         return this.columns.filter(column => column.isPrimary);
-    }
-
-    get hasGeneratedColumn(): boolean {
-        return !!this.columns.find(column => column.isGenerated);
     }
 
     // -------------------------------------------------------------------------
@@ -246,6 +234,42 @@ export class Table {
 
     findColumnByName(name: string): TableColumn|undefined {
         return this.columns.find(column => column.name === name);
+    }
+
+    /**
+     * Returns all column indices.
+     */
+    findColumnIndices(column: TableColumn): TableIndex[] {
+        return this.indices.filter(index => {
+           return !!index.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column foreign keys.
+     */
+    findColumnForeignKeys(column: TableColumn): TableForeignKey[] {
+        return this.foreignKeys.filter(foreignKey => {
+            return !!foreignKey.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column uniques.
+     */
+    findColumnUniques(column: TableColumn): TableUnique[] {
+        return this.uniques.filter(unique => {
+            return !!unique.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column checks.
+     */
+    findColumnChecks(column: TableColumn): TableCheck[] {
+        return this.checks.filter(check => {
+            return !!check.columnNames.find(columnName => columnName === column.name);
+        });
     }
 
     // -------------------------------------------------------------------------

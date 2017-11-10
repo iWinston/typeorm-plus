@@ -8,7 +8,7 @@ describe("query runner > create and drop schema", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mssql"], // mysql does not supports table schemas
             dropSchema: true,
         });
     });

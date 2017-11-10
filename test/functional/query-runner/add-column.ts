@@ -3,6 +3,8 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 
 describe("query runner > add column", () => {
 
@@ -10,7 +12,7 @@ describe("query runner > add column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mssql", "mysql"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -26,16 +28,20 @@ describe("query runner > add column", () => {
             name: "secondId",
             type: "int",
             isPrimary: true,
-            isUnique: true,
-            isNullable: false,
-            isGenerated: true,
-            generationStrategy: "increment"
+            isNullable: false
         });
+
+        // MySql does not support AUTO_INCREMENT on composite primary keys.
+        if (!(connection.driver instanceof MysqlDriver)) {
+            column1.isGenerated = true;
+            column1.generationStrategy = "increment";
+        }
+
         let column2 = new TableColumn({
             name: "description",
             type: "varchar",
             length: "100",
-            default: "'this is default'"
+            default: "'this is description'"
         });
 
         await queryRunner.addColumn(table!, column1);
@@ -45,15 +51,24 @@ describe("query runner > add column", () => {
         column1 = table!.findColumnByName("secondId")!;
         column1!.should.be.exist;
         column1!.isPrimary.should.be.true;
-        column1!.isUnique.should.be.true;
         column1!.isNullable.should.be.false;
-        column1!.isGenerated.should.be.true;
-        column1!.generationStrategy!.should.be.equal("increment");
+
+        // MySql does not support AUTO_INCREMENT on composite primary keys.
+        if (!(connection.driver instanceof MysqlDriver)) {
+            column1!.isGenerated.should.be.true;
+            column1!.generationStrategy!.should.be.equal("increment");
+        }
 
         column2 = table!.findColumnByName("description")!;
         column2!.should.be.exist;
         column2.length.should.be.equal("100");
-        column2!.default!.should.be.equal("('this is default')");
+
+        if (connection.driver instanceof MysqlDriver) {
+            column2!.default!.should.be.equal("'this is description'");
+
+        } else if (connection.driver instanceof SqlServerDriver) {
+            column2!.default!.should.be.equal("('this is description')");
+        }
 
         await queryRunner.executeMemoryDownSql();
 

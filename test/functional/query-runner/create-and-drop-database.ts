@@ -8,7 +8,7 @@ describe("query runner > create and drop database", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mysql"],
             dropSchema: true,
         });
     });
