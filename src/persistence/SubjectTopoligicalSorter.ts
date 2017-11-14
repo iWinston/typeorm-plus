@@ -172,7 +172,7 @@ export class SubjectTopoligicalSorter {
             visited[i] = true;
 
             // outgoing edges
-            let outgoing = edges.filter(function(edge){
+            let outgoing = edges.filter(function(edge) {
                 return edge[0] === node;
             });
             if (i = outgoing.length) {

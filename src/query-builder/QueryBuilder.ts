@@ -18,6 +18,7 @@ import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOp
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -371,6 +372,9 @@ export abstract class QueryBuilder<Entity> {
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
+            }
+            if (this.connection.driver instanceof SqljsDriver) {
+                await this.connection.driver.autoSave();
             }
         }
     }

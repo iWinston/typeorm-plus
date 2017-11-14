@@ -44,6 +44,7 @@ Use `findOne(id)` method instead now.
 * fixed bug with replication support (#1035)
 * fixed broken `typeorm version` command
 * fixed bug with wrong embedded column names being generated (#969) 
+* added support for `sql.js`. To use it you just need to install `npm i sql.js` and use `sqljs` as driver type [#894](https://github.com/typeorm/typeorm/pull/894).
 * added support for caching in respositories [#1057](https://github.com/typeorm/typeorm/issues/1057)
 * added support for the `citext` column type for postgres [#1075](https://github.com/typeorm/typeorm/pull/1075)
 
