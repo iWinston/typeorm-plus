@@ -165,9 +165,14 @@ export class SqljsDriver extends AbstractSqliteDriver {
             // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
             if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
                 const query = "SELECT last_insert_rowid()";
-                let result = this.databaseConnection.exec(query);
-                this.connection.logger.logQuery(query);
-                return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(result[0].values[0][0]));
+                try {
+                    let result = this.databaseConnection.exec(query);
+                    this.connection.logger.logQuery(query);
+                    return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(result[0].values[0][0]));
+                }
+                catch (e) {
+                    this.connection.logger.logQueryError(e, query, []);
+                }
             }
 
             return map;
