@@ -14,6 +14,7 @@ import {MongoRepository} from "./repository/MongoRepository";
 import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
+import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -224,6 +225,15 @@ export function getManager(connectionName: string = "default"): EntityManager {
  */
 export function getMongoManager(connectionName: string = "default"): MongoEntityManager {
     return getConnectionManager().get(connectionName).manager as MongoEntityManager;
+}
+
+/**
+ * Gets Sqljs entity manager from connection name.
+ * "default" connection is used, when no name is specified.
+ * Only works when Sqljs driver is used.
+ */
+export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
+    return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }
 
 /**

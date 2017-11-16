@@ -5,7 +5,6 @@ import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {RandomGenerator} from "../util/RandomGenerator";
 import {InsertResult} from "./result/InsertResult";
@@ -13,6 +12,8 @@ import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNo
 import {InsertValuesMissingError} from "../error/InsertValuesMissingError";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -99,6 +100,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
+            }
+            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
+                await this.connection.driver.autoSave();
             }
         }
     }
@@ -324,7 +328,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                        if (this.connection.driver instanceof AbstractSqliteDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined) { // try to use default defined in the column
                                 return this.connection.driver.normalizeDefault(column);
                             }
@@ -371,7 +375,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver instanceof SqliteDriver) {
+                        if (this.connection.driver instanceof AbstractSqliteDriver) {
                             return "NULL";
 
                         } else {

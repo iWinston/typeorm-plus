@@ -9,6 +9,7 @@ import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
 import {DeleteResult} from "./result/DeleteResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
+import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -83,6 +84,9 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         } finally {
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
+            }
+            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
+                await this.connection.driver.autoSave();
             }
         }
     }
