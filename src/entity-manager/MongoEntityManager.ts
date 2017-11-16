@@ -26,7 +26,7 @@ import {
     MongoCallback,
     MongoCountPreferences,
     MongodbIndexOptions,
-    MongoError,
+    MongoError, ObjectID,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -49,7 +49,7 @@ import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
-import {EntityId} from "../repository/EntityId";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -153,7 +153,7 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
-                          optionsOrConditions?: EntityId|FindOneOptions<Entity>|DeepPartial<Entity>,
+                          optionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
@@ -180,6 +180,7 @@ export class MongoEntityManager extends EntityManager {
      * You can execute bulk inserts using this method.
      */
     async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<InsertResult> {
+        // todo: convert entity to its database name
         const result = new InsertResult();
         if (entity instanceof Array) {
             result.raw = await this.insertMany(target, entity);
@@ -203,8 +204,16 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
-    async update<Entity>(target: ObjectType<Entity>|string, criteria: EntityId|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
-        await this.updateMany(target, this.convertMixedIdToQueryId(criteria), partialEntity);
+    async update<Entity>(target: ObjectType<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+        if (criteria instanceof Array) {
+            await Promise.all((criteria as any[]).map(criteriaItem => {
+                return this.update(target, criteriaItem, partialEntity);
+            }));
+
+        } else {
+            const metadata = this.connection.getMetadata(target);
+            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), partialEntity);
+        }
 
         return new UpdateResult();
     }
@@ -215,9 +224,15 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    async delete<Entity>(target: ObjectType<Entity>|string, criteria: EntityId|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
-        console.log(this.convertMixedIdToQueryId(criteria));
-        await this.deleteMany(target, this.convertMixedIdToQueryId(criteria));
+    async delete<Entity>(target: ObjectType<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+        if (criteria instanceof Array) {
+            await Promise.all((criteria as any[]).map(criteriaItem => {
+                return this.delete(target, criteriaItem);
+            }));
+
+        } else {
+            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+        }
 
         return new DeleteResult();
     }
@@ -596,10 +611,12 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Ensures given id is an id for query.
      */
-    protected convertMixedIdToQueryId(idMap: any): ObjectLiteral {
-        if (idMap instanceof Object)
-            return idMap;
+    protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
+        if (idMap instanceof Object) {
+            return metadata.getValueDatabasePaths(idMap);
+        }
 
+        // means idMap is just object id
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         return {
             "_id": (idMap instanceof objectIdInstance) ? idMap : new objectIdInstance(idMap)

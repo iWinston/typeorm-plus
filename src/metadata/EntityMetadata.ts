@@ -620,6 +620,15 @@ export class EntityMetadata {
         return Object.keys(map).length > 0 ? map : undefined;
     }
 
+    getValueDatabasePaths(entity: ObjectLiteral): ObjectLiteral {
+        return this.columns.reduce((query, column) => {
+            const columnValue = column.getEntityValue(entity);
+            if (columnValue !== undefined)
+                query[column.databasePath] = columnValue;
+            return query;
+        }, {} as any);
+    }
+
     /**
      * Replaces in a new object all property name of the given entity into their database names.
      */
@@ -629,6 +638,13 @@ export class EntityMetadata {
             if (column.isVirtual) return;
 
             OrmUtils.mergeDeep(map, column.createValueMap(column.getEntityValue(entity)));
+        });
+        this.relations.forEach(relation => {
+            let relationValue = relation.getEntityValue(entity);
+            if (relationValue instanceof Object)
+                relationValue = relation.createValueMap(this.convertPropertiesMapToDatabaseMap(relationValue));
+
+            OrmUtils.mergeDeep(map, relationValue);
         });
         return map;
     }

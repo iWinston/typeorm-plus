@@ -7,6 +7,7 @@ import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * This metadata contains all information about entity's column.
@@ -144,6 +145,14 @@ export class ColumnMetadata {
      * If property is not in embeds then it returns just property name of the column.
      */
     propertyPath: string;
+
+    /**
+     * Gets full path to this column database name (including column database name).
+     * Full path is relevant when column is used in embeds (one or multiple nested).
+     * For example it will return "counters.subcounters.likes".
+     * If property is not in embeds then it returns just database name of the column.
+     */
+    databasePath: string;
 
     /**
      * Complete column name in the database including its embedded prefixes.
@@ -323,12 +332,7 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = [];
-            if (useDatabaseName) {
-                propertyNames.push(...this.embeddedMetadata.parentDatabaseNames);
-            } else {
-                propertyNames.push(...this.embeddedMetadata.parentPropertyNames);
-            }
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
 
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
@@ -510,6 +514,7 @@ export class ColumnMetadata {
     build(connection: Connection): this {
         this.propertyPath = this.buildPropertyPath();
         this.databaseName = this.buildDatabaseName(connection);
+        this.databasePath = this.buildDatabasePath();
         this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);
         return this;
     }
@@ -534,8 +539,26 @@ export class ColumnMetadata {
         return path;
     }
 
+    protected buildDatabasePath(): string {
+        let path = "";
+        if (this.embeddedMetadata && this.embeddedMetadata.parentPropertyNames.length)
+            path = this.embeddedMetadata.parentPropertyNames.join(".") + ".";
+
+        path += this.databaseName;
+
+        // we add reference column to property path only if this column is virtual
+        // because if its not virtual it means user defined a real column for this relation
+        // also we don't do it if column is inside a junction table
+        if (!    this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.databaseName !== this.databaseName)
+            path += "." + this.referencedColumn.databaseName;
+
+        return path;
+    }
+
     protected buildDatabaseName(connection: Connection): string {
-        const propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPrefixes : [];
+        let propertyNames = this.embeddedMetadata ? this.embeddedMetadata.parentPrefixes : [];
+        if (connection.driver instanceof MongoDriver) // we don't need to include embedded name for the mongodb column names
+            propertyNames = [];
         return connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, propertyNames);
     }
 

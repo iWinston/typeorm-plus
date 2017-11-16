@@ -11,7 +11,7 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
-import {EntityId} from "./EntityId";
+import {ObjectID} from "../driver/mongodb/typings";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -196,7 +196,7 @@ export class BaseEntity {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
-    static update<T extends BaseEntity>(this: ObjectType<T>, criteria: EntityId|EntityId[]|DeepPartial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<UpdateResult> {
+    static update<T extends BaseEntity>(this: ObjectType<T>, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<T>, partialEntity: DeepPartial<T>, options?: SaveOptions): Promise<UpdateResult> {
         return (this as any).getRepository().update(criteria, partialEntity, options);
     }
 
@@ -206,7 +206,7 @@ export class BaseEntity {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    static delete<T extends BaseEntity>(this: ObjectType<T>, criteria: EntityId|EntityId[]|DeepPartial<T>, options?: RemoveOptions): Promise<DeleteResult> {
+    static delete<T extends BaseEntity>(this: ObjectType<T>, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<T>, options?: RemoveOptions): Promise<DeleteResult> {
         return (this as any).getRepository().delete(criteria, options);
     }
 
@@ -290,7 +290,7 @@ export class BaseEntity {
     /**
      * Finds first entity that matches given options.
      */
-    static findOne<T extends BaseEntity>(this: ObjectType<T>, id?: EntityId, options?: FindOneOptions<T>): Promise<T|undefined>;
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, id?: string|number|Date|ObjectID, options?: FindOneOptions<T>): Promise<T|undefined>;
 
     /**
      * Finds first entity that matches given options.
@@ -305,7 +305,7 @@ export class BaseEntity {
     /**
      * Finds first entity that matches given conditions.
      */
-    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: EntityId|FindOneOptions<T>|DeepPartial<T>, maybeOptions?: FindOneOptions<T>): Promise<T|undefined> {
+    static findOne<T extends BaseEntity>(this: ObjectType<T>, optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<T>|DeepPartial<T>, maybeOptions?: FindOneOptions<T>): Promise<T|undefined> {
         return (this as any).getRepository().findOne(optionsOrConditions as any, maybeOptions);
     }
 

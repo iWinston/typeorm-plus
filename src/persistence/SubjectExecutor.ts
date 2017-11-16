@@ -8,6 +8,8 @@ import {SubjectRemovedAndUpdatedError} from "../error/SubjectRemovedAndUpdatedEr
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {InsertResult} from "../query-builder/result/InsertResult";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {ObjectLiteral} from "../common/ObjectLiteral";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -162,7 +164,13 @@ export class SubjectExecutor {
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(Object.keys(groupedInsertSubjects), async groupName => {
             const subjects = groupedInsertSubjects[groupName];
-            const insertMaps = subjects.map(subject => subject.createValueSetAndPopChangeMap());
+            const insertMaps = subjects.map(subject => {
+                if (this.queryRunner.connection.driver instanceof MongoDriver) {
+                    return subject.entity;
+                } else {
+                    return subject.createValueSetAndPopChangeMap();
+                }
+            });
             let insertResult: InsertResult;
 
             // for mongodb we have a bit different insertion logic
@@ -205,7 +213,7 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
-            const updateMap = subject.createValueSetAndPopChangeMap();
+            const updateMap: ObjectLiteral = this.queryRunner.connection.driver instanceof MongoDriver ? subject.entity! : subject.createValueSetAndPopChangeMap();
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
