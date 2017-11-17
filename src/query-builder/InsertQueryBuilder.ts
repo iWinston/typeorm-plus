@@ -1,5 +1,4 @@
 import {QueryBuilder} from "./QueryBuilder";
-import {ArrayParameter} from "./ArrayParameter";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
 import {QueryPartialEntity} from "./QueryPartialEntity";
@@ -292,9 +291,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
-
-            return valueSets.map((valueSet, valueSetIndex) => {
-                const columnValues = columns.map(column => {
+            let expression = "";
+            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+            valueSets.forEach((valueSet, valueSetIndex) => {
+                columns.forEach((column, columnIndex) => {
+                    if (columnIndex === 0) {
+                        expression += "(";
+                    }
                     const paramName = "_inserted_" + valueSetIndex + "_" + column.databaseName;
 
                     // extract real value from the entity
@@ -312,7 +315,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // newly inserted entities always have a version equal to 1 (first version)
                     if (column.isVersion) {
-                        return "1";
+                        expression += "1";
+                        // return "1";
 
                     // for create and update dates we insert current date
                     // no, we don't do it because this constant is already in "default" value of the column
@@ -322,44 +326,56 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
+
                         const paramName = "_uuid_" + column.databaseName + valueSetIndex;
-                        this.setParameter(paramName, RandomGenerator.uuid4());
-                        return ":" + paramName;
+                        value = RandomGenerator.uuid4();
+                        this.expressionMap.nativeParameters[paramName] = value;
+                        expression += this.connection.driver.createParameter(paramName, parametersCount);
+                        parametersCount++;
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (this.connection.driver instanceof AbstractSqliteDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined) { // try to use default defined in the column
-                                return this.connection.driver.normalizeDefault(column);
+                                expression += this.connection.driver.normalizeDefault(column);
+                            } else {
+                                expression += "NULL"; // otherwise simply use NULL and pray if column is nullable
                             }
-                            return "NULL"; // otherwise simply use NULL and pray if column is nullable
 
                         } else {
-                            return "DEFAULT";
+                            expression += "DEFAULT";
                         }
 
                     // support for SQL expressions in queries
                     } else if (value instanceof Function) {
-                        return value();
+                        expression += value();
 
                     // just any other regular value
                     } else {
-                        if (this.connection.driver instanceof SqlServerDriver) {
-                            this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
-                        } else {
+                        if (this.connection.driver instanceof SqlServerDriver)
+                            value = this.connection.driver.parametrizeValue(column, value);
 
-                            // we need to store array values in a special class to make sure parameter replacement will work correctly
-                            if (value instanceof Array)
-                                value = new ArrayParameter(value);
+                        // we need to store array values in a special class to make sure parameter replacement will work correctly
+                        // if (value instanceof Array)
+                        //     value = new ArrayParameter(value);
 
-                            this.setParameter(paramName, value);
-                        }
-                        return ":" + paramName;
+                        this.expressionMap.nativeParameters[paramName] = value;
+                        expression += this.connection.driver.createParameter(paramName, parametersCount);
+                        parametersCount++;
                     }
 
-                }).join(", ").trim();
-                return columnValues ? "(" + columnValues + ")" : "";
-            }).join(", ");
+                    if (columnIndex === columns.length - 1) {
+                        if (valueSetIndex === valueSets.length - 1) {
+                            expression += ")";
+                        } else {
+                            expression += "), ";
+                        }
+                    } else {
+                        expression += ", ";
+                    }
+                });
+            });
+            return expression;
 
         } else { // for tables without metadata
 
@@ -384,8 +400,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     // just any other regular value
                     } else {
-                        this.setParameter(paramName, value);
-                        return ":" + paramName;
+                        this.expressionMap.nativeParameters[paramName] = value;
+                        return this.connection.driver.createParameter(paramName, Object.keys(this.expressionMap.nativeParameters).length - 1);
                     }
 
                 }).join(", ").trim();

@@ -233,6 +233,12 @@ export class QueryExpressionMap {
      */
     useTransaction: boolean = false;
 
+    /**
+     * Extra parameters.
+     * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
+     */
+    nativeParameters: ObjectLiteral = {};
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -379,6 +385,12 @@ export class QueryExpressionMap {
         map.cacheDuration = this.cacheDuration;
         map.relationPropertyPath = this.relationPropertyPath;
         map.of = this.of;
+        map.insertColumns = this.insertColumns;
+        map.whereEntities = this.whereEntities;
+        map.updateEntity = this.updateEntity;
+        map.callListeners = this.callListeners;
+        map.useTransaction = this.useTransaction;
+        map.nativeParameters = this.nativeParameters;
         return map;
     }
 

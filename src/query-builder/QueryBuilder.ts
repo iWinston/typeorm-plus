@@ -357,7 +357,10 @@ export abstract class QueryBuilder<Entity> {
      * Gets query to be executed with all parameters used in it.
      */
     getQueryAndParameters(): [string, any[]] {
-        return this.connection.driver.escapeQueryWithParameters(this.getQuery(), this.getParameters());
+        // this execution order is important because getQuery method generates this.expressionMap.nativeParameters values
+        const query = this.getQuery();
+        const parameters = this.getParameters();
+        return this.connection.driver.escapeQueryWithParameters(query, parameters, this.expressionMap.nativeParameters);
     }
 
     /**
