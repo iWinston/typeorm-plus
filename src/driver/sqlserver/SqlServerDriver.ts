@@ -150,8 +150,8 @@ export class SqlServerDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        varchar: { length: 255 },
-        nvarchar: { length: 255 }
+        "varchar": { length: 255 },
+        "nvarchar": { length: 255 }
     };
 
     // -------------------------------------------------------------------------

@@ -185,7 +185,7 @@ export abstract class BaseQueryRunner {
     /**
      * Checks if at least one of column properties was changed.
      */
-    protected isColumnChanged(oldColumn: TableColumn, newColumn: TableColumn, checkDefault?: boolean): boolean {
+    protected isColumnChanged(oldColumn: TableColumn, newColumn: TableColumn, checkDefault?: boolean, checkComment?: boolean): boolean {
         return oldColumn.type !== newColumn.type
             || oldColumn.length !== newColumn.length
             || oldColumn.charset !== newColumn.charset
@@ -194,7 +194,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.scale !== newColumn.scale
             || (checkDefault && oldColumn.default !== newColumn.default)
             || oldColumn.isNullable !== newColumn.isNullable
-            || oldColumn.comment !== newColumn.comment
+            || (checkComment && oldColumn.comment !== newColumn.comment)
             || oldColumn.enum !== newColumn.enum;
     }
 

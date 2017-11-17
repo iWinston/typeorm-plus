@@ -484,7 +484,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         await this.executeQueries(upQueries, downQueries);
-
     }
 
     /**
@@ -526,7 +525,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * todo: think to create options and move skips there
      */
     async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
-        // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query and vice versa
+        // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
         const tableName = target instanceof Table ? target.name : target;
         const table = await this.getCachedTable(tableName);
@@ -1170,7 +1169,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
         const schemaNamesString = schemaNames.map(name => "'" + name + "'").join(", ");
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
 
-        const tablesSql = dbNames.map(dbName => {
+        const tablesSql = dbNames.map(dbName => { // TODO: replace with TABLE_NAME = '' AND TABLE_SCHEMA = ''
             return `SELECT * FROM "${dbName}"."INFORMATION_SCHEMA"."TABLES" WHERE TABLE_NAME IN (${tableNamesString}) AND TABLE_SCHEMA IN (${schemaNamesString})`;
         }).join(" UNION ALL ");
 

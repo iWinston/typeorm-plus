@@ -8,7 +8,7 @@ describe("query runner > create and drop schema", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"], // mysql does not supports table schemas
+            enabledDrivers: ["mssql", "postgres"],
             dropSchema: true,
         });
     });
@@ -19,7 +19,7 @@ describe("query runner > create and drop schema", () => {
 
         const queryRunner = connection.createQueryRunner();
 
-        await queryRunner.createSchema("myTestSchema");
+        await queryRunner.createSchema("myTestSchema", true);
         let hasSchema = await queryRunner.hasSchema("myTestSchema");
         hasSchema.should.be.true;
 

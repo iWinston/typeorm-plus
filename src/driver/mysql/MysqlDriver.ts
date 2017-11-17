@@ -148,13 +148,13 @@ export class MysqlDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        varchar: { length: 255 },
-        int: { length: 11 },
-        tinyint: { length: 4 },
-        smallint: { length: 5 },
-        mediumint: { length: 9 },
-        bigint: { length: 20 },
-        year: { length: 4 }
+        "varchar": { length: 255 },
+        "int": { length: 11 },
+        "tinyint": { length: 4 },
+        "smallint": { length: 5 },
+        "mediumint": { length: 9 },
+        "bigint": { length: 20 },
+        "year": { length: 4 }
     };
 
     // -------------------------------------------------------------------------

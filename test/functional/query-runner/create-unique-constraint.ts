@@ -10,7 +10,7 @@ describe("query runner > create unique constraint", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"], // mysql does not supports unique constraints
+            enabledDrivers: ["mssql", "postgres"], // mysql does not supports unique constraints
             schemaCreate: true,
             dropSchema: true,
         });

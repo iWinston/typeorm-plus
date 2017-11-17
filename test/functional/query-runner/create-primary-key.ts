@@ -9,7 +9,7 @@ describe("query runner > create primary key", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql"],
+            enabledDrivers: ["mssql", "mysql", "postgres"],
             schemaCreate: true,
             dropSchema: true,
         });

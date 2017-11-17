@@ -278,7 +278,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
-        const result = await this.query(`SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '${database}'`);
+        const result = await this.query(`SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = '${database}'`);
         return result.length ? true : false;
     }
 
@@ -294,7 +294,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrPath: Table|string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tableOrPath);
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${parsedTablePath.database}' AND TABLE_NAME = '${parsedTablePath.tableName}'`;
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTablePath.database}' AND \`TABLE_NAME\` = '${parsedTablePath.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -305,7 +305,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     async hasColumn(tableOrPath: Table|string, column: TableColumn|string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tableOrPath);
         const columnName = column instanceof TableColumn ? column.name : column;
-        const sql = `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${parsedTablePath.database}' AND TABLE_NAME = '${parsedTablePath.tableName}' AND COLUMN_NAME = '${columnName}'`;
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTablePath.database}' AND \`TABLE_NAME\` = '${parsedTablePath.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -343,7 +343,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new table from the given table and column inside it.
+     * Creates a new table.
      */
     async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true, createIndices: boolean = true): Promise<void> {
         if (ifNotExist) {
@@ -842,14 +842,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    async clearDatabase(database?: string): Promise<void> {
+    async clearDatabase(): Promise<void> {
         if (!this.driver.database)
             throw new Error(`Can not clear database. No database is specified`);
 
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`;') AS query FROM information_schema.tables WHERE table_schema = '${this.driver.database}'`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS query FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${this.driver.database}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
             await this.query(disableForeignKeysCheckQuery);
@@ -872,7 +872,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
-     * Return current database.
+     * Returns current database.
      */
     protected async getCurrentDatabase(): Promise<string> {
         const currentDBQuery = await this.query(`SELECT DATABASE() AS \`db_name\``);
@@ -889,29 +889,32 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return [];
 
         const currentDatabase = await this.getCurrentDatabase();
-
-        const tableNames = tablePaths.map(tablePath => {
-            return tablePath.indexOf(".") === -1 ? tablePath : tablePath.split(".")[1];
-        });
         const dbNames = tablePaths
             .filter(tablePath => tablePath.indexOf(".") !== -1)
             .map(tablePath => tablePath.split(".")[0]);
         if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
             dbNames.push(this.driver.database);
 
-        // load tables, columns, indices and foreign keys
-        const databaseNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
-        const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
-        const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` IN (${databaseNamesString}) AND \`TABLE_NAME\` IN (${tableNamesString})`; // todo(dima): fix, remove IN, apply AND and OR like in Mssql
-        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` IN (${databaseNamesString})`;
+        const dbNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
+        const tablesCondition = tablePaths.map(tablePath => {
+            let [dbName, tableName] = tablePath.split(".");
+            if (!tableName) {
+                tableName = dbName;
+                dbName = this.driver.database || currentDatabase;
+            }
+            return `\`TABLE_SCHEMA\` = '${dbName}' AND \`TABLE_NAME\` = '${tableName}'`;
+        }).join(" OR ");
+
+        const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE `  + tablesCondition;
+        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` IN (${dbNamesString})`;
         const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
             `LEFT JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` ` +
-            `WHERE \`s\`.\`TABLE_SCHEMA\` IN (${databaseNamesString}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
+            `WHERE \`s\`.\`TABLE_SCHEMA\` IN (${dbNamesString}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
         const foreignKeysSql = `SELECT \`kcu\`.\`TABLE_SCHEMA\`, \`kcu\`.\`TABLE_NAME\`, \`kcu\`.\`CONSTRAINT_NAME\`, \`kcu\`.\`COLUMN_NAME\`, \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`, ` +
             `\`kcu\`.\`REFERENCED_TABLE_NAME\`, \`kcu\`.\`REFERENCED_COLUMN_NAME\`, \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`, \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\` ` +
             `INNER JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`rc\`.\`constraint_name\` = \`kcu\`.\`constraint_name\` ` +
-            `WHERE \`kcu\`.\`TABLE_SCHEMA\` IN (${databaseNamesString})`;
+            `WHERE \`kcu\`.\`TABLE_SCHEMA\` IN (${dbNamesString})`;
         const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
@@ -937,7 +940,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // create columns from the loaded columns
             table.columns = dbColumns
-                .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
+                .filter(dbColumn => this.driver.buildTableName(dbColumn["TABLE_NAME"], undefined, dbColumn["TABLE_SCHEMA"]) === tableFullName)
                 .map(dbColumn => {
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];

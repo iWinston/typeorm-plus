@@ -165,7 +165,10 @@ export class PostgresDriver implements Driver {
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults;
+    dataTypeDefaults: DataTypeDefaults = {
+        "character varying": { length: 255 },
+        "varchar": { length: 255 }
+    };
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -378,10 +381,10 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * Build full table name with schema name and table name.
+     * E.g. "mySchema"."myTable"
      */
-    buildTableName(tableName: string, schema?: string, database?: string): string {
+    buildTableName(tableName: string, schema?: string): string {
         return schema ? `${schema}.${tableName}` : tableName;
     }
 

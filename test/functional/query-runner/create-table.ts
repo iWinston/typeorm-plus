@@ -13,7 +13,7 @@ describe("query runner > create table", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql"],
+            enabledDrivers: ["mssql", "mysql", "postgres"],
             dropSchema: true,
         });
     });
@@ -40,6 +40,7 @@ describe("query runner > create table", () => {
                 }
             ]
         };
+
         await queryRunner.createTable(new Table(options));
 
         let table = await queryRunner.getTable("category");
