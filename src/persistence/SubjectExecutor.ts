@@ -76,6 +76,9 @@ export class SubjectExecutor {
      */
     async execute(): Promise<void> {
 
+        // console.time("execution");
+        // console.time("prepare");
+
         // broadcast "before" events before we start insert / update / remove operations
         await this.broadcastBeforeEventsForAll();
 
@@ -85,25 +88,34 @@ export class SubjectExecutor {
         // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
         this.insertSubjects = new SubjectTopoligicalSorter(this.insertSubjects).sort("insert");
 
+        // console.timeEnd("prepare");
+
         // execute all insert operations
+        // console.time("insertion");
         await this.executeInsertOperations();
+        // console.timeEnd("insertion");
 
         // recompute update operations since insertion can create updation operations for the
         // properties it wasn't able to handle on its own (referenced columns)
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
 
         // execute update operations
+        // console.time("updation");
         await this.executeUpdateOperations();
+        // console.timeEnd("updation");
 
         // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
+        // console.time("removal");
         this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
         await this.executeRemoveOperations();
+        // console.timeEnd("removal");
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         await this.updateSpecialColumnsInPersistedEntities();
 
         // finally broadcast "after" events after we finish insert / update / remove operations
         await this.broadcastAfterEventsForAll();
+        // console.timeEnd("execution");
     }
 
     // -------------------------------------------------------------------------

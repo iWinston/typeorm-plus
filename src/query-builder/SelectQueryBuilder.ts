@@ -720,10 +720,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     whereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.where(whereExpression, parameters);
-        return this;
+        return this.where(this.createWhereIdsExpression(ids));
     }
 
     /**
@@ -735,10 +732,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     andWhereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.andWhere(whereExpression, parameters);
-        return this;
+        return this.andWhere(this.createWhereIdsExpression(ids));
     }
 
     /**
@@ -750,10 +744,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * for example [{ firstId: 1, secondId: 2 }, { firstId: 2, secondId: 3 }, ...]
      */
     orWhereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.orWhere(whereExpression, parameters);
-        return this;
+        return this.orWhere(this.createWhereIdsExpression(ids));
     }
 
     /**

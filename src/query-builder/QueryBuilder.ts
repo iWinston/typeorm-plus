@@ -659,28 +659,34 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates "WHERE" expression and variables for the given "ids".
      */
-    protected createWhereIdsExpression(ids: any[]): [string, ObjectLiteral] {
+    protected createWhereIdsExpression(ids: any|any[]): string {
+        ids = ids instanceof Array ? ids : [ids];
         const metadata = this.expressionMap.mainAlias!.metadata;
 
         // create shortcuts for better readability
         const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
-        const parameters: ObjectLiteral = {};
-        const whereStrings = ids.map((id, index) => {
+        let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
+        const whereStrings = (ids as any[]).map((id, index) => {
             id = metadata.ensureEntityIdMap(id);
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
-                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
-                parameters["id_" + index + "_" + secondIndex] = primaryColumn.getEntityValue(id);
+                const parameterName = "id_" + index + "_" + secondIndex;
+                // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
+                whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
+                this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id);
+                parameterIndex++;
             });
             metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
-                whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
-                parameters["parentId_" + index + "_" + secondIndex] = parentIdColumn.getEntityValue(id);
+                // whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
+                const parameterName = "parentId_" + index + "_" + secondIndex;
+                whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
+                this.expressionMap.nativeParameters[parameterName] = parentIdColumn.getEntityValue(id);
+                parameterIndex++;
             });
             return whereSubStrings.join(" AND ");
         });
 
-        const whereString = whereStrings.length > 1 ? whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") : whereStrings[0];
-        return [whereString, parameters];
+        return whereStrings.length > 1 ? whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") : whereStrings[0];
     }
 
     /**

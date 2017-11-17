@@ -12,6 +12,8 @@ import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNo
 import {ArrayParameter} from "./ArrayParameter";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -160,30 +162,21 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds new AND WHERE with conditions for the given ids.
      */
     whereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.where(whereExpression, parameters);
-        return this;
+        return this.where(this.createWhereIdsExpression(ids));
     }
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
      */
     andWhereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.andWhere(whereExpression, parameters);
-        return this;
+        return this.andWhere(this.createWhereIdsExpression(ids));
     }
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
      */
     orWhereInIds(ids: any|any[]): this {
-        ids = ids instanceof Array ? ids : [ids];
-        const [whereExpression, parameters] = this.createWhereIdsExpression(ids);
-        this.orWhere(whereExpression, parameters);
-        return this;
+        return this.orWhere(this.createWhereIdsExpression(ids));
     }
     /**
      * Optional returning/output clause.
@@ -287,6 +280,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
+        const newParameters: ObjectLiteral = {};
+        let parametersCount = this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadataUtils.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
                 // todo: make this and other query builder to work with properly with tables without metadata
@@ -306,25 +301,28 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
                     } else {
                         if (this.connection.driver instanceof SqlServerDriver) {
-                            this.setParameter(paramName, this.connection.driver.parametrizeValue(column, value));
-                        } else {
+                            value = this.connection.driver.parametrizeValue(column, value);
 
-                            // we need to store array values in a special class to make sure parameter replacement will work correctly
-                            if (value instanceof Array)
-                                value = new ArrayParameter(value);
-
-                            this.setParameter(paramName, value);
+                        } else if (value instanceof Array) {
+                            value = new ArrayParameter(value);
                         }
-                        updateColumnAndValues.push(this.escape(column.databaseName) + " = :" + paramName);
+
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
+                            newParameters[paramName] = value;
+                        } else {
+                            this.expressionMap.nativeParameters[paramName] = value;
+                        }
+
+                        updateColumnAndValues.push(this.escape(column.databaseName) + " = " + this.connection.driver.createParameter(paramName, parametersCount));
+                        parametersCount++;
                     }
                 });
             });
 
-
             if (metadata.versionColumn)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
             if (metadata.updateDateColumn)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used
+                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
 
         } else {
             Object.keys(valuesSet).map(key => {
@@ -339,10 +337,22 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     if (value instanceof Array)
                         value = new ArrayParameter(value);
 
-                    updateColumnAndValues.push(this.escape(key) + " = :" + key);
-                    this.setParameter(key, value);
+                    if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
+                        newParameters[key] = value;
+                    } else {
+                        this.expressionMap.nativeParameters[key] = value;
+                    }
+
+                    updateColumnAndValues.push(this.escape(key) + " = " + this.connection.driver.createParameter(key, parametersCount));
+                    parametersCount++;
                 }
             });
+        }
+
+        // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
+        // because some drivers like mysql depend on order of parameters
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
+            this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 
         // get a table name and all column database names

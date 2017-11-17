@@ -323,6 +323,7 @@ describe("one-to-one", function() {
         });
     });
 
+    // todo: check why it generates extra query
     describe("cascade updates should be executed when cascadeUpdate option is set", function() {
         let newPost: Post, newImage: PostImage;
 

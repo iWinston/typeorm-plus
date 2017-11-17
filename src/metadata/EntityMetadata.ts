@@ -480,6 +480,8 @@ export class EntityMetadata {
     /**
      * Compares two different entity instances by their ids.
      * Returns true if they match, false otherwise.
+     *
+     * @deprecated performance bottleneck
      */
     compareEntities(firstEntity: ObjectLiteral, secondEntity: ObjectLiteral): boolean {
 

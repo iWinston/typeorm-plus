@@ -10,10 +10,10 @@ describe("benchmark > bulk-save > case2", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("testing bulk save of 5000 objects", () => Promise.all(connections.map(async connection => {
+    it("testing bulk save of 10000 objects", () => Promise.all(connections.map(async connection => {
 
         const documents: Document[] = [];
-        for (let i = 0; i < 5000; i++) {
+        for (let i = 0; i < 10000; i++) {
             const document = new Document();
 
             document.id = i.toString();
@@ -44,8 +44,7 @@ describe("benchmark > bulk-save > case2", () => {
             // await connection.manager.insert(Document, document);
         }
 
-        await connection.manager.insert(Document, documents);
-        // await connection.manager.save(documents);
+        await connection.manager.save(documents);
         // await connection.manager.insert(Document, documents);
 
     })));

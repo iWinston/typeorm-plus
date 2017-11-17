@@ -11,7 +11,8 @@ export class CascadesSubjectBuilder {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(protected subject: Subject) {
+    constructor(protected subject: Subject,
+                protected allSubjects: Subject[]) {
     }
 
     // ---------------------------------------------------------------------
@@ -21,10 +22,8 @@ export class CascadesSubjectBuilder {
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
      */
-    build(): Subject[] {
-        const subjects: Subject[] = [this.subject];
-        this.buildRecursively(subjects, this.subject);
-        return subjects;
+    build() {
+        this.buildRecursively(this.subject);
     }
 
     // ---------------------------------------------------------------------
@@ -34,10 +33,10 @@ export class CascadesSubjectBuilder {
     /**
      * Builds a cascade subjects recursively.
      */
-    protected buildRecursively(subjects: Subject[], subject: Subject) {
+    protected buildRecursively(subject: Subject) {
 
         subject.metadata
-            .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations)
+            .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations) // todo: we can create EntityMetadata.cascadeRelations
             .forEach(([relation, relationEntity, relationEntityMetadata]) => {
 
                 // we need only defined values and insert or update cascades of the relation should be set
@@ -52,7 +51,7 @@ export class CascadesSubjectBuilder {
                     return;
 
                 // if we already has this entity in list of operated subjects then skip it to avoid recursion
-                const alreadyExistRelationEntitySubject = this.findByPersistEntityLike(subjects, relationEntityMetadata.target, relationEntity);
+                const alreadyExistRelationEntitySubject = this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
                 if (alreadyExistRelationEntitySubject) {
                     if (alreadyExistRelationEntitySubject.canBeInserted === false) // if its not marked for insertion yet
                         alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true;
@@ -69,10 +68,10 @@ export class CascadesSubjectBuilder {
                     canBeInserted: relation.isCascadeInsert === true,
                     canBeUpdated: relation.isCascadeUpdate === true
                 });
-                subjects.push(relationEntitySubject);
+                this.allSubjects.push(relationEntitySubject);
 
                 // go recursively and find other entities we need to insert/update
-                this.buildRecursively(subjects, relationEntitySubject);
+                this.buildRecursively(relationEntitySubject);
             });
     }
 
@@ -80,8 +79,8 @@ export class CascadesSubjectBuilder {
      * Finds subject where entity like given subject's entity.
      * Comparision made by entity id.
      */
-    protected findByPersistEntityLike(subjects: Subject[], entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
-        return subjects.find(subject => {
+    protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
+        return this.allSubjects.find(subject => {
             if (!subject.entity)
                 return false;
 

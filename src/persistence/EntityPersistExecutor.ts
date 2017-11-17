@@ -7,7 +7,6 @@ import {CannotDetermineEntityError} from "../error/CannotDetermineEntityError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Connection} from "../connection/Connection";
 import {Subject} from "./Subject";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {OneToManySubjectBuilder} from "./subject-builder/OneToManySubjectBuilder";
 import {OneToOneInverseSideSubjectBuilder} from "./subject-builder/OneToOneInverseSideSubjectBuilder";
 import {ManyToManySubjectBuilder} from "./subject-builder/ManyToManySubjectBuilder";
@@ -18,6 +17,15 @@ import {CascadesSubjectBuilder} from "./subject-builder/CascadesSubjectBuilder";
  * Persists a single entity or multiple entities - saves or removes them.
  */
 export class EntityPersistExecutor {
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * All subjects being persisted in this executor.
+     */
+    protected subjects: Subject[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -59,25 +67,58 @@ export class EntityPersistExecutor {
             try {
 
                 // collect all operate subjects
-                const subjects: Subject[] = [];
                 const entities: ObjectLiteral[] = this.entity instanceof Array ? this.entity : [this.entity];
-                // console.log("entities", entities);
-                await Promise.all(entities.map(async entity => {
+                // console.time("building subjects...");
+
+                // create subjects for all entities we received for the persistence
+                entities.forEach(entity => {
                     const entityTarget = this.target ? this.target : entity.constructor;
                     if (entityTarget === Object)
                         throw new CannotDetermineEntityError(this.mode);
 
-                    const metadata = this.connection.getMetadata(entityTarget);
-                    if (this.mode === "save") {
-                        subjects.push(...await this.save(queryRunner, metadata, entity));
-                    } else { // remove
-                        subjects.push(...await this.remove(queryRunner, metadata, entity));
-                    }
-                }));
+                    this.subjects.push(new Subject({
+                        metadata: this.connection.getMetadata(entityTarget),
+                        entity: entity,
+                        canBeInserted: this.mode === "save",
+                        canBeUpdated: this.mode === "save",
+                        mustBeRemoved: this.mode === "remove"
+                    }));
+                });
+
+                // console.time("building cascades...");
+                // go thought each entity with metadata and create subjects and subjects by cascades for them
+                this.subjects.forEach(subject => {
+                    // next step we build list of subjects we will operate with
+                    // these subjects are subjects that we need to insert or update alongside with main persisted entity
+                    new CascadesSubjectBuilder(subject, this.subjects).build();
+                });
+                // console.timeEnd("building cascades...");
+
+                // load database entities for all subjects we have
+                // next step is to load database entities for all operate subjects
+                // console.time("loading...");
+                await new SubjectDatabaseEntityLoader(queryRunner, this.subjects).load(this.mode);
+                // console.timeEnd("loading...");
+
+                // console.time("other subjects...");
+                // build all related subjects and change maps
+                if (this.mode === "save") {
+                    new OneToManySubjectBuilder(this.subjects).build();
+                    new OneToOneInverseSideSubjectBuilder(this.subjects).build();
+                    new ManyToManySubjectBuilder(this.subjects).build();
+                } else {
+                    this.subjects.forEach(subject => {
+                        if (subject.mustBeRemoved) {
+                            new ManyToManySubjectBuilder(this.subjects).buildForAllRemoval(subject);
+                        }
+                    });
+                }
+                // console.timeEnd("other subjects...");
+                // console.timeEnd("building subjects...");
                 // console.log("subjects", subjects);
 
                 // create a subject executor
-                const executor = new SubjectExecutor(queryRunner, subjects);
+                const executor = new SubjectExecutor(queryRunner, this.subjects);
 
                 // make sure we have at least one executable operation before we create a transaction and proceed
                 // if we don't have operations it means we don't really need to update or remove something
@@ -100,8 +141,10 @@ export class EntityPersistExecutor {
                     await executor.execute();
 
                     // commit transaction if it was started by us
+                    // console.time("commit");
                     if (isTransactionStartedByUs === true)
                         await queryRunner.commitTransaction();
+                    // console.timeEnd("commit");
 
                 } catch (error) {
 
@@ -121,60 +164,6 @@ export class EntityPersistExecutor {
                     await queryRunner.release();
             }
         });
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Builds operations for entity that is being inserted/updated.
-     */
-    protected async save(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
-
-        // create subject for currently persisted entity and mark that it can be inserted and updated
-        const mainSubject = new Subject({
-            metadata: metadata,
-            entity: entity,
-            canBeInserted: true,
-            canBeUpdated: true,
-        });
-
-        // next step we build list of subjects we will operate with
-        // these subjects are subjects that we need to insert or update alongside with main persisted entity
-        const subjects = await new CascadesSubjectBuilder(mainSubject).build();
-
-        // next step is to load database entities of all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load("save");
-
-        // build all related subjects and change maps
-        new OneToManySubjectBuilder(subjects).build();
-        new OneToOneInverseSideSubjectBuilder(subjects).build();
-        new ManyToManySubjectBuilder(subjects).build();
-
-        return subjects;
-    }
-
-    /**
-     * Builds only remove operations for entity that is being removed.
-     */
-    protected async remove(queryRunner: QueryRunner, metadata: EntityMetadata, entity: ObjectLiteral): Promise<Subject[]> {
-
-        // create subject for currently removed entity and mark that it must be removed
-        const mainSubject = new Subject({
-            metadata: metadata,
-            entity: entity,
-            mustBeRemoved: true,
-        });
-        const subjects: Subject[] = [mainSubject];
-
-        // next step is to load database entities for all operate subjects
-        await new SubjectDatabaseEntityLoader(queryRunner, subjects).load("remove");
-
-        // build subjects for junction tables
-        new ManyToManySubjectBuilder(subjects).buildForAllRemoval(mainSubject);
-
-        return subjects;
     }
 
 }

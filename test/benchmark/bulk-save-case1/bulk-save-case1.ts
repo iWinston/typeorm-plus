@@ -6,7 +6,7 @@ import {Post} from "./entity/Post";
 describe("benchmark > bulk-save > case1", () => {
     
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["mysql", "postgres"] }));
+    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["postgres"] }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
@@ -24,24 +24,51 @@ describe("benchmark > bulk-save > case1", () => {
             posts.push(post);
         }
 
-        // await connection.manager.save(posts);
-        await connection.manager.insert(Post, posts);
+        await connection.manager.save(posts);
+        // await connection.manager.insert(Post, posts);
 
     })));
 
     /**
-     * Before getters refactoring
+     * Before persistence refactoring
      *
-     √ testing bulk save of 1000 objects (3149ms)
-     √ testing bulk save of 1000 objects (2008ms)
-     √ testing bulk save of 1000 objects (1893ms)
-     √ testing bulk save of 1000 objects (1744ms)
-     √ testing bulk save of 1000 objects (1836ms)
-     √ testing bulk save of 1000 objects (1787ms)
-     √ testing bulk save of 1000 objects (1904ms)
-     √ testing bulk save of 1000 objects (1848ms)
-     √ testing bulk save of 1000 objects (1947ms)
-     √ testing bulk save of 1000 objects (2004ms)
+     *  MySql
+     *
+     * √ testing bulk save of 1000 objects (2686ms)
+     * √ testing bulk save of 1000 objects (1579ms)
+     * √ testing bulk save of 1000 objects (1664ms)
+     * √ testing bulk save of 1000 objects (1426ms)
+     * √ testing bulk save of 1000 objects (1512ms)
+     * √ testing bulk save of 1000 objects (1526ms)
+     * √ testing bulk save of 1000 objects (1605ms)
+     * √ testing bulk save of 1000 objects (1914ms)
+     * √ testing bulk save of 1000 objects (1983ms)
+     * √ testing bulk save of 1000 objects (1500ms)
+     *
+     * Postgres
+     *
+     * √ testing bulk save of 1000 objects (3704ms)
+     * √ testing bulk save of 1000 objects (2080ms)
+     * √ testing bulk save of 1000 objects (2176ms)
+     * √ testing bulk save of 1000 objects (2447ms)
+     * √ testing bulk save of 1000 objects (2259ms)
+     * √ testing bulk save of 1000 objects (2112ms)
+     * √ testing bulk save of 1000 objects (2193ms)
+     * √ testing bulk save of 1000 objects (2211ms)
+     * √ testing bulk save of 1000 objects (2282ms)
+     * √ testing bulk save of 1000 objects (2551ms)
+     *
+     * SqlServer
+     *
+     * √ testing bulk save of 1000 objects (8098ms)
+     * √ testing bulk save of 1000 objects (6534ms)
+     * √ testing bulk save of 1000 objects (5789ms)
+     * √ testing bulk save of 1000 objects (5505ms)
+     * √ testing bulk save of 1000 objects (5813ms)
+     * √ testing bulk save of 1000 objects (5932ms)
+     * √ testing bulk save of 1000 objects (6114ms)
+     * √ testing bulk save of 1000 objects (5960ms)
+     * √ testing bulk save of 1000 objects (5755ms)
+     * √ testing bulk save of 1000 objects (5935ms)
      */
-
 });
