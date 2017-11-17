@@ -106,18 +106,19 @@ export class WebsqlDriver extends AbstractSqliteDriver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, []];
         const escapedParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
-            if (value instanceof Function) {
-                return value();
+        Object.keys(parameters).forEach(key => {
+            sql = sql.replace(new RegExp("(:" + key + "\\b)", "g"), (key: string): string => {
+                let value = parameters[key.substr(1)];
+                if (value instanceof Function) {
+                    return value();
 
-            } else {
-                if (value instanceof ArrayParameter) value = value.value;
-                escapedParameters.push(value);
-                return "?";
-            }
-        }); // todo: make replace only in value statements, otherwise problems
+                } else {
+                    if (value instanceof ArrayParameter) value = value.value;
+                    escapedParameters.push(value);
+                    return "?";
+                }
+            });
+        });
         return [sql, escapedParameters];
     }
 
