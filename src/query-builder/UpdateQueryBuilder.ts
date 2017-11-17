@@ -9,7 +9,6 @@ import {Brackets} from "./Brackets";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
-import {ArrayParameter} from "./ArrayParameter";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
@@ -303,8 +302,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         if (this.connection.driver instanceof SqlServerDriver) {
                             value = this.connection.driver.parametrizeValue(column, value);
 
-                        } else if (value instanceof Array) {
-                            value = new ArrayParameter(value);
+                        // } else if (value instanceof Array) {
+                        //     value = new ArrayParameter(value);
                         }
 
                         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
@@ -334,8 +333,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 } else {
 
                     // we need to store array values in a special class to make sure parameter replacement will work correctly
-                    if (value instanceof Array)
-                        value = new ArrayParameter(value);
+                    // if (value instanceof Array)
+                    //     value = new ArrayParameter(value);
 
                     if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
                         newParameters[key] = value;
