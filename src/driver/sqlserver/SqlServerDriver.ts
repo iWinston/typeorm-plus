@@ -245,24 +245,23 @@ export class SqlServerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, []];
         const escapedParameters: any[] = [];
-        Object.keys(parameters).forEach(key => {
-            sql = sql.replace(new RegExp("(:" + key + "\\b)", "g"), (key: string): string => {
-                let value = parameters[key.substr(1)];
-                if (value instanceof Array) {
-                    return value.map((v: any) => {
-                        escapedParameters.push(v);
-                        return "@" + (escapedParameters.length - 1);
-                    }).join(", ");
-                } else if (value instanceof Function) {
-                    return value();
-
-                } else {
-                    if (value instanceof ArrayParameter) value = value.value;
-                    escapedParameters.push(value);
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
+            let value = parameters[key.substr(1)];
+            if (value instanceof Array) {
+                return value.map((v: any) => {
+                    escapedParameters.push(v);
                     return "@" + (escapedParameters.length - 1);
-                }
-            });
-        });
+                }).join(", ");
+            } else if (value instanceof Function) {
+                return value();
+
+            } else {
+                if (value instanceof ArrayParameter) value = value.value;
+                escapedParameters.push(value);
+                return "@" + (escapedParameters.length - 1);
+            }
+        }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
 

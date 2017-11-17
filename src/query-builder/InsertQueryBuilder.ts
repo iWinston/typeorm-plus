@@ -29,7 +29,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createInsertExpression();
-        console.log("wtf");
         return sql.trim();
     }
 
@@ -38,7 +37,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     async execute(): Promise<InsertResult> {
         const queryRunner = this.obtainQueryRunner();
-        console.log("hello execution");
         let transactionStartedByUs: boolean = false;
 
         try {
@@ -49,9 +47,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 transactionStartedByUs = true;
             }
 
-            console.log("getting value sets");
             const valueSets: ObjectLiteral[] = this.getValueSets();
-            console.log("got value set");
 
             // call before insertion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
@@ -67,10 +63,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
 
             // execute query
-            console.log("get query and parameters");
             const [sql, parameters] = this.getQueryAndParameters();
             const insertResult = new InsertResult();
-            console.log("query execution");
             insertResult.raw = await queryRunner.query(sql, parameters);
 
             // load returning results and set them to the entity if entity updation is enabled
@@ -207,13 +201,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates INSERT express used to perform insert query.
      */
     protected createInsertExpression() {
-        console.log("getting query");
 
         const tableName = this.getTableName(this.getMainTableName());
         const returningExpression = this.createReturningExpression();
         const columnsExpression = this.createColumnNamesExpression();
         const valuesExpression = this.createValuesExpression();
-        console.log("finishing query");
 
         // generate INSERT query
         let query = `INSERT INTO ${tableName}`;

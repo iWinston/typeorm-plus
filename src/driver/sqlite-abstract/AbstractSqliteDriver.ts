@@ -271,25 +271,24 @@ export class AbstractSqliteDriver implements Driver {
             return [sql, []];
 
         const builtParameters: any[] = [];
-        Object.keys(parameters).forEach(key => {
-            sql = sql.replace(new RegExp("(:" + key + "\\b)", "g"), (key: string): string => {
-                let value = parameters[key.substr(1)];
-                if (value instanceof Array) {
-                    return value.map((v: any) => {
-                        builtParameters.push(v);
-                        return "$" + builtParameters.length;
-                    }).join(", ");
-
-                } else if (value instanceof Function) {
-                    return value();
-
-                } else {
-                    if (value instanceof ArrayParameter) value = value.value;
-                    builtParameters.push(value);
+        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
+            let value = parameters[key.substr(1)];
+            if (value instanceof Array) {
+                return value.map((v: any) => {
+                    builtParameters.push(v);
                     return "$" + builtParameters.length;
-                }
-            });
-        });
+                }).join(", ");
+
+            } else if (value instanceof Function) {
+                return value();
+
+            } else {
+                if (value instanceof ArrayParameter) value = value.value;
+                builtParameters.push(value);
+                return "$" + builtParameters.length;
+            }
+        }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
     }
 

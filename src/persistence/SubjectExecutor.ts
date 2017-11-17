@@ -163,7 +163,6 @@ export class SubjectExecutor {
 
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(Object.keys(groupedInsertSubjects), async groupName => {
-
             const subjects = groupedInsertSubjects[groupName];
             const insertMaps = subjects.map(subject => {
                 if (this.queryRunner.connection.driver instanceof MongoDriver) {

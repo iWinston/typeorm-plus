@@ -3,12 +3,15 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe.skip("benchmark > bulk-save > case1", () => {
+describe.skip("benchmark > bulk-save", () => {
     
     let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname }));
+    before(async () => connections = await createTestingConnections({
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+    }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
+
 
     it("testing bulk save of 1000 objects", () => Promise.all(connections.map(async connection => {
 
@@ -24,8 +27,7 @@ describe.skip("benchmark > bulk-save > case1", () => {
             posts.push(post);
         }
 
-        // await connection.manager.save(posts);
-        await connection.manager.insert(Post, posts);
+        await connection.manager.save(posts);
 
     })));
 
