@@ -1761,6 +1761,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 .orderBy(orderBys)
                 .cache(this.expressionMap.cache ? this.expressionMap.cache : this.expressionMap.cacheId, this.expressionMap.cacheDuration)
                 .setParameters(this.getParameters())
+                .setNativeParameters(this.expressionMap.nativeParameters)
                 .getRawMany();
 
             if (rawResults.length > 0) {
