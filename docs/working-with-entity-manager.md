@@ -10,7 +10,7 @@ Example how to use it:
 import {getManager} from "typeorm";
 
 const entityManager = getManager(); // you can also get it via getConnection().manager
-const user = await entityManager.findOneById(1);
+const user = await entityManager.findOneById(User, 1);
 user.name = "Umed";
 await entityManager.save(user);
 ```
