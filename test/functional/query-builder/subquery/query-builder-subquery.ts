@@ -312,8 +312,8 @@ describe("query builder > sub-query", () => {
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer", categories: [] },
-            { id: 2, title: "Dima Zotov", categories: [] },
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
         ]);
     })));
 

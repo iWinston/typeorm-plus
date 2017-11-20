@@ -67,7 +67,7 @@ export class RawSqlResultsToEntityTransformer {
      * Transforms set of data results into single entity.
      */
     protected transformRawResultsGroup(rawResults: any[], alias: Alias): ObjectLiteral|undefined {
-        let hasColumns = false, hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false, hasRelations = false, hasRelationIds = false, hasRelationCounts = false;
+        // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let entity: any = alias.metadata.create();
 
         if (alias.metadata.discriminatorColumn) {
@@ -80,15 +80,24 @@ export class RawSqlResultsToEntityTransformer {
         }
 
         // get value from columns selections and put them into newly created entity
-        hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata);
+        const hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata);
+        const hasRelations = this.transformJoins(rawResults, entity, alias);
+        const hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
+        const hasRelationCounts = this.transformRelationCounts(rawResults, alias, entity);
 
-        hasRelations = this.transformJoins(rawResults, entity, alias);
-        hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
-        hasRelationCounts = this.transformRelationCounts(rawResults, alias, entity);
+        // if we have at least one selected column then return this entity
+        // since entity must have at least primary columns to be really selected and transformed into entity
+        if (hasColumns)
+            return entity;
 
-        // this.removeVirtualColumns(entity, alias);
+        // if we don't have any selected column we should not return entity,
+        // except for the case when entity only contain a primary column as a relation to another entity
+        // in this case its absolutely possible our entity to not have any columns except a single relation
+        const hasOnlyVirtualPrimaryColumns = alias.metadata.primaryColumns.filter(column => column.isVirtual === false).length === 0; // todo: create metadata.hasOnlyVirtualPrimaryColumns
+        if (hasOnlyVirtualPrimaryColumns && (hasRelations || hasRelationIds || hasRelationCounts))
+            return entity;
 
-        return (hasColumns || hasEmbeddedColumns || hasParentColumns || hasParentEmbeddedColumns || hasRelations || hasRelationIds || hasRelationCounts) ? entity : undefined;
+        return undefined;
     }
 
     // get value from columns selections and put them into object
@@ -137,6 +146,10 @@ export class RawSqlResultsToEntityTransformer {
 
             // skip joins without metadata
             if (!join.metadata)
+                return;
+
+            // if simple left or inner join was performed without selection then we don't need to do anything
+            if (!join.isSelected)
                 return;
 
             // this check need to avoid setting properties than not belong to entity when single table inheritance used.
