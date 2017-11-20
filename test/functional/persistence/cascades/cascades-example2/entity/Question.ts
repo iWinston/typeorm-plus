@@ -9,7 +9,7 @@ export class Question {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToMany(type => Answer, answer => answer.question, { cascadeInsert: true })
+    @OneToMany(type => Answer, answer => answer.question, { cascade: ["insert"] })
     answers: Answer[];
 
 }

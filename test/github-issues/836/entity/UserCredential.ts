@@ -10,7 +10,7 @@ export class UserCredential {
 
     @OneToOne(() => User, {
         primary: true,
-        cascadeAll: true,
+        cascade: true,
     })
     @JoinColumn({
         name: "id",

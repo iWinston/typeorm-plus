@@ -259,9 +259,8 @@ export class RelationMetadata {
             this.givenInverseSidePropertyFactory = args.inverseSideProperty;
 
         this.isLazy = args.isLazy || false;
-        this.isCascadeInsert = args.options.cascadeInsert || args.options.cascadeAll || false;
-        this.isCascadeUpdate = args.options.cascadeUpdate || args.options.cascadeAll || false;
-        this.isCascadeRemove = args.options.cascadeRemove || args.options.cascadeAll || false;
+        this.isCascadeInsert = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("insert") !== -1);
+        this.isCascadeUpdate = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("update") !== -1);
         this.isNullable = args.options.nullable !== false;
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;

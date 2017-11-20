@@ -7,9 +7,12 @@ feel free to ask us and community.
 
 ## 0.2.0 (next: `npm i typeorm@next`)
 
-* completely refactored, improved and optimized persistence process and performance
+* completely refactored, improved and optimized persistence process and performance.
 * removed cascade remove functionality, refactored how cascades are working.
-* removed `cascadeRemove` and `cascadeAll` options from column options.
+* removed `cascadeRemove` option from relation options.
+* replaced `cascadeAll` with `cascade: true` syntax from relation options.
+* replaced `cascadeInsert` with `cascade: ["insert"]` syntax from relation options.
+* replaced `cascadeUpdate` with `cascade: ["update"]` syntax from relation options.
 * now when one-to-one or many-to-one relation is loaded and its not set (set to null) ORM returns you entity with relation set to `null` instead of `undefined property` as before.
 * now relation id can be set directly to relation, e.g. `Post { @ManyToOne(type => Tag) tag: Tag|number }` with `post.tag = 1` usage.
 * now you can disable persistence on any relation by setting `@OneToMany(type => Post, post => tag, { persistence: false })`. This can dramatically improve entity save performance.

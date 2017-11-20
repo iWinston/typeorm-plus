@@ -986,20 +986,13 @@ export class Photo {
     /// ... other columns
 
     @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
-        cascadeInsert: true,
-        cascadeUpdate: true,
-        cascadeRemove: true
+        cascade: true,
     })
     metadata: PhotoMetadata;
 }
 ```
 
-* **cascadeInsert** - automatically insert metadata in the relation if it does not exist in its table. 
-    This means that we don't need to manually insert a newly created `photoMetadata` object.
-* **cascadeUpdate** - automatically update metadata in the relation if something is changed in this object.
-* **cascadeRemove** - automatically remove metadata from its table if you removed metadata from photo object.
-
-Using `cascadeInsert` allows us not to separately save photo and separately save metadata objects now. 
+Using `cascade` allows us not to separately save photo and separately save metadata objects now. 
 Now we can simply save a photo object, and the metadata object will be saved automatically because of cascade options.
 
 ```typescript
@@ -1009,7 +1002,7 @@ createConnection(options).then(async connection => {
     let photo = new Photo();
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg"
+    photo.filename = "photo-with-bears.jpg";
     photo.isPublished = true;
 
     // create photo metadata object

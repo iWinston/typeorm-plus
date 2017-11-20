@@ -8,25 +8,13 @@ import {OnDeleteType} from "../../metadata/types/OnDeleteType";
 export interface RelationOptions {
 
     /**
-     * If set to true then it means that related object can be allowed to be inserted / updated / removed to the db.
-     * This is option a shortcut if you would like to set cascadeInsert, cascadeUpdate and cascadeRemove to true.
+     * Sets cascades options for the given relation.
+     * If set to true then it means that related object can be allowed to be inserted or updated in the database.
+     * You can separately restrict cascades to insertion or updation using following syntax:
+     *
+     * cascade: ["insert", "update"] // include or exclude one of them
      */
-    cascadeAll?: boolean; // todo: replace with cascade: boolean|("insert"|"update")[]
-
-    /**
-     * If set to true then it means that related object can be allowed to be inserted to the db.
-     */
-    cascadeInsert?: boolean;
-
-    /**
-     * If set to true then it means that related object can be allowed to be updated in the db.
-     */
-    cascadeUpdate?: boolean;
-
-    /**
-     * If set to true then it means that related object can be allowed to be remove from the db.
-     */
-    cascadeRemove?: boolean;
+    cascade?: boolean|("insert"|"update")[];
 
     /**
      * Indicates if relation column value can be nullable or not.

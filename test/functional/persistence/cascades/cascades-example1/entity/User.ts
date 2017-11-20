@@ -9,7 +9,7 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(type => Profile, profile => profile.user, { cascadeInsert: true })
+    @OneToOne(type => Profile, profile => profile.user, { cascade: ["insert"] })
     profile: Profile;
 
 }

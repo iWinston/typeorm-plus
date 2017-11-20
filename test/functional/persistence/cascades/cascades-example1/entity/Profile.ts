@@ -19,7 +19,7 @@ export class Profile {
 
     @OneToOne(type => Photo, {
         nullable: false,
-        cascadeInsert: true
+        cascade: ["insert"]
     })
     @JoinColumn()
     photo: Photo;

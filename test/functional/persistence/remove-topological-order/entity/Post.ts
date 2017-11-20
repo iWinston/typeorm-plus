@@ -13,7 +13,7 @@ export class Post {
     @Column()
     title: string;
 
-    @OneToMany(type => Category, category => category.post, { cascadeInsert: true })
+    @OneToMany(type => Category, category => category.post, { cascade: ["insert"] })
     categories: Category[];
 
 }

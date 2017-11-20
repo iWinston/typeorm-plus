@@ -10,7 +10,7 @@ export class User {
     id: number;
 
     @ManyToOne(type => Question, {
-        cascadeInsert: true,
+        cascade: ["insert"],
         nullable: true
     })
     question: Question;
