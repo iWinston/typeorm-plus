@@ -13,6 +13,7 @@ import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
+import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -103,7 +104,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (queryRunner !== this.queryRunner) { // means we created our own query runner
                 await queryRunner.release();
             }
-            if (this.connection.driver instanceof SqljsDriver  && !queryRunner.isTransactionActive) {
+            if (this.connection.driver instanceof SqljsDriver && !queryRunner.isTransactionActive) {
                 await this.connection.driver.autoSave();
             }
         }
@@ -280,7 +281,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
-        let parametersCount = this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
+        let parametersCount =   this.connection.driver instanceof MysqlDriver ||
+                                this.connection.driver instanceof SqliteDriver ||
+                                this.connection.driver instanceof WebsqlDriver
+            ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadataUtils.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
                 // todo: make this and other query builder to work with properly with tables without metadata
@@ -306,7 +310,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         //     value = new ArrayParameter(value);
                         }
 
-                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
+                        if (this.connection.driver instanceof MysqlDriver ||
+                            this.connection.driver instanceof SqliteDriver ||
+                            this.connection.driver instanceof WebsqlDriver) {
                             newParameters[paramName] = value;
                         } else {
                             this.expressionMap.nativeParameters[paramName] = value;
@@ -336,7 +342,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     // if (value instanceof Array)
                     //     value = new ArrayParameter(value);
 
-                    if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
+                    if (this.connection.driver instanceof MysqlDriver ||
+                        this.connection.driver instanceof SqliteDriver ||
+                        this.connection.driver instanceof WebsqlDriver) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -350,7 +358,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
         // because some drivers like mysql depend on order of parameters
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof WebsqlDriver) {
+        if (this.connection.driver instanceof MysqlDriver ||
+            this.connection.driver instanceof SqliteDriver ||
+            this.connection.driver instanceof WebsqlDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 

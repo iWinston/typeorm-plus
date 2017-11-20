@@ -277,7 +277,8 @@ export class AbstractSqliteDriver implements Driver {
             if (value instanceof Array) {
                 return value.map((v: any) => {
                     builtParameters.push(v);
-                    return "$" + builtParameters.length;
+                    return "?";
+                    // return "$" + builtParameters.length;
                 }).join(", ");
 
             } else if (value instanceof Function) {
@@ -286,7 +287,8 @@ export class AbstractSqliteDriver implements Driver {
             } else {
                 if (value instanceof ArrayParameter) value = value.value;
                 builtParameters.push(value);
-                return "$" + builtParameters.length;
+                return "?";
+                // return "$" + builtParameters.length;
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
@@ -448,7 +450,9 @@ export class AbstractSqliteDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "$" + (index + 1);
+        // return "$" + (index + 1);
+        return "?";
+        // return "$" + parameterName;
     }
 
     // -------------------------------------------------------------------------

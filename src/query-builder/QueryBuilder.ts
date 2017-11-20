@@ -709,6 +709,7 @@ export abstract class QueryBuilder<Entity> {
         } else if (where instanceof Object) {
             const wheres: ObjectLiteral[] = where instanceof Array ? where : [where];
             let andConditions: string[];
+            let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
 
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 andConditions = wheres.map((where, whereIndex) => {
@@ -725,8 +726,9 @@ export abstract class QueryBuilder<Entity> {
 
                             } else {
                                 const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
-                                this.setParameter(parameterName, parameterValue);
-                                return `${aliasPath} = :${parameterName}`;
+                                this.expressionMap.nativeParameters[parameterName] = parameterValue;
+                                parameterIndex++;
+                                return `${aliasPath} = ${this.connection.driver.createParameter(parameterName, parameterIndex - 1)}`;
                             }
                         }).join(" AND ");
                     }).join(" AND ");
@@ -742,8 +744,9 @@ export abstract class QueryBuilder<Entity> {
 
                         } else {
                             const parameterName = "where_" + whereIndex + "_" + parameterIndex;
-                            this.setParameter(parameterName, parameterValue);
-                            return `${aliasPath} = :${parameterName}`;
+                            this.expressionMap.nativeParameters[parameterName] = parameterValue;
+                            parameterIndex++;
+                            return `${aliasPath} = ${this.connection.driver.createParameter(parameterName, parameterIndex - 1)}`;
                         }
                     }).join(" AND ");
                 });
