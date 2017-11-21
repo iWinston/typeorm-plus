@@ -289,6 +289,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const valueSets = this.getValueSets();
         const columns = this.getInsertedColumns();
 
+
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
             let expression = "";
@@ -306,7 +307,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // if column is relational and value is an object then get real referenced column value from this object
                     // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
                     // and we extract "1" from this object
-                    if (column.referencedColumn && value instanceof Object) {
+                    if (column.referencedColumn && value instanceof Object && !(value instanceof Function)) { // todo: check if we still need it since getEntityValue already has similar code
                         value = column.referencedColumn.getEntityValue(value);
                     }
 

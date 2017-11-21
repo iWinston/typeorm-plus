@@ -477,10 +477,10 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
-                if (relatedEntity && relatedEntity instanceof Object) {
+                if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof Function)) {
                     return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
 
-                } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+                } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof Function)) {
                     return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
                 }
 
