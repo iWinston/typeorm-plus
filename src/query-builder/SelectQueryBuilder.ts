@@ -30,6 +30,7 @@ import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
+import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1444,6 +1445,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (this.expressionMap.offset)
                 return " OFFSET " + this.expressionMap.offset + " ROWS";
 
+        } else if (this.connection.driver instanceof MysqlDriver) {
+
+            if (this.expressionMap.limit && this.expressionMap.offset)
+                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
+            if (this.expressionMap.limit)
+                return " LIMIT " + this.expressionMap.limit;
+            if (this.expressionMap.offset)
+                throw new OffsetWithoutLimitNotSupportedError("MySQL");
+
+        } else if (this.connection.driver instanceof AbstractSqliteDriver) {
+
+            if (this.expressionMap.limit && this.expressionMap.offset)
+                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
+            if (this.expressionMap.limit)
+                return " LIMIT " + this.expressionMap.limit;
+            if (this.expressionMap.offset)
+                return " LIMIT -1 OFFSET " + this.expressionMap.offset;
+
         } else {
             if (this.expressionMap.limit && this.expressionMap.offset)
                 return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
@@ -1639,7 +1658,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             });
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
-                .select(`DISTINCT ${querySelects.join(", ")} `)
+                .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
                 .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
