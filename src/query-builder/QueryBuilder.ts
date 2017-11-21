@@ -734,7 +734,7 @@ export abstract class QueryBuilder<Entity> {
                         const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
                         return columns.map((column, columnIndex) => {
 
-                            const parameterValue = EntityMetadataUtils.getPropertyPathValue(where, column.propertyPath);
+                            let parameterValue = column.getEntityValue(where);
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                             if (parameterValue === null) {
                                 return `${aliasPath} IS NULL`;

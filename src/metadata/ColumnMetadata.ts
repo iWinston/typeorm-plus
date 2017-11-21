@@ -8,6 +8,7 @@ import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
+import {PromiseUtils} from "../util/PromiseUtils";
 
 /**
  * This metadata contains all information about entity's column.
@@ -459,18 +460,32 @@ export class ColumnMetadata {
             if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
-                    if (relatedEntity && relatedEntity instanceof Object)
-                        return this.referencedColumn.getEntityValue(relatedEntity);
+                    if (relatedEntity && relatedEntity instanceof Object) {
+                        return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+
+                    } else if (embeddedObject[this.propertyName] && embeddedObject[this.propertyName] instanceof Object) {
+                        return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                    }
+
+                } else if (this.referencedColumn) {
+                    return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
                 }
-                return embeddedObject[this.propertyName];
+                return PromiseUtils.extractValue(embeddedObject[this.propertyName]);
             }
             return undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
-                if (relatedEntity && relatedEntity instanceof Object)
-                    return this.referencedColumn.getEntityValue(relatedEntity);
+                if (relatedEntity && relatedEntity instanceof Object) {
+                    return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+
+                } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object) {
+                    return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+                }
+
+            } else if (this.referencedColumn) {
+                return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
             }
 
             return entity[this.propertyName];
