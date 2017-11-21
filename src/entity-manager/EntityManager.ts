@@ -657,6 +657,11 @@ export class EntityManager {
      * Optionally find options or conditions can be applied.
      */
     findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+
+        // if no ids passed, no need to execute a query - just return an empty array of values
+        if (!ids.length)
+            return Promise.resolve([]);
+
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
