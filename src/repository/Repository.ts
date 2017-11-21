@@ -41,10 +41,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Creates a new query builder that can be used to build a sql query.
      */
     createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
-        if (alias)
-            return this.manager.createQueryBuilder(this.metadata.target, alias, queryRunner || this.queryRunner);
-
-        return this.manager.createQueryBuilder(queryRunner || this.queryRunner);
+        return this.manager.createQueryBuilder(this.metadata.target, alias || this.metadata.targetName, queryRunner || this.queryRunner);
     }
 
     /**

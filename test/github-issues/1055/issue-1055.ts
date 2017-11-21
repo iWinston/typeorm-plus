@@ -10,12 +10,12 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mariadb"]
+        enabledDrivers: ["mariadb"] // only one driver is enabled because this example uses lazy relations
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should be able to find by object reference", () => Promise.all(connections.map(async connection => {
+    it.skip("should be able to find by object reference", () => Promise.all(connections.map(async connection => {
         const manager = connection.manager;
 
         const parent = new Parent();
@@ -48,7 +48,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
     })));
 
 
-    it("should be able to lookup from promise as well", () => Promise.all(connections.map(async connection => {
+    it.skip("should be able to lookup from promise as well", () => Promise.all(connections.map(async connection => {
         const manager = connection.manager;
 
         const parent = new Parent();
