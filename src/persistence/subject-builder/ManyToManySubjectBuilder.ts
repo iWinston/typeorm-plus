@@ -78,7 +78,7 @@ export class ManyToManySubjectBuilder {
                 // we use unshift because we need to perform those operations before post deletion is performed
                 // but post deletion was already added as an subject
                 // this is temporary solution, later we need to implement proper sorting of subjects before their removal
-                this.subjects.unshift(junctionSubject);
+                this.subjects.push(junctionSubject);
             });
         });
     }
@@ -193,7 +193,7 @@ export class ManyToManySubjectBuilder {
                 mustBeRemoved: true,
                 identifier: this.buildJunctionIdentifier(subject, relation, removedEntityRelationId)
             });
-            this.subjects.unshift(junctionSubject);
+            this.subjects.push(junctionSubject);
         });
     }
 

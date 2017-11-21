@@ -45,7 +45,15 @@ export class SubjectTopoligicalSorter {
 
         const sortedSubjects: Subject[] = [];
 
-        // first we always insert entities with non-nullable relations, sort them first
+        // first if we sort for deletion all junction subjects
+        // junction subjects are subjects without entity and database entity set
+        if (direction === "delete") {
+            const junctionSubjects = this.subjects.filter(subject => !subject.entity && !subject.databaseEntity);
+            sortedSubjects.push(...junctionSubjects);
+            this.removeAlreadySorted(junctionSubjects);
+        }
+
+        // next we always insert entities with non-nullable relations, sort them first
         const nonNullableDependencies = this.getNonNullableDependencies();
         let sortedNonNullableEntityTargets = this.toposort(nonNullableDependencies);
         if (direction === "insert")
@@ -57,9 +65,7 @@ export class SubjectTopoligicalSorter {
         sortedNonNullableEntityTargets.forEach(sortedEntityTarget => {
             const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
             sortedSubjects.push(...entityTargetSubjects);
-            entityTargetSubjects.forEach(entityTargetSubject => {
-                this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1);
-            });
+            this.removeAlreadySorted(entityTargetSubjects);
         });
 
         // next sort all other entities
@@ -72,9 +78,7 @@ export class SubjectTopoligicalSorter {
         sortedOtherEntityTargets.forEach(sortedEntityTarget => {
             const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
             sortedSubjects.push(...entityTargetSubjects);
-            entityTargetSubjects.forEach(entityTargetSubject => {
-                this.subjects.splice(this.subjects.indexOf(entityTargetSubject), 1);
-            });
+            this.removeAlreadySorted(entityTargetSubjects);
         });
 
         // if we have something left in the subjects add them as well
@@ -85,6 +89,15 @@ export class SubjectTopoligicalSorter {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Removes already sorted subjects from this.subjects list of subjects.
+     */
+    protected removeAlreadySorted(subjects: Subject[]) {
+        subjects.forEach(subject => {
+            this.subjects.splice(this.subjects.indexOf(subject), 1);
+        });
+    }
 
     /**
      * Extracts all unique metadatas from the given subjects.
