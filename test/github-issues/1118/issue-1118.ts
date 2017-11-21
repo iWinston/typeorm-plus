@@ -3,7 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
-describe.only("github issues > #1099 findByIds must return empty results if no criteria were passed in an array", () => {
+describe("github issues > #1099 findByIds must return empty results if no criteria were passed in an array", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
