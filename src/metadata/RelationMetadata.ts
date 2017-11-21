@@ -342,10 +342,31 @@ export class RelationMetadata {
 
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
             const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
-            return embeddedObject ? embeddedObject[this.isLazy ? "__" + this.propertyName + "__" : this.propertyName] : undefined;
+
+            if (this.isLazy) {
+                if (embeddedObject["__" + this.propertyName + "__"] !== undefined)
+                    return embeddedObject["__" + this.propertyName + "__"];
+
+                if (embeddedObject[this.propertyName] instanceof Promise && embeddedObject[this.propertyName]["__value__"]) {
+                    return embeddedObject[this.propertyName]["__value__"];
+                }
+
+                return undefined;
+            }
+            return embeddedObject[this.propertyName];
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
-            return entity[this.isLazy ? "__" + this.propertyName + "__" : this.propertyName];
+            if (this.isLazy) {
+                if (entity["__" + this.propertyName + "__"] !== undefined)
+                    return entity["__" + this.propertyName + "__"];
+
+                if (entity[this.propertyName] instanceof Promise && entity[this.propertyName]["__value__"]) {
+                    return entity[this.propertyName]["__value__"];
+                }
+
+                return undefined;
+            }
+            return entity[this.propertyName];
         }
     }
 

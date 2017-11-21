@@ -11,7 +11,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mariadb"] // only one driver is enabled because this example uses lazy relations
+        enabledDrivers: ["mysql"] // only one driver is enabled because this example uses lazy relations
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -28,9 +28,10 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
 
         if (!loadedParent) return;
 
-        const child = new Child();
-        child.name = "Child";
-        child.parent = Promise.resolve(loadedParent);
+        const child = connection.manager.create(Child, { // use alternative way of creating (to fix #1180 at the same time as well)
+            name: "Child",
+            parent: PromiseUtils.create(loadedParent)
+        });
         await manager.save(child);
 
         const foundChild = await manager.findOne(Child, { parent: loadedParent });
