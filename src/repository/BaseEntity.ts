@@ -97,7 +97,7 @@ export class BaseEntity {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    static createQueryBuilder<T extends BaseEntity>(this: ObjectType<T>, alias: string): SelectQueryBuilder<T> {
+    static createQueryBuilder<T extends BaseEntity>(this: ObjectType<T>, alias?: string): SelectQueryBuilder<T> {
         return (this as any).getRepository().createQueryBuilder(alias);
     }
 
