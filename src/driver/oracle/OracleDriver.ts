@@ -120,7 +120,7 @@ export class OracleDriver implements Driver {
         "nvarchar2",
         "varchar2"
     ];
-    
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -303,7 +303,7 @@ export class OracleDriver implements Driver {
 
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
@@ -385,13 +385,13 @@ export class OracleDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length;
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }
@@ -424,7 +424,7 @@ export class OracleDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
-            this.master.connect((err: any, connection: any, release: Function) => {
+            this.master.getConnection((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
                 ok(connection);
             });
@@ -443,7 +443,7 @@ export class OracleDriver implements Driver {
         return new Promise<any>((ok, fail) => {
             const random = Math.floor(Math.random() * this.slaves.length);
 
-            this.slaves[random].connect((err: any, connection: any) => {
+            this.slaves[random].getConnection((err: any, connection: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });

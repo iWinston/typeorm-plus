@@ -46,7 +46,7 @@ describe("sqljs driver > autosave", () => {
             await repository.remove(savedPost);
         }
 
-        connection.close();
+        await connection.close();
 
         expect(saves).to.be.equal(7);
     });
@@ -77,10 +77,10 @@ describe("sqljs driver > autosave", () => {
         if (savedPost) {
             savedPost.title = "A updated post";
             await repository.save(savedPost);
-            repository.remove(savedPost);
+            await repository.remove(savedPost);
         }
 
-        connection.close();
+        await connection.close();
 
         expect(saves).to.be.equal(0);
     });
