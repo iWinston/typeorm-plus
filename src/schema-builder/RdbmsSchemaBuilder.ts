@@ -153,7 +153,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (schema)
                 schemaPaths.push(schema);
         }
-        schemaPaths.forEach(schemaPath => this.queryRunner.createSchema(schemaPath));
+        schemaPaths.forEach(schemaPath => this.queryRunner.createSchema(schemaPath, true));
 
         await this.dropOldForeignKeys();
         // await this.dropOldIndexes();

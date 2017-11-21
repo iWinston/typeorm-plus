@@ -113,7 +113,7 @@ export class UniqueMetadata {
             })
             .reduce((a, b) => a.concat(b));
         }
-        this.name = this.givenName ? this.givenName : namingStrategy.uniqueConstraintName(this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
+        this.name = this.givenName ? this.givenName : namingStrategy.uniqueConstraintName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName));
         return this;
     }
 

@@ -32,7 +32,7 @@ describe("query runner > create primary key", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         await queryRunner.createTable(new Table({
             name: "person",
@@ -50,7 +50,7 @@ describe("query runner > create primary key", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();

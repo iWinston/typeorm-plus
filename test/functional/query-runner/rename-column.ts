@@ -3,6 +3,8 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
+import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("query runner > rename column", () => {
 
@@ -10,7 +12,7 @@ describe("query runner > rename column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mssql", /*"mysql",*/ "postgres"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -37,7 +39,6 @@ describe("query runner > rename column", () => {
         table!.findColumnByName("title")!.should.be.exist;
         table!.findColumnByName("description")!.should.be.exist;
 
-        console.log(queryRunner.getMemorySql());
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
@@ -79,8 +80,25 @@ describe("query runner > rename column", () => {
         });
         tableUnique!.name!.should.be.equal(newUniqueConstraintName);
 
+        let questionTableName: string = "question";
+        let categoryTableName: string = "category";
+
+        // create different names to test renaming with custom schema and database.
+        if (connection.driver instanceof SqlServerDriver) {
+            questionTableName = "testDB.testSchema.question";
+            categoryTableName = "testDB.testSchema.category";
+            await queryRunner.createDatabase("testDB", true);
+            await queryRunner.createSchema("testDB.testSchema", true);
+
+        } else if (connection.driver instanceof PostgresDriver) {
+            questionTableName = "testSchema.question";
+            categoryTableName = "testSchema.category";
+            await queryRunner.createSchema("testSchema", true);
+
+        }
+
         await queryRunner.createTable(new Table({
-            name: "question",
+            name: questionTableName,
             columns: [
                 {
                     name: "id",
@@ -95,10 +113,10 @@ describe("query runner > rename column", () => {
                 }
             ],
             indices: [{ columnNames: ["name"] }]
-        }));
+        }), true);
 
         await queryRunner.createTable(new Table({
-            name: "category",
+            name: categoryTableName,
             columns: [
                 {
                     name: "id",
@@ -116,19 +134,19 @@ describe("query runner > rename column", () => {
             foreignKeys: [
                 {
                     columnNames: ["questionId"],
-                    referencedTableName: "question",
+                    referencedTableName: questionTableName,
                     referencedColumnNames: ["id"]
                 }
             ]
-        }));
+        }), true);
 
-        await queryRunner.renameColumn("question", "name", "name2");
-        table = await queryRunner.getTable("question");
+        await queryRunner.renameColumn(questionTableName, "name", "name2");
+        table = await queryRunner.getTable(questionTableName);
         const newIndexName = connection.namingStrategy.indexName(table!, ["name2"]);
         table!.indices[0].name!.should.be.equal(newIndexName);
 
-        await queryRunner.renameColumn("category", "questionId", "questionId2");
-        table = await queryRunner.getTable("category");
+        await queryRunner.renameColumn(categoryTableName, "questionId", "questionId2");
+        table = await queryRunner.getTable(categoryTableName);
         const newForeignKeyName = connection.namingStrategy.foreignKeyName(table!, ["questionId2"]);
         table!.foreignKeys[0].name!.should.be.equal(newForeignKeyName);
 

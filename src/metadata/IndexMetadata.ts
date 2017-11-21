@@ -140,7 +140,7 @@ export class IndexMetadata {
                 updatedMap[column.databaseName] = map[key];
             return updatedMap;
         }, {} as { [key: string]: number });
-        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
+        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName));
         return this;
     }
 

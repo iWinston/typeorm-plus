@@ -34,7 +34,7 @@ describe("query runner > create foreign key", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         await queryRunner.createTable(new Table({
             name: "answer",
@@ -53,7 +53,7 @@ describe("query runner > create foreign key", () => {
                     type: "int",
                 }
             ]
-        }));
+        }), true);
 
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();

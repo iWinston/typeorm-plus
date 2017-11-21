@@ -34,7 +34,7 @@ describe("query runner > create unique constraint", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         await queryRunner.createTable(new Table({
             name: "question",
@@ -53,7 +53,7 @@ describe("query runner > create unique constraint", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();

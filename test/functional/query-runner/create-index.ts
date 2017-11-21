@@ -38,7 +38,7 @@ describe("query runner > create index", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         // clear sqls in memory to avoid removing tables when down queries executed.
         queryRunner.clearSqlMemory();

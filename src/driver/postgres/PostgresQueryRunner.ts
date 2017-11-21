@@ -335,16 +335,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
         const up = ifNotExist ? `CREATE SCHEMA IF NOT EXISTS "${schema}"` : `CREATE SCHEMA "${schema}"`;
-        const down = `DROP SCHEMA "${schema}"`;
+        const down = `DROP SCHEMA "${schema}" CASCADE`;
         await this.executeQueries(up, down);
     }
 
     /**
      * Drops table schema.
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void> {
         const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[0];
-        const up = ifExist ? `DROP SCHEMA IF EXISTS "${schema}"` : `DROP SCHEMA "${schema}"`;
+        const up = ifExist ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}` : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`;
         const down = `CREATE SCHEMA "${schema}"`;
         await this.executeQueries(up, down);
     }
@@ -492,28 +492,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Renames column in the given table.
      */
     async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
-
-        let table: Table|undefined = undefined;
-        if (tableOrName instanceof Table) {
-            table = tableOrName;
-        } else {
-            table = await this.getTable(tableOrName);
-        }
-
-        if (!table)
-            throw new Error(`Table ${tableOrName} was not found.`);
-
-        let oldColumn: TableColumn|undefined = undefined;
-        if (oldTableColumnOrName instanceof TableColumn) {
-            oldColumn = oldTableColumnOrName;
-        } else {
-            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
-        }
-
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        let newColumn: TableColumn|undefined = undefined;
+        let newColumn;
         if (newTableColumnOrName instanceof TableColumn) {
             newColumn = newTableColumnOrName;
         } else {
@@ -539,14 +523,84 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (oldColumn.name !== newColumn.name) { // todo: Need also change sequences and their defaults
+        if (oldColumn.name !== newColumn.name) {
+            // rename column
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
+
+            // rename column primary key constraint
+            if (oldColumn.isPrimary === true) {
+                const primaryColumns = clonedTable.primaryColumns;
+
+                // build old primary constraint name
+                const columnNames = primaryColumns.map(column => column.name);
+                const oldPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+
+                // replace old column name with new column name
+                columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
+                columnNames.push(newColumn.name);
+
+                // build new primary constraint name
+                const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
+            }
+
+            // rename column sequence
+            if (oldColumn.isGenerated === true) {
+                const schema = this.extractSchema(table);
+
+                // building sequence name. Sequence without schema needed because it must be supplied in RENAME TO without
+                // schema name, but schema needed in ALTER SEQUENCE argument.
+                const seqName = this.buildSequenceName(table, oldColumn.name, undefined, true, true);
+                const newSeqName = this.buildSequenceName(table, newColumn.name, undefined, true, true);
+
+                const up = schema ? `ALTER SEQUENCE "${schema}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
+                const down = schema ? `ALTER SEQUENCE "${schema}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
+                upQueries.push(up);
+                downQueries.push(down);
+            }
+
+            // rename unique constraints
+            clonedTable.findColumnUniques(oldColumn).forEach(unique => {
+                unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
+                unique.columnNames.push(newColumn.name);
+                const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
+
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
+            });
+
+            // rename index constraints
+            clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
+                index.columnNames.push(newColumn.name);
+                const schema = this.extractSchema(table);
+                const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+
+                const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
+                const down = schema ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"` : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`;
+                upQueries.push(up);
+                downQueries.push(down);
+            });
+
+            // rename foreign key constraints
+            clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
+                foreignKey.columnNames.push(newColumn.name);
+                const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
+            });
 
             // rename old column in the Table object
             const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
             clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
             oldColumn.name = newColumn.name;
+
+            // TODO: rename fk
         }
 
         if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
@@ -899,9 +953,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Removes all tables from the currently connected database.
      */
-    async clearDatabase(schemas?: string[]): Promise<void> {
-        if (!schemas)
-            schemas = [];
+    async clearDatabase(): Promise<void> {
+        const schemas: string[] = [];
+        this.connection.entityMetadatas
+            .filter(metadata => metadata.schema)
+            .forEach(metadata => {
+                const isSchemaExist = !!schemas.find(schema => schema === metadata.schema);
+                if (!isSchemaExist)
+                    schemas.push(metadata.schema!);
+            });
         schemas.push(this.driver.options.schema || "current_schema()");
         const schemaNamesString = schemas.map(name => {
             return name === "current_schema()" ? name : "'" + name + "'";
@@ -1279,7 +1339,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds sequence name from given table and column.
      */
-    protected buildSequenceName(table: Table, columnOrName: TableColumn|string, currentSchema?: string, disableEscape?: true): string {
+    protected buildSequenceName(table: Table, columnOrName: TableColumn|string, currentSchema?: string, disableEscape?: true, skipSchema?: boolean): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         let schema: string|undefined = undefined;
         let tableName: string|undefined = undefined;
@@ -1291,7 +1351,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             tableName = table.name.split(".")[1];
         }
 
-        if (schema && schema !== currentSchema) {
+        if (schema && schema !== currentSchema && !skipSchema) {
             return disableEscape ? `${schema}.${tableName}_${columnName}_seq` : `"${schema}"."${tableName}_${columnName}_seq"`;
 
         } else {

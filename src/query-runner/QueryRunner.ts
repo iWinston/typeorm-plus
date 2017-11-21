@@ -183,7 +183,7 @@ export interface QueryRunner {
      * For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
      * If schema path passed, it will drop schema in specified database.
      */
-    dropSchema(schemaPath: string, ifExist?: boolean): Promise<void>;
+    dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>;
 
     /**
      * Creates a new table.

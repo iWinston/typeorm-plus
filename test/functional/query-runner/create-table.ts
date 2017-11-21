@@ -41,7 +41,7 @@ describe("query runner > create table", () => {
             ]
         };
 
-        await queryRunner.createTable(new Table(options));
+        await queryRunner.createTable(new Table(options), true);
 
         let table = await queryRunner.getTable("category");
         const idColumn = table!.findColumnByName("id");
@@ -97,7 +97,7 @@ describe("query runner > create table", () => {
                     type: "varchar",
                 }
             ]
-        }));
+        }), true);
 
         await queryRunner.createTable(new Table({
             name: "question",
@@ -136,7 +136,8 @@ describe("query runner > create table", () => {
                     referencedColumnNames: ["id", "userId"]
                 }
             ]
-        }));
+        }), true);
+
         const categoryTableOptions = <TableOptions>{
             name: "category",
             columns: [
@@ -177,7 +178,7 @@ describe("query runner > create table", () => {
         if (!(connection.driver instanceof MysqlDriver))
             categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
 
-        await queryRunner.createTable(new Table(categoryTableOptions));
+        await queryRunner.createTable(new Table(categoryTableOptions), true);
 
         let personTable = await queryRunner.getTable("person");
         const personIdColumn = personTable!.findColumnByName("id");
