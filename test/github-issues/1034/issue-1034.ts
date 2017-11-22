@@ -10,7 +10,7 @@ describe("github issues > #1034 Issue using setter with promises", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql"]
+        enabledDrivers: ["mysql"] // we are using lazy relations that's why we are using a single driver
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -28,15 +28,13 @@ describe("github issues > #1034 Issue using setter with promises", () => {
         await connection.manager.save(user);
         await connection.manager.save(circle);
 
-        console.log("test beginning");
-
         users.push(user);
         const circleFromDB = await connection.manager.findOneById(Circle, circle.getId());
         expect(circleFromDB).is.not.undefined;
 
         // Setting users with setter
         circleFromDB!.setUsers(Promise.resolve(users));
-        console.log("before assert");
+        await Promise.resolve(); // this is unpleasant way to fix this issue
         expect(users).deep.equal(await circleFromDB!.getUsers());
     })));
 
