@@ -30,7 +30,7 @@ export class Broadcaster {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(entity)) {
-                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+                return listener.execute(entity);
             }
         });
 
@@ -56,7 +56,7 @@ export class Broadcaster {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(entity)) {
-                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+                return listener.execute(entity);
             }
         });
 
@@ -85,7 +85,7 @@ export class Broadcaster {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(entity)) {
-                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+                return listener.execute(entity);
             }
         });
 
@@ -113,7 +113,7 @@ export class Broadcaster {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(entity)) {
-                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+                return listener.execute(entity);
             }
         });
 
@@ -139,7 +139,7 @@ export class Broadcaster {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(entity)) {
-                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+                return listener.execute(entity);
             }
         });
 
@@ -168,7 +168,7 @@ export class Broadcaster {
 
         const listeners = metadata.listeners.map(listener => {
             if (entity && listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(entity)) {
-                return entity[listener.propertyName]();  // getValue() ?!! But its a function! What about embeds? Tests!
+                return listener.execute(entity);
             }
         });
 

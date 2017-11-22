@@ -377,8 +377,6 @@ export class RelationMetadata {
      * If merge is set to true, it merges given value into currently
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
-        const propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
-
         if (this.embeddedMetadata) {
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
@@ -394,13 +392,13 @@ export class RelationMetadata {
                     extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
                     return map;
                 }
-                map[propertyName] = value;
+                map[this.propertyName] = value;
                 return map;
             };
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[propertyName] = value;
+            entity[this.propertyName] = value;
         }
     }
 

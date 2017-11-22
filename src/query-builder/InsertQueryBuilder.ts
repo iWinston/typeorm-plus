@@ -192,6 +192,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         return this;
     }
 
+    /**
+     * Adds additional ON CONFLICT statement supported in postgres.
+     */
+    onConflict(statement: string): this {
+        this.expressionMap.onConflict = statement;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -231,6 +239,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             } else {
                 query += ` DEFAULT VALUES`;
             }
+        }
+
+        if (this.expressionMap.onConflict && this.connection.driver instanceof PostgresDriver) {
+            query += ` ON CONFLICT ` + this.expressionMap.onConflict;
         }
 
         // add RETURNING expression

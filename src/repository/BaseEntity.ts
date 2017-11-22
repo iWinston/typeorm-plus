@@ -101,7 +101,7 @@ export class BaseEntity {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    static createQueryBuilder<T extends BaseEntity>(this: ObjectType<T>, alias: string): SelectQueryBuilder<T> {
+    static createQueryBuilder<T extends BaseEntity>(this: ObjectType<T>, alias?: string): SelectQueryBuilder<T> {
         return (this as any).getRepository().createQueryBuilder(alias);
     }
 
@@ -109,17 +109,22 @@ export class BaseEntity {
      * Creates a new entity instance.
      */
     static create<T extends BaseEntity>(this: ObjectType<T>): T;
+
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
     static create<T extends BaseEntity>(this: ObjectType<T>, entityLikeArray: DeepPartial<T>[]): T;
+
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
     static create<T extends BaseEntity>(this: ObjectType<T>, entityLike: DeepPartial<T>): T;
-
+   /**
+     * Creates a new entity instance and copies all entity properties from this object into a new entity.
+     * Note that it copies only properties that present in entity schema.
+     */
     static create<T extends BaseEntity>(this: ObjectType<T>, entityOrEntities?: any): T {
         return (this as any).getRepository().create(entityOrEntities);
     }

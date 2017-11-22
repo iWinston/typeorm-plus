@@ -1,24 +1,23 @@
 import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
+import {PostInformation} from "./PostInformation";
+import {Index} from "../../../../../src/decorator/Index";
 
-@Entity({
-    orderBy: {
-        myOrder: "DESC"
-    }
-})
+@Entity()
 export class Post {
 
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
-    myOrder: number;
+    @Index()
+    title: string;
 
     @Column()
-    num1: number = 1;
+    text: string;
 
-    @Column()
-    num2: number = 1;
+    @Column(type => PostInformation)
+    information: PostInformation = new PostInformation();
 
 }

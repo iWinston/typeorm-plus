@@ -178,7 +178,6 @@ export class RawSqlResultsToEntityTransformer {
                 entity[join.mapToPropertyPropertyName] = result; // todo: fix embeds
 
             } else { // otherwise set to relation
-                // console.log(result);
                 join.relation!.setEntityValue(entity, result);
             }
 
