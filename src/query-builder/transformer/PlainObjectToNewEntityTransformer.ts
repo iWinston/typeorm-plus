@@ -8,6 +8,13 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 export class PlainObjectToNewEntityTransformer {
 
     // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(protected getLazyRelationsPromiseValue: boolean = false) {
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -46,7 +53,7 @@ export class PlainObjectToNewEntityTransformer {
         metadata.relations.forEach(relation => {
 
             let entityRelatedValue = relation.getEntityValue(entity);
-            const objectRelatedValue = relation.getEntityValue(object);
+            const objectRelatedValue = relation.getEntityValue(object, this.getLazyRelationsPromiseValue);
             if (objectRelatedValue === undefined)
                 return;
 

@@ -56,19 +56,17 @@ describe("basic-lazy-relations", () => {
 
         await postRepository.save(savedPost);
 
-        savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
+        await savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
         const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
-        post.categories.should.be.instanceOf(Promise);
-
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.contain(savedCategory1);
-        categories.should.contain(savedCategory2);
-        categories.should.contain(savedCategory3);
+        categories.should.contain({ id: 1, name: "kids" });
+        categories.should.contain({ id: 2, name: "people" });
+        categories.should.contain({ id: 3, name: "animals" });
     })));
 
 
@@ -96,19 +94,17 @@ describe("basic-lazy-relations", () => {
 
         await postRepository.save(savedPost);
 
-        savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
+        await savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
         const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
-        post.twoSideCategories.should.be.instanceOf(Promise);
-
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.contain(savedCategory1);
-        categories.should.contain(savedCategory2);
-        categories.should.contain(savedCategory3);
+        categories.should.contain({ id: 1, name: "kids" });
+        categories.should.contain({ id: 2, name: "people" });
+        categories.should.contain({ id: 3, name: "animals" });
 
         const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
@@ -136,13 +132,12 @@ describe("basic-lazy-relations", () => {
         newUser.profile = Promise.resolve(profile);
         await userRepository.save(newUser);
 
-        newUser.profile.should.eventually.be.eql(profile);
+        await newUser.profile.should.eventually.be.eql(profile);
 
         // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
         const loadedUser: any = await userRepository.findOne(1);
         loadedUser.firstName.should.be.equal("Umed");
         loadedUser.secondName.should.be.equal("San");
-        loadedUser.profile.should.be.instanceOf(Promise);
 
         const lazyLoadedProfile = await loadedUser.profile;
         lazyLoadedProfile.country.should.be.equal("Japan");

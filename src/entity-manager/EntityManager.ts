@@ -215,7 +215,10 @@ export class EntityManager {
         if (plainObjectOrObjects instanceof Array)
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
-        return this.merge(entityClass, metadata.create(), plainObjectOrObjects);
+        const mergeIntoEntity = metadata.create();
+        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer(true);
+        plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata);
+        return mergeIntoEntity;
     }
 
     /**

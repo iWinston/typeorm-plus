@@ -49,13 +49,11 @@ describe("named-tables-lazy-relations", () => {
 
         await postRepository.save(savedPost);
 
-        savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
+        await savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
         const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
-
-        post.categories.should.be.instanceOf(Promise);
 
         const categories = await post.categories;
         categories.length.should.be.equal(3);
@@ -89,13 +87,11 @@ describe("named-tables-lazy-relations", () => {
 
         await postRepository.save(savedPost);
 
-        savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
+        await savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
         const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
-
-        post.twoSideCategories.should.be.instanceOf(Promise);
 
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);

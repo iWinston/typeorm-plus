@@ -316,7 +316,7 @@ export class RelationMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-    getEntityValue(entity: ObjectLiteral): any|undefined {
+    getEntityValue(entity: ObjectLiteral, getLazyRelationsPromiseValue: boolean = false): any|undefined {
 
         // extract column value from embeddeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -347,22 +347,20 @@ export class RelationMetadata {
                 if (embeddedObject["__" + this.propertyName + "__"] !== undefined)
                     return embeddedObject["__" + this.propertyName + "__"];
 
-                if (embeddedObject[this.propertyName] instanceof Promise && embeddedObject[this.propertyName]["__value__"]) {
-                    return embeddedObject[this.propertyName]["__value__"];
-                }
+                if (getLazyRelationsPromiseValue === true)
+                    return embeddedObject[this.propertyName];
 
                 return undefined;
             }
-            return embeddedObject[this.propertyName];
+            return embeddedObject ? embeddedObject[this.isLazy ? "__" + this.propertyName + "__" : this.propertyName] : undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.isLazy) {
                 if (entity["__" + this.propertyName + "__"] !== undefined)
                     return entity["__" + this.propertyName + "__"];
 
-                if (entity[this.propertyName] instanceof Promise && entity[this.propertyName]["__value__"]) {
-                    return entity[this.propertyName]["__value__"];
-                }
+                if (getLazyRelationsPromiseValue === true)
+                    return entity[this.propertyName];
 
                 return undefined;
             }
@@ -377,6 +375,8 @@ export class RelationMetadata {
      * If merge is set to true, it merges given value into currently
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
+        const propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
+
         if (this.embeddedMetadata) {
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
@@ -392,13 +392,13 @@ export class RelationMetadata {
                     extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
                     return map;
                 }
-                map[this.propertyName] = value;
+                map[propertyName] = value;
                 return map;
             };
             return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
 
         } else {
-            entity[this.propertyName] = value;
+            entity[propertyName] = value;
         }
     }
 

@@ -30,13 +30,14 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
 
         const child = connection.manager.create(Child, { // use alternative way of creating (to fix #1180 at the same time as well)
             name: "Child",
-            parent: PromiseUtils.create(loadedParent)
+            parent: loadedParent
         });
         await manager.save(child);
 
         const foundChild = await manager.findOne(Child, { parent: loadedParent });
         expect(foundChild).not.to.be.empty;
     })));
+
 
     it("should be able to lookup from promise as well", () => Promise.all(connections.map(async connection => {
         const manager = connection.manager;
