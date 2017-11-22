@@ -51,9 +51,10 @@ export class Broadcaster {
      */
     async broadcastBeforeInsertEvent(manager: EntityManager, subject: Subject): Promise<void> {
 
+        // console.log(subject.metadata.listeners);
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]()); // getValue() ?
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeInsert)
@@ -75,7 +76,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeUpdate)
@@ -100,7 +101,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.databaseEntity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.databaseEntity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.beforeRemove)
@@ -124,7 +125,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_INSERT && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterInsert)
@@ -146,7 +147,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterUpdate)
@@ -171,7 +172,7 @@ export class Broadcaster {
 
         const listeners = subject.metadata.listeners
             .filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE && listener.isAllowed(subject.entity))
-            .map(entityListener => subject.entity[entityListener.propertyName]());
+            .map(entityListener => entityListener.execute(subject.entity));
 
         const subscribers = this.connection.subscribers
             .filter(subscriber => this.isAllowedSubscriber(subscriber, subject.entityTarget!) && subscriber.afterRemove)

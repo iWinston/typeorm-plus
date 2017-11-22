@@ -154,6 +154,16 @@ export class EntityMetadata {
     ownRelations: RelationMetadata[] = [];
 
     /**
+     * Entity's own listener metadatas.
+     */
+    ownListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Entity's own indices.
+     */
+    ownIndices: IndexMetadata[] = [];
+
+    /**
      * Relations of the entity, including relations that are coming from the embeddeds of this entity.
      */
     relations: RelationMetadata[] = [];
