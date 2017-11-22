@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe.only("other issues > entity listeners must work in embeddeds as well", () => {
+describe("other issues > entity listeners must work in embeddeds as well", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
