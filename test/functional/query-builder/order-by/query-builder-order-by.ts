@@ -78,4 +78,33 @@ describe("query builder > order-by", () => {
 
     })));
 
+    it("should be able to order by sql statement", () => Promise.all(connections.map(async connection => {
+        const post1 = new Post();
+        post1.myOrder = 1;
+        post1.num1 = 10;
+        post1.num2 = 5;
+
+        const post2 = new Post();
+        post2.myOrder = 2;
+        post2.num1 = 10;
+        post2.num2 = 2;
+        await connection.manager.save([post1, post2]);
+
+        const loadedPost1 = await connection.manager
+            .createQueryBuilder(Post, "post")
+            .orderBy("post.num1 DIV post.num2")
+            .getOne();
+
+        expect(loadedPost1!.num1).to.be.equal(10);
+        expect(loadedPost1!.num2).to.be.equal(5);
+
+        const loadedPost2 = await connection.manager
+            .createQueryBuilder(Post, "post")
+            .orderBy("post.num1 DIV post.num2", "DESC")
+            .getOne();
+
+        expect(loadedPost2!.num1).to.be.equal(10);
+        expect(loadedPost2!.num2).to.be.equal(2);
+    })));
+
 });
