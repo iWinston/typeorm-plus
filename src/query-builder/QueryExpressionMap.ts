@@ -62,6 +62,11 @@ export class QueryExpressionMap {
     returning: string = "";
 
     /**
+     * Optional on conflict statement used in insertion query in postgres.
+     */
+    onConflict: string = "";
+
+    /**
      * JOIN queries.
      */
     joinAttributes: JoinAttribute[] = [];
@@ -328,6 +333,8 @@ export class QueryExpressionMap {
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
         map.mainAlias = this.mainAlias;
         map.valuesSet = this.valuesSet;
+        map.returning = this.returning;
+        map.onConflict = this.onConflict;
         map.joinAttributes = this.joinAttributes.map(join => new JoinAttribute(this.connection, this, join));
         map.relationIdAttributes = this.relationIdAttributes.map(relationId => new RelationIdAttribute(this, relationId));
         map.relationCountAttributes = this.relationCountAttributes.map(relationCount => new RelationCountAttribute(this, relationCount));

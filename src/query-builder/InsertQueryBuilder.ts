@@ -62,6 +62,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         } else throw new Error("OUTPUT or RETURNING clause only supported by MS SQLServer or PostgreSQL");
     }
 
+    /**
+     * Adds additional ON CONFLICT statement supported in postgres.
+     */
+    onConflict(statement: string): this {
+        this.expressionMap.onConflict = statement;
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -146,13 +154,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         // generate sql query
         if (this.expressionMap.returning !== "" && this.connection.driver instanceof PostgresDriver) {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values} RETURNING ${this.expressionMap.returning}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}${columnNames ? "(" + columnNames + ")" : ""} VALUES ${values}${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""} RETURNING ${this.expressionMap.returning}`;
 
         } else if (this.expressionMap.returning !== "" && this.connection.driver instanceof SqlServerDriver) {
             return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) OUTPUT ${this.expressionMap.returning} VALUES ${values}`;
 
         } else {
-            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}`;
+            return `INSERT INTO ${this.getTableName(this.getMainTableName())}(${columnNames}) VALUES ${values}${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
         }
     }
 
