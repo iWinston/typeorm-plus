@@ -4,6 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
+import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
 
 describe("query builder > order-by", () => {
 
@@ -52,7 +53,7 @@ describe("query builder > order-by", () => {
     })));
 
     it("should be always in right order(custom order)", () => Promise.all(connections.map(async connection => {
-        if (!(connection.driver instanceof PostgresDriver))
+        if (!(connection.driver instanceof PostgresDriver)) // NULLS FIRST / LAST only supported by postgres
             return;
 
         const post1 = new Post();
@@ -79,6 +80,8 @@ describe("query builder > order-by", () => {
     })));
 
     it("should be able to order by sql statement", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof MysqlDriver)) return; // DIV statement does not supported by all drivers
+
         const post1 = new Post();
         post1.myOrder = 1;
         post1.num1 = 10;
