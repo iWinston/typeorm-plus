@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {AbstractSqliteQueryRunner} from "./AbstractSqliteQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
 import {Connection} from "../../connection/Connection";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
@@ -9,7 +8,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
@@ -18,7 +17,7 @@ import {ArrayParameter} from "../../query-builder/ArrayParameter";
 /**
  * Organizes communication with sqlite DBMS.
  */
-export class AbstractSqliteDriver implements Driver {
+export abstract class AbstractSqliteDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -160,6 +159,15 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
+    // Public Abstract
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    abstract createQueryRunner(mode: "master"|"slave"): QueryRunner;
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -192,16 +200,6 @@ export class AbstractSqliteDriver implements Driver {
      */
     createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    }
-
-    /**
-     * Creates a query runner used to execute database queries.
-     */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        if (!this.queryRunner)
-            this.queryRunner = new AbstractSqliteQueryRunner(this);
-
-        return this.queryRunner;
     }
 
     /**
@@ -302,6 +300,16 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     *
+     * Returns only simple table name because all inherited drivers does not supports schema and database.
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return tableName;
+    }
+
+    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
@@ -331,21 +339,21 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
-        if (typeof column.default === "number") {
-            return "" + column.default;
+    normalizeDefault(defaultValue: string): string {
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
 
-        } else if (typeof column.default === "boolean") {
-            return column.default === true ? "1" : "0";
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
 
-        } else if (typeof column.default === "function") {
-            return column.default();
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
 
-        } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
 
         } else {
-            return column.default;
+            return defaultValue;
         }
     }
 

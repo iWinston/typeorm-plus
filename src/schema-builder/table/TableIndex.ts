@@ -1,4 +1,5 @@
 import {IndexMetadata} from "../../metadata/IndexMetadata";
+import {TableIndexOptions} from "../options/TableIndexOptions";
 
 /**
  * Database's table index stored in this class.
@@ -10,34 +11,28 @@ export class TableIndex {
     // -------------------------------------------------------------------------
 
     /**
-     * Table name that contains this unique index.
-     */
-    tableName: string;
-
-    /**
      * Index name.
      */
-    name: string;
+    name?: string;
 
     /**
      * Columns included in this index.
      */
-    columnNames: string[];
+    columnNames: string[] = [];
 
     /**
      * Indicates if this index is unique.
      */
-    isUnique: boolean;
+    isUnique?: boolean;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(tableName: string, name: string, columnNames: string[], isUnique: boolean) {
-        this.tableName = tableName;
-        this.name = name;
-        this.columnNames = columnNames;
-        this.isUnique = isUnique;
+    constructor(options: TableIndexOptions) {
+        this.name = options.name;
+        this.columnNames = options.columnNames;
+        this.isUnique = options.isUnique;
     }
 
     // -------------------------------------------------------------------------
@@ -47,8 +42,12 @@ export class TableIndex {
     /**
      * Creates a new copy of this index with exactly same properties.
      */
-    clone() {
-        return new TableIndex(this.tableName, this.name, this.columnNames.map(name => name), this.isUnique);
+    clone(): TableIndex {
+        return new TableIndex(<TableIndexOptions>{
+            name: this.name,
+            columnNames: [...this.columnNames],
+            isUnique: this.isUnique
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -59,12 +58,11 @@ export class TableIndex {
      * Creates index from the index metadata object.
      */
     static create(indexMetadata: IndexMetadata): TableIndex {
-        return new TableIndex(
-            indexMetadata.entityMetadata.tableName,
-            indexMetadata.name,
-            indexMetadata.columns.map(column => column.databaseName),
-            indexMetadata.isUnique
-        );
+        return new TableIndex(<TableIndexOptions>{
+            name: indexMetadata.name,
+            columnNames: indexMetadata.columns.map(column => column.databaseName),
+            isUnique: indexMetadata.isUnique
+        });
     }
 
 }

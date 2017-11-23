@@ -17,6 +17,7 @@ import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {ColumnOptions} from "../decorator/options/ColumnOptions";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
+import {UniqueMetadata} from "../metadata/UniqueMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -163,6 +164,11 @@ export class EntityMetadataBuilder {
             entityMetadata.indices.forEach(index => index.build(this.connection.namingStrategy));
         });
 
+        // build all unique constraints (need to do it after relations and their join columns are built)
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.uniques.forEach(unique => unique.build(this.connection.namingStrategy));
+        });
+
         entityMetadatas
             .filter(metadata => !!metadata.parentEntityMetadata && metadata.tableType === "class-table-child")
             .forEach(metadata => {
@@ -302,6 +308,10 @@ export class EntityMetadataBuilder {
         });
         entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
+        });
+        // TODO: ownUniques?
+        entityMetadata.uniques = this.metadataArgsStorage.filterUniques(inheritanceTree).map(args => {
+            return new UniqueMetadata({ entityMetadata, args });
         });
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });

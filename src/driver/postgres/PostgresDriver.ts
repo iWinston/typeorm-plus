@@ -14,7 +14,7 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
@@ -168,7 +168,10 @@ export class PostgresDriver implements Driver {
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults;
+    dataTypeDefaults: DataTypeDefaults = {
+        "character varying": { length: 255 },
+        "varchar": { length: 255 }
+    };
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -382,6 +385,14 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Build full table name with schema name and table name.
+     * E.g. "mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string): string {
+        return schema ? `${schema}.${tableName}` : tableName;
+    }
+
+    /**
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
@@ -458,24 +469,24 @@ export class PostgresDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
-        if (typeof column.default === "number") {
-            return "" + column.default;
+    normalizeDefault(defaultValue: string): string {
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
 
-        } else if (typeof column.default === "boolean") {
-            return column.default === true ? "true" : "false";
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "true" : "false";
 
-        } else if (typeof column.default === "function") {
-            return column.default();
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
 
-        } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
 
-        } else if (typeof column.default === "object") {
-            return `'${JSON.stringify(column.default)}'`;
+        } else if (typeof defaultValue === "object") {
+            return `'${JSON.stringify(defaultValue)}'`;
 
         } else {
-            return column.default;
+            return defaultValue;
         }
     }
 

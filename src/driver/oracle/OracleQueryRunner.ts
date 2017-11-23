@@ -2,17 +2,21 @@ import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {Table} from "../../schema-builder/schema/Table";
-import {TableForeignKey} from "../../schema-builder/schema/TableForeignKey";
-import {TablePrimaryKey} from "../../schema-builder/schema/TablePrimaryKey";
-import {TableIndex} from "../../schema-builder/schema/TableIndex";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
+import {Table} from "../../schema-builder/table/Table";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OracleDriver} from "./OracleDriver";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
+import {SqlInMemory} from "../SqlInMemory";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
+import {PromiseUtils} from "../../util/PromiseUtils";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
@@ -63,6 +67,11 @@ export class OracleQueryRunner implements QueryRunner {
      */
     data = {};
 
+    /**
+     * All synchronized tables in the database.
+     */
+    loadedTables: Table[];
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -85,7 +94,7 @@ export class OracleQueryRunner implements QueryRunner {
     /**
      * Sql-s stored if "sql in memory" mode is enabled.
      */
-    protected sqlsInMemory: string[] = [];
+    protected sqlInMemory: SqlInMemory;
 
     /**
      * Mode in which query runner executes.
@@ -320,6 +329,21 @@ export class OracleQueryRunner implements QueryRunner {
     }
 
     /**
+     * Returns all available database names including system databases.
+     */
+    async getDatabases(): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
+     * Returns all available schema names including system schemas.
+     * If database parameter specified, returns schemas of that database.
+     */
+    async getSchemas(database?: string): Promise<string[]> {
+        return Promise.resolve([]);
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(tableName: string): Promise<Table|undefined> {
@@ -363,7 +387,8 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
 
         // create tables for loaded tables
         return dbTables.map(dbTable => {
-            const table = new Table(dbTable["TABLE_NAME"]);
+            const table = new Table();
+            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
 
             // create columns from the loaded columns
             table.columns = dbColumns
@@ -398,29 +423,33 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
                     return tableColumn;
                 });
 
-            // create primary key schema
-            table.primaryKeys = constraints
-                .filter(constraint =>
-                    constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "P"
-                )
-                .map(constraint =>
-                    new TablePrimaryKey(constraint["CONSTRAINT_NAME"], constraint["COLUMN_NAME"])
-                );
-
             // create foreign key schemas from the loaded indices
             table.foreignKeys = constraints
                 .filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "R")
-                .map(constraint => new TableForeignKey(constraint["CONSTRAINT_NAME"], [], [], "", "")); // todo: fix missing params
+                .map(dbForeignKey => {
+                    return new TableForeignKey(<TableForeignKeyOptions>{
+                        table: table,
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: [],
+                        referencedTableName: "",
+                        referencedColumnNames: []
+                    });
+                }); // todo: fix missing params
 
             // create index schemas from the loaded indices
             table.indices = dbIndices
                 .filter(dbIndex => {
                     return  dbIndex["TABLE_NAME"] === table.name &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"])) &&
-                        (!table.primaryKeys.find(primaryKey => primaryKey.name === dbIndex["INDEX_NAME"]));
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]));
+                        // && (!table.primaryKey === dbIndex["INDEX_NAME"]); TODO: check and fix
                 })
                 .map(dbIndex => {
-                    return new TableIndex(dbTable["TABLE_NAME"], dbIndex["INDEX_NAME"], dbIndex["COLUMN_NAMES"], !!(dbIndex["COLUMN_NAMES"] === "UNIQUE"));
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndex["INDEX_NAME"],
+                        columnNames: dbIndex["COLUMN_NAMES"],
+                        isUnique: (dbIndex["COLUMN_NAMES"] === "UNIQUE")
+                    });
                 });
 
             return table;
@@ -435,6 +464,13 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
+     * Checks if schema with the given name exist.
+     */
+    async hasSchema(schema: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    /**
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableName: string): Promise<boolean> {
@@ -444,17 +480,31 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
-     * Creates a database if it's not created.
+     * Creates a new database.
      */
-    createDatabase(database: string): Promise<void[]> {
-        return this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
+    async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
+        await this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
     }
 
     /**
-     * Creates a schema if it's not created.
+     * Drops database.
      */
-    createSchema(schemas: string[]): Promise<void[]> {
-        return Promise.resolve([]);
+    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Creates a new table schema.
+     */
+    async createSchema(schemas: string, ifNotExist?: boolean): Promise<void> {
+        throw new Error(`Schema create queries are not supported by Oracle driver.`);
+    }
+
+    /**
+     * Drops table schema.
+     */
+    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+        throw new Error(`Schema drop queries are not supported by Oracle driver.`);
     }
 
     /**
@@ -473,9 +523,16 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops the table.
      */
-    async dropTable(tableName: string): Promise<void> {
+    async dropTable(tableName: Table|string): Promise<void> {
         let sql = `DROP TABLE "${tableName}"`;
         await this.query(sql);
+    }
+
+    /**
+     * Renames the given table.
+     */
+    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
+        // TODO
     }
 
     /**
@@ -568,11 +625,11 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
 
             if (newColumn.isGenerated) {
-                if (table.primaryKeys.length > 0 && oldColumn.isPrimary) {
+               /* if (table.primaryKey && oldColumn.isPrimary) {
                     // console.log(table.primaryKeys);
-                    const dropPrimarySql = `ALTER TABLE "${table.name}" DROP CONSTRAINT "${table.primaryKeys[0].name}"`;
+                    const dropPrimarySql = `ALTER TABLE "${table.name}" DROP CONSTRAINT "${table.primaryKey.name}"`;
                     await this.query(dropPrimarySql);
-                }
+                }*/ // TODO: fix
 
                 // since modifying identity column is not supported yet, we need to recreate this column
                 const dropSql = `ALTER TABLE "${table.name}" DROP COLUMN "${newColumn.name}"`;
@@ -601,9 +658,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Changes a column in the table.
      */
-    async changeColumns(table: Table, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
+    async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
         const updatePromises = changedColumns.map(async changedColumn => {
-            return this.changeColumn(table, changedColumn.oldColumn, changedColumn.newColumn);
+            return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
         await Promise.all(updatePromises);
     }
@@ -611,28 +668,60 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Drops column in the table.
      */
-    async dropColumn(table: Table, column: TableColumn): Promise<void> {
-        return this.query(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
+    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        return this.query(`ALTER TABLE "${table!.name}" DROP COLUMN "${column.name}"`);
     }
 
     /**
      * Drops the columns in the table.
      */
-    async dropColumns(table: Table, columns: TableColumn[]): Promise<void> {
-        const dropPromises = columns.map(column => this.dropColumn(table, column));
+    async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
+        const dropPromises = columns.map(column => this.dropColumn(table!, column));
         await Promise.all(dropPromises);
     }
 
     /**
      * Updates table's primary keys.
+     * TODO: fix or remove
      */
     async updatePrimaryKeys(dbTable: Table): Promise<void> {
-        const primaryColumnNames = dbTable.primaryKeys.map(primaryKey => "\"" + primaryKey.columnName + "\"");
-        // console.log(dbTable.primaryKeys);
-        if (dbTable.primaryKeys.length > 0 && dbTable.primaryKeys[0].name)
-            await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKeys[0].name}"`);
+        /*if (!dbTable.primaryKey)
+            return Promise.resolve();
+
+        await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKey.name}"`);
+        const primaryColumnNames = dbTable.primaryKey.columnNames.map(columnName => "\"" + columnName + "\"");
         if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);
+            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);*/
+    }
+
+    /**
+     * Creates a new primary key.
+     */
+    async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops a primary key.
+     */
+    async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Creates a new unique constraint.
+     */
+    async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        // todo
+    }
+
+    /**
+     * Drops an unique constraint.
+     */
+    async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
+        // todo
     }
 
     /**
@@ -677,9 +766,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     /**
      * Creates a new index.
      */
-    async createIndex(table: Table|string, index: TableIndex): Promise<void> {
+    async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${table instanceof Table ? table.name : table}"(${columns})`;
+        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"(${columns})`;
         await this.query(sql);
     }
 
@@ -693,9 +783,10 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
-     * Truncates table.
+     * Clears all table contents.
+     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async truncate(tableName: string): Promise<void> {
+    async clearTable(tableName: string): Promise<void> {
         await this.query(`TRUNCATE TABLE "${tableName}"`);
     }
 
@@ -741,15 +832,36 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
      * Previously memorized sql will be flushed.
      */
     disableSqlMemory(): void {
-        this.sqlsInMemory = [];
+        this.sqlInMemory = new SqlInMemory();
         this.sqlMemoryMode = false;
+    }
+
+    /**
+     * Flushes all memorized sqls.
+     */
+    clearSqlMemory(): void {
+        this.sqlInMemory = new SqlInMemory();
     }
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    getMemorySql(): (string|{ up: string, down: string })[] {
-        return this.sqlsInMemory;
+    getMemorySql(): SqlInMemory {
+        return this.sqlInMemory;
+    }
+
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries, downQuery => this.query(downQuery));
     }
 
     // -------------------------------------------------------------------------

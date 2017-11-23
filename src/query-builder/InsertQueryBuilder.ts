@@ -350,7 +350,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     } else if (value === undefined) {
                         if (this.connection.driver instanceof AbstractSqliteDriver) { // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (column.default !== undefined) { // try to use default defined in the column
-                                expression += this.connection.driver.normalizeDefault(column);
+                                expression += this.connection.driver.normalizeDefault(column.default);
                             } else {
                                 expression += "NULL"; // otherwise simply use NULL and pray if column is nullable
                             }

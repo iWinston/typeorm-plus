@@ -6,7 +6,7 @@ import {MappedColumnTypes} from "./types/MappedColumnTypes";
 import {SchemaBuilder} from "../schema-builder/SchemaBuilder";
 import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
-import {TableColumn} from "../schema-builder/schema/TableColumn";
+import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
@@ -96,6 +96,12 @@ export interface Driver {
     escape(name: string): string;
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string;
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, column: ColumnMetadata): any;
@@ -113,7 +119,7 @@ export interface Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string;
+    normalizeDefault(defaultValue: string): string;
 
     /**
      * Normalizes "isUnique" value of the column.

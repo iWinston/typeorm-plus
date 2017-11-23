@@ -1,7 +1,7 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {Table} from "../../schema-builder/schema/Table";
+import {Table} from "../../schema-builder/table/Table";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
@@ -38,8 +38,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: WebsqlDriver) {
-        super(driver);
-
+        super();
         this.driver = driver;
         this.connection = driver.connection;
         this.broadcaster = new Broadcaster(this);
@@ -226,7 +225,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table(dbTable["name"]);
+            const table = new Table({name: dbTable["name"]});
 
             // load columns and indices
             /*const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -257,6 +256,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
             // create columns from the loaded columns
             table.columns = dbColumns.map(dbColumn => {
                 const tableColumn = new TableColumn();
+                tableColumn.table = table;
                 tableColumn.name = dbColumn["name"];
                 tableColumn.type = dbColumn["type"].toLowerCase();
                 tableColumn.default = dbColumn["dflt_value"] !== null && dbColumn["dflt_value"] !== undefined ? dbColumn["dflt_value"] : undefined;

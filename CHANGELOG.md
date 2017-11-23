@@ -41,6 +41,8 @@ Use `findOne(id)` method instead now.
 * removed deprecated `removeById`, `removeByIds` methods
 * removed `deleteById` method - use `delete(id)` method instead now
 * removed `updateById` method - use `update(id)` method instead now
+* added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
+composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
 
 ## 0.1.2 (latest)
 

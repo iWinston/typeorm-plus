@@ -7,9 +7,6 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
- *
- * Does not support compose primary keys with autoincrement field.
- * todo: need to throw exception for this case.
  */
 export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     
@@ -23,7 +20,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: CordovaDriver) {
-        super(driver);
+        super();
         this.driver = driver;
         this.connection = driver.connection;
         this.broadcaster = new Broadcaster(this);

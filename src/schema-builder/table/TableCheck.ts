@@ -1,29 +1,31 @@
+import {TableCheckOptions} from "../options/TableCheckOptions";
+
 /**
- * Primary key from the database stored in this class.
+ * Database's table check constraint stored in this class.
  */
-export class TablePrimaryKey {
+export class TableCheck {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Key name.
+     * Constraint name.
      */
     name: string;
 
     /**
-     * Column to which this primary key is bind.
+     * Column that contains this constraint.
      */
-    columnName: string;
+    columnNames: string[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columnName: string) {
-        this.name = name;
-        this.columnName = columnName;
+    constructor(options: TableCheckOptions) {
+        this.name = options.name;
+        this.columnNames = options.columnNames;
     }
 
     // -------------------------------------------------------------------------
@@ -31,10 +33,13 @@ export class TablePrimaryKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new copy of this primary key with exactly same properties.
+     * Creates a new copy of this constraint with exactly same properties.
      */
-    clone() {
-        return new TablePrimaryKey(this.name, this.columnName);
+    clone(): TableCheck {
+        return new TableCheck(<TableCheckOptions>{
+            name: this.name,
+            columnNames: [...this.columnNames],
+        });
     }
 
 }

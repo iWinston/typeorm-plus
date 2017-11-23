@@ -1,12 +1,14 @@
 import {TableColumn} from "./TableColumn";
 import {TableIndex} from "./TableIndex";
 import {TableForeignKey} from "./TableForeignKey";
-import {TablePrimaryKey} from "./TablePrimaryKey";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {Driver} from "../../driver/Driver";
 import {ColumnType} from "../../driver/types/ColumnTypes";
+import {TableOptions} from "../options/TableOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {TableUtils} from "../util/TableUtils";
+import {TableUnique} from "./TableUnique";
+import {TableCheck} from "./TableCheck";
 
 /**
  * Table in the database represented in this class.
@@ -18,7 +20,8 @@ export class Table {
     // -------------------------------------------------------------------------
 
     /**
-     * Table name.
+     * Contains database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
      */
     name: string;
 
@@ -38,9 +41,14 @@ export class Table {
     foreignKeys: TableForeignKey[] = [];
 
     /**
-     * Table primary keys.
+     * Table unique constraints.
      */
-    primaryKeys: TablePrimaryKey[] = [];
+    uniques: TableUnique[] = [];
+
+    /**
+     * Table check constraints.
+     */
+    checks: TableCheck[] = [];
 
     /**
      * Indicates if table was just created.
@@ -54,59 +62,42 @@ export class Table {
      */
     engine?: string;
 
-    /**
-     * Database name.
-     */
-    database?: string;
-
-    /**
-     * Schema name. Used in Postgres and Sql Server.
-     */
-    schema?: string;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(name: string, columns?: TableColumn[]|ObjectLiteral[], justCreated?: boolean, engine?: string, database?: string, schema?: string) {
-        this.name = name;
-        if (columns) {
-            this.columns = (columns as any[]).map(column => { // as any[] is a temporary fix (some weird compiler error)
-                if (column instanceof TableColumn) {
-                    return column;
-                } else {
-                    return new TableColumn(column);
-                }
-            });
+    constructor(options?: TableOptions) {
+        if (options) {
+            this.name = options.name;
+
+            if (options.columns)
+                this.columns = options.columns.map(column => new TableColumn(column));
+
+            if (options.indices)
+                this.indices = options.indices.map(index => new TableIndex(index));
+
+            if (options.foreignKeys)
+                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey(foreignKey));
+
+            if (options.uniques)
+                this.uniques = options.uniques.map(unique => new TableUnique(unique));
+
+            if (options.checks)
+                this.checks = options.checks.map(check => new TableCheck(check));
+
+            if (options.justCreated !== undefined)
+                this.justCreated = options.justCreated;
+
+            this.engine = options.engine;
         }
-
-        if (justCreated !== undefined)
-            this.justCreated = justCreated;
-
-        this.engine = engine;
-        this.database = database;
-        this.schema = schema;
     }
 
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
-    /**
-     * Gets only those primary keys that does not
-     */
-    get primaryKeysWithoutGenerated(): TablePrimaryKey[] {
-        const generatedColumn = this.columns.find(column => column.isGenerated);
-        if (!generatedColumn)
-            return this.primaryKeys;
-
-        return this.primaryKeys.filter(primaryKey => {
-            return primaryKey.columnName !== generatedColumn.name;
-        });
-    }
-
-    get hasGeneratedColumn(): boolean {
-        return !!this.columns.find(column => column.isGenerated);
+    get primaryColumns(): TableColumn[] {
+        return this.columns.filter(column => column.isPrimary);
     }
 
     // -------------------------------------------------------------------------
@@ -117,109 +108,95 @@ export class Table {
      * Clones this table to a new table with all properties cloned.
      */
     clone(): Table {
-        const cloned = new Table(this.name);
-        cloned.columns = this.columns.map(column => column.clone());
-        cloned.indices = this.indices.map(index => index.clone());
-        cloned.foreignKeys = this.foreignKeys.map(key => key.clone());
-        cloned.primaryKeys = this.primaryKeys.map(key => key.clone());
-        cloned.engine = this.engine;
-        cloned.database = this.database;
-        cloned.schema = this.schema;
-        return cloned;
+        return new Table(<TableOptions>{
+            name: this.name,
+            columns: this.columns.map(column => column.clone()),
+            indices: this.indices.map(constraint => constraint.clone()),
+            foreignKeys: this.foreignKeys.map(constraint => constraint.clone()),
+            uniques: this.uniques.map(constraint => constraint.clone()),
+            checks: this.checks.map(constraint => constraint.clone()),
+            justCreated: this.justCreated,
+            engine: this.engine,
+        });
     }
 
     /**
-     * Adds columns.
+     * Add column and creates its constraints.
      */
-    addColumns(columns: TableColumn[]) {
-        this.columns = this.columns.concat(columns);
+    addColumn(column: TableColumn): void {
+        this.columns.push(column);
     }
 
     /**
-     * Replaces given column.
+     * Remove column and its constraints.
      */
-    replaceColumn(oldColumn: TableColumn, newColumn: TableColumn) {
-        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
-    }
-
-    /**
-     * Removes a columns from this table.
-     */
-    removeColumn(columnToRemove: TableColumn) {
-        const foundColumn = this.columns.find(column => column.name === columnToRemove.name);
+    removeColumn(column: TableColumn): void {
+        const foundColumn = this.columns.find(c => c.name === column.name);
         if (foundColumn)
             this.columns.splice(this.columns.indexOf(foundColumn), 1);
     }
 
     /**
-     * Remove all columns from this table.
+     * Replaces given column.
      */
-    removeColumns(columns: TableColumn[]) {
-        columns.forEach(column => this.removeColumn(column));
+    replaceColumn(oldColumn: TableColumn, newColumn: TableColumn): void {
+        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
     }
 
     /**
-     * Adds all given primary keys.
+     * Adds unique constraint.
      */
-    addPrimaryKeys(addedKeys: TablePrimaryKey[]) {
-        addedKeys.forEach(key => {
-            this.primaryKeys.push(key);
-            const index = this.columns.findIndex(column => column.name === key.columnName);
-            if (index !== -1) {
-                this.columns[index].isPrimary = true;
+    addUniqueConstraint(uniqueConstraint: TableUnique): void {
+        this.uniques.push(uniqueConstraint);
+        if (uniqueConstraint.columnNames.length === 1) {
+            const uniqueColumn = this.columns.find(column => column.name === uniqueConstraint.columnNames[0]);
+            if (uniqueColumn)
+                uniqueColumn.isUnique = true;
+        }
+    }
+
+    /**
+     * Removes unique constraint.
+     */
+    removeUniqueConstraint(removedUnique: TableUnique): void {
+        const foundUnique = this.uniques.find(unique => unique.name === removedUnique.name);
+        if (foundUnique) {
+            this.uniques.splice(this.uniques.indexOf(foundUnique), 1);
+            if (foundUnique.columnNames.length === 1) {
+                const uniqueColumn = this.columns.find(column => column.name === foundUnique.columnNames[0]);
+                if (uniqueColumn)
+                    uniqueColumn.isUnique = false;
             }
-        });
-    }
-
-    /**
-     * Removes all given primary keys.
-     */
-    removePrimaryKeys(droppedKeys: TablePrimaryKey[]) {
-        droppedKeys.forEach(key => {
-            this.primaryKeys.splice(this.primaryKeys.indexOf(key), 1);
-            const index = this.columns.findIndex(column => column.name === key.columnName);
-            if (index !== -1) {
-                this.columns[index].isPrimary = false;
-            }
-        });
-    }
-
-    /**
-     * Removes primary keys of the given columns.
-     */
-    removePrimaryKeysOfColumns(columns: TableColumn[]) {
-        this.primaryKeys = this.primaryKeys.filter(primaryKey => {
-            return !columns.find(column => column.name === primaryKey.columnName);
-        });
+        }
     }
 
     /**
      * Adds foreign keys.
      */
-    addForeignKeys(foreignKeys: TableForeignKey[]) {
-        this.foreignKeys = this.foreignKeys.concat(foreignKeys);
+    addForeignKey(foreignKey: TableForeignKey): void {
+        this.foreignKeys.push(foreignKey);
     }
 
     /**
-     * Removes foreign key from this table.
+     * Removes foreign key.
      */
-    removeForeignKey(removedForeignKey: TableForeignKey) {
-        const fk = this.foreignKeys.find(foreignKey => foreignKey.name === removedForeignKey.name); // this must be by name
+    removeForeignKey(removedForeignKey: TableForeignKey): void {
+        const fk = this.foreignKeys.find(foreignKey => foreignKey.name === removedForeignKey.name);
         if (fk)
             this.foreignKeys.splice(this.foreignKeys.indexOf(fk), 1);
     }
 
     /**
-     * Removes all foreign keys from this table.
+     * Adds index.
      */
-    removeForeignKeys(dbForeignKeys: TableForeignKey[]) {
-        dbForeignKeys.forEach(foreignKey => this.removeForeignKey(foreignKey));
+    addIndex(index: TableIndex): void {
+        this.indices.push(index);
     }
 
     /**
-     * Removes indices from this table.
+     * Removes index.
      */
-    removeIndex(tableIndex: TableIndex) {
+    removeIndex(tableIndex: TableIndex): void {
         const index = this.indices.find(index => index.name === tableIndex.name);
         if (index)
             this.indices.splice(this.indices.indexOf(index), 1);
@@ -246,7 +223,7 @@ export class Table {
             return  tableColumn.name !== columnMetadata.databaseName ||
                     tableColumn.type !== driver.normalizeType(columnMetadata) ||
                     tableColumn.comment !== columnMetadata.comment ||
-                    (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
+                    (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
                     tableColumn.isNullable !== columnMetadata.isNullable ||
                     tableColumn.isUnique !== driver.normalizeIsUnique(columnMetadata) ||
                     // tableColumn.isPrimary !== columnMetadata.isPrimary ||
@@ -259,6 +236,42 @@ export class Table {
         return this.columns.find(column => column.name === name);
     }
 
+    /**
+     * Returns all column indices.
+     */
+    findColumnIndices(column: TableColumn): TableIndex[] {
+        return this.indices.filter(index => {
+           return !!index.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column foreign keys.
+     */
+    findColumnForeignKeys(column: TableColumn): TableForeignKey[] {
+        return this.foreignKeys.filter(foreignKey => {
+            return !!foreignKey.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column uniques.
+     */
+    findColumnUniques(column: TableColumn): TableUnique[] {
+        return this.uniques.filter(unique => {
+            return !!unique.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
+    /**
+     * Returns all column checks.
+     */
+    findColumnChecks(column: TableColumn): TableCheck[] {
+        return this.checks.filter(check => {
+            return !!check.columnNames.find(columnName => columnName === column.name);
+        });
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -266,8 +279,7 @@ export class Table {
     /**
      * Compare column lengths only if the datatype supports it.
      */
-
-    private compareColumnLengths(driver: Driver, tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
+    protected compareColumnLengths(driver: Driver, tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
 
         const normalizedColumn = driver.normalizeType(columnMetadata) as ColumnType;
         if (driver.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
@@ -281,22 +293,12 @@ export class Table {
 
         return true;
 
-    }    
+    }
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
     protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
-
-        // if (typeof columnMetadataValue === "number")
-        //     return columnMetadataValue === parseInt(databaseValue);
-        // if (typeof columnMetadataValue === "boolean")
-        //     return columnMetadataValue === (!!databaseValue || databaseValue === "false");
-        // if (typeof columnMetadataValue === "function")
-        // if (typeof columnMetadataValue === "string" && typeof databaseValue === "string")
-        //     return columnMetadataValue.toLowerCase() === databaseValue.toLowerCase();
-
-
         if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
 
             // we need to cut out "((x))" where x number generated by mssql
@@ -314,8 +316,6 @@ export class Table {
             databaseValue = databaseValue.replace(/^'+|'+$/g, "");
         }
 
-        // console.log("columnMetadataValue", columnMetadataValue);
-        // console.log("databaseValue", databaseValue);
         return columnMetadataValue === databaseValue;
     }
 
@@ -325,23 +325,19 @@ export class Table {
 
     /**
      * Creates table from a given entity metadata.
-     *
-     * todo: need deeper implementation
      */
-    static create(entityMetadata: EntityMetadata, driver: Driver) {
-        const table = new Table(entityMetadata.tableName);
-        table.engine = entityMetadata.engine;
-        table.database = entityMetadata.database;
-        table.schema = entityMetadata.schema;
-        entityMetadata.columns.forEach(column => {
-            const tableColumn = TableColumn.create(column, 
-                driver.normalizeType(column), 
-                driver.normalizeDefault(column),
-                driver.getColumnLength(column)); 
-            table.columns.push(tableColumn);
-        });
+    static create(entityMetadata: EntityMetadata, driver: Driver): Table {
+        const options: TableOptions = {
+            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            engine: entityMetadata.engine,
+            columns: entityMetadata.columns
+                .filter(column => column)
+                .map(column => TableUtils.createTableColumnOptions(column, driver)),
+            indices: entityMetadata.indices.map(index => TableIndex.create(index)),
+            uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
+        };
 
-        return table;
+        return new Table(options);
     }
 
 }

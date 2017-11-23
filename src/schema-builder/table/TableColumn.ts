@@ -1,4 +1,4 @@
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
+import {TableColumnOptions} from "../options/TableColumnOptions";
 
 /**
  * Table's columns in the database represented in this class.
@@ -22,7 +22,7 @@ export class TableColumn {
     /**
      * Column's default value.
      */
-    default: any;
+    default?: any;
 
     /**
      * Indicates if column is NULL, or is NOT NULL in the database.
@@ -96,25 +96,9 @@ export class TableColumn {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options?: {
-        name?: string,
-        type?: string,
-        length?: string,
-        charset?: string,
-        collation?: string,
-        precision?: number,
-        scale?: number,
-        default?: any,
-        isNullable?: boolean,
-        isGenerated?: boolean,
-        generationStrategy?: "uuid"|"increment",
-        isPrimary?: boolean,
-        isUnique?: boolean,
-        comment?: string,
-        enum?: any[]
-    }) {
+    constructor(options?: TableColumnOptions) {
         if (options) {
-            this.name = options.name || "";
+            this.name = options.name;
             this.type = options.type || "";
             this.length = options.length || "";
             this.charset = options.charset;
@@ -140,52 +124,24 @@ export class TableColumn {
      * Clones this column to a new column with exact same properties as this column has.
      */
     clone(): TableColumn {
-        const newTableColumn = new TableColumn();
-        newTableColumn.name = this.name;
-        newTableColumn.type = this.type;
-        newTableColumn.length = this.length;
-        newTableColumn.charset = this.charset;
-        newTableColumn.collation = this.collation;
-        newTableColumn.precision = this.precision;
-        newTableColumn.scale = this.scale;
-        newTableColumn.enum = this.enum;
-        newTableColumn.default = this.default;
-        newTableColumn.isNullable = this.isNullable;
-        newTableColumn.isGenerated = this.isGenerated;
-        newTableColumn.generationStrategy = this.generationStrategy;
-        newTableColumn.isPrimary = this.isPrimary;
-        newTableColumn.isUnique = this.isUnique;
-        newTableColumn.isArray = this.isArray;
-        newTableColumn.comment = this.comment;
-        return newTableColumn;
-    }
-
-    // -------------------------------------------------------------------------
-    // Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Creates a new column based on the given column metadata.
-     */
-    static create(columnMetadata: ColumnMetadata, normalizedType: string, normalizedDefault: string, normalizedLength: string): TableColumn {
-        const tableColumn = new TableColumn();
-        tableColumn.name = columnMetadata.databaseName;
-        tableColumn.length = normalizedLength;
-        tableColumn.charset = columnMetadata.charset;
-        tableColumn.collation = columnMetadata.collation;
-        tableColumn.precision = columnMetadata.precision;
-        tableColumn.scale = columnMetadata.scale;
-        tableColumn.default = normalizedDefault;
-        tableColumn.comment = columnMetadata.comment;
-        tableColumn.isGenerated = columnMetadata.isGenerated;
-        tableColumn.generationStrategy = columnMetadata.generationStrategy;
-        tableColumn.isNullable = columnMetadata.isNullable;
-        tableColumn.type = normalizedType;
-        tableColumn.isPrimary = columnMetadata.isPrimary;
-        tableColumn.isUnique = columnMetadata.isUnique;
-        tableColumn.isArray = columnMetadata.isArray || false;
-        tableColumn.enum = columnMetadata.enum;
-        return tableColumn;
+        return new TableColumn(<TableColumnOptions>{
+            name: this.name,
+            type: this.type,
+            length: this.length,
+            charset: this.charset,
+            collation: this.collation,
+            precision: this.precision,
+            scale: this.scale,
+            enum: this.enum,
+            default: this.default,
+            isNullable: this.isNullable,
+            isGenerated: this.isGenerated,
+            generationStrategy: this.generationStrategy,
+            isPrimary: this.isPrimary,
+            isUnique: this.isUnique,
+            isArray: this.isArray,
+            comment: this.comment
+        });
     }
 
 }

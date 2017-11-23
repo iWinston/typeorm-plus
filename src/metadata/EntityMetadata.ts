@@ -17,6 +17,7 @@ import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {UniqueMetadata} from "./UniqueMetadata";
 
 /**
  * Contains all entity metadata.
@@ -209,6 +210,11 @@ export class EntityMetadata {
      * Entity's index metadatas.
      */
     indices: IndexMetadata[] = [];
+
+    /**
+     * Entity's unique metadatas.
+     */
+    uniques: UniqueMetadata[] = [];
 
     /**
      * Entity's foreign key metadatas.
@@ -409,6 +415,7 @@ export class EntityMetadata {
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
+        // todo: store connection inside a public property
         const namingStrategy = options.connection.namingStrategy;
         const entityPrefix = options.connection.options.entityPrefix;
         this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
@@ -736,12 +743,7 @@ export class EntityMetadata {
      */
     registerColumn(column: ColumnMetadata) {
         this.ownColumns.push(column);
-        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
-        this.parentIdColumns = this.columns.filter(column => column.isParentId);
-        this.primaryColumns = this.columns.filter(column => column.isPrimary);
-        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
-        this.hasUUIDGeneratedColumns = this.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
-        this.propertiesMap = this.createPropertiesMap();
+        this.recomputeColumnDependencies( this.ownColumns);
     }
 
     /**
@@ -764,7 +766,18 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds table path using database name and schema name and table name.
+     * Recomputes all column dependencies
+     */
+    protected recomputeColumnDependencies(ownColumns: ColumnMetadata[]): void {
+        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), ownColumns);
+        this.parentIdColumns = this.columns.filter(column => column.isParentId);
+        this.primaryColumns = this.columns.filter(column => column.isPrimary);
+        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
+        this.propertiesMap = this.createPropertiesMap();
+    }
+
+    /**
+     * Builds table path using database, schema name and table name.
      */
     protected buildTablePath(driver: Driver): string {
         let tablePath = this.tableName;
