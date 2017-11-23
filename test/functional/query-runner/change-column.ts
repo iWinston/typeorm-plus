@@ -3,14 +3,15 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
-describe.only("query runner > change column", () => {
+describe("query runner > change column", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", /*"mysql", "postgres"*/], // TODO bug with mysql
+            enabledDrivers: [/*"mssql", "mysql",*/ "postgres", "sqlite"], // TODO bug with mysql and mssql. Need to drop constraints when column length changed
             schemaCreate: true,
             dropSchema: true,
         });
@@ -36,7 +37,9 @@ describe.only("query runner > change column", () => {
         table!.findColumnByName("name")!.isUnique.should.be.true;
 
         const textColumn = table!.findColumnByName("text")!;
-        textColumn!.length!.should.be.equal("255");
+        // SQLite does not impose any length restrictions
+        if (!(connection.driver instanceof AbstractSqliteDriver))
+            textColumn!.length!.should.be.equal("255");
 
         const changedTextColumn = textColumn.clone();
         changedTextColumn.name = "description";
@@ -48,8 +51,11 @@ describe.only("query runner > change column", () => {
         // column name was changed to 'description'
         table = await queryRunner.getTable("post");
         table!.findColumnByName("description")!.isPrimary.should.be.true;
-        table!.findColumnByName("description")!.length!.should.be.equal("500");
         table!.findColumnByName("description")!.default!.should.exist;
+
+        // SQLite does not impose any length restrictions
+        if (!(connection.driver instanceof AbstractSqliteDriver))
+            table!.findColumnByName("description")!.length!.should.be.equal("500");
 
         let idColumn = table!.findColumnByName("id")!;
         let changedIdColumn = idColumn.clone();
@@ -66,8 +72,11 @@ describe.only("query runner > change column", () => {
         table!.findColumnByName("name")!.default!.should.exist;
         table!.findColumnByName("name")!.isUnique.should.be.false;
         table!.findColumnByName("text")!.isPrimary.should.be.false;
-        table!.findColumnByName("text")!.length!.should.be.equal("255");
         expect(table!.findColumnByName("text")!.default).to.be.undefined;
+
+        // SQLite does not impose any length restrictions
+        if (!(connection.driver instanceof AbstractSqliteDriver))
+            table!.findColumnByName("text")!.length!.should.be.equal("255");
 
         await queryRunner.release();
     })));

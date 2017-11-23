@@ -6,6 +6,8 @@ import {Table} from "../../../src/schema-builder/table/Table";
 import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
 import {Post} from "./entity/Post";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("query runner > create table", () => {
 
@@ -13,7 +15,7 @@ describe("query runner > create table", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql", "postgres"],
+            enabledDrivers: ["mssql", "mysql", "postgres", "sqlite"],
             dropSchema: true,
         });
     });
@@ -27,7 +29,7 @@ describe("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: "int",
+                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
                     isPrimary: true,
                     isGenerated: true,
                     generationStrategy: "increment"
@@ -70,7 +72,20 @@ describe("query runner > create table", () => {
         await queryRunner.createTable(newTable);
 
         const table = await queryRunner.getTable("post");
+        const idColumn = table!.findColumnByName("id");
+        const nameColumn = table!.findColumnByName("name");
         table!.should.exist;
+        idColumn!.isPrimary.should.be.true;
+        nameColumn!.default!.should.be.exist;
+
+        // Postgres does not create unique constraint if column is already marked as primary.
+        if (connection.driver instanceof PostgresDriver) {
+            table!.uniques.length.should.be.equal(1);
+
+        } else {
+            idColumn!.isUnique.should.be.true;
+            table!.uniques.length.should.be.equal(2);
+        }
 
         await queryRunner.release();
     })));
@@ -104,7 +119,7 @@ describe("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: "int",
+                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
                     isPrimary: true,
                     isGenerated: true,
                     generationStrategy: "increment"
@@ -143,7 +158,7 @@ describe("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: "int",
+                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
                     isPrimary: true,
                     isGenerated: true,
                     generationStrategy: "increment"

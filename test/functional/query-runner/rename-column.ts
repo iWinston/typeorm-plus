@@ -1,10 +1,11 @@
 import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
 describe("query runner > rename column", () => {
 
@@ -12,12 +13,11 @@ describe("query runner > rename column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", /*"mysql",*/ "postgres"],
+            enabledDrivers: ["mssql", /*"mysql",*/ "postgres", "sqlite"],
             schemaCreate: true,
             dropSchema: true,
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should correctly rename column and revert rename", () => Promise.all(connections.map(async connection => {
@@ -102,7 +102,7 @@ describe("query runner > rename column", () => {
             columns: [
                 {
                     name: "id",
-                    type: "int",
+                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
                     isPrimary: true,
                     isGenerated: true,
                     generationStrategy: "increment"
@@ -120,7 +120,7 @@ describe("query runner > rename column", () => {
             columns: [
                 {
                     name: "id",
-                    type: "int",
+                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
                     isPrimary: true,
                     isGenerated: true,
                     generationStrategy: "increment"

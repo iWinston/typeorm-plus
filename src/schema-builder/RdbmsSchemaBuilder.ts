@@ -324,8 +324,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 table.replaceColumn(changedTableColumn, newTableColumn);
 
                 return {
-                    newColumn: newTableColumn,
-                    oldColumn: changedTableColumn
+                    oldColumn: changedTableColumn,
+                    newColumn: newTableColumn
                 };
             });
 

@@ -189,13 +189,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of the generated column if given and generate column exist in the table.
      */
-    async insert(tablePath: string, keyValues: ObjectLiteral): Promise<InsertResult> {
+    async insert(tableName: string, keyValues: ObjectLiteral): Promise<InsertResult> {
         const keys = Object.keys(keyValues);
         const columns = keys.map(key => `\`${key}\``).join(", ");
         const values = keys.map(key => "?").join(",");
         const parameters = keys.map(key => keyValues[key]);
-        const generatedColumns = this.connection.hasMetadata(tablePath) ? this.connection.getMetadata(tablePath).generatedColumns : [];
-        const sql = `INSERT INTO ${this.escapeTableName(tablePath)}(${columns}) VALUES (${values})`;
+        const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
+        const sql = `INSERT INTO ${this.escapeTableName(tableName)}(${columns}) VALUES (${values})`;
         const result = await this.query(sql, parameters);
 
         const generatedMap = generatedColumns.reduce((map, generatedColumn) => {
@@ -213,10 +213,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Updates rows that match given conditions in the given table.
      */
-    async update(tablePath: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
+    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<void> {
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions).join(" AND ");
-        const sql = `UPDATE ${this.escapeTableName(tablePath)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const sql = `UPDATE ${this.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -226,33 +226,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
      */
-    async delete(tablePath: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
+    async delete(tableName: string, conditions: ObjectLiteral|string, maybeParameters?: any[]): Promise<void> {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.escapeTableName(tablePath)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
     /**
      * Inserts rows into the closure table.
      */
-    async insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
+    async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
         if (hasLevel) {
             await this.query(
-                `INSERT INTO ${this.escapeTableName(tablePath)}(\`ancestor\`, \`descendant\`, \`level\`) ` +
-                `SELECT \`ancestor\`, \`${newEntityId}\`, \`level\` + 1 FROM ${this.escapeTableName(tablePath)} WHERE \`descendant\` = ${parentId} ` +
+                `INSERT INTO ${this.escapeTableName(tableName)}(\`ancestor\`, \`descendant\`, \`level\`) ` +
+                `SELECT \`ancestor\`, \`${newEntityId}\`, \`level\` + 1 FROM ${this.escapeTableName(tableName)} WHERE \`descendant\` = ${parentId} ` +
                 `UNION ALL SELECT \`${newEntityId}\`, \`${newEntityId}\`, 1`
             );
         } else {
             await this.query(
-                `INSERT INTO ${this.escapeTableName(tablePath)}(\`ancestor\`, \`descendant\`) ` +
-                `SELECT \`ancestor\`, \`${newEntityId}\` FROM ${this.escapeTableName(tablePath)} WHERE \`descendant\` = ${parentId} ` +
+                `INSERT INTO ${this.escapeTableName(tableName)}(\`ancestor\`, \`descendant\`) ` +
+                `SELECT \`ancestor\`, \`${newEntityId}\` FROM ${this.escapeTableName(tableName)} WHERE \`descendant\` = ${parentId} ` +
                 `UNION ALL SELECT \`${newEntityId}\`, \`${newEntityId}\``
             );
         }
         if (hasLevel) {
-            const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM ${this.escapeTableName(tablePath)} WHERE \`descendant\` = ${parentId}`);
+            const results: ObjectLiteral[] = await this.query(`SELECT MAX(\`level\`) as \`level\` FROM ${this.escapeTableName(tableName)} WHERE \`descendant\` = ${parentId}`);
             return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
         } else {
             return -1;
@@ -292,9 +292,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Checks if table with the given name exist in the database.
      */
-    async hasTable(tableOrPath: Table|string): Promise<boolean> {
-        const parsedTablePath = this.parseTablePath(tableOrPath);
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTablePath.database}' AND \`TABLE_NAME\` = '${parsedTablePath.tableName}'`;
+    async hasTable(tableOrName: Table|string): Promise<boolean> {
+        const parsedTableName = this.parseTableName(tableOrName);
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -302,10 +302,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Checks if column with the given name exist in the given table.
      */
-    async hasColumn(tableOrPath: Table|string, column: TableColumn|string): Promise<boolean> {
-        const parsedTablePath = this.parseTablePath(tableOrPath);
+    async hasColumn(tableOrName: Table|string, column: TableColumn|string): Promise<boolean> {
+        const parsedTableName = this.parseTableName(tableOrName);
         const columnName = column instanceof TableColumn ? column.name : column;
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTablePath.database}' AND \`TABLE_NAME\` = '${parsedTablePath.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`;
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -385,6 +385,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const table = await this.getCachedTable(tableName);
         const upQueries: string[] = [];
         const downQueries: string[] = [];
+
+        // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
+        // to perform drop queries for foreign keys and indices.
+        if (ifExist) {
+            const isTableExist = await this.hasTable(table);
+            if (!isTableExist) return Promise.resolve();
+        }
 
         if (dropForeignKeys)
             table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
@@ -833,8 +840,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async clearTable(tableOrPath: Table|string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapeTableName(tableOrPath)}`);
+    async clearTable(tableOrName: Table|string): Promise<void> {
+        await this.query(`TRUNCATE TABLE ${this.escapeTableName(tableOrName)}`);
     }
 
     /**
@@ -882,29 +889,29 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    protected async loadTables(tablePaths: string[]): Promise<Table[]> {
+    protected async loadTables(tableNames: string[]): Promise<Table[]> {
 
         // if no tables given then no need to proceed
-        if (!tablePaths || !tablePaths.length)
+        if (!tableNames || !tableNames.length)
             return [];
 
         const currentDatabase = await this.getCurrentDatabase();
-        const dbNames = tablePaths
-            .filter(tablePath => tablePath.indexOf(".") !== -1)
-            .map(tablePath => tablePath.split(".")[0]);
+        const dbNames = tableNames
+            .filter(tableName => tableName.indexOf(".") !== -1)
+            .map(tableName => tableName.split(".")[0]);
         if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
             dbNames.push(this.driver.database);
 
         const dbNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
-        const tablesCondition = tablePaths.map(tablePath => {
-            let [dbName, tableName] = tablePath.split(".");
-            if (!tableName) {
-                tableName = dbName;
-                dbName = this.driver.database || currentDatabase;
+        const tablesCondition = tableNames.map(tableName => {
+            let [database, name] = tableName.split(".");
+            if (!name) {
+                name = database;
+                database = this.driver.database || currentDatabase;
             }
-            return `\`TABLE_SCHEMA\` = '${dbName}' AND \`TABLE_NAME\` = '${tableName}'`;
+            return `\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`;
         }).join(" OR ");
-
+// TODO conditions
         const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE `  + tablesCondition;
         const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` IN (${dbNamesString})`;
         const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
@@ -958,9 +965,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
+                    const columnIndex = dbIndices.find(dbIndex => {
+                        return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === 0;
+                    });
+                    const isIndexComposite = columnIndex
+                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnIndex["INDEX_NAME"]
+                            && dbIndex["NON_UNIQUE"] === 0
+                            && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                        : false;
+
+                    if (dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1 || (!!columnIndex && !isIndexComposite))
+                        tableColumn.isUnique = true;
+
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
-                    tableColumn.isUnique = dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1;
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
@@ -1123,8 +1142,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds drop table sql
      */
-    protected dropTableSql(tableOrPath: Table|string): string {
-        return `DROP TABLE ${this.escapeTableName(tableOrPath)}`;
+    protected dropTableSql(tableOrName: Table|string): string {
+        return `DROP TABLE ${this.escapeTableName(tableOrName)}`;
     }
 
     /**
@@ -1182,7 +1201,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${foreignKeyName}\``;
     }
 
-    protected parseTablePath(target: Table|string) {
+    protected parseTableName(target: Table|string) {
         const tableName = target instanceof Table ? target.name : target;
         return {
             database: tableName.indexOf(".") !== -1 ? tableName.split(".")[0] : this.driver.database,

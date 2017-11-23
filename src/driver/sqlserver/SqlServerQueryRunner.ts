@@ -524,16 +524,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
     /**
      * Drops the table.
-     *
-     * todo: think to create options and move skips there
      */
-    async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+    async dropTable(tableOrName: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
         // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
-        const tableName = target instanceof Table ? target.name : target;
-        const table = await this.getCachedTable(tableName);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const upQueries: string[] = [];
         const downQueries: string[] = [];
+
+        // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
+        // to perform drop queries for foreign keys and indices.
+        if (ifExist) {
+            const isTableExist = await this.hasTable(table);
+            if (!isTableExist) return Promise.resolve();
+        }
 
         if (dropIndices) {
             table.indices.forEach(index => {
@@ -644,7 +648,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        let newColumn;
+        let newColumn: TableColumn|undefined = undefined;
         if (newTableColumnOrName instanceof TableColumn) {
             newColumn = newTableColumnOrName;
         } else {
@@ -1291,7 +1295,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                             && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
                     });
 
-                    const uniqueConstraint = columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "UNIQUE");
+                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
                     const isConstraintComposite = uniqueConstraint
                         ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
                             && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]

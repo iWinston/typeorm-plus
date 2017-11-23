@@ -38,8 +38,7 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: WebsqlDriver) {
-        super(driver);
-
+        super();
         this.driver = driver;
         this.connection = driver.connection;
     }

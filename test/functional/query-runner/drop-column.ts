@@ -9,7 +9,7 @@ describe("query runner > drop column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql", "postgres"],
+            enabledDrivers: ["mssql", "mysql", "postgres", "sqlite"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -26,8 +26,10 @@ describe("query runner > drop column", () => {
         idColumn!.should.be.exist;
         nameColumn!.should.be.exist;
 
-        await queryRunner.dropColumn(table!, idColumn);
-        await queryRunner.dropColumn(table!, nameColumn);
+        // In Sqlite 'dropColumns' method is more optimal than 'dropColumn', because it recreate table just once,
+        // without all removed columns. In other drivers it's no difference between these methods, because 'dropColumns'
+        // calls 'dropColumn' method for each removed column.
+        await queryRunner.dropColumns(table!, [idColumn, nameColumn]);
 
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("id")).to.be.undefined;

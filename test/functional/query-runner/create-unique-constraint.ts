@@ -10,7 +10,7 @@ describe("query runner > create unique constraint", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "postgres"], // mysql does not supports unique constraints
+            enabledDrivers: ["mssql", "postgres", "sqlite"], // mysql does not supports unique constraints
             schemaCreate: true,
             dropSchema: true,
         });
@@ -69,8 +69,8 @@ describe("query runner > create unique constraint", () => {
         categoryTable!.uniques.length.should.be.equal(1);
 
         let questionTable = await queryRunner.getTable("question");
-        // when unique constraint defined on multiple columns. each of this columns must be non-unique.
-        // Because they are unique only in complex.
+        // when unique constraint defined on multiple columns. each of this columns must be non-unique,
+        // because they are unique only in complex.
         questionTable!.findColumnByName("name")!.isUnique.should.be.false;
         questionTable!.findColumnByName("description")!.isUnique.should.be.false;
         questionTable!.uniques.length.should.be.equal(1);

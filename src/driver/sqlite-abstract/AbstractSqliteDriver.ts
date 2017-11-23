@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {AbstractSqliteQueryRunner} from "./AbstractSqliteQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
 import {Connection} from "../../connection/Connection";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
@@ -16,7 +15,7 @@ import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 /**
  * Organizes communication with sqlite DBMS.
  */
-export class AbstractSqliteDriver implements Driver {
+export abstract class AbstractSqliteDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -158,6 +157,15 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     // -------------------------------------------------------------------------
+    // Public Abstract
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    abstract createQueryRunner(mode: "master"|"slave"): QueryRunner;
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -190,16 +198,6 @@ export class AbstractSqliteDriver implements Driver {
      */
     createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    }
-
-    /**
-     * Creates a query runner used to execute database queries.
-     */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        if (!this.queryRunner)
-            this.queryRunner = new AbstractSqliteQueryRunner(this);
-
-        return this.queryRunner;
     }
 
     /**

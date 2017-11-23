@@ -393,6 +393,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
+        // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
+        // to perform drop queries for foreign keys and indices.
+        if (ifExist) {
+            const isTableExist = await this.hasTable(table);
+            if (!isTableExist) return Promise.resolve();
+        }
+
         if (dropIndices) {
             table.indices.forEach(index => {
                 upQueries.push(this.dropIndexSql(table, index));
@@ -1401,7 +1408,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected buildCreateColumnSql(column: TableColumn) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true && column.generationStrategy === "increment") { // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && column.generationStrategy === "increment") {
             if (column.type === "integer" || column.type === "int")
                 c += " SERIAL";
             if (column.type === "smallint")

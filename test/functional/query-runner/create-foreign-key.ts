@@ -10,7 +10,7 @@ describe("query runner > create foreign key", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql", "postgres"],
+            enabledDrivers: ["mssql", "mysql", "postgres", "sqlite"],
             schemaCreate: true,
             dropSchema: true,
         });

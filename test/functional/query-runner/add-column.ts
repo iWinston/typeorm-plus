@@ -5,6 +5,7 @@ import {closeTestingConnections, createTestingConnections} from "../../utils/tes
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
 describe("query runner > add column", () => {
 
@@ -12,7 +13,7 @@ describe("query runner > add column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql", "postgres"],
+            enabledDrivers: [ "sqlite"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -31,8 +32,8 @@ describe("query runner > add column", () => {
             isNullable: false
         });
 
-        // MySql does not support AUTO_INCREMENT on composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver)) {
+        // MySql and Sqlite does not supports autoincrement composite primary keys.
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
             column1.isGenerated = true;
             column1.generationStrategy = "increment";
         }
@@ -53,14 +54,14 @@ describe("query runner > add column", () => {
         column1!.isPrimary.should.be.true;
         column1!.isNullable.should.be.false;
 
-        // MySql does not support AUTO_INCREMENT on composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver)) {
+        // MySql and Sqlite does not supports autoincrement composite primary keys.
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
             column1!.isGenerated.should.be.true;
             column1!.generationStrategy!.should.be.equal("increment");
         }
 
         column2 = table!.findColumnByName("description")!;
-        column2!.should.be.exist;
+        column2.should.be.exist;
         column2.length.should.be.equal("100");
 
         if (connection.driver instanceof MysqlDriver) {
