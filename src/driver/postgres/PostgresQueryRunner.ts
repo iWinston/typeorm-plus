@@ -30,11 +30,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     driver: PostgresDriver;
 
-    /**
-     * Broadcaster used on this query runner to broadcast entity events.
-     */
-    broadcaster: Broadcaster;
-
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------

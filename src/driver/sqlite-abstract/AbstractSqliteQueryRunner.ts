@@ -13,7 +13,6 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
-import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -28,11 +27,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Database driver used by connection.
      */
     driver: AbstractSqliteDriver;
-
-    /**
-     * Broadcaster used on this query runner to broadcast entity events.
-     */
-    broadcaster: Broadcaster;
 
     // -------------------------------------------------------------------------
     // Constructor

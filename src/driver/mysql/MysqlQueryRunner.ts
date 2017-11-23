@@ -30,11 +30,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     driver: MysqlDriver;
 
-    /**
-     * Broadcaster used on this query runner to broadcast entity events.
-     */
-    broadcaster: Broadcaster;
-
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------

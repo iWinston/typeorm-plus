@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
+import {Broadcaster} from "../subscriber/Broadcaster";
 
 export abstract class BaseQueryRunner {
 
@@ -42,6 +43,11 @@ export abstract class BaseQueryRunner {
      * All synchronized tables in the database.
      */
     loadedTables: Table[] = [];
+
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster;
 
     // -------------------------------------------------------------------------
     // Protected Properties

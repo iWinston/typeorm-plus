@@ -32,11 +32,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     driver: SqlServerDriver;
 
-    /**
-     * Broadcaster used on this query runner to broadcast entity events.
-     */
-    broadcaster: Broadcaster;
-
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
