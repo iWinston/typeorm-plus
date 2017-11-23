@@ -201,7 +201,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createNewTables(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             // check if table does not exist yet
-            const existTable = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const existTable = this.queryRunner.loadedTables.find(table => {
+                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
+                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
+
+                return table.name === fullTableName;
+            });
             if (existTable)
                 return;
 
@@ -209,10 +215,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // create a new table and sync it in the database
             const table = Table.create(metadata, this.connection.driver);
-            /*const table = new Table({
-                name: metadata.tablePath,
-                columns: this.metadataColumnsToTableColumnOptions(metadata.columns)
-            });*/
             this.queryRunner.loadedTables.push(table);
             await this.queryRunner.createTable(table);
         });
