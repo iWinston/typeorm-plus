@@ -560,7 +560,9 @@ export class EntityManager {
     findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
         return this.findOne(entityClass, idOrOptionsOrConditions as any, maybeOptions).then((value) => {
             if (value === undefined) {
-                return Promise.reject(new EntityNotFoundError());
+                return Promise.reject(new EntityNotFoundError(
+                        (typeof entityClass === "string") ? entityClass : entityClass.constructor.name,
+                        JSON.stringify(idOrOptionsOrConditions)));
             }
             return Promise.resolve(value);
         });

@@ -4,10 +4,10 @@
 export class EntityNotFoundError extends Error {
     name = "EntityNotFound";
 
-    constructor() {
+    constructor(entityClass: string, criteria: string) {
         super();
         Object.setPrototypeOf(this, EntityNotFoundError.prototype);
-        this.message = `No such entity.`;
+        this.message = `Could not find any entity of type "${entityClass}" matching: ${criteria}`;
     }
 
 }
