@@ -924,7 +924,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.startTransaction();
         try {
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as query FROM pg_tables WHERE schemaname IN (${schemaNamesString})`;
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString})`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
 

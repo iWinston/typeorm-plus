@@ -9,13 +9,13 @@ import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
-describe("query runner > create table", () => {
+describe.only("query runner > create table", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "mysql", "postgres", "sqlite"],
+            enabledDrivers: ["oracle"],
             dropSchema: true,
         });
     });

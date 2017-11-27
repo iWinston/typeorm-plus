@@ -8,23 +8,18 @@ import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {OracleDriver} from "./OracleDriver";
-import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
-import {EntityManager} from "../../entity-manager/EntityManager";
 import {QueryFailedError} from "../../error/QueryFailedError";
-import {SqlInMemory} from "../SqlInMemory";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
 import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
-import {PromiseUtils} from "../../util/PromiseUtils";
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 
 /**
  * Runs queries on a single oracle database connection.
- *
- * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
-export class OracleQueryRunner implements QueryRunner {
+export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -35,79 +30,21 @@ export class OracleQueryRunner implements QueryRunner {
      */
     driver: OracleDriver;
 
-    /**
-     * Connection used by this query runner.
-     */
-    connection: Connection;
-
-    /**
-     * Broadcaster used on this query runner to broadcast entity events.
-     */
-    broadcaster: Broadcaster;
-
-    /**
-     * Isolated entity manager working only with current query runner.
-     */
-    manager: EntityManager;
-
-    /**
-     * Indicates if connection for this query runner is released.
-     * Once its released, query runner cannot run queries anymore.
-     */
-    isReleased = false;
-
-    /**
-     * Indicates if transaction is in progress.
-     */
-    isTransactionActive = false;
-
-    /**
-     * Stores temporarily user data.
-     * Useful for sharing data with subscribers.
-     */
-    data = {};
-
-    /**
-     * All synchronized tables in the database.
-     */
-    loadedTables: Table[];
-
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Real database connection from a connection pool used to perform queries.
-     */
-    protected databaseConnection: any;
 
     /**
      * Promise used to obtain a database connection for a first time.
      */
     protected databaseConnectionPromise: Promise<any>;
 
-    /**
-     * Indicates if special query runner mode in which sql queries won't be executed is enabled.
-     */
-    protected sqlMemoryMode: boolean = false;
-
-    /**
-     * Sql-s stored if "sql in memory" mode is enabled.
-     */
-    protected sqlInMemory: SqlInMemory;
-
-    /**
-     * Mode in which query runner executes.
-     * Used for replication.
-     * If replication is not setup its value is ignored.
-     */
-    protected mode: "master"|"slave";
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(driver: OracleDriver, mode: "master"|"slave" = "master") {
+        super();
         this.driver = driver;
         this.connection = driver.connection;
         this.broadcaster = new Broadcaster(this);
@@ -341,119 +278,6 @@ export class OracleQueryRunner implements QueryRunner {
      */
     async getSchemas(database?: string): Promise<string[]> {
         return Promise.resolve([]);
-    }
-
-    /**
-     * Loads given table's data from the database.
-     */
-    async getTable(tableName: string): Promise<Table|undefined> {
-        const tables = await this.getTables([tableName]);
-        return tables.length > 0 ? tables[0] : undefined;
-    }
-
-    /**
-     * Loads all tables (with given names) from the database and creates a Table from them.
-     */
-    async getTables(tableNames: string[]): Promise<Table[]> {
-        // if no tables given then no need to proceed
-        if (!tableNames || !tableNames.length)
-            return [];
-
-        // load tables, columns, indices and foreign keys
-        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql      = `SELECT TABLE_NAME FROM user_tables WHERE TABLE_NAME IN (${tableNamesString})`;
-        const columnsSql     = `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, IDENTITY_COLUMN FROM all_tab_cols WHERE TABLE_NAME IN (${tableNamesString})`;
-        const indicesSql     = `SELECT ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS, LISTAGG(cols.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY cols.COLUMN_NAME) AS COLUMN_NAMES
-                                FROM USER_INDEXES ind, USER_IND_COLUMNS cols 
-                                WHERE ind.INDEX_NAME = cols.INDEX_NAME AND ind.TABLE_NAME IN (${tableNamesString})
-                                GROUP BY ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS`;
-        // const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
-        // const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        const constraintsSql = `SELECT cols.table_name, cols.column_name, cols.position, cons.constraint_type, cons.constraint_name
-FROM all_constraints cons, all_cons_columns cols WHERE cols.table_name IN (${tableNamesString}) 
-AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDER BY cols.table_name, cols.position`;
-        const [dbTables, dbColumns, dbIndices, /*dbForeignKeys, dbUniqueKeys, */constraints]: ObjectLiteral[][] = await Promise.all([
-            this.query(tablesSql),
-            this.query(columnsSql),
-            this.query(indicesSql),
-            // this.query(foreignKeysSql),
-            // this.query(uniqueKeysSql),
-            this.query(constraintsSql),
-        ]);
-
-        // if tables were not found in the db, no need to proceed
-        if (!dbTables.length)
-            return [];
-
-        // create tables for loaded tables
-        return dbTables.map(dbTable => {
-            const table = new Table();
-            table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
-
-            // create columns from the loaded columns
-            table.columns = dbColumns
-                .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
-                .map(dbColumn => {
-                    const isPrimary = !!constraints
-                        .find(constraint => {
-                            return  constraint["TABLE_NAME"] === table.name &&
-                                    constraint["CONSTRAINT_TYPE"] === "P" &&
-                                    constraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
-                        });
-                    // TODO fix
-                    let columnType = dbColumn["DATA_TYPE"].toLowerCase();
-                    if (dbColumn["DATA_TYPE"].toLowerCase() === "varchar2" && dbColumn["DATA_LENGTH"] !== null) {
-                        columnType += "(" + dbColumn["DATA_LENGTH"] + ")";
-                    } else if (dbColumn["DATA_PRECISION"] !== null && dbColumn["DATA_SCALE"] !== null) {
-                        columnType += "(" + dbColumn["DATA_PRECISION"] + "," + dbColumn["DATA_SCALE"] + ")";
-                    } else if (dbColumn["DATA_SCALE"] !== null) {
-                        columnType += "(0," + dbColumn["DATA_SCALE"] + ")";
-                    } else if (dbColumn["DATA_PRECISION"] !== null) {
-                        columnType += "(" + dbColumn["DATA_PRECISION"] + ")";
-                    }
-
-                    const tableColumn = new TableColumn();
-                    tableColumn.name = dbColumn["COLUMN_NAME"];
-                    tableColumn.type = columnType;
-                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
-                    tableColumn.isNullable = dbColumn["NULLABLE"] !== "N";
-                    tableColumn.isPrimary = isPrimary;
-                    tableColumn.isGenerated = dbColumn["IDENTITY_COLUMN"] === "YES"; // todo
-                    tableColumn.comment = ""; // todo
-                    return tableColumn;
-                });
-
-            // create foreign key schemas from the loaded indices
-            table.foreignKeys = constraints
-                .filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "R")
-                .map(dbForeignKey => {
-                    return new TableForeignKey(<TableForeignKeyOptions>{
-                        table: table,
-                        name: dbForeignKey["CONSTRAINT_NAME"],
-                        columnNames: [],
-                        referencedTableName: "",
-                        referencedColumnNames: []
-                    });
-                }); // todo: fix missing params
-
-            // create index schemas from the loaded indices
-            table.indices = dbIndices
-                .filter(dbIndex => {
-                    return  dbIndex["TABLE_NAME"] === table.name &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]));
-                        // && (!table.primaryKey === dbIndex["INDEX_NAME"]); TODO: check and fix
-                })
-                .map(dbIndex => {
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: dbIndex["INDEX_NAME"],
-                        columnNames: dbIndex["COLUMN_NAMES"],
-                        isUnique: (dbIndex["COLUMN_NAMES"] === "UNIQUE")
-                    });
-                });
-
-            return table;
-        });
     }
 
     /**
@@ -796,15 +620,9 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     async clearDatabase(): Promise<void> {
         await this.startTransaction();
         try {
-            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS "', table_name, '";') AS query FROM information_schema.tables WHERE table_schema = '${this.dbName}'`;
-            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
-
-            await this.query(disableForeignKeysCheckQuery);
+            const dropTablesQuery = `SELECT 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS' AS "query" FROM "USER_TABLES"`;
             const dropQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
             await Promise.all(dropQueries.map(query => this.query(query["query"])));
-            await this.query(enableForeignKeysCheckQuery);
-
             await this.commitTransaction();
 
         } catch (error) {
@@ -816,57 +634,116 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
 
     }
 
-    /**
-     * Enables special query runner mode in which sql queries won't be executed,
-     * instead they will be memorized into a special variable inside query runner.
-     * You can get memorized sql using getMemorySql() method.
-     */
-    enableSqlMemory(): void {
-        this.sqlMemoryMode = true;
-    }
-
-    /**
-     * Disables special query runner mode in which sql queries won't be executed
-     * started by calling enableSqlMemory() method.
-     *
-     * Previously memorized sql will be flushed.
-     */
-    disableSqlMemory(): void {
-        this.sqlInMemory = new SqlInMemory();
-        this.sqlMemoryMode = false;
-    }
-
-    /**
-     * Flushes all memorized sqls.
-     */
-    clearSqlMemory(): void {
-        this.sqlInMemory = new SqlInMemory();
-    }
-
-    /**
-     * Gets sql stored in the memory. Parameters in the sql are already replaced.
-     */
-    getMemorySql(): SqlInMemory {
-        return this.sqlInMemory;
-    }
-
-    /**
-     * Executes up sql queries.
-     */
-    async executeMemoryUpSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
-    }
-
-    /**
-     * Executes down sql queries.
-     */
-    async executeMemoryDownSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries, downQuery => this.query(downQuery));
-    }
-
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Loads all tables (with given names) from the database and creates a Table from them.
+     */
+    protected async loadTables(tableNames: string[]): Promise<Table[]> {
+
+        // if no tables given then no need to proceed
+        if (!tableNames || !tableNames.length)
+            return [];
+
+        // load tables, columns, indices and foreign keys
+        const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
+        const tablesSql      = `SELECT * FROM "USER_TABLES" WHERE "TABLE_NAME" IN (${tableNamesString})`;
+        const columnsSql     = `SELECT * FROM "USER_TAB_COLS" WHERE "TABLE_NAME" IN (${tableNamesString})`;
+        const indicesSql     = `SELECT ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS, LISTAGG(cols.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY cols.COLUMN_NAME) AS COLUMN_NAMES
+                                FROM USER_INDEXES ind, USER_IND_COLUMNS cols 
+                                WHERE ind.INDEX_NAME = cols.INDEX_NAME AND ind.TABLE_NAME IN (${tableNamesString})
+                                GROUP BY ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS`;
+        // const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
+        // const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
+        const constraintsSql = `SELECT cols.table_name, cols.column_name, cols.position, cons.constraint_type, cons.constraint_name
+FROM all_constraints cons, all_cons_columns cols WHERE cols.table_name IN (${tableNamesString}) 
+AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDER BY cols.table_name, cols.position`;
+        const [dbTables, dbColumns, dbIndices, /*dbForeignKeys, dbUniqueKeys, */constraints]: ObjectLiteral[][] = await Promise.all([
+            this.query(tablesSql),
+            this.query(columnsSql),
+            this.query(indicesSql),
+            // this.query(foreignKeysSql),
+            // this.query(uniqueKeysSql),
+            this.query(constraintsSql),
+        ]);
+
+        // if tables were not found in the db, no need to proceed
+        if (!dbTables.length)
+            return [];
+
+        // create tables for loaded tables
+        return dbTables.map(dbTable => {
+            const table = new Table();
+            table.name = dbTable["TABLE_NAME"];
+
+            // create columns from the loaded columns
+            table.columns = dbColumns
+                .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
+                .map(dbColumn => {
+                    const isPrimary = !!constraints
+                        .find(constraint => {
+                            return  constraint["TABLE_NAME"] === table.name &&
+                                constraint["CONSTRAINT_TYPE"] === "P" &&
+                                constraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
+                        });
+                    // TODO fix
+                    let columnType = dbColumn["DATA_TYPE"].toLowerCase();
+                    if (dbColumn["DATA_TYPE"].toLowerCase() === "varchar2" && dbColumn["DATA_LENGTH"] !== null) {
+                        columnType += "(" + dbColumn["DATA_LENGTH"] + ")";
+                    } else if (dbColumn["DATA_PRECISION"] !== null && dbColumn["DATA_SCALE"] !== null) {
+                        columnType += "(" + dbColumn["DATA_PRECISION"] + "," + dbColumn["DATA_SCALE"] + ")";
+                    } else if (dbColumn["DATA_SCALE"] !== null) {
+                        columnType += "(0," + dbColumn["DATA_SCALE"] + ")";
+                    } else if (dbColumn["DATA_PRECISION"] !== null) {
+                        columnType += "(" + dbColumn["DATA_PRECISION"] + ")";
+                    }
+
+                    const tableColumn = new TableColumn();
+                    tableColumn.name = dbColumn["COLUMN_NAME"];
+                    tableColumn.type = columnType;
+                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    tableColumn.isNullable = dbColumn["NULLABLE"] === "Y";
+                    tableColumn.isPrimary = isPrimary;
+                    tableColumn.isGenerated = dbColumn["IDENTITY_COLUMN"] === "YES";
+                    tableColumn.generationStrategy = "increment";
+                    tableColumn.comment = ""; // todo
+                    return tableColumn;
+                });
+
+            // create foreign key schemas from the loaded indices
+            table.foreignKeys = constraints
+                .filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "R")
+                .map(dbForeignKey => {
+                    return new TableForeignKey(<TableForeignKeyOptions>{
+                        table: table,
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: [],
+                        referencedTableName: "",
+                        referencedColumnNames: []
+                    });
+                }); // todo: fix missing params
+
+            // create index schemas from the loaded indices
+            table.indices = dbIndices
+                .filter(dbIndex => {
+                    return  dbIndex["TABLE_NAME"] === table.name &&
+                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]));
+                    // && (!table.primaryKey === dbIndex["INDEX_NAME"]); TODO: check and fix
+                })
+                .map(dbIndex => {
+                    return new TableIndex(<TableIndexOptions>{
+                        table: table,
+                        name: dbIndex["INDEX_NAME"],
+                        columnNames: dbIndex["COLUMN_NAMES"],
+                        isUnique: (dbIndex["COLUMN_NAMES"] === "UNIQUE")
+                    });
+                });
+
+            return table;
+        });
+    }
 
     /**
      * Database name shortcut.
@@ -896,7 +773,7 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
         // if (column.isPrimary === true && addPrimary)
         //     c += " PRIMARY KEY";
         if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
-            c += " GENERATED BY DEFAULT ON NULL AS IDENTITY";
+            c += " GENERATED ALWAYS AS IDENTITY";
         // if (column.comment) // todo: less priority, fix it later
         //     c += " COMMENT '" + column.comment + "'";
         if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY

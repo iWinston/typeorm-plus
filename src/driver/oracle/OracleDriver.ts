@@ -146,7 +146,12 @@ export class OracleDriver implements Driver {
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults;
+    dataTypeDefaults: DataTypeDefaults = {
+        "char": { length: 1 },
+        "varchar": { length: 255 },
+        "varchar2": { length: 255 },
+        "timestamp": { length: 6 }
+    };
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -264,8 +269,7 @@ export class OracleDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
-     * TODO implement later
+     * Oracle does not support table schemas. One user can have only one schema.
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
         return tableName;
@@ -339,27 +343,29 @@ export class OracleDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
-        let type = "";
         if (column.type === Number) {
-            type += "integer";
+            return "integer";
 
         } else if (column.type === String) {
-            type += "nvarchar2";
+            return "nvarchar2";
 
         } else if (column.type === Date) {
-            type += "timestamp(0)";
+            return "timestamp";
 
         } else if (column.type === Boolean) {
-            type += "number(1)";
+            column.length = 1;
+            return "number";
+
+        } else if (column.type === "uuid") {
+            column.length = 16;
+            return "varchar";
 
         } else if (column.type === "simple-array") {
-            type += "text";
+            return "text";
 
         } else {
-            type += column.type;
+            return column.type as string || "";
         }
-
-        return type;
     }
 
     /**

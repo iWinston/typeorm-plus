@@ -396,74 +396,57 @@ export class PostgresDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
-        let type = "";
-        if (column.type === Number) {
-            type += "integer";
+        if (column.type === Number || column.type === "int" || column.type === "int4") {
+            return "integer";
 
-        } else if (column.type === String) {
-            type += "character varying";
+        } else if (column.type === String || column.type === "varchar") {
+            return "character varying";
 
         } else if (column.type === Date) {
-            type += "timestamp";
+            return "timestamp";
 
-        } else if (column.type === Boolean) {
-            type += "boolean";
+        } else if (column.type === Boolean || column.type === "bool") {
+            return "boolean";
 
         } else if (column.type === "simple-array") {
-            type += "text";
+            return "text";
+
+        } else if (column.type === "int2") {
+            return "smallint";
+
+        } else if (column.type === "int8") {
+            return "bigint";
+
+        } else if (column.type === "decimal") {
+            return "numeric";
+
+        } else if (column.type === "float8") {
+            return "double precision";
+
+        } else if (column.type === "float4") {
+            return "real";
+
+        } else if (column.type === "char") {
+            return "character";
+
+        } else if (column.type === "time") {
+            return "time without time zone";
+
+        } else if (column.type === "timetz") {
+            return "time with time zone";
+
+        } else if (column.type === "timestamptz") {
+            return "timestamp with time zone";
+
+        } else if (column.type === "varbit") {
+            return "bit varying";
+
+        } else if (column.type === "timestamp") {
+            return "timestamp without time zone";
 
         } else {
-            type += column.type;
+            return column.type as string || "";
         }
-
-        // normalize shortcuts
-        if (type === "int" || type === "int4") {
-            type = "integer";
-
-        } else if (type === "int2") {
-            type = "smallint";
-
-        } else if (type === "int8") {
-            type = "bigint";
-
-        } else if (type === "decimal") {
-            type = "numeric";
-
-        } else if (type === "float8") {
-            type = "double precision";
-
-        } else if (type === "float4") {
-            type = "real";
-
-        } else if (type === "citext") {
-            type = "citext";
-
-        } else if (type === "char") {
-            type = "character";
-
-        } else if (type === "varchar") {
-            type = "character varying";
-
-        } else if (type === "time") {
-            type = "time without time zone";
-
-        } else if (type === "timetz") {
-            type = "time with time zone";
-
-        } else if (type === "timestamptz") {
-            type = "timestamp with time zone";
-
-        } else if (type === "bool") {
-            type = "boolean";
-
-        } else if (type === "varbit") {
-            type = "bit varying";
-
-        } else if (type === "timestamp") {
-            type = "timestamp without time zone";
-        }
-
-        return type;
     }
 
     /**
