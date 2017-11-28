@@ -10,6 +10,9 @@ import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
 import {InsertResult} from "../query-builder/result/InsertResult";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {SaveOptions} from "../repository/SaveOptions";
+import {RemoveOptions} from "../repository/RemoveOptions";
+import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -36,6 +39,11 @@ export class SubjectExecutor {
     protected queryRunner: QueryRunner;
 
     /**
+     * Persistence options.
+     */
+    protected options?: SaveOptions & RemoveOptions;
+
+    /**
      * All subjects that needs to be operated.
      */
     protected allSubjects: Subject[];
@@ -59,9 +67,10 @@ export class SubjectExecutor {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(queryRunner: QueryRunner, subjects: Subject[]) {
+    constructor(queryRunner: QueryRunner, subjects: Subject[], options?: SaveOptions & RemoveOptions) {
         this.queryRunner = queryRunner;
         this.allSubjects = subjects;
+        this.options = options;
         this.validate();
         this.recompute();
     }
@@ -75,47 +84,63 @@ export class SubjectExecutor {
      * Executes queries using given query runner.
      */
     async execute(): Promise<void> {
-
-        // console.time("execution");
-        // console.time("prepare");
+        // console.time("SubjectExecutor.execute");
 
         // broadcast "before" events before we start insert / update / remove operations
-        await this.broadcastBeforeEventsForAll();
+        let broadcasterResult: BroadcasterResult|undefined = undefined;
+        if (!this.options || this.options.listeners !== false) {
+            // console.time(".broadcastBeforeEventsForAll");
+            broadcasterResult = this.broadcastBeforeEventsForAll();
+            if (broadcasterResult.promises.length > 0) await Promise.all(broadcasterResult.promises);
+            // console.timeEnd(".broadcastBeforeEventsForAll");
+        }
 
         // since event listeners and subscribers can call save methods and/or trigger entity changes we need to recompute operational subjects
-        this.recompute();
+        // recompute only in the case if any listener or subscriber was really executed
+        if (broadcasterResult && broadcasterResult.count > 0) {
+            // console.time(".recompute");
+            this.recompute();
+            // console.timeEnd(".recompute");
+        }
 
         // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
-        this.insertSubjects = new SubjectTopoligicalSorter(this.insertSubjects).sort("insert");
 
         // console.timeEnd("prepare");
 
         // execute all insert operations
-        // console.time("insertion");
+        // console.time(".insertion");
+        this.insertSubjects = new SubjectTopoligicalSorter(this.insertSubjects).sort("insert");
         await this.executeInsertOperations();
-        // console.timeEnd("insertion");
+        // console.timeEnd(".insertion");
 
         // recompute update operations since insertion can create updation operations for the
         // properties it wasn't able to handle on its own (referenced columns)
         this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
 
         // execute update operations
-        // console.time("updation");
+        // console.time(".updation");
         await this.executeUpdateOperations();
-        // console.timeEnd("updation");
+        // console.timeEnd(".updation");
 
         // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
-        // console.time("removal");
+        // console.time(".removal");
         this.removeSubjects = new SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
         await this.executeRemoveOperations();
-        // console.timeEnd("removal");
+        // console.timeEnd(".removal");
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
+        // console.time(".updateSpecialColumnsInPersistedEntities");
         await this.updateSpecialColumnsInPersistedEntities();
+        // console.timeEnd(".updateSpecialColumnsInPersistedEntities");
 
         // finally broadcast "after" events after we finish insert / update / remove operations
-        await this.broadcastAfterEventsForAll();
-        // console.timeEnd("execution");
+        if (!this.options || this.options.listeners !== false) {
+            // console.time(".broadcastAfterEventsForAll");
+            broadcasterResult = this.broadcastAfterEventsForAll();
+            if (broadcasterResult.promises.length > 0) await Promise.all(broadcasterResult.promises);
+            // console.timeEnd(".broadcastAfterEventsForAll");
+        }
+        // console.timeEnd("SubjectExecutor.execute");
     }
 
     // -------------------------------------------------------------------------
@@ -146,23 +171,31 @@ export class SubjectExecutor {
     /**
      * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
      */
-    protected async broadcastBeforeEventsForAll(): Promise<void> {
-        await Promise.all([
-            ...this.insertSubjects.map(subject => this.queryRunner.broadcaster.broadcastBeforeInsertEvent(subject.metadata, subject.entity!)),
-            ...this.updateSubjects.map(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(subject.metadata, subject.entity!, subject.databaseEntity)),
-            ...this.removeSubjects.map(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(subject.metadata, subject.entity!, subject.databaseEntity))
-        ]);
+    protected broadcastBeforeEventsForAll(): BroadcasterResult {
+        const result = new BroadcasterResult();
+        if (this.insertSubjects.length)
+            this.insertSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeInsertEvent(result, subject.metadata, subject.entity!));
+        if (this.updateSubjects.length)
+            this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        if (this.removeSubjects.length)
+            this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        return result;
     }
 
     /**
      * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
+     * Returns void if there wasn't any listener or subscriber executed.
+     * Note: this method has a performance-optimized code organization.
      */
-    protected async broadcastAfterEventsForAll(): Promise<void> {
-        await Promise.all([
-            ...this.insertSubjects.map(subject => this.queryRunner.broadcaster.broadcastAfterInsertEvent(subject.metadata, subject.entity!)),
-            ...this.updateSubjects.map(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(subject.metadata, subject.entity!, subject.databaseEntity)),
-            ...this.removeSubjects.map(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(subject.metadata, subject.entity!, subject.databaseEntity))
-        ]);
+    protected broadcastAfterEventsForAll(): BroadcasterResult {
+        const result = new BroadcasterResult();
+        if (this.insertSubjects.length)
+            this.insertSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterInsertEvent(result, subject.metadata, subject.entity!));
+        if (this.updateSubjects.length)
+            this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        if (this.removeSubjects.length)
+            this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
+        return result;
     }
 
     /**
@@ -171,10 +204,10 @@ export class SubjectExecutor {
     protected async executeInsertOperations(): Promise<void> {
 
         // group insertion subjects to make bulk insertions
-        const groupedInsertSubjects = this.groupBulkSubjects(this.insertSubjects, "insert");
+        const [groupedInsertSubjects, groupedInsertSubjectKeys] = this.groupBulkSubjects(this.insertSubjects, "insert");
 
         // then we run insertion in the sequential order which is important since we have an ordered subjects
-        await PromiseUtils.runInSequence(Object.keys(groupedInsertSubjects), async groupName => {
+        await PromiseUtils.runInSequence(groupedInsertSubjectKeys, async groupName => {
             const subjects = groupedInsertSubjects[groupName];
             const insertMaps = subjects.map(subject => {
                 if (this.queryRunner.connection.driver instanceof MongoDriver) {
@@ -203,7 +236,7 @@ export class SubjectExecutor {
                     .insert()
                     .into(subjects[0].metadata.target)
                     .values(insertMaps)
-                    .updateEntity(true)
+                    .updateEntity(this.options && this.options.reload === false ? false : true)
                     .callListeners(false)
                     .execute();
             }
@@ -243,7 +276,7 @@ export class SubjectExecutor {
                     .createQueryBuilder()
                     .update(subject.metadata.target)
                     .set(updateMap)
-                    .updateEntity(true)
+                    .updateEntity(this.options && this.options.reload === false ? false : true)
                     .callListeners(false);
 
                 if (subject.entity) {
@@ -266,9 +299,9 @@ export class SubjectExecutor {
      */
     protected async executeRemoveOperations(): Promise<void> {
         // group insertion subjects to make bulk insertions
-        const groupedRemoveSubjects = this.groupBulkSubjects(this.removeSubjects, "delete");
+        const [groupedRemoveSubjects, groupedRemoveSubjectKeys] = this.groupBulkSubjects(this.removeSubjects, "delete");
 
-        await PromiseUtils.runInSequence(Object.keys(groupedRemoveSubjects), async groupName => {
+        await PromiseUtils.runInSequence(groupedRemoveSubjectKeys, async groupName => {
             const subjects = groupedRemoveSubjects[groupName];
             const deleteMaps = subjects.map(subject => {
                 if (!subject.identifier)
@@ -306,8 +339,41 @@ export class SubjectExecutor {
      */
     protected updateSpecialColumnsInPersistedEntities(): void {
 
-        // update inserted and updated entity properties
-        [...this.insertSubjects, ...this.updateSubjects].forEach(subject => {
+        // update inserted entity properties
+        if (this.insertSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.insertSubjects);
+
+        // update updated entity properties
+        if (this.updateSubjects.length)
+            this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.updateSubjects);
+
+        // remove ids from the entities that were removed
+        if (this.removeSubjects.length) {
+            this.removeSubjects.forEach(subject => {
+                if (!subject.entity) return;
+
+                subject.metadata.primaryColumns.forEach(primaryColumn => {
+                    primaryColumn.setEntityValue(subject.entity!, undefined);
+                });
+            });
+        }
+
+        // other post-persist updations
+        this.allSubjects.forEach(subject => {
+            if (!subject.entity) return;
+
+            subject.metadata.relationIds.forEach(relationId => {
+                relationId.setValue(subject.entity!);
+            });
+        });
+    }
+
+    /**
+     * Updates all special columns of the saving entities (create date, update date, version, etc.).
+     * Also updates nullable columns and columns with default values.
+     */
+    protected updateSpecialColumnsInInsertedAndUpdatedEntities(subjects: Subject[]): void {
+        subjects.forEach(subject => {
             if (!subject.entity) return;
 
             // set values to "null" for nullable columns that did not have values
@@ -324,24 +390,6 @@ export class SubjectExecutor {
             if (subject.generatedMap)
                 this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
         });
-
-        // remove ids from the entities that were removed
-        this.removeSubjects.forEach(subject => {
-            if (!subject.entity) return;
-
-            subject.metadata.primaryColumns.forEach(primaryColumn => {
-                primaryColumn.setEntityValue(subject.entity!, undefined);
-            });
-        });
-
-        // other post-persist updations
-        this.allSubjects.forEach(subject => {
-            if (!subject.entity) return;
-
-            subject.metadata.relationIds.forEach(relationId => {
-                relationId.setValue(subject.entity!);
-            });
-        });
     }
 
     /**
@@ -355,19 +403,22 @@ export class SubjectExecutor {
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
      */
-    protected groupBulkSubjects(subjects: Subject[], type: "insert"|"delete"): { [key: string]: Subject[] } {
-        return subjects.reduce((group, subject, index) => {
+    protected groupBulkSubjects(subjects: Subject[], type: "insert"|"delete"): [{ [key: string]: Subject[] }, string[]] {
+        const group: { [key: string]: Subject[] } = {};
+        const keys: string[] = [];
+        const groupingAllowed = type === "delete" || this.queryRunner.connection.driver.isReturningSqlSupported();
 
-            const key = type === "delete" || this.queryRunner.connection.driver.isReturningSqlSupported() || subject.metadata.isJunction
-                ? subject.metadata.name
-                : subject.metadata.name + "_" + index;
+        subjects.forEach((subject, index) => {
+            const key = groupingAllowed || subject.metadata.isJunction ? subject.metadata.name : subject.metadata.name + "_" + index;
+            if (!group[key]) {
+                group[key] = [subject];
+                keys.push(key);
+            } else {
+                group[key].push(subject);
+            }
+        });
 
-            if (!group[key])
-                group[key] = [];
-
-            group[key].push(subject);
-            return group;
-        }, {} as { [key: string]: Subject[] });
+        return [group, keys];
     }
 
 }

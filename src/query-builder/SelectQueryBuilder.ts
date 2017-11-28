@@ -30,6 +30,7 @@ import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
+import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1823,8 +1824,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
 
             // broadcast all "after load" events
-            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata)
-                await queryRunner.broadcaster.broadcastLoadEventsForAll(this.expressionMap.mainAlias.target, entities);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata) {
+                const broadcastResult = new BroadcasterResult();
+                queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, this.expressionMap.mainAlias.metadata, entities);
+                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+            }
         }
 
         return {

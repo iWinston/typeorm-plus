@@ -570,6 +570,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     *
+     * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult)

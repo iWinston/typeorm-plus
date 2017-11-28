@@ -62,6 +62,11 @@ export class EntityManager {
      */
     protected repositories: Repository<any>[] = [];
 
+    /**
+     * Plain to object transformer used in create and merge operations.
+     */
+    protected plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -216,8 +221,7 @@ export class EntityManager {
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
         const mergeIntoEntity = metadata.create();
-        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer(true);
-        plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata);
+        this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
         return mergeIntoEntity;
     }
 
@@ -226,8 +230,7 @@ export class EntityManager {
      */
     merge<Entity>(entityClass: ObjectType<Entity>|string, mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity { // todo: throw exception if entity manager is released
         const metadata = this.connection.getMetadata(entityClass);
-        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-        entityLikes.forEach(object => plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
+        entityLikes.forEach(object => this.plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
         return mergeIntoEntity;
     }
 
@@ -251,25 +254,25 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
-
-    /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
     save<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
+    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
     save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves a given entity in the database.
@@ -290,7 +293,7 @@ export class EntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(entity: Entity): Promise<Entity>;
+    remove<Entity>(entity: Entity, options?: RemoveOptions): Promise<Entity>;
 
     /**
      * Removes a given entity from the database.

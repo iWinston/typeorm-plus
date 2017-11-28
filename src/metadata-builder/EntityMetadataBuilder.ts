@@ -367,8 +367,16 @@ export class EntityMetadataBuilder {
         entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren);
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
         entityMetadata.listeners = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
+        entityMetadata.afterLoadListeners = entityMetadata.listeners.filter(listener => listener.type === "after-load");
+        entityMetadata.afterInsertListeners = entityMetadata.listeners.filter(listener => listener.type === "after-insert");
+        entityMetadata.afterUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === "after-update");
+        entityMetadata.afterRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === "after-remove");
+        entityMetadata.beforeInsertListeners = entityMetadata.listeners.filter(listener => listener.type === "before-insert");
+        entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === "before-update");
+        entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === "before-remove");
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
+        entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.isObjectId);
         entityMetadata.hasUUIDGeneratedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;

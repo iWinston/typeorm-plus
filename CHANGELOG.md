@@ -42,6 +42,10 @@ Use `findOne(id)` method instead now.
 * removed `deleteById` method - use `delete(id)` method instead now
 * removed `updateById` method - use `update(id)` method instead now
 * changed `snakeCase` utility - check table names after upgrading
+* added ability to disable transaction in `save` and `remove` operations
+* added ability to disable listeners and subscribers in `save` and `remove` operations
+* added ability to save and remove objects in chunks
+* added ability to disable entity reloading after insertion and updation
 
 ## 0.1.2 (latest)
 

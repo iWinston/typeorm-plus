@@ -14,6 +14,7 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
+import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -57,8 +58,11 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             // call before updation methods in listeners and subscribers
-            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata)
-                await queryRunner.broadcaster.broadcastBeforeUpdateEvent(this.expressionMap.mainAlias!.metadata);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                const broadcastResult = new BroadcasterResult();
+                queryRunner.broadcaster.broadcastBeforeUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+            }
 
             // if update entity mode is enabled we may need extra columns for the returning statement
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
@@ -81,8 +85,11 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             // call after updation methods in listeners and subscribers
-            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata)
-                await queryRunner.broadcaster.broadcastAfterUpdateEvent(this.expressionMap.mainAlias!.metadata);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                const broadcastResult = new BroadcasterResult();
+                queryRunner.broadcaster.broadcastAfterUpdateEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+            }
 
             // close transaction if we started it
             if (transactionStartedByUs)

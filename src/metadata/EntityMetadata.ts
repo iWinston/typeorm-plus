@@ -184,6 +184,11 @@ export class EntityMetadata {
     columns: ColumnMetadata[] = [];
 
     /**
+     * All columns except for virtual columns.
+     */
+    nonVirtualColumns: ColumnMetadata[] = [];
+
+    /**
      * In the case if this entity metadata is junction table's entity metadata,
      * this will contain all referenced columns of owner entity.
      */
@@ -229,6 +234,41 @@ export class EntityMetadata {
      * Entity listener metadatas.
      */
     listeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER LOAD" type.
+     */
+    afterLoadListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER INSERT" type.
+     */
+    beforeInsertListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER INSERT" type.
+     */
+    afterInsertListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER UPDATE" type.
+     */
+    beforeUpdateListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER UPDATE" type.
+     */
+    afterUpdateListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER REMOVE" type.
+     */
+    beforeRemoveListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER REMOVE" type.
+     */
+    afterRemoveListeners: EntityListenerMetadata[] = [];
 
     /**
      * If this entity metadata's table using one of the inheritance patterns,
