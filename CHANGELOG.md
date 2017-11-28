@@ -41,6 +41,7 @@ Use `findOne(id)` method instead now.
 * removed deprecated `removeById`, `removeByIds` methods
 * removed `deleteById` method - use `delete(id)` method instead now
 * removed `updateById` method - use `update(id)` method instead now
+* changed `snakeCase` utility - check table names after upgrading
 
 ## 0.1.2 (latest)
 
