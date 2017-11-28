@@ -284,6 +284,10 @@ export class EntityManager {
         const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
+        // if user passed empty array of entities then we don't need to do anything
+        if (entity instanceof Array && entity.length === 0)
+            return Promise.resolve(entity);
+
         // execute save operation
         return new EntityPersistExecutor(this.connection, this.queryRunner, "save", target, entity, options)
             .execute()
@@ -319,6 +323,10 @@ export class EntityManager {
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
+
+        // if user passed empty array of entities then we don't need to do anything
+        if (entity instanceof Array && entity.length === 0)
+            return Promise.resolve(entity);
 
         // execute save operation
         return new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options)

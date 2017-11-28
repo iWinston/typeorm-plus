@@ -21,7 +21,7 @@ describe("persistence > persistence options > chunks", () => {
 
     it("should save objects in chunks", () => Promise.all(connections.map(async connection => {
         const posts: Post[] = [];
-        for (let i = 0; i < 1000000; i++) {
+        for (let i = 0; i < 100000; i++) {
             const post = new Post();
             post.title = "Bakhrom " + i;
             post.description = "Hello" + i;
