@@ -353,6 +353,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Checks if column exist in the table.
+     */
+    async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
+        const parsedTablePath = this.parseTableName(tableOrName);
+        const sql = `SELECT * FROM "${parsedTablePath.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTablePath.tableName}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = '${parsedTablePath.schema}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
@@ -511,16 +521,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const down = `EXEC sp_rename '${this.escapeTableName(newTableName, true)}', '${oldTableName}'`;
 
         await this.executeQueries(up, down);
-    }
-
-    /**
-     * Checks if column exist in the table.
-     */
-    async hasColumn(tablePath: string, columnName: string): Promise<boolean> {
-        const parsedTablePath = this.parseTableName(tablePath);
-        const sql = `SELECT * FROM "${parsedTablePath.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTablePath.tableName}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = '${parsedTablePath.schema}'`;
-        const result = await this.query(sql);
-        return result.length ? true : false;
     }
 
     /**
@@ -1539,15 +1539,6 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
                 tableName: tableName
             };
         }
-    }
-
-    /**
-     * Parametrizes given object of values. Used to create column=value queries.
-     */
-    protected parametrize(objectLiteral: ObjectLiteral, startFrom: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => {
-            return `"${key}"` + "=@" + (startFrom + index);
-        });
     }
 
     /**

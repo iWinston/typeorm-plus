@@ -144,7 +144,12 @@ export interface QueryRunner {
     /**
      * Checks if table with the given name exist.
      */
-    hasTable(table: Table|string): Promise<boolean>;
+    hasTable(tableOrName: Table|string): Promise<boolean>;
+
+    /**
+     * Checks if column exist in the table.
+     */
+    hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean>;
 
     /**
      * Creates a new database.
@@ -182,12 +187,6 @@ export interface QueryRunner {
      * Renames a table.
      */
     renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void>;
-
-    /**
-     * Checks if column exist in the table.
-     */
-    hasColumn(tableName: string, columnName: string): Promise<boolean>;
-
     /**
      * Adds a new column.
      */

@@ -505,6 +505,13 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Checks if column with the given name exist in the given table.
+     */
+    async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Creates a database if it's not created.
      */
     async createDatabase(database: string): Promise<void> {
@@ -550,13 +557,6 @@ export class MongoQueryRunner implements QueryRunner {
      * Renames the given table.
      */
     async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
-        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
-    }
-
-    /**
-     * Checks if column with the given name exist in the given table.
-     */
-    async hasColumn(collectionName: string, columnName: string): Promise<boolean> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

@@ -1,13 +1,17 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Unique} from "../../../../src/decorator/Unique";
+import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 
 @Entity()
 @Unique(["text", "tag"])
 export class Post {
 
-    @Column({ primary: true, unique: true })
+    @PrimaryColumn()
     id: number;
+
+    @Column({ unique: true })
+    version: number;
 
     @Column({ default: "My post" })
     name: string;

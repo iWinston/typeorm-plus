@@ -263,6 +263,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Checks if column with the given name exist in the given table.
+     */
+    async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
+        const parsedTableName = this.parseTableName(tableOrName);
+        const sql = `SELECT * FROM information_schema.columns WHERE table_schema = ${parsedTableName.schema} AND table_name = '${parsedTableName.tableName}' AND column_name = '${columnName}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
      * Creates a new database.
      * Postgres does not supports database creation inside a transaction block.
      */
@@ -378,16 +388,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const down = `ALTER TABLE ${this.escapeTableName(newFullTableName)} RENAME TO "${oldTableName}"`;
 
         await this.executeQueries(up, down);
-    }
-
-    /**
-     * Checks if column with the given name exist in the given table.
-     */
-    async hasColumn(tableName: string, columnName: string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableName);
-        const sql = `SELECT * FROM information_schema.columns WHERE table_schema = ${parsedTableName.schema} AND table_name = '${parsedTableName.tableName}' AND column_name = '${columnName}'`;
-        const result = await this.query(sql);
-        return result.length ? true : false;
     }
 
     /**

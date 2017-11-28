@@ -150,6 +150,8 @@ export class OracleDriver implements Driver {
         "char": { length: 1 },
         "varchar": { length: 255 },
         "varchar2": { length: 255 },
+        "nvarchar": { length: 255 },
+        "nvarchar2": { length: 255 },
         "timestamp": { length: 6 }
     };
 

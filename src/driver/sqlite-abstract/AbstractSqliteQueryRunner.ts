@@ -163,6 +163,16 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Checks if column with the given name exist in the given table.
+     */
+    async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const sql = `PRAGMA table_info("${tableName}")`;
+        const columns: ObjectLiteral[] = await this.query(sql);
+        return !!columns.find(column => column["name"] === columnName);
+    }
+
+    /**
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
@@ -253,15 +263,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const down = `ALTER TABLE "${newTableName}" RENAME TO "${oldTableName}"`;
 
         await this.executeQueries(up, down);
-    }
-
-    /**
-     * Checks if column with the given name exist in the given table.
-     */
-    async hasColumn(tableName: string, columnName: string): Promise<boolean> {
-        const sql = `PRAGMA table_info("${tableName}")`;
-        const columns: ObjectLiteral[] = await this.query(sql);
-        return !!columns.find(column => column["name"] === columnName);
     }
 
     /**

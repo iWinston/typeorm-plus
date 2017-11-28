@@ -10,11 +10,11 @@ import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyRel
 import {OracleDriver} from "./OracleDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {QueryFailedError} from "../../error/QueryFailedError";
-import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
-import {TableForeignKeyOptions} from "../../schema-builder/options/TableForeignKeyOptions";
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
+import {OrmUtils} from "../../util/OrmUtils";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -297,8 +297,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Checks if table with the given name exist in the database.
      */
-    async hasTable(tableName: string): Promise<boolean> {
-        const sql = `SELECT TABLE_NAME FROM user_tables WHERE TABLE_NAME = '${tableName}'`;
+    async hasTable(tableOrName: Table|string): Promise<boolean> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
+     * Checks if column with the given name exist in the given table.
+     */
+    async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -307,7 +318,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        await this.query(`CREATE DATABASE IF NOT EXISTS ${database}`);
+        await this.query(`CREATE DATABASE IF NOT EXISTS "${database}"`);
     }
 
     /**
@@ -332,24 +343,71 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates a new table from the given table metadata and column metadatas.
+     * Creates a new table.
      */
-    async createTable(table: Table): Promise<void> {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
-        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
-        const primaryKeyColumns = table.columns.filter(column => column.isPrimary);
-        if (primaryKeyColumns.length > 0)
-            sql += `, PRIMARY KEY(${primaryKeyColumns.map(column => `"${column.name}"`).join(", ")})`;
-        sql += `)`;
-        await this.query(sql);
+    async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true, createIndices: boolean = true): Promise<void> {
+        if (ifNotExist) {
+            const isTableExist = await this.hasTable(table);
+            if (isTableExist) return Promise.resolve();
+        }
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        upQueries.push(this.createTableSql(table, createForeignKeys));
+        downQueries.push(this.dropTableSql(table));
+
+        // if createForeignKeys is true, we must drop created foreign keys in down query.
+        // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
+        if (createForeignKeys)
+            table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
+
+        if (createIndices) {
+            table.indices.forEach(index => {
+
+                // new index may be passed without name. In this case we generate index name manually.
+                if (!index.name)
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                upQueries.push(this.createIndexSql(table, index));
+                downQueries.push(this.dropIndexSql(index));
+            });
+        }
+
+        await this.executeQueries(upQueries, downQueries);
     }
 
     /**
      * Drops the table.
      */
-    async dropTable(tableName: Table|string): Promise<void> {
-        let sql = `DROP TABLE "${tableName}"`;
-        await this.query(sql);
+    async dropTable(tableOrName: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+        // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
+        const createForeignKeys: boolean = dropForeignKeys;
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
+        // to perform drop queries for foreign keys and indices.
+        if (ifExist) {
+            const isTableExist = await this.hasTable(table);
+            if (!isTableExist) return Promise.resolve();
+        }
+
+        if (dropIndices) {
+            table.indices.forEach(index => {
+                upQueries.push(this.dropIndexSql(index));
+                downQueries.push(this.createIndexSql(table, index));
+            });
+        }
+
+        // if dropForeignKeys is true, we just drop the table, otherwise we also drop table foreign keys.
+        // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
+        if (dropForeignKeys)
+            table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
+
+        upQueries.push(this.dropTableSql(table));
+        downQueries.push(this.createTableSql(table, createForeignKeys));
+
+        await this.executeQueries(upQueries, downQueries);
     }
 
     /**
@@ -360,21 +418,48 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Checks if column with the given name exist in the given table.
-     */
-    async hasColumn(tableName: string, columnName: string): Promise<boolean> {
-        const sql = `SELECT COLUMN_NAME FROM all_tab_cols WHERE TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${columnName}'`;
-        const result = await this.query(sql);
-        return result.length ? true : false;
-    }
-
-    /**
      * Creates a new column from the column in the table.
      */
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const sql = `ALTER TABLE "${tableName}" ADD ${this.buildCreateColumnSql(column)}`;
-        return this.query(sql);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const clonedTable = table.clone();
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        upQueries.push(`ALTER TABLE "${table.name}" ADD ${this.buildCreateColumnSql(column)}`);
+        downQueries.push(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
+
+        if (column.isPrimary) {
+            const primaryColumns = clonedTable.primaryColumns;
+            // if table already have primary key, me must drop it and recreate again
+            if (primaryColumns.length > 0) {
+                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
+                upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
+                downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+            }
+
+            primaryColumns.push(column);
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+            const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
+            upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+            downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
+        }
+
+        if (column.isUnique) {
+            const uniqueConstraint = new TableUnique({
+                name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
+                columnNames: [column.name]
+            });
+            clonedTable.uniques.push(uniqueConstraint);
+            upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${column.name}")`);
+            downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint.name}"`);
+        }
+
+        await this.executeQueries(upQueries, downQueries);
+
+        clonedTable.addColumn(column);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
@@ -389,26 +474,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Renames column in the given table.
      */
     async renameColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newTableColumnOrName: TableColumn|string): Promise<void> {
-
-        let table: Table|undefined = undefined;
-        if (tableOrName instanceof Table) {
-            table = tableOrName;
-        } else {
-            table = await this.getTable(tableOrName);
-        }
-
-        if (!table)
-            throw new Error(`Table ${tableOrName} was not found.`);
-
-        let oldColumn: TableColumn|undefined = undefined;
-        if (oldTableColumnOrName instanceof TableColumn) {
-            oldColumn = oldTableColumnOrName;
-        } else {
-            oldColumn = table.columns.find(column => column.name === oldTableColumnOrName);
-        }
-
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${tableOrName}" table.`);
+            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn: TableColumn|undefined = undefined;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -418,7 +487,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             newColumn.name = newTableColumnOrName;
         }
 
-        return this.changeColumn(table, oldColumn, newColumn);
+        await this.changeColumn(table, oldColumn, newColumn);
     }
 
     /**
@@ -493,8 +562,44 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops column in the table.
      */
     async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
-        return this.query(`ALTER TABLE "${table!.name}" DROP COLUMN "${column.name}"`);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const clonedTable = table.clone();
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        const primaryColumns = clonedTable.primaryColumns;
+        if (primaryColumns.length > 0 && primaryColumns.find(primaryColumn => primaryColumn.name === column.name)) {
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+            const columnNames = primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
+            upQueries.push(`ALTER TABLE "${clonedTable.name}" DROP CONSTRAINT "${pkName}"`);
+            downQueries.push(`ALTER TABLE "${clonedTable.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+            primaryColumns.splice(primaryColumns.indexOf(column), 1);
+
+            // if primary key have multiple columns, we must recreate it without dropped column
+            if (primaryColumns.length > 0) {
+                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                const columnNames = primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
+                upQueries.push(`ALTER TABLE "${clonedTable.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+                downQueries.push(`ALTER TABLE "${clonedTable.name}" DROP CONSTRAINT "${pkName}"`);
+            }
+        }
+
+        if (column.isUnique) {
+            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
+            const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);
+            if (foundUnique)
+                clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
+            upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueName}"`);
+            downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueName}" UNIQUE ("${column.name}")`);
+        }
+
+        upQueries.push(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
+        downQueries.push(`ALTER TABLE "${table.name}" ADD ${this.buildCreateColumnSql(column)}`);
+
+        await this.executeQueries(upQueries, downQueries);
+
+        table.removeColumn(column);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
@@ -524,42 +629,80 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new primary key.
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
-        // todo
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const clonedTable = table.clone();
+
+        const up = this.createPrimaryKeySql(table, columnNames);
+
+        // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
+        clonedTable.columns.forEach(column => {
+            if (columnNames.find(columnName => columnName === column.name))
+                column.isPrimary = true;
+        });
+        const down = this.dropPrimaryKeySql(clonedTable);
+
+        await this.executeQueries(up, down);
+        this.replaceCachedTable(table, clonedTable);
     }
 
     /**
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
-        // todo
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const up = this.dropPrimaryKeySql(table);
+        const down = this.createPrimaryKeySql(table, table.primaryColumns.map(column => column.name));
+        await this.executeQueries(up, down);
+        table.primaryColumns.forEach(column => {
+            column.isPrimary = false;
+        });
     }
 
     /**
      * Creates a new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
-        // todo
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        if (!uniqueConstraint.name)
+            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table.name, uniqueConstraint.columnNames);
+
+        const up = this.createUniqueConstraintSql(table, uniqueConstraint);
+        const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
+        await this.executeQueries(up, down);
+        table.addUniqueConstraint(uniqueConstraint);
     }
 
     /**
      * Drops an unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
-        // todo
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
+        if (!uniqueConstraint)
+            throw new Error(`Supplied unique constraint does not found in table ${table.name}`);
+
+        const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
+        const down = this.createUniqueConstraintSql(table, uniqueConstraint);
+        await this.executeQueries(up, down);
+        table.removeUniqueConstraint(uniqueConstraint);
     }
 
     /**
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const columnNames = foreignKey.columnNames.map(column => "\"" + column + "\"").join(", ");
-        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => "\"" + column + "\"").join(",");
-        let sql = `ALTER TABLE "${tableName}" ADD CONSTRAINT "${foreignKey.name}" ` +
-            `FOREIGN KEY (${columnNames}) ` +
-            `REFERENCES "${foreignKey.referencedTableName}"(${referencedColumnNames})`;
-        if (foreignKey.onDelete) sql += " ON DELETE " + foreignKey.onDelete;
-        return this.query(sql);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new FK may be passed without name. In this case we generate FK name manually.
+        if (!foreignKey.name)
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames);
+
+        const up = this.createForeignKeySql(table, foreignKey);
+        const down = this.dropForeignKeySql(table, foreignKey);
+        await this.executeQueries(up, down);
+        table.addForeignKey(foreignKey);
     }
 
     /**
@@ -573,10 +716,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops a foreign key from the table.
      */
-    async dropForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const sql = `ALTER TABLE "${tableName}" DROP CONSTRAINT "${foreignKey.name}"`;
-        return this.query(sql);
+    async dropForeignKey(tableOrName: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
+        if (!foreignKey)
+            throw new Error(`Supplied foreign key does not found in table ${table.name}`);
+
+        const up = this.dropForeignKeySql(table, foreignKey);
+        const down = this.createForeignKeySql(table, foreignKey);
+        await this.executeQueries(up, down);
+        table.removeForeignKey(foreignKey);
     }
 
     /**
@@ -591,19 +740,31 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new index.
      */
     async createIndex(tableOrName: Table|string, index: TableIndex): Promise<void> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const columns = index.columnNames.map(columnName => "\"" + columnName + "\"").join(", ");
-        const sql = `CREATE ${index.isUnique ? "UNIQUE" : ""} INDEX "${index.name}" ON "${tableName}"(${columns})`;
-        await this.query(sql);
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name)
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+
+        const up = this.createIndexSql(table, index);
+        const down = this.dropIndexSql(index);
+        await this.executeQueries(up, down);
+        table.addIndex(index);
     }
 
     /**
      * Drops an index from the table.
      */
-    async dropIndex(tableSchemeOrName: Table|string, indexName: string): Promise<void> {
-        const tableName = tableSchemeOrName instanceof Table ? tableSchemeOrName.name : tableSchemeOrName;
-        const sql = `ALTER TABLE "${tableName}" DROP INDEX "${indexName}"`;
-        await this.query(sql);
+    async dropIndex(tableOrName: Table|string, indexOrName: TableIndex|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
+        if (!index)
+            throw new Error(`Supplied index does not found in table ${table.name}`);
+
+        const up = this.dropIndexSql(index);
+        const down = this.createIndexSql(table, index);
+        await this.executeQueries(up, down);
+        table.removeIndex(index);
     }
 
     /**
@@ -649,23 +810,34 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // load tables, columns, indices and foreign keys
         const tableNamesString = tableNames.map(name => "'" + name + "'").join(", ");
-        const tablesSql      = `SELECT * FROM "USER_TABLES" WHERE "TABLE_NAME" IN (${tableNamesString})`;
-        const columnsSql     = `SELECT * FROM "USER_TAB_COLS" WHERE "TABLE_NAME" IN (${tableNamesString})`;
-        const indicesSql     = `SELECT ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS, LISTAGG(cols.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY cols.COLUMN_NAME) AS COLUMN_NAMES
-                                FROM USER_INDEXES ind, USER_IND_COLUMNS cols 
-                                WHERE ind.INDEX_NAME = cols.INDEX_NAME AND ind.TABLE_NAME IN (${tableNamesString})
-                                GROUP BY ind.INDEX_NAME, ind.TABLE_NAME, ind.UNIQUENESS`;
-        // const foreignKeysSql = `SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${this.dbName}' AND REFERENCED_COLUMN_NAME IS NOT NULL`;
-        // const uniqueKeysSql  = `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '${this.dbName}' AND CONSTRAINT_TYPE = 'UNIQUE'`;
-        const constraintsSql = `SELECT cols.table_name, cols.column_name, cols.position, cons.constraint_type, cons.constraint_name
-FROM all_constraints cons, all_cons_columns cols WHERE cols.table_name IN (${tableNamesString}) 
-AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDER BY cols.table_name, cols.position`;
-        const [dbTables, dbColumns, dbIndices, /*dbForeignKeys, dbUniqueKeys, */constraints]: ObjectLiteral[][] = await Promise.all([
+        const tablesSql = `SELECT * FROM "USER_TABLES" WHERE "TABLE_NAME" IN (${tableNamesString})`;
+        const columnsSql = `SELECT * FROM "USER_TAB_COLS" WHERE "TABLE_NAME" IN (${tableNamesString})`;
+
+        const indicesSql = `SELECT "IND"."INDEX_NAME", "IND"."TABLE_NAME", "IND"."UNIQUENESS", ` +
+            `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_NAMES" ` +
+            `FROM "USER_INDEXES" "IND" ` +
+            `INNER JOIN "USER_IND_COLUMNS" "COL" ON "COL"."INDEX_NAME" = "IND"."INDEX_NAME" ` +
+            `LEFT JOIN "USER_CONSTRAINTS" "CON" ON "CON"."CONSTRAINT_NAME" = "IND"."INDEX_NAME" ` +
+            `WHERE "IND"."TABLE_NAME" IN (${tableNamesString}) AND "CON"."CONSTRAINT_NAME" IS NULL ` +
+            `GROUP BY "IND"."INDEX_NAME", "IND"."TABLE_NAME", "IND"."UNIQUENESS"`;
+
+        const foreignKeysSql = `SELECT "C"."CONSTRAINT_NAME", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "REF_COL"."TABLE_NAME" AS "REFERENCED_TABLE_NAME", ` +
+            `"REF_COL"."COLUMN_NAME" AS "REFERENCED_COLUMN_NAME", "C"."DELETE_RULE" AS "ON_DELETE" ` +
+            `FROM "USER_CONSTRAINTS" "C" ` +
+            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
+            `INNER JOIN "USER_CONS_COLUMNS" "REF_COL" ON "REF_COL"."OWNER" = "C"."R_OWNER" AND "REF_COL"."CONSTRAINT_NAME" = "C"."R_CONSTRAINT_NAME" AND "REF_COL"."POSITION" = "COL"."POSITION" ` +
+            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" = 'R'`;
+
+        const constraintsSql = `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME" ` +
+            `FROM "USER_CONSTRAINTS" "C" ` +
+            `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
+            `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
+
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbConstraints]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(indicesSql),
-            // this.query(foreignKeysSql),
-            // this.query(uniqueKeysSql),
+            this.query(foreignKeysSql),
             this.query(constraintsSql),
         ]);
 
@@ -682,62 +854,93 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             table.columns = dbColumns
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
                 .map(dbColumn => {
-                    const isPrimary = !!constraints
-                        .find(constraint => {
-                            return  constraint["TABLE_NAME"] === table.name &&
-                                constraint["CONSTRAINT_TYPE"] === "P" &&
-                                constraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
-                        });
-                    // TODO fix
-                    let columnType = dbColumn["DATA_TYPE"].toLowerCase();
-                    if (dbColumn["DATA_TYPE"].toLowerCase() === "varchar2" && dbColumn["DATA_LENGTH"] !== null) {
-                        columnType += "(" + dbColumn["DATA_LENGTH"] + ")";
-                    } else if (dbColumn["DATA_PRECISION"] !== null && dbColumn["DATA_SCALE"] !== null) {
-                        columnType += "(" + dbColumn["DATA_PRECISION"] + "," + dbColumn["DATA_SCALE"] + ")";
-                    } else if (dbColumn["DATA_SCALE"] !== null) {
-                        columnType += "(0," + dbColumn["DATA_SCALE"] + ")";
-                    } else if (dbColumn["DATA_PRECISION"] !== null) {
-                        columnType += "(" + dbColumn["DATA_PRECISION"] + ")";
-                    }
+                    const columnConstraints = dbConstraints.filter(dbConstraint => dbConstraint["TABLE_NAME"] === table.name && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]);
+
+                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "U");
+                    const isConstraintComposite = uniqueConstraint
+                        ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "U"
+                            && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
+                            && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                        : false;
+                    const isUnique = !!uniqueConstraint && !isConstraintComposite;
+
+                    const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "P");
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
-                    tableColumn.type = columnType;
-                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
+                    tableColumn.length = dbColumn["CHAR_COL_DECL_LENGTH"] ? dbColumn["CHAR_COL_DECL_LENGTH"].toString() : "";
+
+                    if (tableColumn.type === "number" || tableColumn.type === "numeric" || tableColumn.type === "dec" || tableColumn.type === "decimal") {
+                        tableColumn.precision = dbColumn["DATA_PRECISION"];
+                        tableColumn.scale = dbColumn["DATA_SCALE"];
+                    }
+
+                    // TODO fix datatypes
+
+                    tableColumn.default = dbColumn["DATA_DEFAULT"] !== null && dbColumn["DATA_DEFAULT"] !== undefined ? dbColumn["DATA_DEFAULT"] : undefined;
                     tableColumn.isNullable = dbColumn["NULLABLE"] === "Y";
+                    tableColumn.isUnique = isUnique;
                     tableColumn.isPrimary = isPrimary;
                     tableColumn.isGenerated = dbColumn["IDENTITY_COLUMN"] === "YES";
-                    tableColumn.generationStrategy = "increment";
+                    if (tableColumn.isGenerated) {
+                        tableColumn.generationStrategy = "increment";
+                        tableColumn.default = undefined;
+                    }
                     tableColumn.comment = ""; // todo
                     return tableColumn;
                 });
 
-            // create foreign key schemas from the loaded indices
-            table.foreignKeys = constraints
-                .filter(constraint => constraint["TABLE_NAME"] === table.name && constraint["CONSTRAINT_TYPE"] === "R")
-                .map(dbForeignKey => {
-                    return new TableForeignKey(<TableForeignKeyOptions>{
-                        table: table,
-                        name: dbForeignKey["CONSTRAINT_NAME"],
-                        columnNames: [],
-                        referencedTableName: "",
-                        referencedColumnNames: []
-                    });
-                }); // todo: fix missing params
+            // find unique constraints of table, group them by constraint name and build TableUnique.
+            const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
+                return dbConstraint["TABLE_NAME"] === table.name && dbConstraint["CONSTRAINT_TYPE"] === "U";
+            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
-            // create index schemas from the loaded indices
+            table.uniques = tableUniqueConstraints.map(constraint => {
+                const uniques = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                return new TableUnique({
+                    name: constraint["CONSTRAINT_NAME"],
+                    columnNames: uniques.map(u => u["COLUMN_NAME"])
+                });
+            });
+
+            // find check constraints of table, group them by constraint name and build TableCheck.
+            const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
+                return dbConstraint["TABLE_NAME"] === table.name && dbConstraint["CONSTRAINT_TYPE"] === "C";
+            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
+
+            table.checks = tableCheckConstraints.map(constraint => {
+                const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                return new TableCheck({
+                    name: constraint["CONSTRAINT_NAME"],
+                    columnNames: checks.map(c => c["COLUMN_NAME"])
+                });
+            });
+
+            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
+            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
+                return dbForeignKey["TABLE_NAME"] === table.name;
+            }), dbForeignKey => dbForeignKey["CONSTRAINT_NAME"]);
+
+            table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
+                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+                return new TableForeignKey({
+                    name: dbForeignKey["CONSTRAINT_NAME"],
+                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
+                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
+                    onDelete: dbForeignKey["ON_DELETE"] === "NO ACTION" ? undefined : dbForeignKey["ON_DELETE"]
+                });
+            });
+
+            // create TableIndex objects from the loaded indices
             table.indices = dbIndices
-                .filter(dbIndex => {
-                    return  dbIndex["TABLE_NAME"] === table.name &&
-                        (!table.foreignKeys.find(foreignKey => foreignKey.name === dbIndex["INDEX_NAME"]));
-                    // && (!table.primaryKey === dbIndex["INDEX_NAME"]); TODO: check and fix
-                })
+                .filter(dbIndex => dbIndex["TABLE_NAME"] === table.name )
                 .map(dbIndex => {
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
+                    return new TableIndex({
                         name: dbIndex["INDEX_NAME"],
-                        columnNames: dbIndex["COLUMN_NAMES"],
-                        isUnique: (dbIndex["COLUMN_NAMES"] === "UNIQUE")
+                        columnNames: dbIndex["COLUMN_NAMES"].split(","),
+                        isUnique: dbIndex["UNIQUENESS"] === "UNIQUE"
                     });
                 });
 
@@ -746,17 +949,141 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
     }
 
     /**
-     * Database name shortcut.
+     * Builds and returns SQL for create table.
      */
-    protected get dbName(): string {
-        return this.driver.options.schema as string;
+    protected createTableSql(table: Table, createForeignKeys?: boolean): string {
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
+        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+
+        table.columns
+            .filter(column => column.isUnique)
+            .forEach(column => {
+                const isUniqueExist = !!table.uniques.find(unique => {
+                    return !!(unique.columnNames.length === 1 && unique.columnNames.find(columnName => columnName === column.name));
+                });
+                if (!isUniqueExist)
+                    table.uniques.push(new TableUnique({
+                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
+                        columnNames: [column.name]
+                    }));
+            });
+
+        if (table.uniques.length > 0) {
+            const uniquesSql = table.uniques.map(unique => {
+                const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table.name, unique.columnNames);
+                const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
+                return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+            }).join(", ");
+
+            sql += `, ${uniquesSql}`;
+        }
+
+        if (table.foreignKeys.length > 0 && createForeignKeys) {
+            const foreignKeysSql = table.foreignKeys.map(fk => {
+                const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
+                if (!fk.name)
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
+                const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
+                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;
+                if (fk.onDelete)
+                    constraint += ` ON DELETE ${fk.onDelete}`;
+
+                return constraint;
+            }).join(", ");
+
+            sql += `, ${foreignKeysSql}`;
+        }
+
+        const primaryColumns = table.columns.filter(column => column.isPrimary);
+        if (primaryColumns.length > 0) {
+            const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, primaryColumns.map(column => column.name));
+            const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
+            sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`;
+        }
+
+        sql += `)`;
+
+        return sql;
     }
 
     /**
-     * Parametrizes given object of values. Used to create column=value queries.
+     * Builds drop table sql.
      */
-    protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map(key => `"${key}"=:${key}`);
+    protected dropTableSql(tableOrName: Table|string, ifExist?: boolean): string {
+        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        return ifExist ? `DROP TABLE IF EXISTS "${tableName}"` : `DROP TABLE "${tableName}"`;
+    }
+
+    /**
+     * Builds create index sql.
+     */
+    protected createIndexSql(table: Table, index: TableIndex): string {
+        const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}"(${columns})`;
+    }
+
+    /**
+     * Builds drop index sql.
+     */
+    protected dropIndexSql(indexOrName: TableIndex|string): string {
+        let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
+        return `DROP INDEX "${indexName}"`;
+    }
+
+    /**
+     * Builds create primary key sql.
+     */
+    protected createPrimaryKeySql(table: Table, columnNames: string[]): string {
+        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
+        const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
+        return `ALTER TABLE "${table.name}" ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`;
+    }
+
+    /**
+     * Builds drop primary key sql.
+     */
+    protected dropPrimaryKeySql(table: Table): string {
+        const columnNames = table.primaryColumns.map(column => column.name);
+        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
+        return `ALTER TABLE "${table.name}" DROP CONSTRAINT "${primaryKeyName}"`;
+    }
+
+    /**
+     * Builds create unique constraint sql.
+     */
+    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): string {
+        const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
+        return `ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
+    }
+
+    /**
+     * Builds drop unique constraint sql.
+     */
+    protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): string {
+        const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
+        return `ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueName}"`;
+    }
+
+    /**
+     * Builds create foreign key sql.
+     */
+    protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): string {
+        const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
+        const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
+        let sql = `ALTER TABLE "${table.name}" ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
+            `REFERENCES "${foreignKey.referencedTableName}" (${referencedColumnNames})`;
+        if (foreignKey.onDelete)
+            sql += ` ON DELETE ${foreignKey.onDelete}`;
+
+        return sql;
+    }
+
+    /**
+     * Builds drop foreign key sql.
+     */
+    protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): string {
+        const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
+        return `ALTER TABLE "${table.name}" DROP CONSTRAINT "${foreignKeyName}"`;
     }
 
     /**
@@ -768,17 +1095,12 @@ AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner ORDE
             c += " CHARACTER SET " + column.charset;
         if (column.collation)
             c += " COLLATE " + column.collation;
+        if (column.default !== undefined && column.default !== null) // DEFAULT must be placed before NOT NULL
+            c += " DEFAULT " + column.default;
         if (column.isNullable !== true && !column.isGenerated) // NOT NULL is not supported with GENERATED
             c += " NOT NULL";
-        // if (column.isPrimary === true && addPrimary)
-        //     c += " PRIMARY KEY";
-        if (column.isGenerated === true) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated === true && column.generationStrategy === "increment")
             c += " GENERATED ALWAYS AS IDENTITY";
-        // if (column.comment) // todo: less priority, fix it later
-        //     c += " COMMENT '" + column.comment + "'";
-        if (column.default !== undefined && column.default !== null) { // todo: same code in all drivers. make it DRY
-            c += " DEFAULT " + column.default;
-        }
 
         return c;
     }

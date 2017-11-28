@@ -7,15 +7,14 @@ import {TableOptions} from "../../../src/schema-builder/options/TableOptions";
 import {Post} from "./entity/Post";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 
-describe.only("query runner > create table", () => {
+describe("query runner > create table", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["oracle"],
             dropSchema: true,
         });
     });
@@ -73,19 +72,13 @@ describe.only("query runner > create table", () => {
 
         const table = await queryRunner.getTable("post");
         const idColumn = table!.findColumnByName("id");
+        const versionColumn = table!.findColumnByName("version");
         const nameColumn = table!.findColumnByName("name");
         table!.should.exist;
+        table!.uniques.length.should.be.equal(2);
         idColumn!.isPrimary.should.be.true;
+        versionColumn!.isUnique.should.be.true;
         nameColumn!.default!.should.be.exist;
-
-        // Postgres does not create unique constraint if column is already marked as primary.
-        if (connection.driver instanceof PostgresDriver) {
-            table!.uniques.length.should.be.equal(1);
-
-        } else {
-            idColumn!.isUnique.should.be.true;
-            table!.uniques.length.should.be.equal(2);
-        }
 
         await queryRunner.release();
     })));
@@ -190,7 +183,7 @@ describe.only("query runner > create table", () => {
             ]
         };
         // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
-        if (!(connection.driver instanceof MysqlDriver))
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof OracleDriver))
             categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
 
         await queryRunner.createTable(new Table(categoryTableOptions), true);
@@ -209,11 +202,13 @@ describe.only("query runner > create table", () => {
         questionIdColumn!.generationStrategy!.should.be.equal("increment");
         questionTable!.should.exist;
 
-        // MySql driver does not have unique constraints. All unique constraints is unique indexes.
-        // Also we store unique indexes as TableUniques.
+        // Only composite Unique constraints listed in table.uniques array.
         if (connection.driver instanceof MysqlDriver) {
+            // MySql driver does not have unique constraints. All unique constraints is unique indexes.
+            // Also we store unique indexes as TableUniques.
             questionTable!.uniques.length.should.be.equal(2);
             questionTable!.indices.length.should.be.equal(2);
+
         } else {
             questionTable!.uniques.length.should.be.equal(1);
             questionTable!.uniques[0].columnNames.length.should.be.equal(2);
@@ -234,9 +229,14 @@ describe.only("query runner > create table", () => {
         categoryTable!.uniques.length.should.be.equal(3);
         categoryTable!.foreignKeys.length.should.be.equal(1);
 
-        // MySql driver does not have unique constraints. All unique constraints is unique indexes.
         if (connection.driver instanceof MysqlDriver) {
+            // MySql driver does not have unique constraints. All unique constraints is unique indexes.
             categoryTable!.indices.length.should.be.equal(3);
+
+        } else if (connection.driver instanceof OracleDriver) {
+            // Oracle does not allow to put index on primary or unique columns.
+            categoryTable!.indices.length.should.be.equal(0);
+
         } else {
             categoryTable!.indices.length.should.be.equal(1);
         }

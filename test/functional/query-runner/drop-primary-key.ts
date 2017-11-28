@@ -8,7 +8,6 @@ describe("query runner > drop primary key", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql", "mysql", "postgres", "sqlite"],
             schemaCreate: true,
             dropSchema: true,
         });
