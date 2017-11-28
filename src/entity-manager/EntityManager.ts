@@ -680,9 +680,8 @@ export class EntityManager {
             }
             return id;
         });
-        qb.whereInIds(ids);
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return qb.getMany();
+        return qb.andWhereInIds(ids).getMany();
     }
 
     /**
