@@ -47,16 +47,36 @@ Use `findOne(id)` method instead now.
 * added ability to save and remove objects in chunks
 * added ability to disable entity reloading after insertion and updation
 
-## 0.1.2 (latest)
+## 0.1.6
+* added support for indices and listeners in embeddeds
+* added support for `ON CONFLICT` keyword
+* fixed bug with query builder where lazy relations are loaded multiple times when using `leftJoinAndSelect` ([#996](https://github.com/typeorm/typeorm/issues/996))
+* fixed bug in all sqlite based drivers that generated wrong uuid columns ([#1128](https://github.com/typeorm/typeorm/issues/1128) and [#1161](https://github.com/typeorm/typeorm/issues/1161))
 
-* sqlite now supports relative database file paths (#798 and #799)
-* fixed bug with not properly working `update` method (#1037, #1042)
-* fixed bug with replication support (#1035)
-* fixed broken `typeorm version` command
-* fixed bug with wrong embedded column names being generated (#969) 
-* added support for `sql.js`. To use it you just need to install `npm i sql.js` and use `sqljs` as driver type [#894](https://github.com/typeorm/typeorm/pull/894).
-* added support for caching in respositories [#1057](https://github.com/typeorm/typeorm/issues/1057)
-* added support for the `citext` column type for postgres [#1075](https://github.com/typeorm/typeorm/pull/1075)
+## 0.1.5
+* fixed bug where `findByIds` would return values with an empty array ([#1118](https://github.com/typeorm/typeorm/issues/1118))
+* fixed bug in MigrationExecutor that didn't release created query builder ([#1201](https://github.com/typeorm/typeorm/issues/1201))
+
+## 0.1.4
+* fixed bug in mysql driver that generated wrong query when using skip ([#1099](https://github.com/typeorm/typeorm/issues/1099))
+* added option to create query builder from repository without alias([#1084](https://github.com/typeorm/typeorm/issues/1084))
+* fixed bug that made column option "select" unusable ([#1110](https://github.com/typeorm/typeorm/issues/1110))
+* fixed bug that generated mongodb projects what don't work ([#1119](https://github.com/typeorm/typeorm/issues/1119))
+
+## 0.1.3
+* added support for `sql.js`. To use it you just need to install `npm i sql.js` and use `sqljs` as driver type ([#894](https://github.com/typeorm/typeorm/pull/894)).
+* added explicit require() statements for drivers ([#1143](https://github.com/typeorm/typeorm/pull/1143))
+* fixed bug where wrong query is generated with multiple primary keys ([#1146](https://github.com/typeorm/typeorm/pull/1146))
+* fixed bug for oracle driver where connect method was wrong ([#1177](https://github.com/typeorm/typeorm/pull/1177))
+
+## 0.1.2
+
+* sqlite now supports relative database file paths ([#798](https://github.com/typeorm/typeorm/issues/798) and [#799](https://github.com/typeorm/typeorm/issues/799))
+* fixed bug with not properly working `update` method ([#1037](https://github.com/typeorm/typeorm/issues/1037), [#1042](https://github.com/typeorm/typeorm/issues/1042))
+* fixed bug with replication support ([#1035](https://github.com/typeorm/typeorm/pull/1035))
+* fixed bug with wrong embedded column names being generated ([#969](https://github.com/typeorm/typeorm/pull/969)) 
+* added support for caching in respositories ([#1057](https://github.com/typeorm/typeorm/issues/1057))
+* added support for the `citext` column type for postgres ([#1075](https://github.com/typeorm/typeorm/pull/1075))
 
 ## 0.1.1
 
@@ -290,7 +310,7 @@ from two sides of `@OneToOne` relationship now.
     `addParameters` now is deprecated
     * `getOne` returns `Promise<Entity|undefined>`
 * breaking changes in `Repository` and `EntityManager`:
-    * `findOne` and .findOne` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
+    * `findOne` and .findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
 * now typeorm is compiled into `ES5` instead of `ES6` - this allows to run it on older versions of node.js
 * fixed multiple issues with dates and utc-related stuff
 * multiple bugfixes
