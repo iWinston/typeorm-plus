@@ -559,12 +559,11 @@ describe("repository > find methods", () => {
             loadedUser!.firstName.should.be.equal("name #0");
             loadedUser!.secondName.should.be.equal("Doe");
 
-            loadedUser = await userRepository.findOneOrFail(1, {
+            await userRepository.findOneOrFail(1, {
                 where: {
                     secondName: "Dorian"
                 }
-            });
-            expect(loadedUser).to.be.undefined;
+            }).should.eventually.be.rejectedWith(EntityNotFoundError);
         })));
 
         it("should throw an error if nothing was found", () => Promise.all(connections.map(async connection => {
@@ -582,7 +581,7 @@ describe("repository > find methods", () => {
             const savedUsers = await Promise.all(promises);
             savedUsers.length.should.be.equal(100); // check if they all are saved
 
-            expect(async () => await userRepository.findOneOrFail(100)).should.be.rejectedWith(EntityNotFoundError);
+            await userRepository.findOneOrFail(100).should.eventually.be.rejectedWith(EntityNotFoundError);
         })));
     });
 
