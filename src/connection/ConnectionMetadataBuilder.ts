@@ -29,7 +29,7 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds migration instances for the given classes or directories.
      */
-    buildMigrations(migrations: Function[]|string[]): MigrationInterface[] {
+    buildMigrations(migrations: (Function|string)[]): MigrationInterface[] {
         const [migrationClasses, migrationDirectories] = OrmUtils.splitClassesAndStrings(migrations);
         const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(migrationDirectories)];
         return allMigrationClasses.map(migrationClass => getFromContainer<MigrationInterface>(migrationClass));
@@ -38,7 +38,7 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds subscriber instances for the given classes or directories.
      */
-    buildSubscribers(subscribers: Function[]|string[]): EntitySubscriberInterface<any>[] {
+    buildSubscribers(subscribers: (Function|string)[]): EntitySubscriberInterface<any>[] {
         const [subscriberClasses, subscriberDirectories] = OrmUtils.splitClassesAndStrings(subscribers || []);
         const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(subscriberDirectories)];
         return getMetadataArgsStorage()
