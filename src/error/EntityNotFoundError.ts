@@ -1,4 +1,5 @@
-import { ObjectType } from "../";
+import {ObjectType} from "../common/ObjectType";
+
 /**
  * Thrown when no result could be found in methods which are not allowed to return undefined or an empty set.
  */
