@@ -11,10 +11,10 @@ export class OrmUtils {
         });
     }
 
-    static splitClassesAndStrings<T>(clsesAndStrings: T[]|string[]): [T[], string[]] {
+    static splitClassesAndStrings<T>(clsesAndStrings: (string|T)[]): [T[], string[]] {
         return [
-            (clsesAndStrings as T[]).filter(cls => typeof cls !== "string"),
-            (clsesAndStrings as string[]).filter(str => typeof str === "string"),
+            (clsesAndStrings).filter((cls): cls is T => typeof cls !== "string"),
+            (clsesAndStrings).filter((str): str is string => typeof str === "string"),
         ];
     }
 

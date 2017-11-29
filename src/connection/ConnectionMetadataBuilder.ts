@@ -49,7 +49,7 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds entity metadatas for the given classes or directories.
      */
-    buildEntityMetadatas(entities: Function[]|string[], schemas: EntitySchema[]|string[]): EntityMetadata[] {
+    buildEntityMetadatas(entities: (Function|string)[], schemas: (EntitySchema|string)[]): EntityMetadata[] {
         const [entityClasses, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
         const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(entityDirectories)];
         const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
