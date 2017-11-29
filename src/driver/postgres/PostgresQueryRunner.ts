@@ -267,7 +267,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM information_schema.columns WHERE table_schema = ${parsedTableName.schema} AND table_name = '${parsedTableName.tableName}' AND column_name = '${columnName}'`;
+        const sql = `SELECT * FROM information_schema.columns WHERE table_schema = ${parsedTableName.schema} AND table_name = ${parsedTableName.tableName} AND column_name = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -519,43 +519,56 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // rename unique constraints
             clonedTable.findColumnUniques(oldColumn).forEach(unique => {
+                // build new constraint name
                 unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
                 unique.columnNames.push(newColumn.name);
                 const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
 
+                // build queries
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
+
+                // replace constraint name
+                unique.name = newUniqueName;
             });
 
             // rename index constraints
             clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                // build new constraint name
                 index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                 index.columnNames.push(newColumn.name);
                 const schema = this.extractSchema(table);
                 const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
 
+                // build queries
                 const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
                 const down = schema ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"` : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`;
                 upQueries.push(up);
                 downQueries.push(down);
+
+                // replace constraint name
+                index.name = newIndexName;
             });
 
             // rename foreign key constraints
             clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                // build new constraint name
                 foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                 foreignKey.columnNames.push(newColumn.name);
                 const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
 
+                // build queries
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
+
+                // replace constraint name
+                foreignKey.name = newForeignKeyName;
             });
 
             // rename old column in the Table object
             const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
             clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
             oldColumn.name = newColumn.name;
-
-            // TODO: rename fk
         }
 
         if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
@@ -1342,13 +1355,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 tableName: `'${tableName.split(".")[1]}'`
             };
         }
-    }
-
-    /**
-     * Parametrizes given object of values. Used to create column=value queries.
-     */
-    protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => "\"" + key + "\"=$" + (startIndex + index + 1));
     }
 
     /**

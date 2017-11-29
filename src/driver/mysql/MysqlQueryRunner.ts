@@ -1170,13 +1170,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Parametrizes given object of values. Used to create column=value queries.
-     */
-    protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map(key => `\`${key}\`=?`);
-    }
-
-    /**
      * Builds a part of query to create/change a column.
      */
     protected buildCreateColumnSql(column: TableColumn, skipPrimary: boolean, skipName: boolean = false) {

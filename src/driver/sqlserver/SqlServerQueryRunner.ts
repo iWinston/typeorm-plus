@@ -65,7 +65,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
-    connect(): Promise<any> {
+    connect(): Promise<void> {
         return Promise.resolve();
     }
 
@@ -347,7 +347,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}'`;
+        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = ${schema}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -356,8 +357,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Checks if column exist in the table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const parsedTablePath = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "${parsedTablePath.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTablePath.tableName}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = '${parsedTablePath.schema}'`;
+        const parsedTableName = this.parseTableName(tableOrName);
+        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = ${schema}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -669,11 +671,17 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                    // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+
+                    // build queries
                     upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${index.name}", "${newIndexName}", "INDEX"`);
                     downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newIndexName}", "${index.name}", "INDEX"`);
+
+                    // replace constraint name
+                    index.name = newIndexName;
                 });
 
                 // this function concat database name and schema name to the foreign key.
@@ -690,29 +698,47 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // rename foreign key constraints
                 clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                    // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
                     const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+
+                    // build queries
                     upQueries.push(`EXEC sp_rename "${buildForeignKeyName(foreignKey.name!)}", "${newForeignKeyName}"`);
                     downQueries.push(`EXEC sp_rename "${buildForeignKeyName(newForeignKeyName)}", "${foreignKey.name}"`);
+
+                    // replace constraint name
+                    foreignKey.name = newForeignKeyName;
                 });
 
                 // rename check constraints
                 clonedTable.findColumnChecks(oldColumn).forEach(check => {
+                    // build new constraint name
                     check.columnNames.splice(check.columnNames.indexOf(oldColumn.name), 1);
                     check.columnNames.push(newColumn.name);
                     const newCheckName = this.connection.namingStrategy.checkConstraintName(clonedTable, check.columnNames);
+
+                    // build queries
                     upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${check.name}", "${newCheckName}"`);
                     downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newCheckName}", "${check.name}"`);
+
+                    // replace constraint name
+                    check.name = newCheckName;
                 });
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach(unique => {
+                    // build new constraint name
                     unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
                     unique.columnNames.push(newColumn.name);
                     const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
+
+                    // build queries
                     upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${unique.name}", "${newUniqueName}"`);
                     downQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${newUniqueName}", "${unique.name}"`);
+
+                    // replace constraint name
+                    unique.name = newUniqueName;
                 });
 
                 // change currently used database back to default db.
@@ -973,7 +999,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      * Creates a new foreign keys.
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName as any, foreignKey));
+        const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName, foreignKey));
         await Promise.all(promises);
     }
 
@@ -996,7 +1022,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
      * Drops a foreign keys from the table.
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName as any, foreignKey));
+        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName, foreignKey));
         await Promise.all(promises);
     }
 
@@ -1045,7 +1071,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
     async clearDatabase(): Promise<void> {
         await this.startTransaction();
         try {
-            let allTablesSql = `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE TABLE_TYPE = 'BASE TABLE'`;
+            let allTablesSql = `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`;
             const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
             await Promise.all(allTablesResults.map(async tablesResult => {
                 const dropForeignKeySql = `SELECT 'ALTER TABLE "' + OBJECT_SCHEMA_NAME(fk.parent_object_id) + '"."' + OBJECT_NAME(fk.parent_object_id) + '" DROP CONSTRAINT "' + fk.name + '"' as query FROM "sys"."foreign_keys" AS fk WHERE fk.referenced_object_id = object_id('"${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
@@ -1518,7 +1544,7 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
         }).join(".");
     }
 
-    protected parseTableName(target: Table|string): any {
+    protected parseTableName(target: Table|string) {
         const tableName = target instanceof Table ? target.name : target;
         if (tableName.split(".").length === 3) {
             return {

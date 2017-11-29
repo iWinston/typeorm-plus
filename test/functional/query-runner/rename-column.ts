@@ -7,13 +7,13 @@ import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
-describe("query runner > rename column", () => {
+describe.only("query runner > rename column", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", /*"mysql",*/ "postgres", "sqlite"],
+            enabledDrivers: ["mssql", /*"mysql",*/ "postgres", "sqlite", "oracle"],
             schemaCreate: true,
             dropSchema: true,
         });

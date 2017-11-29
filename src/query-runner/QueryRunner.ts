@@ -187,6 +187,7 @@ export interface QueryRunner {
      * Renames a table.
      */
     renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void>;
+
     /**
      * Adds a new column.
      */

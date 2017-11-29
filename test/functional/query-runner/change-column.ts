@@ -4,6 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 
 describe("query runner > change column", () => {
 
@@ -11,7 +12,7 @@ describe("query runner > change column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: [/*"mssql", "mysql",*/ "postgres", "sqlite"], // TODO bug with mysql and mssql. Need to drop constraints when column length changed
+            enabledDrivers: [/*"mssql", "mysql",*/ "postgres", "sqlite", "oracle"], // TODO bug with mysql and mssql. Need to drop constraints when column length changed
             schemaCreate: true,
             dropSchema: true,
         });
@@ -30,11 +31,13 @@ describe("query runner > change column", () => {
         const changedNameColumn = nameColumn.clone();
         changedNameColumn.default = undefined;
         changedNameColumn.isUnique = true;
+        changedNameColumn.isNullable = true;
         await queryRunner.changeColumn(table!, nameColumn, changedNameColumn);
 
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("name")!.default).to.be.undefined;
         table!.findColumnByName("name")!.isUnique.should.be.true;
+        table!.findColumnByName("name")!.isNullable.should.be.true;
 
         const textColumn = table!.findColumnByName("text")!;
         // SQLite does not impose any length restrictions
@@ -71,6 +74,7 @@ describe("query runner > change column", () => {
         table!.findColumnByName("id")!.isPrimary.should.be.true;
         table!.findColumnByName("name")!.default!.should.exist;
         table!.findColumnByName("name")!.isUnique.should.be.false;
+        table!.findColumnByName("name")!.isNullable.should.be.false;
         table!.findColumnByName("text")!.isPrimary.should.be.false;
         expect(table!.findColumnByName("text")!.default).to.be.undefined;
 
@@ -84,7 +88,7 @@ describe("query runner > change column", () => {
     it("should correctly change column 'isGenerated' property and revert change", () => Promise.all(connections.map(async connection => {
 
         // SqlServer does not support changing of isGenerated property.
-        if (connection.driver instanceof SqlServerDriver)
+        if (connection.driver instanceof SqlServerDriver || connection.driver instanceof OracleDriver)
             return;
 
         const queryRunner = connection.createQueryRunner();
