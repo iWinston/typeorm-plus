@@ -677,7 +677,7 @@ export class SqlServerQueryRunner implements QueryRunner {
      */
     async hasTable(tablePath: string): Promise<boolean> {
         const parsedTablePath = this.parseTablePath(tablePath);
-        const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.schema}' AND TABLE_SCHEMA = ${parsedTablePath.schema === "SCHEMA_NAME()" ? parsedTablePath.schema : `'${parsedTablePath.schema}'`}`;
+        const sql = `SELECT * FROM ${parsedTablePath.database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${parsedTablePath.tableName}' AND TABLE_SCHEMA = ${parsedTablePath.schema === "SCHEMA_NAME()" ? parsedTablePath.schema : `'${parsedTablePath.schema}'`}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
