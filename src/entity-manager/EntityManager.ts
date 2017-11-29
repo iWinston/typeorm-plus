@@ -495,10 +495,9 @@ export class EntityManager {
             return Promise.resolve([]);
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        qb.whereInIds(ids.map(id => metadata.ensureEntityIdMap(id)));
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return qb.getMany();
+        return qb.andWhereInIds(ids).getMany();
     }
 
     /**
