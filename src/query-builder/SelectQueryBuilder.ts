@@ -1610,6 +1610,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .groupBy()
             .offset(undefined)
             .limit(undefined)
+            .skip(undefined)
+            .take(undefined)
             .select(countSql)
             .loadRawResults(queryRunner);
 
