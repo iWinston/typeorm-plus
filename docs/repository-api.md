@@ -169,17 +169,25 @@ but ignores pagination settings (`from` and `take` options).
 const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timber" });
 ```
 
-* `findByIds` - Finds entities by given ids.
+* `findByIds` - Finds multiple entities by id.
 
 ```typescript
 const users = await repository.findByIds([1, 2, 3]);
 ```
 
-* `findOne` - Finds first entity that matches given id or find options.
+* `findOne` - Finds first entity that matches some id or find options.
 
 ```typescript
 const user = await repository.findOne(1);
 const timber = await repository.findOne({ firstName: "Timber" });
+```
+
+* `findOneOrFail` - Finds the first entity that matches the some id or find options.
+Rejects the returned promise if nothing matches.
+
+```typescript
+const user = await repository.findOneOrFail(1);
+const timber = await repository.findOneOrFail({ firstName: "Timber" });
 ```
 
 * `query` - Executes a raw SQL query.

@@ -167,17 +167,25 @@ but ignores pagination settings (from and take options).
 const [timbers, timbersCount] = await manager.findAndCount(User, { firstName: "Timber" });
 ```
 
-* `findByIds` - Finds entities by given ids.
+* `findByIds` - Finds multiple entities by id.
 
 ```typescript
 const users = await manager.findByIds(User, [1, 2, 3]);
 ```
 
-* `findOne` - Finds first entity that matches given id or find options.
+* `findOne` - Finds the first entity that matches some id or find options.
 
 ```typescript
 const user = await manager.findOne(User, 1);
 const timber = await manager.findOne(User, { firstName: "Timber" });
+```
+
+* `findOneOrFail` - Finds the first entity that matches some id or find options.
+Rejects the returned promise if nothing matches.
+
+```typescript
+const user = await manager.findOneOrFail(User, 1);
+const timber = await manager.findOneOrFail(User, { firstName: "Timber" });
 ```
 
 * `clear` - Clears all the data from the given table (truncates/drops it).
