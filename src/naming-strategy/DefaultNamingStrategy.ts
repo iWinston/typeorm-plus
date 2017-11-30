@@ -60,7 +60,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return columnName + "_" + index;
     }
 
-    joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string {
+    joinTableColumnName(tableName: string, propertyName: string, columnName?: string, inverse?: boolean): string {
         return camelCase(tableName + "_" + (columnName ? columnName : propertyName));
     }
 
