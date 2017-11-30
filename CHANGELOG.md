@@ -10,6 +10,7 @@ feel free to ask us and community.
 * fixed bug with migrations execution in mssql ([#1254](https://github.com/typeorm/typeorm/issues/1254))
 * added support for more complex ordering in paginated results ([#1259](https://github.com/typeorm/typeorm/issues/1259))
 * MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied 
+* fixed issue when relation query builder methods execute operations with empty arrays ([#1241](https://github.com/typeorm/typeorm/issues/1241))
 
 ## 0.1.6
 
