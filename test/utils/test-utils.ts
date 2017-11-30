@@ -3,6 +3,7 @@ import {createConnection, createConnections} from "../../src/index";
 import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
+import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -68,6 +69,12 @@ export interface TestingOptions {
     schema?: string;
 
     /**
+     * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
+     * generated.
+     */
+    namingStrategy?: NamingStrategyInterface;
+
+    /**
      * Schema name used for postgres driver.
      */
     cache?: boolean|{
@@ -117,7 +124,8 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
         enabledDrivers: [driverType],
         cache: options.cache,
-        schema: options.schema ? options.schema : undefined
+        schema: options.schema ? options.schema : undefined,
+        namingStrategy: options.namingStrategy ? options.namingStrategy : undefined
     });
     if (!testingConnections.length)
         throw new Error(`Unable to run tests because connection options for "${driverType}" are not set.`);
@@ -182,6 +190,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.synchronize = options.schemaCreate;
             if (options && options.schema)
                 newOptions.schema = options.schema;
+            if (options && options.namingStrategy)
+                newOptions.namingStrategy = options.namingStrategy;
             return newOptions;
         });
 }
