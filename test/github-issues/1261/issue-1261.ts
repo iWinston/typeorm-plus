@@ -11,7 +11,7 @@ describe("github issues > #1261 onDelete property on foreign key is not modified
     }));
     after(() => closeTestingConnections(connections));
 
-    it.only("should order by added selects when pagination is used", () => Promise.all(connections.map(async connection => {
+    it("should order by added selects when pagination is used", () => Promise.all(connections.map(async connection => {
         await connection.synchronize();
         BaseEntity.useConnection(connection);
 
