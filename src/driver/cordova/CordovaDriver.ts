@@ -72,7 +72,12 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            this.sqlite.openDatabase({name: this.options.database, location: this.options.location}, (db: any) => {
+            const options = Object.assign({}, {
+                name: this.options.database,
+                location: this.options.location,
+            }, this.options.extra || {});
+
+            this.sqlite.openDatabase(options, (db: any) => {
                 const databaseConnection = db;
 
                 // we need to enable foreign keys in sqlite to make sure all foreign key related features

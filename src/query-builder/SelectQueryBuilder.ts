@@ -1552,40 +1552,49 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (this.connection.driver instanceof OracleDriver)
             return "";
 
+        // in the case if nothing is joined in the query builder we don't need to make two requests to get paginated results
+        // we can use regular limit / offset, that's why we add offset and limit construction here based on skip and take values
+        let offset: number|undefined = this.expressionMap.offset,
+            limit: number|undefined = this.expressionMap.limit;
+        if (!offset && !limit && this.expressionMap.joinAttributes.length === 0) {
+            offset = this.expressionMap.skip;
+            limit = this.expressionMap.take;
+        }
+
         if (this.connection.driver instanceof SqlServerDriver) {
 
-            if (this.expressionMap.limit && this.expressionMap.offset)
-                return " OFFSET " + this.expressionMap.offset + " ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
-            if (this.expressionMap.limit)
-                return " OFFSET 0 ROWS FETCH NEXT " + this.expressionMap.limit + " ROWS ONLY";
-            if (this.expressionMap.offset)
-                return " OFFSET " + this.expressionMap.offset + " ROWS";
+            if (limit && offset)
+                return " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (limit)
+                return " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (offset)
+                return " OFFSET " + offset + " ROWS";
 
         } else if (this.connection.driver instanceof MysqlDriver) {
 
-            if (this.expressionMap.limit && this.expressionMap.offset)
-                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
-            if (this.expressionMap.limit)
-                return " LIMIT " + this.expressionMap.limit;
-            if (this.expressionMap.offset)
+            if (limit && offset)
+                return " LIMIT " + limit + " OFFSET " + offset;
+            if (limit)
+                return " LIMIT " + limit;
+            if (offset)
                 throw new OffsetWithoutLimitNotSupportedError("MySQL");
 
         } else if (this.connection.driver instanceof AbstractSqliteDriver) {
 
-            if (this.expressionMap.limit && this.expressionMap.offset)
-                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
-            if (this.expressionMap.limit)
-                return " LIMIT " + this.expressionMap.limit;
-            if (this.expressionMap.offset)
-                return " LIMIT -1 OFFSET " + this.expressionMap.offset;
+            if (limit && offset)
+                return " LIMIT " + limit + " OFFSET " + offset;
+            if (limit)
+                return " LIMIT " + limit;
+            if (offset)
+                return " LIMIT -1 OFFSET " + offset;
 
         } else {
-            if (this.expressionMap.limit && this.expressionMap.offset)
-                return " LIMIT " + this.expressionMap.limit + " OFFSET " + this.expressionMap.offset;
-            if (this.expressionMap.limit)
-                return " LIMIT " + this.expressionMap.limit;
-            if (this.expressionMap.offset)
-                return " OFFSET " + this.expressionMap.offset;
+            if (limit && offset)
+                return " LIMIT " + limit + " OFFSET " + offset;
+            if (limit)
+                return " LIMIT " + limit;
+            if (offset)
+                return " OFFSET " + offset;
         }
 
         return "";
@@ -1717,6 +1726,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .groupBy()
             .offset(undefined)
             .limit(undefined)
+            .skip(undefined)
+            .take(undefined)
             .select(countSql)
             .loadRawResults(queryRunner);
 
@@ -1756,7 +1767,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // where we make two queries to find the data we need
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
-        if (this.expressionMap.skip || this.expressionMap.take) {
+        if ((this.expressionMap.skip || this.expressionMap.take) && this.expressionMap.joinAttributes.length > 0) {
 
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
@@ -1841,26 +1852,36 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // if table has a default order then apply it
         const orderBys = this.expressionMap.allOrderBys;
-
         const selectString = Object.keys(orderBys)
-            .map(columnName => {
-                if (columnName.indexOf(".") === -1) return;
+            .map(orderCriteria => {
+                if (orderCriteria.indexOf(".") !== -1) {
+                    const [aliasName, propertyPath] = orderCriteria.split(".");
+                    const alias = this.expressionMap.findAliasByName(aliasName);
+                    const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                    return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
+                } else {
+                    if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
+                        return this.escape(parentAlias) + "." + orderCriteria;
 
-                const [aliasName, propertyPath] = columnName.split(".");
-                const alias = this.expressionMap.findAliasByName(aliasName);
-                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
+                    return "";
+                }
             })
             .join(", ");
 
         const orderByObject: OrderByCondition = {};
-        Object.keys(orderBys).forEach(columnName => {
-            if (columnName.indexOf(".") === -1) return;
-
-            const [aliasName, propertyPath] = columnName.split(".");
-            const alias = this.expressionMap.findAliasByName(aliasName);
-            const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[columnName];
+        Object.keys(orderBys).forEach(orderCriteria => {
+            if (orderCriteria.indexOf(".") !== -1) {
+                const [aliasName, propertyPath] = orderCriteria.split(".");
+                const alias = this.expressionMap.findAliasByName(aliasName);
+                const column = alias.metadata.findColumnWithPropertyName(propertyPath);
+                orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[orderCriteria];
+            } else {
+                if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
+                    orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];
+                } else {
+                    orderByObject[orderCriteria] = orderBys[orderCriteria];
+                }
+            }
         });
 
         return [selectString, orderByObject];

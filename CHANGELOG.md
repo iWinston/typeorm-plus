@@ -47,23 +47,36 @@ Use `findOne(id)` method instead now.
 * added ability to save and remove objects in chunks
 * added ability to disable entity reloading after insertion and updation
 
+## 0.1.7
+
+* fixed bug with migrations execution in mssql ([#1254](https://github.com/typeorm/typeorm/issues/1254))
+* added support for more complex ordering in paginated results ([#1259](https://github.com/typeorm/typeorm/issues/1259))
+* MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied 
+* fixed issue when relation query builder methods execute operations with empty arrays ([#1241](https://github.com/typeorm/typeorm/issues/1241))
+* Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--018) for the needed changes. ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
+* added support for loading sub-relations in via find options ([#1270](https://github.com/typeorm/typeorm/issues/1270))
+
 ## 0.1.6
+
 * added support for indices and listeners in embeddeds
 * added support for `ON CONFLICT` keyword
 * fixed bug with query builder where lazy relations are loaded multiple times when using `leftJoinAndSelect` ([#996](https://github.com/typeorm/typeorm/issues/996))
 * fixed bug in all sqlite based drivers that generated wrong uuid columns ([#1128](https://github.com/typeorm/typeorm/issues/1128) and [#1161](https://github.com/typeorm/typeorm/issues/1161))
 
 ## 0.1.5
+
 * fixed bug where `findByIds` would return values with an empty array ([#1118](https://github.com/typeorm/typeorm/issues/1118))
 * fixed bug in MigrationExecutor that didn't release created query builder ([#1201](https://github.com/typeorm/typeorm/issues/1201))
 
 ## 0.1.4
+
 * fixed bug in mysql driver that generated wrong query when using skip ([#1099](https://github.com/typeorm/typeorm/issues/1099))
 * added option to create query builder from repository without alias([#1084](https://github.com/typeorm/typeorm/issues/1084))
 * fixed bug that made column option "select" unusable ([#1110](https://github.com/typeorm/typeorm/issues/1110))
 * fixed bug that generated mongodb projects what don't work ([#1119](https://github.com/typeorm/typeorm/issues/1119))
 
 ## 0.1.3
+
 * added support for `sql.js`. To use it you just need to install `npm i sql.js` and use `sqljs` as driver type ([#894](https://github.com/typeorm/typeorm/pull/894)).
 * added explicit require() statements for drivers ([#1143](https://github.com/typeorm/typeorm/pull/1143))
 * fixed bug where wrong query is generated with multiple primary keys ([#1146](https://github.com/typeorm/typeorm/pull/1146))
