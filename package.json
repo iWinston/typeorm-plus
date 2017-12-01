@@ -35,8 +35,6 @@
     "websql",
     "websql-orm"
   ],
-  "browser": "./browser",
-  "module": "index",
   "devDependencies": {
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "7.1.0",
