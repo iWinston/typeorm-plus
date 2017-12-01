@@ -596,7 +596,7 @@ export class EntityManager {
      * Counts entities that match given find options or conditions.
      * Useful for pagination.
      */
-    count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
+    async count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
@@ -615,7 +615,7 @@ export class EntityManager {
     /**
      * Finds entities that match given find options or conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
@@ -641,7 +641,7 @@ export class EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[Entity[], number]> {
+    async findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
@@ -664,7 +664,7 @@ export class EntityManager {
      * Finds entities with ids.
      * Optionally find options or conditions can be applied.
      */
-    findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
 
         // if no ids passed, no need to execute a query - just return an empty array of values
         if (!ids.length)
@@ -697,7 +697,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+    async findOne<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
@@ -720,7 +720,7 @@ export class EntityManager {
      * Finds entity with given id.
      * Optionally find options or conditions can be applied.
      */
-    findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+    async findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
         if (metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {

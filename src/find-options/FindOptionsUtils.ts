@@ -1,11 +1,17 @@
 import {FindManyOptions} from "./FindManyOptions";
 import {FindOneOptions} from "./FindOneOptions";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Utilities to work with FindOptions.
  */
 export class FindOptionsUtils {
+
+    // -------------------------------------------------------------------------
+    // Public Static Methods
+    // -------------------------------------------------------------------------
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.
@@ -125,10 +131,15 @@ export class FindOptionsUtils {
                 }
             });
 
-        if (options.relations)
-            options.relations.forEach(relation => {
-                qb.leftJoinAndSelect(qb.alias + "." + relation, relation);
-            });
+        if (options.relations) {
+            const allRelations = options.relations.map(relation => relation);
+            this.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
+            // recursive removes found relations from allRelations array
+            // if there are relations left in this array it means those relations were not found in the entity structure
+            // so, we give an exception about not found relations
+            if (allRelations.length > 0)
+                throw new FindRelationsNotFoundError(allRelations);
+        }
 
         if (options.join) {
             if (options.join.leftJoin)
@@ -162,6 +173,43 @@ export class FindOptionsUtils {
         }
 
         return qb;
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Adds joins for all relations and sub-relations of the given relations provided in the find options.
+     */
+    protected static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string): void {
+
+        // find all relations that match given prefix
+        let matchedBaseRelations: string[] = [];
+        if (prefix) {
+            const regexp = new RegExp("^" + prefix.replace(".", "\\.") + "\\.");
+            matchedBaseRelations = allRelations
+                .filter(relation => relation.match(regexp))
+                .map(relation => relation.replace(regexp, ""))
+                .filter(relation => metadata.findRelationWithPropertyPath(relation));
+        } else {
+            matchedBaseRelations = allRelations.filter(relation => metadata.findRelationWithPropertyPath(relation));
+        }
+
+        // go through all matched relations and add join for them
+        matchedBaseRelations.forEach(relation => {
+
+            // add a join for the found relation
+            const selection = alias + "." + relation;
+            qb.leftJoinAndSelect(selection, alias + "_" + relation);
+
+            // remove added relations from the allRelations array, this is needed to find all not found relations at the end
+            allRelations.splice(allRelations.indexOf(prefix ? prefix + "." + relation : relation), 1);
+
+            // try to find sub-relations
+            const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
+            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, relation);
+        });
     }
 
 }

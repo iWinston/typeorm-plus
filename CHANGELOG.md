@@ -5,15 +5,14 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
-## 0.1.8 (future)
-* Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--018) for the needed changes. ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
-
 ## 0.1.7
 
 * fixed bug with migrations execution in mssql ([#1254](https://github.com/typeorm/typeorm/issues/1254))
 * added support for more complex ordering in paginated results ([#1259](https://github.com/typeorm/typeorm/issues/1259))
 * MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied 
 * fixed issue when relation query builder methods execute operations with empty arrays ([#1241](https://github.com/typeorm/typeorm/issues/1241))
+* Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--018) for the needed changes. ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
+* added support for loading sub-relations in via find options ([#1270](https://github.com/typeorm/typeorm/issues/1270))
 
 ## 0.1.6
 

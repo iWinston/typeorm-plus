@@ -5,6 +5,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
  * Defines a special criteria to find specific entity.
  */
 export interface FindOneOptions<Entity> {
+
     /**
      * Specifies what columns should be retrieved.
      */
@@ -18,7 +19,7 @@ export interface FindOneOptions<Entity> {
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
-    relations?: (keyof Entity)[];
+    relations?: string[];
 
     /**
      * Specifies what relations should be loaded.
