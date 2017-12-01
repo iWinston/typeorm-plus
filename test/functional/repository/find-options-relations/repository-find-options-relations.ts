@@ -8,7 +8,7 @@ import {Photo} from "./entity/Photo";
 import {Counters} from "./entity/Counters";
 import {FindRelationsNotFoundError} from "../../../../src/error/FindRelationsNotFoundError";
 
-describe.only("repository > find options > relations", () => {
+describe("repository > find options > relations", () => {
 
     // -------------------------------------------------------------------------
     // Configuration
