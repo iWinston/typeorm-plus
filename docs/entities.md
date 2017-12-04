@@ -91,6 +91,8 @@ const connection: Connection = await createConnection({
 If you want to use an alternative table name for the `User` entity you can specify it in `@Entity`: `@Entity("my_users")`.
 If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
 
+Learn more about parameters @Entity in [Decorators reference](decorator-reference.md).
+
 ## Entity columns
 
 Since database table consist of columns your entities must consist of columns too. 
