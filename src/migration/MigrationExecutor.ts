@@ -288,7 +288,7 @@ export class MigrationExecutor {
         await queryRunner.manager
             .createQueryBuilder()
             .delete()
-            .from("query-result-cache")
+            .from("migrations")
             .where(conditions)
             .execute();
     }
