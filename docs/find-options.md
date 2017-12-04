@@ -8,10 +8,11 @@ All repository and manager `find` methods accept special options you can use to 
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
-* `relations` - relations needs to be loaded with the main entity.
+* `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });
+userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_attributes"] });
 ```
 
 * `join` - joins needs to be performed for the entity. Extended version of "relations".
