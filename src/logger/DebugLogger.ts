@@ -8,10 +8,10 @@ const debug = PlatformTools.load("debug");
  * Performs logging of the events in TypeORM via debug library.
  */
 export class DebugLogger implements Logger {
-    private debugQuery = debug("typeorm:query");
-    private debugQueryError = debug("typeorm:queryError");
-    private debugQuerySlow = debug("typeorm:querySlow");
-    private debugSchemaBuild = debug("typeorm:schemaBuild");
+    private debugQueryLog = debug("typeorm:query:log");
+    private debugQueryError = debug("typeorm:query:error");
+    private debugQuerySlow = debug("typeorm:query:slow");
+    private debugSchemaBuild = debug("typeorm:schema");
     private debugMigration = debug("typeorm:migration");
     
     private debugLog = debug("typeorm:log");
@@ -22,10 +22,10 @@ export class DebugLogger implements Logger {
      * Logs query and parameters used in it.
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQuery.enabled) {
-            this.debugQuery(PlatformTools.highlightSql(query) + ";");
+        if (this.debugQueryLog.enabled) {
+            this.debugQueryLog(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
-                this.debugQuery("parameters:", parameters);
+                this.debugQueryLog("parameters:", parameters);
             }
         }
     }
