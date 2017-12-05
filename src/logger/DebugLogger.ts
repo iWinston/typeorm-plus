@@ -1,7 +1,8 @@
-import * as debug from "debug";
 import { Logger } from "./Logger";
 import { QueryRunner } from "../";
 import { PlatformTools } from "../platform/PlatformTools";
+
+const debug = PlatformTools.load("debug");
 
 /**
  * Performs logging of the events in TypeORM via debug library.
