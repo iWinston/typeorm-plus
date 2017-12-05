@@ -26,7 +26,7 @@ export class DebugLogger implements Logger {
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.debugQuery.enabled) {
-            this.debugQuery(PlatformTools.highlightSql(query));
+            this.debugQuery(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
                 this.debugQuery("parameters:", parameters);
             }
@@ -38,7 +38,7 @@ export class DebugLogger implements Logger {
      */
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.debugQueryError.enabled) {
-            this.debugQueryError(PlatformTools.highlightSql(query));
+            this.debugQueryError(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
                 this.debugQueryError("parameters:", parameters);
             }
@@ -51,7 +51,7 @@ export class DebugLogger implements Logger {
      */
     logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.debugQuerySlow.enabled) {
-            this.debugQuerySlow(PlatformTools.highlightSql(query));
+            this.debugQuerySlow(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
                 this.debugQuerySlow("parameters:", parameters);
             }
