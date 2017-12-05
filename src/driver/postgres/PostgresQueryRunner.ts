@@ -377,17 +377,72 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Renames the given table.
      */
-    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
-        const oldFullTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
-        const oldTableName = oldFullTableName.indexOf(".") === -1 ? oldFullTableName : oldFullTableName.split(".")[1];
+    async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+        const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
+        const newTable = oldTable.clone();
+        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
+        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+        newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
-        const newFullTableName = newTableOrName instanceof Table ? newTableOrName.name : newTableOrName;
-        const newTableName = newFullTableName.indexOf(".") === -1 ? newFullTableName : newFullTableName.split(".")[1];
+        upQueries.push(`ALTER TABLE ${this.escapeTableName(oldTable)} RENAME TO "${newTableName}"`);
+        downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME TO "${oldTableName}"`);
 
-        const up = `ALTER TABLE ${this.escapeTableName(oldFullTableName)} RENAME TO "${newTableName}"`;
-        const down = `ALTER TABLE ${this.escapeTableName(newFullTableName)} RENAME TO "${oldTableName}"`;
+        // rename column primary key constraint
+        if (newTable.primaryColumns.length > 0) {
+            const columnNames = newTable.primaryColumns.map(column => column.name);
 
-        await this.executeQueries(up, down);
+            const oldPkName = this.connection.namingStrategy.primaryKeyName(oldTable, columnNames);
+            const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
+
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
+        }
+
+        // rename unique constraints
+        newTable.uniques.forEach(unique => {
+            // build new constraint name
+            const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
+
+            // build queries
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
+
+            // replace constraint name
+            unique.name = newUniqueName;
+        });
+
+        // rename index constraints
+        newTable.indices.forEach(index => {
+            // build new constraint name
+            const schema = this.extractSchema(newTable);
+            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+
+            // build queries
+            const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
+            const down = schema ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"` : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`;
+            upQueries.push(up);
+            downQueries.push(down);
+
+            // replace constraint name
+            index.name = newIndexName;
+        });
+
+        // rename foreign key constraints
+        newTable.foreignKeys.forEach(foreignKey => {
+            // build new constraint name
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+
+            // build queries
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
+
+            // replace constraint name
+            foreignKey.name = newForeignKeyName;
+        });
+
+        await this.executeQueries(upQueries, downQueries);
     }
 
     /**
@@ -609,7 +664,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
 
-            } else if (newColumn.isPrimary === false) {
+            } else {
                 const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
                 primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
 
@@ -633,7 +688,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`);
 
-            } else if (newColumn.isUnique === false) {
+            } else {
                 const uniqueConstraint = table.uniques.find(unique => {
                     return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
                 });

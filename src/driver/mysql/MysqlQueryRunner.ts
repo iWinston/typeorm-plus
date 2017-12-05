@@ -360,14 +360,66 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Renames a table.
      */
-    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
-        const oldTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
-        const newTableName = newTableOrName instanceof Table ? newTableOrName.name : newTableOrName;
+    async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+        const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
+        const newTable = oldTable.clone();
+        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+        newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
-        const up = `RENAME TABLE ${this.escapeTableName(oldTableName)} TO ${this.escapeTableName(newTableName)}`;
-        const down = `RENAME TABLE ${this.escapeTableName(newTableName)} TO ${this.escapeTableName(oldTableName)}`;
+        // rename table
+        upQueries.push(`RENAME TABLE ${this.escapeTableName(oldTable.name)} TO ${this.escapeTableName(newTable.name)}`);
+        downQueries.push(`RENAME TABLE ${this.escapeTableName(newTable.name)} TO ${this.escapeTableName(oldTable.name)}`);
 
-        await this.executeQueries(up, down);
+        // rename index constraints
+        newTable.indices.forEach(index => {
+            // build new constraint name
+            const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
+            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+
+            // build queries
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+
+            // replace constraint name
+            index.name = newIndexName;
+        });
+
+        // rename foreign key constraint
+        newTable.foreignKeys.forEach(foreignKey => {
+            // build new constraint name
+            const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
+            const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+
+            // build queries
+            let up = `ALTER TABLE ${this.escapeTableName(newTable)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+            if (foreignKey.onDelete)
+                up += ` ON DELETE ${foreignKey.onDelete}`;
+            if (foreignKey.onUpdate)
+                up += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+            let down = `ALTER TABLE ${this.escapeTableName(newTable)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+                `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+            if (foreignKey.onDelete)
+                down += ` ON DELETE ${foreignKey.onDelete}`;
+            if (foreignKey.onUpdate)
+                down += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+            upQueries.push(up);
+            downQueries.push(down);
+
+            // replace constraint name
+            foreignKey.name = newForeignKeyName;
+        });
+
+        await this.executeQueries(upQueries, downQueries);
+
+        // rename old table and replace it in cached tabled;
+        oldTable.name = newTable.name;
+        this.replaceCachedTable(oldTable, newTable);
     }
 
     /**
@@ -435,12 +487,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        const newColumnName = newTableColumnOrName instanceof TableColumn ? newTableColumnOrName.name : newTableColumnOrName;
+        let newColumn: TableColumn|undefined = undefined;
+        if (newTableColumnOrName instanceof TableColumn) {
+            newColumn = newTableColumnOrName;
+        } else {
+            newColumn = oldColumn.clone();
+            newColumn.name = newTableColumnOrName;
+        }
 
-        const up = `ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` \`${newColumnName}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`;
-        const down = `ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumnName}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`;
-
-        await this.executeQueries(up, down);
+        await this.changeColumn(table, oldColumn, newColumn);
     }
 
     /**
@@ -458,13 +513,75 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
+        if (newColumn.name !== oldColumn.name) {
+            // We don't change any column properties, just rename it.
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
+
+
+            // rename index constraints
+            clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                // build new constraint name
+                index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
+                index.columnNames.push(newColumn.name);
+                const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
+                const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+
+                // build queries
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+
+                // replace constraint name
+                index.name = newIndexName;
+            });
+
+            // rename foreign key constraints
+            clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                // build new constraint name
+                foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
+                foreignKey.columnNames.push(newColumn.name);
+                const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
+                const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
+                const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+
+                // build queries
+                let up = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                    `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+                if (foreignKey.onDelete)
+                    up += ` ON DELETE ${foreignKey.onDelete}`;
+                if (foreignKey.onUpdate)
+                    up += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+                let down = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+                    `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+                if (foreignKey.onDelete)
+                    down += ` ON DELETE ${foreignKey.onDelete}`;
+                if (foreignKey.onUpdate)
+                    down += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+                upQueries.push(up);
+                downQueries.push(down);
+
+                // replace constraint name
+                foreignKey.name = newForeignKeyName;
+            });
+
+            // rename old column in the Table object
+            const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
+            clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
+            oldColumn.name = newColumn.name;
+        }
+
+        // When we change isGenerated property, we must also check isPrimary property.
+        // If column is non-primary, we can not make it generated.
+        // If column marked as generated and column also changed to primary, we must first create primary key, and then make column generated.
+        // If column marked as non-generated and isPrimary also changed to false, we must first make column non-generated and then drop primary key.
         if (newColumn.isGenerated !== oldColumn.isGenerated) {
             if (newColumn.isGenerated === true) {
-                if (newColumn.isPrimary === oldColumn.isPrimary && newColumn.isPrimary === true) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
+                if (newColumn.isPrimary === false)
+                    throw new Error(`Can not specify AUTO_INCREMENT on to non-primary column.`);
 
-                } else if (newColumn.isPrimary !== oldColumn.isPrimary && newColumn.isPrimary === true) {
+                if (newColumn.isPrimary !== oldColumn.isPrimary && newColumn.isPrimary === true) {
                     const primaryColumns = clonedTable.primaryColumns;
 
                     if (primaryColumns.length > 0) {
@@ -477,24 +594,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
-
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
-
-                } else {
-                    throw new Error(`Can not specify AUTO_INCREMENT on to non-primary column.`);
                 }
 
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
+
             } else {
-                if (newColumn.isPrimary === oldColumn.isPrimary && newColumn.isPrimary === true) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
 
-                } else if (newColumn.isPrimary !== oldColumn.isPrimary && newColumn.isPrimary === false) {
+                if (newColumn.isPrimary !== oldColumn.isPrimary && newColumn.isPrimary === false) {
                     const primaryColumns = clonedTable.primaryColumns;
-
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
 
                     const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
@@ -512,9 +622,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 }
             }
+
         } else {
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
+            if (this.isColumnChanged(newColumn, oldColumn)) {
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
+            }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
                 const primaryColumns = clonedTable.primaryColumns;
@@ -532,7 +645,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
 
-                } else if (newColumn.isPrimary === false) {
+                } else {
                     const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
                     primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
 
@@ -561,7 +674,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``);
 
-            } else if (newColumn.isUnique === false) {
+            } else {
                 const uniqueIndex = table.indices.find(index => {
                     return index.columnNames.length === 1 && index.isUnique === true && !!index.columnNames.find(columnName => columnName === newColumn.name);
                 });
@@ -848,32 +961,43 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return [];
 
         const currentDatabase = await this.getCurrentDatabase();
-        const dbNames = tableNames
-            .filter(tableName => tableName.indexOf(".") !== -1)
-            .map(tableName => tableName.split(".")[0]);
-        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
-            dbNames.push(this.driver.database);
-
-        const dbNamesString = dbNames.map(dbName => `'${dbName}'`).join(", ");
         const tablesCondition = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
             if (!name) {
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`;
+            return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
         }).join(" OR ");
-// TODO conditions
-        const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE `  + tablesCondition;
-        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` IN (${dbNamesString})`;
+        const tablesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE ` + tablesCondition;
+        
+        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE ` + tablesCondition;
+
+        const indicesCondition = tableNames.map(tableName => {
+            let [database, name] = tableName.split(".");
+            if (!name) {
+                name = database;
+                database = this.driver.database || currentDatabase;
+            }
+            return `(\`s\`.\`TABLE_SCHEMA\` = '${database}' AND \`s\`.\`TABLE_NAME\` = '${name}')`;
+        }).join(" OR ");
         const indicesSql = `SELECT \`s\`.* FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` \`s\` ` +
             `LEFT JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` ` +
-            `WHERE \`s\`.\`TABLE_SCHEMA\` IN (${dbNamesString}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
+            `WHERE (${indicesCondition}) AND \`s\`.\`INDEX_NAME\` != 'PRIMARY' AND \`rc\`.\`CONSTRAINT_NAME\` IS NULL`;
+
+        const foreignKeysCondition = tableNames.map(tableName => {
+            let [database, name] = tableName.split(".");
+            if (!name) {
+                name = database;
+                database = this.driver.database || currentDatabase;
+            }
+            return `(\`kcu\`.\`TABLE_SCHEMA\` = '${database}' AND \`kcu\`.\`TABLE_NAME\` = '${name}')`;
+        }).join(" OR ");
         const foreignKeysSql = `SELECT \`kcu\`.\`TABLE_SCHEMA\`, \`kcu\`.\`TABLE_NAME\`, \`kcu\`.\`CONSTRAINT_NAME\`, \`kcu\`.\`COLUMN_NAME\`, \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`, ` +
             `\`kcu\`.\`REFERENCED_TABLE_NAME\`, \`kcu\`.\`REFERENCED_COLUMN_NAME\`, \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`, \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\` ` +
             `INNER JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`rc\`.\`constraint_name\` = \`kcu\`.\`constraint_name\` ` +
-            `WHERE \`kcu\`.\`TABLE_SCHEMA\` IN (${dbNamesString})`;
+            `WHERE ` + foreignKeysCondition;
         const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
@@ -974,10 +1098,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+
+                // if referenced table located in currently used db, we dont need to concat db name to table name.
+                const database = dbForeignKey["REFERENCED_TABLE_SCHEMA"] === currentDatabase ? undefined : dbForeignKey["REFERENCED_TABLE_SCHEMA"];
+                const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, database);
+
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
-                    referencedTableName: this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, dbForeignKey["REFERENCED_TABLE_SCHEMA"]),
+                    referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["ON_DELETE"],
                     onUpdate: dbForeignKey["ON_UPDATE"]

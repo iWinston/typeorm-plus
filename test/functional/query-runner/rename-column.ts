@@ -6,14 +6,14 @@ import {Table} from "../../../src/schema-builder/table/Table";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
-describe.only("query runner > rename column", () => {
+describe("query runner > rename column", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", /*"mysql",*/ "postgres", "sqlite", "oracle"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -65,20 +65,37 @@ describe.only("query runner > rename column", () => {
         expect(table!.findColumnByName("id")).to.be.undefined;
         table!.findColumnByName("id2")!.should.be.exist;
 
-        const oldUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
-        let tableUnique = table!.uniques.find(unique => {
-            return !!unique.columnNames.find(columnName => columnName === "tag");
-        });
-        tableUnique!.name!.should.be.equal(oldUniqueConstraintName);
+        // MySql does not support unique constraints
+        if (!(connection.driver instanceof MysqlDriver)) {
+            const oldUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
+            let tableUnique = table!.uniques.find(unique => {
+                return !!unique.columnNames.find(columnName => columnName === "tag");
+            });
+            tableUnique!.name!.should.be.equal(oldUniqueConstraintName);
 
-        await queryRunner.renameColumn(table!, "text", "text2");
+            await queryRunner.renameColumn(table!, "text", "text2");
+
+            table = await queryRunner.getTable("post");
+            const newUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text2", "tag"]);
+            tableUnique = table!.uniques.find(unique => {
+                return !!unique.columnNames.find(columnName => columnName === "tag");
+            });
+            tableUnique!.name!.should.be.equal(newUniqueConstraintName);
+        }
+
+        await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
-        const newUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text2", "tag"]);
-        tableUnique = table!.uniques.find(unique => {
-            return !!unique.columnNames.find(columnName => columnName === "tag");
-        });
-        tableUnique!.name!.should.be.equal(newUniqueConstraintName);
+        table!.findColumnByName("id")!.should.be.exist;
+        expect(table!.findColumnByName("id2")).to.be.undefined;
+
+        await queryRunner.release();
+    })));
+
+    it("should correctly rename column with all constraints in custom table schema and database and revert rename", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        let table: Table|undefined;
 
         let questionTableName: string = "question";
         let categoryTableName: string = "category";
@@ -95,6 +112,10 @@ describe.only("query runner > rename column", () => {
             categoryTableName = "testSchema.category";
             await queryRunner.createSchema("testSchema", true);
 
+        } else if (connection.driver instanceof MysqlDriver) {
+            questionTableName = "testDB.question";
+            categoryTableName = "testDB.category";
+            await queryRunner.createDatabase("testDB", true);
         }
 
         await queryRunner.createTable(new Table({
@@ -140,6 +161,9 @@ describe.only("query runner > rename column", () => {
             ]
         }), true);
 
+        // clear sqls in memory to avoid removing tables when down queries executed.
+        queryRunner.clearSqlMemory();
+
         await queryRunner.renameColumn(questionTableName, "name", "name2");
         table = await queryRunner.getTable(questionTableName);
         const newIndexName = connection.namingStrategy.indexName(table!, ["name2"]);
@@ -152,9 +176,13 @@ describe.only("query runner > rename column", () => {
 
         await queryRunner.executeMemoryDownSql();
 
-        table = await queryRunner.getTable("post");
-        table!.findColumnByName("id")!.should.be.exist;
-        expect(table!.findColumnByName("id2")).to.be.undefined;
+        table = await queryRunner.getTable(questionTableName);
+        table!.findColumnByName("name")!.should.be.exist;
+        expect(table!.findColumnByName("name2")).to.be.undefined;
+
+        table = await queryRunner.getTable(categoryTableName);
+        table!.findColumnByName("questionId")!.should.be.exist;
+        expect(table!.findColumnByName("questionId2")).to.be.undefined;
 
         await queryRunner.release();
     })));

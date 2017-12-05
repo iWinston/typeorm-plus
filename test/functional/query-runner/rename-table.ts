@@ -5,6 +5,7 @@ import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {Table} from "../../../src/schema-builder/table/Table";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
 describe("query runner > rename table", () => {
 
@@ -12,7 +13,6 @@ describe("query runner > rename table", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: [/*"mssql", "mysql", "postgres", "sqlite",*/ "oracle"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -25,10 +25,8 @@ describe("query runner > rename table", () => {
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
-        const renamedTable = table!.clone();
-        renamedTable.name = "question";
 
-        await queryRunner.renameTable(table!, renamedTable);
+        await queryRunner.renameTable(table!, "question");
         table = await queryRunner.getTable("question");
         table!.should.be.exist;
 
@@ -49,21 +47,22 @@ describe("query runner > rename table", () => {
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
-        const renamedTable = table!.clone();
-        renamedTable.name = "renamedPost";
 
-        await queryRunner.renameTable(table!, renamedTable);
+        await queryRunner.renameTable(table!, "renamedPost");
         table = await queryRunner.getTable("renamedPost");
         table!.should.be.exist;
 
         // should successfully drop pk if pk constraint was correctly renamed.
         await queryRunner.dropPrimaryKey(table!);
 
-        const newUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
-        let tableUnique = table!.uniques.find(unique => {
-            return !!unique.columnNames.find(columnName => columnName === "tag");
-        });
-        tableUnique!.name!.should.be.equal(newUniqueConstraintName);
+        // MySql does not support unique constraints
+        if (!(connection.driver instanceof MysqlDriver)) {
+            const newUniqueConstraintName = connection.namingStrategy.uniqueConstraintName(table!, ["text", "tag"]);
+            let tableUnique = table!.uniques.find(unique => {
+                return !!unique.columnNames.find(columnName => columnName === "tag");
+            });
+            tableUnique!.name!.should.be.equal(newUniqueConstraintName);
+        }
 
         await queryRunner.executeMemoryDownSql();
 
@@ -99,6 +98,12 @@ describe("query runner > rename table", () => {
             renamedCategoryTableName = "testSchema.renamedCategory";
             await queryRunner.createSchema("testSchema", true);
 
+        } else if (connection.driver instanceof MysqlDriver) {
+            questionTableName = "testDB.question";
+            renamedQuestionTableName = "testDB.renamedQuestion";
+            categoryTableName = "testDB.category";
+            renamedCategoryTableName = "testDB.renamedCategory";
+            await queryRunner.createDatabase("testDB", true);
         }
 
         await queryRunner.createTable(new Table({

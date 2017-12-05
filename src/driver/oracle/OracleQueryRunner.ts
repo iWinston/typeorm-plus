@@ -425,6 +425,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             newTable.name = newTableOrName;
         }
 
+        // rename table
         upQueries.push(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`);
         downQueries.push(`ALTER TABLE "${newTable.name}" RENAME TO "${oldTable.name}"`);
 
@@ -435,6 +436,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const oldPkName = this.connection.namingStrategy.primaryKeyName(oldTable, columnNames);
             const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
 
+            // build queries
             upQueries.push(`ALTER TABLE "${newTable.name}" RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
             downQueries.push(`ALTER TABLE "${newTable.name}" RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
         }
@@ -465,6 +467,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             index.name = newIndexName;
         });
 
+        // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
             // build new constraint name
             const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
@@ -708,7 +711,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
                 downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
 
-            } else if (newColumn.isPrimary === false) {
+            } else {
                 const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
                 primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
 
@@ -732,7 +735,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`);
                 downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint.name}"`);
 
-            } else if (newColumn.isUnique === false) {
+            } else {
                 const uniqueConstraint = table.uniques.find(unique => {
                     return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
                 });
@@ -741,15 +744,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`);
             }
         }
-
-        /*if (newColumn.isNullable !== oldColumn.isNullable) {
-            const sql = `ALTER TABLE "${table.name}" MODIFY "${newColumn.name}" ${this.connection.driver.createFullType(newColumn)} ${newColumn.isNullable ? "NULL" : "NOT NULL"}`;
-            await this.query(sql);
-
-        } else if (this.connection.driver.createFullType(newColumn) !== this.connection.driver.createFullType(oldColumn)) { // elseif is used because
-            const sql = `ALTER TABLE "${table.name}" MODIFY "${newColumn.name}" ${this.connection.driver.createFullType(newColumn)}`;
-            await this.query(sql);
-        }*/
 
         await this.executeQueries(upQueries, downQueries);
         this.replaceCachedTable(table, clonedTable);

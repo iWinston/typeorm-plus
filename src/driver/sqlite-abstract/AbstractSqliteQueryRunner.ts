@@ -255,14 +255,39 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     /**
      * Renames the given table.
      */
-    async renameTable(oldTableOrName: Table|string, newTableOrName: Table|string): Promise<void> {
-        const oldTableName = oldTableOrName instanceof Table ? oldTableOrName.name : oldTableOrName;
-        const newTableName = newTableOrName instanceof Table ? newTableOrName.name : newTableOrName;
+    async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
+        const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
+        const newTable = oldTable.clone();
+        newTable.name = newTableName;
 
-        const up = `ALTER TABLE "${oldTableName}" RENAME TO "${newTableName}"`;
-        const down = `ALTER TABLE "${newTableName}" RENAME TO "${oldTableName}"`;
-
+        // rename table
+        const up = `ALTER TABLE "${oldTable.name}" RENAME TO "${newTableName}"`;
+        const down = `ALTER TABLE "${newTableName}" RENAME TO "${oldTable.name}"`;
         await this.executeQueries(up, down);
+
+        // rename old table;
+        oldTable.name = newTable.name;
+
+        // rename unique constraints
+        newTable.uniques.forEach(unique => {
+            unique.name = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
+        });
+
+        // rename foreign key constraints
+        newTable.foreignKeys.forEach(foreignKey => {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
+        });
+
+        // rename indices
+        newTable.indices.forEach(index => {
+            index.name = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+        });
+
+        // recreate table with new constraint names
+        await this.recreateTable(newTable, oldTable);
+
+        // replace cached table
+        this.replaceCachedTable(oldTable, newTable);
     }
 
     /**
@@ -825,13 +850,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     protected dropIndexSql(indexOrName: TableIndex|string): string {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
         return `DROP INDEX "${indexName}"`;
-    }
-
-    /**
-     * Parametrizes given object of values. Used to create column=value queries.
-     */
-    protected parametrize(objectLiteral: ObjectLiteral, startIndex: number = 0): string[] {
-        return Object.keys(objectLiteral).map((key, index) => `"${key}"` + "=$" + (startIndex + index + 1));
     }
 
     /**

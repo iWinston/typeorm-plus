@@ -87,7 +87,7 @@ describe("query runner > change column", () => {
 
     it("should correctly change column 'isGenerated' property and revert change", () => Promise.all(connections.map(async connection => {
 
-        // SqlServer does not support changing of isGenerated property.
+        // SqlServer and Oracle does not supports changing isGenerated property.
         if (connection.driver instanceof SqlServerDriver || connection.driver instanceof OracleDriver)
             return;
 
