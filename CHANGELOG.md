@@ -6,7 +6,7 @@ If we missed a note on some change or you have a questions on migrating from old
 feel free to ask us and community.
 
 ## 0.1.8
-* New DebugLogger ([#1302](https://github.com/typeorm/typeorm/issues/1302))
+* New DebugLogger ([#1302](https://github.com/typeorm/typeorm/pull/1302))
 
 ## 0.1.7
 
