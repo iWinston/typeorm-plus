@@ -7,7 +7,6 @@ import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierEr
 import {SubjectRemovedAndUpdatedError} from "../error/SubjectRemovedAndUpdatedError";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
-import {InsertResult} from "../query-builder/result/InsertResult";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SaveOptions} from "../repository/SaveOptions";
@@ -209,20 +208,39 @@ export class SubjectExecutor {
         // then we run insertion in the sequential order which is important since we have an ordered subjects
         await PromiseUtils.runInSequence(groupedInsertSubjectKeys, async groupName => {
             const subjects = groupedInsertSubjects[groupName];
-            const insertMaps = subjects.map(subject => {
-                if (this.queryRunner.connection.driver instanceof MongoDriver) {
-                    return subject.entity;
-                } else {
-                    return subject.createValueSetAndPopChangeMap();
-                }
-            });
-            let insertResult: InsertResult;
+
+            // we must separately insert entities which does not have any values to insert
+            // because its not possible to insert multiple entities with only default values in bulk
+            const bulkInsertMaps: ObjectLiteral[] = [];
+            const bulkInsertSubjects: Subject[] = [];
+            const singleInsertSubjects: Subject[] = [];
+            if (this.queryRunner.connection.driver instanceof MongoDriver) {
+                subjects.forEach(subject => {
+                    bulkInsertSubjects.push(subject);
+                    bulkInsertMaps.push(subject.entity!);
+                });
+            } else {
+                subjects.forEach(subject => {
+                    if (subject.changeMaps.length === 0) {
+                        singleInsertSubjects.push(subject);
+
+                    } else {
+                        bulkInsertSubjects.push(subject);
+                        bulkInsertMaps.push(subject.createValueSetAndPopChangeMap());
+                    }
+                });
+            }
 
             // for mongodb we have a bit different insertion logic
             if (this.queryRunner instanceof MongoQueryRunner) {
 
                 const manager = this.queryRunner.manager as MongoEntityManager;
-                insertResult = await manager.insert(subjects[0].metadata.target, insertMaps);
+                const insertResult = await manager.insert(subjects[0].metadata.target, bulkInsertMaps);
+                subjects.forEach((subject, index) => {
+                    subject.identifier = insertResult.identifiers[index];
+                    subject.generatedMap = insertResult.generatedMaps[index];
+                    subject.insertedValueSet = bulkInsertMaps[index];
+                });
 
             } else {
 
@@ -230,22 +248,45 @@ export class SubjectExecutor {
                 // we need to enable entity updation because we DO need to have updated insertedMap
                 // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
                 // also, we disable listeners because we call them on our own in persistence layer
-                insertResult = await this.queryRunner
-                    .manager
-                    .createQueryBuilder()
-                    .insert()
-                    .into(subjects[0].metadata.target)
-                    .values(insertMaps)
-                    .updateEntity(this.options && this.options.reload === false ? false : true)
-                    .callListeners(false)
-                    .execute();
-            }
+                if (bulkInsertMaps.length > 0) {
+                    const insertResult = await this.queryRunner
+                        .manager
+                        .createQueryBuilder()
+                        .insert()
+                        .into(subjects[0].metadata.target)
+                        .values(bulkInsertMaps)
+                        .updateEntity(this.options && this.options.reload === false ? false : true)
+                        .callListeners(false)
+                        .execute();
 
-            subjects.forEach((subject, index) => {
-                subject.identifier = insertResult.identifiers[index];
-                subject.generatedMap = insertResult.generatedMaps[index];
-                subject.insertedValueSet = insertMaps[index];
-            });
+                    bulkInsertSubjects.forEach((subject, index) => {
+                        subject.identifier = insertResult.identifiers[index];
+                        subject.generatedMap = insertResult.generatedMaps[index];
+                        subject.insertedValueSet = bulkInsertMaps[index];
+                    });
+                }
+
+                // insert subjects which must be inserted in separate requests (all default values)
+                if (singleInsertSubjects.length > 0) {
+                    await Promise.all(singleInsertSubjects.map(subject => {
+                        const updatedEntity = {}; // important to have because query builder sets inserted values into it
+                        return this.queryRunner
+                            .manager
+                            .createQueryBuilder()
+                            .insert()
+                            .into(subject.metadata.target)
+                            .values(updatedEntity)
+                            .updateEntity(this.options && this.options.reload === false ? false : true)
+                            .callListeners(false)
+                            .execute()
+                            .then(insertResult => {
+                                subject.identifier = insertResult.identifiers[0];
+                                subject.generatedMap = insertResult.generatedMaps[0];
+                                subject.insertedValueSet = updatedEntity;
+                            });
+                    }));
+                }
+            }
         });
     }
 

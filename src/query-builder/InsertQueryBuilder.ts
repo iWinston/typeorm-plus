@@ -287,7 +287,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
             // if user specified list of columns he wants to insert to, then we filter only them
             if (this.expressionMap.insertColumns.length)
-                return this.expressionMap.insertColumns.indexOf(column.propertyPath);
+                return this.expressionMap.insertColumns.indexOf(column.propertyPath) !== -1;
 
             // if user did not specified such list then return all columns except auto-increment one
             if (column.isGenerated && column.generationStrategy === "increment")
@@ -323,7 +323,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createValuesExpression(): string {
         const valueSets = this.getValueSets();
         const columns = this.getInsertedColumns();
-
 
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
@@ -411,6 +410,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     }
                 });
             });
+            if (expression === "()")
+                return "";
+
             return expression;
 
         } else { // for tables without metadata
