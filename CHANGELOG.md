@@ -5,6 +5,9 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.1.8
+* New DebugLogger ([#1302](https://github.com/typeorm/typeorm/issues/1302))
+
 ## 0.1.7
 
 * fixed bug with migrations execution in mssql ([#1254](https://github.com/typeorm/typeorm/issues/1254))
