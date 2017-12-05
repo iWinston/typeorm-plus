@@ -30,7 +30,7 @@ export class PlatformTools {
      */
     static load(name: string): any {
 
-        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currenly in
+        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
         // this is useful when we are using typeorm package globally installed and it accesses drivers
         // that are not installed globally
 
@@ -41,13 +41,13 @@ export class PlatformTools {
             switch (name) {
 
                 /**
-                *mongodb
+                * mongodb
                 */
                 case "mongodb":
                     return require("mongodb");
 
                 /**
-                *mysql
+                * mysql
                 */
                 case "mysql":
                     return require("mysql");
@@ -56,13 +56,13 @@ export class PlatformTools {
                     return require("mysql2");
 
                 /**
-                *oracle
+                * oracle
                 */
                 case "oracledb":
                     return require("oracledb");
 
                 /**
-                *postgres
+                * postgres
                 */
                 case "pg":
                     return require("pg");
@@ -74,25 +74,25 @@ export class PlatformTools {
                     return require("pg-query-stream");
 
                 /**
-                *redis
+                * redis
                 */
                 case "redis":
                     return require("redis");
 
                 /**
-                *sqlite
+                * sqlite
                 */
                 case "sqlite3":
                     return require("sqlite3");
 
                 /**
-                *sqlserver
+                * sqlserver
                 */
                 case "mssql":
                     return require("mssql");
 
                 /**
-                *other modules
+                * other modules
                 */
                 case "mkdirp":
                     return require("mkdirp");
@@ -101,7 +101,7 @@ export class PlatformTools {
                     return require("path");
 
                 /**
-                *default
+                * default
                 */
                 default:
                     return require(name);
