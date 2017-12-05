@@ -3,7 +3,7 @@ import {LoggerOptions} from "./LoggerOptions";
 import {SimpleConsoleLogger} from "./SimpleConsoleLogger";
 import {AdvancedConsoleLogger} from "./AdvancedConsoleLogger";
 import {FileLogger} from "./FileLogger";
-import { DebugLogger } from "./DebugLogger";
+import {DebugLogger} from "./DebugLogger";
 
 /**
  * Helps to create logger instances.
