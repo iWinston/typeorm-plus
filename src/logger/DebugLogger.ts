@@ -1,6 +1,6 @@
-import { Logger } from "./Logger";
-import { QueryRunner } from "../";
-import { PlatformTools } from "../platform/PlatformTools";
+import {Logger} from "./Logger";
+import {QueryRunner} from "../";
+import {PlatformTools} from "../platform/PlatformTools";
 
 const debug = PlatformTools.load("debug");
 
