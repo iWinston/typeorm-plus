@@ -64,7 +64,13 @@ export interface NamingStrategyInterface {
      * The reverse?:boolean parameter denotes if the joinTableColumnName is called for the junctionColumn (false)
      * or the inverseJunctionColumns (true)
      */
-    joinTableColumnName(tableName: string, propertyName: string, columnName?: string, inverse?: boolean): string;
+    joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string;
+
+    /**
+     * Gets the name of the column used for columns in the junction tables from the invers side of the relationship.
+     *
+     */
+    joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string;
 
     /**
      * Gets the name of the foreign key.

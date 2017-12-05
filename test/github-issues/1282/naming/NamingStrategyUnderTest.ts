@@ -3,10 +3,17 @@ import { NamingStrategyInterface } from "../../../../src/naming-strategy/NamingS
 
 export class NamingStrategyUnderTest extends DefaultNamingStrategy implements NamingStrategyInterface {
 
-    calls: boolean[] = [];
+    calledJoinTableColumnName: boolean[] = [];
 
-    joinTableColumnName(tableName: string, propertyName: string, columnName?: string, inverse = false): string {
-        this.calls.push(inverse);
-        return super.joinTableColumnName(tableName, propertyName, columnName, inverse);
+    calledJoinTableInverseColumnName: boolean[] = [];
+
+    joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string {
+        this.calledJoinTableColumnName.push(true);
+        return super.joinTableColumnName(tableName, propertyName, columnName);
+    }
+
+    joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string {
+        this.calledJoinTableInverseColumnName.push(true);
+        return super.joinTableInverseColumnName(tableName, propertyName, columnName);
     }
 }

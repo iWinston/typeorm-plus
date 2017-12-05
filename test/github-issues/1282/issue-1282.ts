@@ -25,14 +25,11 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
 
         await connection.getRepository(Animal).find();
 
-        // joinTbelColumnName was called at least twice
-        expect(namingStrategy.calls.length).greaterThan(1);
+        // make sure both functions
+        expect(namingStrategy.calledJoinTableColumnName.length).greaterThan(0);
 
-        // the first call was with inverse=false - i.e. for the owning part of the relation
-        expect(namingStrategy.calls[0]).to.be.false;
+        expect(namingStrategy.calledJoinTableInverseColumnName.length).greaterThan(1);
 
-        // the second call was with invers=true - i.e. for the owned part of the relation
-        expect(namingStrategy.calls[1]).to.be.true;
 
     })));
 

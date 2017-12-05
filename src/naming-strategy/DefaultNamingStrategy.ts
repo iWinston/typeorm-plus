@@ -60,8 +60,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return columnName + "_" + index;
     }
 
-    joinTableColumnName(tableName: string, propertyName: string, columnName?: string, inverse?: boolean): string {
+    joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string {
         return camelCase(tableName + "_" + (columnName ? columnName : propertyName));
+    }
+
+    joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string {
+        return this.joinTableColumnName(tableName, propertyName, columnName);
     }
 
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string {
