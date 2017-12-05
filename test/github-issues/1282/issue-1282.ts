@@ -4,6 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Animal} from "./entity/Animal";
 import {NamingStrategyUnderTest} from "./naming/NamingStrategyUnderTest";
+import {ColumnMetadata} from "../../../src/metadata/ColumnMetadata";
 
 
 describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumnName if it is called from the owning or owned (inverse) context ", () => {
@@ -25,11 +26,20 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
 
         await connection.getRepository(Animal).find();
 
-        // make sure both functions
-        expect(namingStrategy.calledJoinTableColumnName.length).greaterThan(0);
+        let metadata = connection.getManyToManyMetadata(Animal, "categories");
 
-        expect(namingStrategy.calledJoinTableInverseColumnName.length).greaterThan(1);
+        let columns:  ColumnMetadata[];
+        if (metadata !== undefined) {
+            columns = metadata.columns;
+        } else {
+            columns = [];
+        }
 
+        expect(columns.find((column: ColumnMetadata) => column.databaseName === "animalIdForward"))
+            .not.to.be.undefined;
+
+        expect(columns.find((column: ColumnMetadata) => column.databaseName === "categoryIdInverse"))
+            .not.to.be.undefined;
 
     })));
 
