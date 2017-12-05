@@ -17,10 +17,6 @@ export class DebugLogger implements Logger {
     private debugInfo = debug("typeorm:info");
     private debugWarn = debug("typeorm:warn");
     
-    constructor() {
-        
-    }
-    
     /**
      * Logs query and parameters used in it.
      */
