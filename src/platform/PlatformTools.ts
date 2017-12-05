@@ -36,7 +36,7 @@ export class PlatformTools {
 
         try {
 
-            // switch case to explicit require statements for webpack compatability.
+            // switch case to explicit require statements for webpack compatibility.
 
             switch (name) {
 
