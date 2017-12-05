@@ -163,7 +163,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
-
                     ok(result.rows || result.outBinds);
                 };
                 const executionOptions = {

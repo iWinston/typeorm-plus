@@ -13,6 +13,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -210,9 +211,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() {
 
         const tableName = this.getTableName(this.getMainTableName());
+        const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression = this.createReturningExpression();
         const columnsExpression = this.createColumnNamesExpression();
-        const valuesExpression = this.createValuesExpression();
 
         // generate INSERT query
         let query = `INSERT INTO ${tableName}`;
@@ -246,7 +247,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // add RETURNING expression
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver)) {
             query += ` RETURNING ${returningExpression}`;
         }
 
@@ -311,7 +312,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (columnIndex === 0) {
                         expression += "(";
                     }
-                    const paramName = "_inserted_" + valueSetIndex + "_" + column.databaseName;
+                    const paramName = "inserted_" + valueSetIndex + "_" + column.databaseName;
 
                     // extract real value from the entity
                     let value = column.getEntityValue(valueSet);
@@ -340,7 +341,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
 
-                        const paramName = "_uuid_" + column.databaseName + valueSetIndex;
+                        const paramName = "uuid_" + column.databaseName + valueSetIndex;
                         value = RandomGenerator.uuid4();
                         this.expressionMap.nativeParameters[paramName] = value;
                         expression += this.connection.driver.createParameter(paramName, parametersCount);
@@ -395,7 +396,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // get values needs to be inserted
             return valueSets.map((valueSet, insertionIndex) => {
                 const columnValues = Object.keys(valueSet).map(columnName => {
-                    const paramName = "_inserted_" + insertionIndex + "_" + columnName;
+                    const paramName = "inserted_" + insertionIndex + "_" + columnName;
                     const value = valueSet[columnName];
 
                     // support for SQL expressions in queries

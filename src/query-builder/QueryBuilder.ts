@@ -19,6 +19,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -619,7 +620,7 @@ export abstract class QueryBuilder<Entity> {
         }
 
         if (columns.length) {
-            return columns.map(column => {
+            let columnsExpression = columns.map(column => {
                 const name = this.escape(column.databaseName);
                 if (this.connection.driver instanceof SqlServerDriver) {
                     if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
@@ -631,6 +632,15 @@ export abstract class QueryBuilder<Entity> {
                     return name;
                 }
             }).join(", ");
+
+            if (this.connection.driver instanceof OracleDriver) {
+                columnsExpression += " INTO " + columns.map(column => {
+                    const parameterName = "output_" + column.databaseName;
+                    this.expressionMap.nativeParameters[parameterName] = { type: (this.connection.driver as OracleDriver).oracle.NUMBER, dir: ( this.connection.driver as OracleDriver).oracle.BIND_OUT };
+                    return this.connection.driver.createParameter(parameterName, Object.keys(this.expressionMap.nativeParameters).length);
+                }).join(", ");
+            }
+            return columnsExpression;
 
         } else if (typeof this.expressionMap.returning === "string") {
             return this.expressionMap.returning;
