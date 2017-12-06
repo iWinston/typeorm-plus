@@ -100,6 +100,9 @@ export class PlatformTools {
                 case "path":
                     return require("path");
 
+                case "debug":
+                    return require("debug");
+
                 /**
                 * default
                 */
