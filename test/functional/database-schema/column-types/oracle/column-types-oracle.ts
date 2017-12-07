@@ -6,7 +6,7 @@ import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
 
-describe("database schema > column types > oracle", () => {
+describe.only("database schema > column types > oracle", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -18,7 +18,7 @@ describe("database schema > column types > oracle", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
+    it("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
@@ -34,6 +34,7 @@ describe("database schema > column types > oracle", () => {
         post.dec = 100;
         post.decimal = 50;
         post.int = 2147483647;
+        post.integer = 2147483647;
         post.smallint = 32767;
         post.real = 10.5;
         post.doublePrecision = 15.35;
@@ -66,6 +67,7 @@ describe("database schema > column types > oracle", () => {
         loadedPost.dec.should.be.equal(post.dec);
         loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.int.should.be.equal(post.int);
+        loadedPost.integer.should.be.equal(post.integer);
         loadedPost.smallint.should.be.equal(post.smallint);
         loadedPost.real.should.be.equal(post.real);
         loadedPost.doublePrecision.should.be.equal(post.doublePrecision);
@@ -96,6 +98,7 @@ describe("database schema > column types > oracle", () => {
         table!.findColumnByName("dec")!.type.should.be.equal("number");
         table!.findColumnByName("decimal")!.type.should.be.equal("number");
         table!.findColumnByName("int")!.type.should.be.equal("number");
+        table!.findColumnByName("integer")!.type.should.be.equal("number");
         table!.findColumnByName("real")!.type.should.be.equal("float");
         table!.findColumnByName("smallint")!.type.should.be.equal("number");
         table!.findColumnByName("doublePrecision")!.type.should.be.equal("float");
@@ -130,73 +133,68 @@ describe("database schema > column types > oracle", () => {
 
         const post = new PostWithOptions();
         post.id = 1;
-        post.decimal = 50;
-        post.dec = 60;
-        post.numeric = 70;
+        post.number = 50;
+        post.numeric = 50;
         post.float = 5.25;
+        post.dec = 60;
+        post.decimal = 70;
         post.char = "AAA";
-        post.varchar = "This is varchar";
         post.nchar = "AAA";
-        post.nvarchar = "This is nvarchar";
-        post.binary = new Buffer("AAAAA");
-        post.varbinary = new Buffer("BBBBB");
-        post.datetime2 = new Date();
-        post.time = new Date();
-        post.datetimeoffset = new Date();
+        post.varchar2 = "This is varchar";
+        post.nvarchar2 = "This is nvarchar";
+        post.raw = new Buffer("This is raw");
+        post.timestamp = new Date();
+        post.timestampWithTimeZone = new Date();
+        post.timestampWithLocalTimeZone = new Date();
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
-        loadedPost.char.should.be.equal(post.char);
-        loadedPost.varchar.should.be.equal(post.varchar);
-        loadedPost.nchar.should.be.equal(post.nchar);
-        loadedPost.nvarchar.should.be.equal(post.nvarchar);
-        loadedPost.decimal.should.be.equal(post.decimal);
-        loadedPost.dec.should.be.equal(post.dec);
+        loadedPost.number.should.be.equal(post.number);
         loadedPost.numeric.should.be.equal(post.numeric);
         loadedPost.float.should.be.equal(post.float);
+        loadedPost.dec.should.be.equal(post.dec);
+        loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.char.should.be.equal(post.char);
-        loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.nchar.should.be.equal(post.nchar);
-        loadedPost.nvarchar.should.be.equal(post.nvarchar);
-        loadedPost.binary.toString().should.be.equal(post.binary.toString());
-        loadedPost.varbinary.toString().should.be.equal(post.varbinary.toString());
-        // commented because mssql inserted milliseconds are not always equal to what we say it to insert
-        // commented to prevent CI failings
-        // loadedPost.datetime2.getTime().should.be.equal(post.datetime2.getTime());
-        // loadedPost.datetimeoffset.getTime().should.be.equal(post.datetimeoffset.getTime());
-        loadedPost.time.should.be.equal(DateUtils.mixedTimeToString(post.time));
+        loadedPost.varchar2.should.be.equal(post.varchar2);
+        loadedPost.nvarchar2.should.be.equal(post.nvarchar2);
+        loadedPost.raw.should.be.eql(post.raw);
+        loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
+        loadedPost.timestampWithTimeZone.getTime().should.be.equal(post.timestampWithTimeZone.getTime());
+        loadedPost.timestampWithLocalTimeZone.getTime().should.be.equal(post.timestampWithLocalTimeZone.getTime());
 
-        table!.findColumnByName("id")!.type.should.be.equal("int");
-        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
-        table!.findColumnByName("decimal")!.precision!.should.be.equal(10);
-        table!.findColumnByName("decimal")!.scale!.should.be.equal(5);
-        table!.findColumnByName("dec")!.type.should.be.equal("decimal");
-        table!.findColumnByName("dec")!.precision!.should.be.equal(10);
-        table!.findColumnByName("dec")!.scale!.should.be.equal(5);
-        table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        table!.findColumnByName("id")!.type.should.be.equal("number");
+        table!.findColumnByName("number")!.type.should.be.equal("number");
+        table!.findColumnByName("number")!.precision!.should.be.equal(10);
+        table!.findColumnByName("number")!.scale!.should.be.equal(5);
+        table!.findColumnByName("numeric")!.type.should.be.equal("number");
         table!.findColumnByName("numeric")!.precision!.should.be.equal(10);
         table!.findColumnByName("numeric")!.scale!.should.be.equal(5);
-        table!.findColumnByName("float")!.type.should.be.equal("real");
+        table!.findColumnByName("float")!.type.should.be.equal("float");
         table!.findColumnByName("float")!.precision!.should.be.equal(24);
+        table!.findColumnByName("dec")!.type.should.be.equal("number");
+        table!.findColumnByName("dec")!.precision!.should.be.equal(10);
+        table!.findColumnByName("dec")!.scale!.should.be.equal(5);
+        table!.findColumnByName("decimal")!.type.should.be.equal("number");
+        table!.findColumnByName("decimal")!.precision!.should.be.equal(10);
+        table!.findColumnByName("decimal")!.scale!.should.be.equal(5);
         table!.findColumnByName("char")!.type.should.be.equal("char");
         table!.findColumnByName("char")!.length!.should.be.equal("3");
-        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        table!.findColumnByName("varchar")!.length!.should.be.equal("50");
         table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
         table!.findColumnByName("nchar")!.length!.should.be.equal("3");
-        table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("nvarchar")!.length!.should.be.equal("40");
-        table!.findColumnByName("binary")!.type.should.be.equal("binary");
-        table!.findColumnByName("binary")!.length!.should.be.equal("5");
-        table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        table!.findColumnByName("varbinary")!.length!.should.be.equal("5");
-        table!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
-        table!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
-        table!.findColumnByName("time")!.type.should.be.equal("time");
-        table!.findColumnByName("time")!.precision!.should.be.equal(6);
-        table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
-        table!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(7);
+        table!.findColumnByName("varchar2")!.type.should.be.equal("varchar2");
+        table!.findColumnByName("varchar2")!.length!.should.be.equal("50");
+        table!.findColumnByName("nvarchar2")!.type.should.be.equal("nvarchar2");
+        table!.findColumnByName("nvarchar2")!.length!.should.be.equal("40");
+        table!.findColumnByName("raw")!.type.should.be.equal("raw");
+        table!.findColumnByName("raw")!.length!.should.be.equal("500");
+        table!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
+        table!.findColumnByName("timestamp")!.precision!.should.be.equal(5);
+        table!.findColumnByName("timestampWithTimeZone")!.type.should.be.equal("timestamp with time zone");
+        table!.findColumnByName("timestampWithTimeZone")!.precision!.should.be.equal(6);
+        table!.findColumnByName("timestampWithLocalTimeZone")!.type.should.be.equal("timestamp with local time zone");
+        table!.findColumnByName("timestampWithLocalTimeZone")!.precision!.should.be.equal(7);
 
     })));
 
@@ -210,26 +208,25 @@ describe("database schema > column types > oracle", () => {
         const post = new PostWithoutTypes();
         post.id = 1;
         post.name = "Post";
-        post.bit = true;
-        post.binary = new Buffer("A");
+        post.boolean = true;
+        post.blob = new Buffer("This is blob");
         post.datetime = new Date();
-        post.datetime.setMilliseconds(0); // set milliseconds to zero because the SQL Server datetime type only has a 1/300 ms (~3.33̅ ms) resolution
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
-        loadedPost.bit.should.be.equal(post.bit);
-        loadedPost.binary.toString().should.be.equal(post.binary.toString());
+        loadedPost.boolean.should.be.equal(post.boolean);
+        loadedPost.blob.toString().should.be.equal(post.blob.toString());
         loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
 
-        table!.findColumnByName("id")!.type.should.be.equal("int");
-        table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
+        table!.findColumnByName("id")!.type.should.be.equal("number");
+        table!.findColumnByName("name")!.type.should.be.equal("varchar2");
         table!.findColumnByName("name")!.length!.should.be.equal("255");
-        table!.findColumnByName("bit")!.type.should.be.equal("bit");
-        table!.findColumnByName("binary")!.type.should.be.equal("binary");
-        table!.findColumnByName("binary")!.length!.should.be.equal("1");
-        table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
+        table!.findColumnByName("boolean")!.type.should.be.equal("char");
+        table!.findColumnByName("boolean")!.length!.should.be.equal("1");
+        table!.findColumnByName("blob")!.type.should.be.equal("blob");
+        table!.findColumnByName("datetime")!.type.should.be.equal("timestamp");
 
     })));
 

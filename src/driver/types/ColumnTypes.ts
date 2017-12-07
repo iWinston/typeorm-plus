@@ -35,7 +35,8 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"time without time zone" // postgres
     |"timestamp" // mysql, postgres, mssql, oracle
     |"timestamp without time zone" // postgres
-    |"timestamp with time zone"; // postgres, oracle
+    |"timestamp with time zone" // postgres, oracle
+    |"timestamp with local time zone"; // oracle
 
 /**
  * Column types where column length is used.
@@ -55,6 +56,7 @@ export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqli
     |"nchar" // mssql, oracle, sqlite
     |"varchar2" // oracle
     |"nvarchar2" // oracle, sqlite
+    |"raw" // oracle
     |"binary" // mssql
     |"varbinary"; // mssql
 

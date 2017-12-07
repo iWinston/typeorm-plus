@@ -21,8 +21,6 @@ import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with Oracle RDBMS.
- *
- * todo: this driver is not 100% finished yet, need to fix all issues that are left
  */
 export class OracleDriver implements Driver {
 
@@ -120,7 +118,9 @@ export class OracleDriver implements Driver {
         "char",
         "nchar",
         "nvarchar2",
-        "varchar2"
+        "varchar2",
+        "varchar",
+        "raw"
     ];
 
     /**
@@ -128,20 +128,20 @@ export class OracleDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "datetime",
+        createDate: "timestamp",
         createDateDefault: "CURRENT_TIMESTAMP",
-        updateDate: "datetime",
+        updateDate: "timestamp",
         updateDateDefault: "CURRENT_TIMESTAMP",
         version: "number",
         treeLevel: "number",
-        migrationName: "nvarchar",
+        migrationName: "varchar2",
         migrationTimestamp: "timestamp",
-        cacheId: "int",
-        cacheIdentifier: "nvarchar",
+        cacheId: "number",
+        cacheIdentifier: "varchar2",
         cacheTime: "timestamp",
-        cacheDuration: "int",
-        cacheQuery: "text",
-        cacheResult: "text",
+        cacheDuration: "number",
+        cacheQuery: "clob",
+        cacheResult: "clob",
     };
 
     /**
@@ -150,11 +150,11 @@ export class OracleDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults = {
         "char": { length: 1 },
+        "nchar": { length: 1 },
         "varchar": { length: 255 },
         "varchar2": { length: 255 },
         "nvarchar2": { length: 255 },
-        "raw": { length: 2000 },
-        "timestamp": { length: 6 }
+        "raw": { length: 2000 }
     };
 
     // -------------------------------------------------------------------------
@@ -291,7 +291,7 @@ export class OracleDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value === true ? 1 : 0;
+            return value ? "1" : "0";
 
         } else if (columnMetadata.type === "date") {
             if (typeof value === "string")
@@ -322,16 +322,16 @@ export class OracleDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            return value === "1" ? true : false;
+
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp with local time zone") {
             return DateUtils.normalizeHydratedDate(value);
-
-        } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
@@ -357,8 +357,7 @@ export class OracleDriver implements Driver {
             return "blob";
 
         } else if (column.type === Boolean) {
-            column.length = 1;
-            return "number";
+            return "char";
 
         } else if (column.type === "uuid") {
             column.length = 16;
@@ -423,11 +422,11 @@ export class OracleDriver implements Driver {
         } else if (column.precision && column.scale) {
             type += "(" + column.precision + "," + column.scale + ")";
         } else if (column.precision) {
-            type +=  "(" + column.precision + ")";
+            type += "(" + column.precision + ")";
         } else if (column.scale) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
+            type += "(" + column.scale + ")";
+        } else if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
+            type += "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.type === "timestamp with time zone") {

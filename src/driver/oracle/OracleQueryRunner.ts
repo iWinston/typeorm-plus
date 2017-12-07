@@ -186,66 +186,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Insert a new row with given values into the given table.
-     * Returns value of the generated column if given and generate column exist in the table.
-     *
-     * todo: reimplement, use QueryBuilder
-
-    async insert(tableName: string, keyValues: ObjectLiteral): Promise<any> {
-        // todo: fix generated columns
-        let generatedColumn: ColumnMetadata|undefined;
-        const keys = Object.keys(keyValues);
-        const columns = keys.map(key => `"${key}"`).join(", ");
-        const values = keys.map(key => ":" + key).join(", ");
-        const parameters = keys.map(key => keyValues[key]);
-        const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
-        if (generatedColumns.length > 0)
-            generatedColumn = generatedColumns.find(column => column.isPrimary && column.isGenerated);
-
-        const insertSql = columns.length > 0
-            ? `INSERT INTO "${tableName}" (${columns}) VALUES (${values})`
-            : `INSERT INTO "${tableName}" DEFAULT VALUES`;
-        if (generatedColumn) {
-            const sql2 = `declare lastId number; begin ${insertSql} returning "${generatedColumn.databaseName}" into lastId; dbms_output.enable; dbms_output.put_line(lastId); dbms_output.get_line(:ln, :st); end;`;
-            const saveResult = await this.query(sql2, parameters.concat([
-                { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.STRING, maxSize: 32767 },
-                { dir: this.driver.oracle.BIND_OUT, type: this.driver.oracle.NUMBER }
-            ]));
-            return parseInt(saveResult[0]);
-        } else {
-            return this.query(insertSql, parameters);
-        }
-    } */
-
-    /**
-     * Updates rows that match given conditions in the given table.
-     *
-     * todo: reimplement, use QueryBuilder
-
-    async update(tableName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> {
-        const updateValues = this.parametrize(valuesMap).join(", ");
-        const conditionString = this.parametrize(conditions).join(" AND ");
-        const sql = `UPDATE "${tableName}" SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
-        const conditionParams = Object.keys(conditions).map(key => conditions[key]);
-        const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
-        const allParameters = updateParams.concat(conditionParams);
-        await this.query(sql, allParameters);
-    }*/
-
-    /**
-     * Deletes from the given table by a given conditions.
-     *
-     * todo: reimplement, use QueryBuilder
-
-    async delete(tableName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> {
-        const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
-        const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
-
-        const sql = `DELETE FROM "${tableName}" WHERE ${conditionString}`;
-        await this.query(sql, parameters);
-    }*/
-
-    /**
      * Inserts rows into the closure table.
      */
     async insertIntoClosureTable(tableName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
@@ -1073,13 +1013,22 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.type = tableColumn.type.replace(/\([0-9]*\)/, "");
 
                     tableColumn.length = dbColumn["CHAR_COL_DECL_LENGTH"] ? dbColumn["CHAR_COL_DECL_LENGTH"].toString() : "";
+                    if (tableColumn.type === "raw")
+                        tableColumn.length = dbColumn["DATA_LENGTH"].toString();
 
-                    if (tableColumn.type === "number" || tableColumn.type === "numeric" || tableColumn.type === "dec" || tableColumn.type === "decimal") {
+                    if (tableColumn.type === "number"
+                        || tableColumn.type === "numeric"
+                        || tableColumn.type === "dec"
+                        || tableColumn.type === "decimal"
+                        || tableColumn.type === "float") {
                         tableColumn.precision = dbColumn["DATA_PRECISION"];
                         tableColumn.scale = dbColumn["DATA_SCALE"];
-                    }
 
-                    // TODO fix datatypes
+                    } else if (tableColumn.type === "timestamp"
+                        || tableColumn.type === "timestamp with time zone"
+                        || tableColumn.type === "timestamp with local time zone") {
+                        tableColumn.precision = dbColumn["DATA_SCALE"];
+                    }
 
                     tableColumn.default = dbColumn["DATA_DEFAULT"] !== null
                         && dbColumn["DATA_DEFAULT"] !== undefined

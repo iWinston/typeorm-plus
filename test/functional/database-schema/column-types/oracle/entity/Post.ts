@@ -33,6 +33,9 @@ export class Post {
     @Column("int")
     int: number;
 
+    @Column("integer")
+    integer: number;
+
     @Column("smallint")
     smallint: number;
 
