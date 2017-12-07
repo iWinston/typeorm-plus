@@ -106,8 +106,8 @@ export type SimpleColumnType =
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite
-    |"interval year" // oracle
-    |"interval day" // oracle
+    |"interval year to month" // oracle
+    |"interval day to second" // oracle
     |"interval" // postgres
     |"year" // mysql
 

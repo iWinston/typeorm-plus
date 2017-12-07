@@ -312,7 +312,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (columnIndex === 0) {
                         expression += "(";
                     }
-                    const paramName = "inserted_" + valueSetIndex + "_" + column.databaseName;
+                    const paramName = "i" + valueSetIndex + "_" + column.databaseName;
 
                     // extract real value from the entity
                     let value = column.getEntityValue(valueSet);
@@ -396,7 +396,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             // get values needs to be inserted
             return valueSets.map((valueSet, insertionIndex) => {
                 const columnValues = Object.keys(valueSet).map(columnName => {
-                    const paramName = "inserted_" + insertionIndex + "_" + columnName;
+                    const paramName = "i" + insertionIndex + "_" + columnName;
                     const value = valueSet[columnName];
 
                     // support for SQL expressions in queries

@@ -15,26 +15,8 @@ export class Post {
     // Numeric Types
     // -------------------------------------------------------------------------
 
-    @Column("bit")
-    bit: boolean;
-
-    @Column("tinyint")
-    tinyint: number;
-
-    @Column("smallint")
-    smallint: number;
-
-    @Column("int")
-    int: number;
-
-    @Column("bigint")
-    bigint: string;
-
-    @Column("decimal")
-    decimal: number;
-
-    @Column("dec")
-    dec: number;
+    @Column("number")
+    number: number;
 
     @Column("numeric")
     numeric: number;
@@ -42,48 +24,45 @@ export class Post {
     @Column("float")
     float: number;
 
+    @Column("dec")
+    dec: number;
+
+    @Column("decimal")
+    decimal: number;
+
+    @Column("int")
+    int: number;
+
+    @Column("smallint")
+    smallint: number;
+
     @Column("real")
     real: number;
 
-    @Column("smallmoney")
-    smallmoney: number;
-
-    @Column("money")
-    money: number;
+    @Column("double precision")
+    doublePrecision: number;
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
-    @Column("uniqueidentifier")
-    uniqueidentifier: string;
-
     @Column("char")
     char: string;
-
-    @Column("varchar")
-    varchar: string;
-
-    @Column("text")
-    text: string;
 
     @Column("nchar")
     nchar: string;
 
-    @Column("nvarchar")
-    nvarchar: string;
+    @Column("nvarchar2")
+    nvarchar2: string;
 
-    @Column("ntext")
-    ntext: string;
+    @Column("varchar2")
+    varchar2: string;
 
-    @Column("binary")
-    binary: Buffer;
+    @Column("long")
+    long: string;
 
-    @Column("varbinary")
-    varbinary: Buffer;
-
-    @Column("image")
-    image: Buffer;
+    @Column("raw")
+    raw: Buffer;
 
     // -------------------------------------------------------------------------
     // Date Types
@@ -95,23 +74,27 @@ export class Post {
     @Column("date")
     date: string;
 
-    @Column("datetime")
-    datetime: Date;
+    @Column("timestamp")
+    timestamp: Date;
 
-    @Column("datetime2")
-    datetime2: Date;
+    @Column("timestamp with time zone")
+    timestampWithTimeZone: Date;
 
-    @Column("smalldatetime")
-    smalldatetime: Date;
+    @Column("timestamp with local time zone")
+    timestampWithLocalTimeZone: Date;
 
-    @Column("time")
-    timeObj: Date;
+    // -------------------------------------------------------------------------
+    // LOB Type
+    // -------------------------------------------------------------------------
 
-    @Column("time")
-    time: string;
+    @Column("blob")
+    blob: Buffer;
 
-    @Column("datetimeoffset")
-    datetimeoffset: Date;
+    @Column("clob")
+    clob: string;
+
+    @Column("nclob")
+    nclob: string;
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Type

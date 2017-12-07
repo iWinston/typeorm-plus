@@ -8,6 +8,7 @@ import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
+import {abbreviate} from "../../util/StringUtils";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -49,7 +50,7 @@ export class RawSqlResultsToEntityTransformer {
     protected group(rawResults: any[], alias: Alias): any[][] {
         const groupedResults: { id: any, items: any[] }[] = [];
         rawResults.forEach(rawResult => {
-            const id = alias.metadata.primaryColumns.map(column => rawResult[alias.name + "_" + column.databaseName]).join("_"); // todo: check partial
+            const id = alias.metadata.primaryColumns.map(column => rawResult[this.buildColumnAlias(alias.name, column.databaseName)]).join("_"); // todo: check partial
             if (!id) return;
 
             let group = groupedResults.find(groupedResult => groupedResult.id === id);
@@ -71,7 +72,7 @@ export class RawSqlResultsToEntityTransformer {
         let entity: any = alias.metadata.create();
 
         if (alias.metadata.discriminatorColumn) {
-            const discriminatorValues = rawResults.map(result => result[alias.name + "_" + alias.metadata.discriminatorColumn!.databaseName]);
+            const discriminatorValues = rawResults.map(result => result[this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
             const metadata = alias.metadata.childEntityMetadatas.find(childEntityMetadata => {
                 return !!discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue);
             });
@@ -104,7 +105,7 @@ export class RawSqlResultsToEntityTransformer {
     protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
         let hasData = false;
         metadata.columns.forEach(column => {
-            const value = rawResults[0][alias.name + "_" + column.databaseName];
+            const value = rawResults[0][this.buildColumnAlias(alias.name, column.databaseName)];
             if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
 
@@ -120,7 +121,7 @@ export class RawSqlResultsToEntityTransformer {
 
         if (alias.metadata.parentEntityMetadata) {
             alias.metadata.parentEntityMetadata.columns.forEach(column => {
-                const value = rawResults[0]["parentIdColumn_" + alias.metadata.parentEntityMetadata.tableName + "_" + column.databaseName];
+                const value = rawResults[0]["parentIdColumn_" + this.buildColumnAlias(alias.metadata.parentEntityMetadata.tableName, column.databaseName)];
                 if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                     return;
 
@@ -140,7 +141,7 @@ export class RawSqlResultsToEntityTransformer {
         let discriminatorValue: string = "";
 
         if (alias.metadata.discriminatorColumn)
-            discriminatorValue = rawResults[0][alias.name + "_" + alias.metadata.discriminatorColumn!.databaseName];
+            discriminatorValue = rawResults[0][this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)];
 
         this.expressionMap.joinAttributes.forEach(join => { // todo: we have problem here - when inner joins are used without selects it still create empty array
 
@@ -297,6 +298,18 @@ export class RawSqlResultsToEntityTransformer {
         return hasData;
     }
 
+    /**
+     * Builds column alias from given alias name and column name,
+     * If alias length is more than 29, abbreviates column name.
+     */
+    protected buildColumnAlias(aliasName: string, columnName: string): string {
+        const columnAliasName = aliasName + "_" + columnName;
+        if (columnAliasName.length > 29)
+            return aliasName  + "_" + abbreviate(columnName, 2);
+
+        return columnAliasName;
+    }
+
     private createValueMapFromJoinColumns(relation: RelationMetadata, parentAlias: string, rawSqlResults: any[]): ObjectLiteral {
         let columns: ColumnMetadata[];
         if (relation.isManyToOne || relation.isOneToOneOwner) {
@@ -313,9 +326,9 @@ export class RawSqlResultsToEntityTransformer {
         return columns.reduce((valueMap, column) => {
             rawSqlResults.forEach(rawSqlResult => {
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
-                    valueMap[column.databaseName] = rawSqlResult[parentAlias + "_" + column.databaseName];
+                    valueMap[column.databaseName] = rawSqlResult[this.buildColumnAlias(parentAlias, column.databaseName)];
                 } else {
-                    valueMap[column.databaseName] =  rawSqlResult[parentAlias + "_" + column.referencedColumn!.databaseName];
+                    valueMap[column.databaseName] =  rawSqlResult[this.buildColumnAlias(parentAlias, column.referencedColumn!.databaseName)];
                 }
             });
             return valueMap;

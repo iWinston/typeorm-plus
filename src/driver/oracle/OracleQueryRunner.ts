@@ -1069,6 +1069,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
+                    if (tableColumn.type.indexOf("(") !== -1)
+                        tableColumn.type = tableColumn.type.replace(/\([0-9]*\)/, "");
+
                     tableColumn.length = dbColumn["CHAR_COL_DECL_LENGTH"] ? dbColumn["CHAR_COL_DECL_LENGTH"].toString() : "";
 
                     if (tableColumn.type === "number" || tableColumn.type === "numeric" || tableColumn.type === "dec" || tableColumn.type === "decimal") {

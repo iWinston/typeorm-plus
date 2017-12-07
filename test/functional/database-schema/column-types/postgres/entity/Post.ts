@@ -36,24 +36,6 @@ export class Post {
     @Column("int8")
     int8: string;
 
-    /*@Column("serial")
-    serial: number;
-
-    @Column("serial4")
-    serial4: number;
-
-    @Column("smallserial")
-    smallserial: number;
-
-    @Column("serial2")
-    serial2: number;
-
-    @Column("bigserial")
-    bigserial: number;
-
-    @Column("serial8")
-    serial8: number;*/
-
     @Column("numeric")
     numeric: string;
 

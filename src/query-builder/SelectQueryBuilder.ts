@@ -30,6 +30,7 @@ import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
+import {abbreviate} from "../util/StringUtils";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1336,7 +1337,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
                 metadata.parentEntityMetadata.columns.forEach(column => {
                     // TODO implement partial select
-                    allSelects.push({ selection: this.escape(alias) + "." + this.escape(column.databaseName), aliasName: alias + "_" + column.databaseName });
+                    allSelects.push({ selection: this.escape(alias) + "." + this.escape(column.databaseName), aliasName: this.buildColumnAlias(alias, column.databaseName) });
                 });
             }
         }
@@ -1664,7 +1665,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             return {
                 selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
-                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
+                aliasName: selection && selection.aliasName ? selection.aliasName : this.buildColumnAlias(aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
@@ -1765,10 +1766,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.databaseName);
+                const columnAlias = this.escape(this.buildColumnAlias(mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
-                return `${distinctAlias}.${columnAlias} as "ids_${mainAliasName + "_" + primaryColumn.databaseName}"`;
+                return `${distinctAlias}.${columnAlias} as "ids_${this.buildColumnAlias(mainAliasName, primaryColumn.databaseName)}"`;
             });
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
@@ -1794,7 +1795,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const ids = rawResults.map(result => result["ids_" + mainAliasName + "_" + metadata.primaryColumns[0].databaseName]);
+                    const ids = rawResults.map(result => result["ids_" + this.buildColumnAlias(mainAliasName, metadata.primaryColumns[0].databaseName)]);
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter
@@ -1845,7 +1846,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const [aliasName, propertyPath] = columnName.split(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
+                return this.escape(parentAlias) + "." + this.escape(this.buildColumnAlias(aliasName, column!.databaseName));
             })
             .join(", ");
 
@@ -1856,7 +1857,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const [aliasName, propertyPath] = columnName.split(".");
             const alias = this.expressionMap.findAliasByName(aliasName);
             const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-            orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[columnName];
+            orderByObject[this.escape(parentAlias) + "." + this.escape(this.buildColumnAlias(aliasName, column!.databaseName))] = orderBys[columnName];
         });
 
         return [selectString, orderByObject];
@@ -1892,6 +1893,18 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         return results;
+    }
+
+    /**
+     * Builds column alias from given alias name and column name,
+     * If alias length is more than 29, abbreviates column name.
+     */
+    protected buildColumnAlias(aliasName: string, columnName: string): string {
+        const columnAliasName = aliasName + "_" + columnName;
+        if (columnAliasName.length > 29)
+            return aliasName  + "_" + abbreviate(columnName, 2);
+
+        return columnAliasName;
     }
 
     /**

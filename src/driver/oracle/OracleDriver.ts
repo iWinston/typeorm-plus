@@ -91,6 +91,7 @@ export class OracleDriver implements Driver {
         "long raw",
         "number",
         "numeric",
+        "float",
         "dec",
         "decimal",
         "integer",
@@ -102,8 +103,8 @@ export class OracleDriver implements Driver {
         "timestamp",
         "timestamp with time zone",
         "timestamp with local time zone",
-        "interval year",
-        "interval day",
+        "interval year to month",
+        "interval day to second",
         "bfile",
         "blob",
         "clob",
@@ -151,8 +152,8 @@ export class OracleDriver implements Driver {
         "char": { length: 1 },
         "varchar": { length: 255 },
         "varchar2": { length: 255 },
-        "nvarchar": { length: 255 },
         "nvarchar2": { length: 255 },
+        "raw": { length: 2000 },
         "timestamp": { length: 6 }
     };
 
@@ -191,7 +192,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-
+        this.oracle.fetchAsString = [ this.oracle.CLOB ];
+        this.oracle.fetchAsBuffer = [ this.oracle.BLOB ];
         if (this.options.replication) {
             this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
                 return this.createPool(this.options, slave);
@@ -292,16 +294,15 @@ export class OracleDriver implements Driver {
             return value === true ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            if (typeof value === "string")
+                value = value.replace(/[^0-9-]/g, "");
+            return () => `TO_DATE('${DateUtils.mixedDateToDateString(value)}', 'YYYY-MM-DD')`;
 
-        } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedDateToTimeString(value);
-
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToUtcDatetimeString(value);
-
-        } else if (columnMetadata.type === "json") {
-            return JSON.stringify(value);
+        } else if (columnMetadata.type === Date
+            || columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamp with time zone"
+            || columnMetadata.type === "timestamp with local time zone") {
+            return DateUtils.mixedDateToDate(value, true, true);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -323,17 +324,14 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value ? true : false;
 
-        } else if (columnMetadata.type === "datetime") {
+        } else if (columnMetadata.type === Date
+            || columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamp with time zone"
+            || columnMetadata.type === "timestamp with local time zone") {
             return DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value);
-
-        } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
-
-        } else if (columnMetadata.type === "json") {
-            return JSON.parse(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
@@ -347,13 +345,16 @@ export class OracleDriver implements Driver {
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
         if (column.type === Number) {
-            return "integer";
+            return "number";
 
-        } else if (column.type === String) {
-            return "nvarchar2";
+        } else if (column.type === String || column.type === "varchar") {
+            return "varchar2";
 
         } else if (column.type === Date) {
             return "timestamp";
+
+        } else if ((column.type as any) === Buffer) {
+            return "blob";
 
         } else if (column.type === Boolean) {
             column.length = 1;
@@ -361,10 +362,10 @@ export class OracleDriver implements Driver {
 
         } else if (column.type === "uuid") {
             column.length = 16;
-            return "varchar";
+            return "varchar2";
 
         } else if (column.type === "simple-array") {
-            return "text";
+            return "clob";
 
         } else {
             return column.type as string || "";
@@ -427,6 +428,13 @@ export class OracleDriver implements Driver {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
             type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
+        }
+
+        if (column.type === "timestamp with time zone") {
+            type = "TIMESTAMP" + (column.precision ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
+
+        } else if (column.type === "timestamp with local time zone") {
+            type = "TIMESTAMP" + (column.precision ? "(" + column.precision + ")" : "") + " WITH LOCAL TIME ZONE";
         }
 
         if (column.isArray)
