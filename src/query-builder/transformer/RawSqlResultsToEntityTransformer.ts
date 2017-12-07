@@ -69,21 +69,22 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected transformRawResultsGroup(rawResults: any[], alias: Alias): ObjectLiteral|undefined {
         // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
-        let entity: any = alias.metadata.create();
+        let metadata = alias.metadata;
 
-        if (alias.metadata.discriminatorColumn) {
+        if (metadata.discriminatorColumn) {
             const discriminatorValues = rawResults.map(result => result[this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
-            const metadata = alias.metadata.childEntityMetadatas.find(childEntityMetadata => {
+            const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata => {
                 return !!discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue);
             });
-            if (metadata)
-                entity = metadata.create();
+            if (discriminatorMetadata)
+                metadata = discriminatorMetadata;
         }
+        let entity: any = metadata.create();
 
         // get value from columns selections and put them into newly created entity
-        const hasColumns = this.transformColumns(rawResults, alias, entity, alias.metadata);
-        const hasRelations = this.transformJoins(rawResults, entity, alias);
-        const hasRelationIds = this.transformRelationIds(rawResults, alias, entity);
+        const hasColumns = this.transformColumns(rawResults, alias, entity, metadata);
+        const hasRelations = this.transformJoins(rawResults, entity, alias, metadata);
+        const hasRelationIds = this.transformRelationIds(rawResults, alias, entity, metadata);
         const hasRelationCounts = this.transformRelationCounts(rawResults, alias, entity);
 
         // if we have at least one selected column then return this entity
@@ -94,7 +95,7 @@ export class RawSqlResultsToEntityTransformer {
         // if we don't have any selected column we should not return entity,
         // except for the case when entity only contain a primary column as a relation to another entity
         // in this case its absolutely possible our entity to not have any columns except a single relation
-        const hasOnlyVirtualPrimaryColumns = alias.metadata.primaryColumns.filter(column => column.isVirtual === false).length === 0; // todo: create metadata.hasOnlyVirtualPrimaryColumns
+        const hasOnlyVirtualPrimaryColumns = metadata.primaryColumns.filter(column => column.isVirtual === false).length === 0; // todo: create metadata.hasOnlyVirtualPrimaryColumns
         if (hasOnlyVirtualPrimaryColumns && (hasRelations || hasRelationIds || hasRelationCounts))
             return entity;
 
@@ -105,6 +106,11 @@ export class RawSqlResultsToEntityTransformer {
     protected transformColumns(rawResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
         let hasData = false;
         metadata.columns.forEach(column => {
+
+            // if table inheritance is used make sure this column is not child's column
+            if (metadata.childEntityMetadatas.length > 0 && metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
+                return;
+
             const value = rawResults[0][this.buildColumnAlias(alias.name, column.databaseName)];
             if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                 return;
@@ -119,9 +125,9 @@ export class RawSqlResultsToEntityTransformer {
                 hasData = true;
         });
 
-        if (alias.metadata.parentEntityMetadata) {
-            alias.metadata.parentEntityMetadata.columns.forEach(column => {
-                const value = rawResults[0]["parentIdColumn_" + this.buildColumnAlias(alias.metadata.parentEntityMetadata.tableName, column.databaseName)];
+        if (metadata.parentEntityMetadata) { // todo: revisit
+            metadata.parentEntityMetadata.columns.forEach(column => {
+                const value = rawResults[0]["parentIdColumn_" + this.buildColumnAlias(metadata.parentEntityMetadata.tableName, column.databaseName)];
                 if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
                     return;
 
@@ -136,12 +142,12 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
      */
-    protected transformJoins(rawResults: any[], entity: ObjectLiteral, alias: Alias) {
+    protected transformJoins(rawResults: any[], entity: ObjectLiteral, alias: Alias, metadata: EntityMetadata) {
         let hasData = false;
-        let discriminatorValue: string = "";
 
-        if (alias.metadata.discriminatorColumn)
-            discriminatorValue = rawResults[0][this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)];
+        // let discriminatorValue: string = "";
+        // if (metadata.discriminatorColumn)
+        //     discriminatorValue = rawResults[0][this.buildColumnAlias(alias.name, alias.metadata.discriminatorColumn!.databaseName)];
 
         this.expressionMap.joinAttributes.forEach(join => { // todo: we have problem here - when inner joins are used without selects it still create empty array
 
@@ -153,9 +159,9 @@ export class RawSqlResultsToEntityTransformer {
             if (!join.isSelected)
                 return;
 
-            // this check need to avoid setting properties than not belong to entity when single table inheritance used.
-            const metadata = alias.metadata.childEntityMetadatas.find(childEntityMetadata => discriminatorValue === childEntityMetadata.discriminatorValue);
-            if (metadata && join.relation && metadata.target !== join.relation.target)
+            // this check need to avoid setting properties than not belong to entity when single table inheritance used. (todo: check if we still need it)
+            // const metadata = metadata.childEntityMetadatas.find(childEntityMetadata => discriminatorValue === childEntityMetadata.discriminatorValue);
+            if (join.relation && !metadata.relations.find(relation => relation === join.relation))
                 return;
 
             // some checks to make sure this join is for current alias
@@ -187,7 +193,7 @@ export class RawSqlResultsToEntityTransformer {
         return hasData;
     }
 
-    protected transformRelationIds(rawSqlResults: any[], alias: Alias, entity: ObjectLiteral): boolean {
+    protected transformRelationIds(rawSqlResults: any[], alias: Alias, entity: ObjectLiteral, metadata: EntityMetadata): boolean {
         let hasData = false;
         this.rawRelationIdResults.forEach(rawRelationIdResult => {
             if (rawRelationIdResult.relationIdAttribute.parentAlias !== alias.name)
@@ -200,7 +206,7 @@ export class RawSqlResultsToEntityTransformer {
 
             const idMaps = rawRelationIdResult.results.map(result => {
                 const entityPrimaryIds = this.extractEntityPrimaryIds(relation, result);
-                if (!alias.metadata.compareIds(entityPrimaryIds, valueMap))
+                if (!metadata.compareIds(entityPrimaryIds, valueMap))
                     return;
 
                 let columns: ColumnMetadata[];

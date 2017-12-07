@@ -42,23 +42,27 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 export abstract class QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
-    // Protected properties
+    // Public Properties
     // -------------------------------------------------------------------------
 
     /**
      * Connection on which QueryBuilder was created.
      */
-    protected connection: Connection;
+    readonly connection: Connection;
+
+    /**
+     * Contains all properties of the QueryBuilder that needs to be build a final query.
+     */
+    readonly expressionMap: QueryExpressionMap;
+
+    // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
 
     /**
      * Query runner used to execute query builder query.
      */
     protected queryRunner?: QueryRunner;
-
-    /**
-     * Contains all properties of the QueryBuilder that needs to be build a final query.
-     */
-    protected expressionMap: QueryExpressionMap;
 
     // -------------------------------------------------------------------------
     // Constructor

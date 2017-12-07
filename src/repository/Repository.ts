@@ -284,6 +284,28 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Finds first entity that matches given options.
+     */
+    findOneOrFail(id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given options.
+     */
+    findOneOrFail(options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOneOrFail(conditions?: DeepPartial<Entity>, options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    findOneOrFail(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
+        return this.manager.findOneOrFail(this.metadata.target, optionsOrConditions as any, maybeOptions);
+    }
+
+    /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */

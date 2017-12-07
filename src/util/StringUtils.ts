@@ -13,10 +13,10 @@ export function camelCase(str: string): string {
 /**
  * Converts string into snake-case.
  *
- * @see http://stackoverflow.com/questions/30521224/javascript-convert-pascalcase-to-underscore-case
+ * @see https://regex101.com/r/QeSm2I/1
  */
-export function snakeCase(str: string): string {
-    return str.replace(/(?:^|\.?)([A-Z])/g, (x, y) => "_" + y.toLowerCase()).replace(/^_/, "");
+export function snakeCase(str: string) {
+    return str.replace(/(?:([a-z])([A-Z]))|(?:((?!^)[A-Z])([a-z]))/g, "$1_$3$2$4").toLowerCase();
 }
 
 /**

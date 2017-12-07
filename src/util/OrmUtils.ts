@@ -2,10 +2,19 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
 
-    static splitClassesAndStrings<T>(clsesAndStrings: T[]|string[]): [T[], string[]] {
+    /**
+     * Chunks array into peaces.
+     */
+    static chunk<T>(array: T[], size: number): T[][] {
+        return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {
+            return array.slice(i * size, i * size + size);
+        });
+    }
+
+    static splitClassesAndStrings<T>(clsesAndStrings: (string|T)[]): [T[], string[]] {
         return [
-            (clsesAndStrings as T[]).filter(cls => typeof cls !== "string"),
-            (clsesAndStrings as string[]).filter(str => typeof str === "string"),
+            (clsesAndStrings).filter((cls): cls is T => typeof cls !== "string"),
+            (clsesAndStrings).filter((str): str is string => typeof str === "string"),
         ];
     }
 

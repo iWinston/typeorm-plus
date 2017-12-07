@@ -10,6 +10,7 @@ import {Brackets} from "./Brackets";
 import {DeleteResult} from "./result/DeleteResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -54,16 +55,22 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
 
             // call before deletion methods in listeners and subscribers
-            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata)
-                await queryRunner.broadcaster.broadcastBeforeRemoveEvent(this.expressionMap.mainAlias!.metadata);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                const broadcastResult = new BroadcasterResult();
+                queryRunner.broadcaster.broadcastBeforeRemoveEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+            }
 
             // execute query
             const deleteResult = new DeleteResult();
             deleteResult.raw = await queryRunner.query(sql, parameters);
 
             // call after deletion methods in listeners and subscribers
-            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata)
-                await queryRunner.broadcaster.broadcastAfterRemoveEvent(this.expressionMap.mainAlias!.metadata);
+            if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
+                const broadcastResult = new BroadcasterResult();
+                queryRunner.broadcaster.broadcastAfterRemoveEvent(broadcastResult, this.expressionMap.mainAlias!.metadata);
+                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+            }
 
             // close transaction if we started it
             if (transactionStartedByUs)

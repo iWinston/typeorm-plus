@@ -25,7 +25,7 @@ export interface BaseConnectionOptions {
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.
      */
-    readonly entities?: Function[]|string[];
+    readonly entities?: (Function|string)[];
 
     /**
      * Subscribers to be loaded for this connection.

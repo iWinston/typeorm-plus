@@ -980,7 +980,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * TODO: maybe deleted
      */
     async updatePrimaryKeys(table: Table): Promise<void> {
-       /* const parsedTableName = this.parseTableName(table); 
+       /* const parsedTableName = this.parseTableName(table);
         const oldPrimaryKeySql = `SELECT columnUsages.*, tableConstraints.CONSTRAINT_TYPE FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."KEY_COLUMN_USAGE" columnUsages
 LEFT JOIN "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" tableConstraints ON tableConstraints.CONSTRAINT_NAME = columnUsages.CONSTRAINT_NAME AND tableConstraints.CONSTRAINT_TYPE = 'PRIMARY KEY'
 WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnUsages.TABLE_SCHEMA = '${parsedTableName.schema}' AND tableConstraints.TABLE_SCHEMA = '${parsedTableName.schema}'`;
@@ -1644,7 +1644,6 @@ WHERE tableConstraints.TABLE_CATALOG = '${parsedTableName.database}' AND columnU
             };
         }
     }
-
     /**
      * Concat database name and schema name to the foreign key name.
      * Needs because FK name is relevant to the schema and database.

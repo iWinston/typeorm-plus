@@ -19,7 +19,7 @@ export interface FindOneOptions<Entity> {
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
-    relations?: (keyof Entity)[];
+    relations?: string[];
 
     /**
      * Specifies what relations should be loaded.

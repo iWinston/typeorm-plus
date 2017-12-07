@@ -35,6 +35,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                 type: "closure-junction"
             }
         });
+        entityMetadata.build();
 
         // create ancestor and descendant columns for new closure junction table
         parentClosureEntityMetadata.primaryColumns.forEach(primaryColumn => {

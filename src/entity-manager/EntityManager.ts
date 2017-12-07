@@ -1,6 +1,7 @@
 import {Connection} from "../connection/Connection";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectType} from "../common/ObjectType";
+import { EntityNotFoundError } from "../error/EntityNotFoundError";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
@@ -61,6 +62,11 @@ export class EntityManager {
      * Once created and then reused by en repositories.
      */
     protected repositories: Repository<any>[] = [];
+
+    /**
+     * Plain to object transformer used in create and merge operations.
+     */
+    protected plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -216,8 +222,7 @@ export class EntityManager {
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
         const mergeIntoEntity = metadata.create();
-        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer(true);
-        plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata);
+        this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
         return mergeIntoEntity;
     }
 
@@ -226,8 +231,7 @@ export class EntityManager {
      */
     merge<Entity>(entityClass: ObjectType<Entity>|string, mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity { // todo: throw exception if entity manager is released
         const metadata = this.connection.getMetadata(entityClass);
-        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-        entityLikes.forEach(object => plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
+        entityLikes.forEach(object => this.plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
         return mergeIntoEntity;
     }
 
@@ -251,25 +255,25 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
-
-    /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
     save<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
+    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
     save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves a given entity in the database.
@@ -281,6 +285,10 @@ export class EntityManager {
         const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
 
+        // if user passed empty array of entities then we don't need to do anything
+        if (entity instanceof Array && entity.length === 0)
+            return Promise.resolve(entity);
+
         // execute save operation
         return new EntityPersistExecutor(this.connection, this.queryRunner, "save", target, entity, options)
             .execute()
@@ -290,7 +298,7 @@ export class EntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(entity: Entity): Promise<Entity>;
+    remove<Entity>(entity: Entity, options?: RemoveOptions): Promise<Entity>;
 
     /**
      * Removes a given entity from the database.
@@ -316,6 +324,10 @@ export class EntityManager {
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
+
+        // if user passed empty array of entities then we don't need to do anything
+        if (entity instanceof Array && entity.length === 0)
+            return Promise.resolve(entity);
 
         // execute save operation
         return new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options)
@@ -408,7 +420,7 @@ export class EntityManager {
      * Counts entities that match given find options or conditions.
      * Useful for pagination.
      */
-    count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<number> {
+    async count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
@@ -427,7 +439,7 @@ export class EntityManager {
     /**
      * Finds entities that match given find options or conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
+    async find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
@@ -453,7 +465,7 @@ export class EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[Entity[], number]> {
+    async findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         this.joinEagerRelations(qb, qb.alias, metadata);
@@ -476,17 +488,16 @@ export class EntityManager {
      * Finds entities with ids.
      * Optionally find options or conditions can be applied.
      */
-    findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
+    async findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
 
         // if no ids passed, no need to execute a query - just return an empty array of values
         if (!ids.length)
             return Promise.resolve([]);
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        qb.whereInIds(ids.map(id => metadata.ensureEntityIdMap(id)));
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
         this.joinEagerRelations(qb, qb.alias, metadata);
-        return qb.getMany();
+        return qb.andWhereInIds(ids).getMany();
     }
 
     /**
@@ -507,8 +518,7 @@ export class EntityManager {
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
-
+    async findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         let alias: string = metadata.name;
         if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions) && idOrOptionsOrConditions.join) {
@@ -536,6 +546,33 @@ export class EntityManager {
         }
 
         return qb.getOne();
+    }
+
+    /**
+     * Finds first entity that matches given find options or rejects the returned promise on error.
+     */
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given find options or rejects the returned promise on error.
+     */
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string, options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions or rejects the returned promise on error.
+     */
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string, conditions?: DeepPartial<Entity>, options?: FindOneOptions<Entity>): Promise<Entity>;
+
+    /**
+     * Finds first entity that matches given conditions or rejects the returned promise on error.
+     */
+    async findOneOrFail<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
+        return this.findOne(entityClass, idOrOptionsOrConditions as any, maybeOptions).then((value) => {
+            if (value === undefined) {
+                return Promise.reject(new EntityNotFoundError(entityClass, idOrOptionsOrConditions));
+            }
+            return Promise.resolve(value);
+        });
     }
 
     /**

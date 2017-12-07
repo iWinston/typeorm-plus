@@ -4,6 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {User} from "./model/User";
+import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
 
 describe("repository > find methods", () => {
 
@@ -499,6 +500,89 @@ describe("repository > find methods", () => {
             expect(loadedUser).to.be.undefined;
         })));
 
+    });
+
+    describe("findOneOrFail", function() {
+
+        it("should return entity by a given id", () => Promise.all(connections.map(async connection => {
+            const userRepository = connection.getRepository<User>("User");
+            const promises: Promise<User>[] = [];
+            for (let i = 0; i < 100; i++) {
+                const user: User = {
+                    id: i,
+                    firstName: "name #" + i,
+                    secondName: "Doe"
+                };
+                promises.push(userRepository.save(user));
+            }
+
+            const savedUsers = await Promise.all(promises);
+            savedUsers.length.should.be.equal(100); // check if they all are saved
+
+            let loadedUser = (await userRepository.findOneOrFail(0))!;
+            loadedUser.id.should.be.equal(0);
+            loadedUser.firstName.should.be.equal("name #0");
+            loadedUser.secondName.should.be.equal("Doe");
+
+            loadedUser = (await userRepository.findOneOrFail(1))!;
+            loadedUser.id.should.be.equal(1);
+            loadedUser.firstName.should.be.equal("name #1");
+            loadedUser.secondName.should.be.equal("Doe");
+
+            loadedUser = (await userRepository.findOneOrFail(99))!;
+            loadedUser.id.should.be.equal(99);
+            loadedUser.firstName.should.be.equal("name #99");
+            loadedUser.secondName.should.be.equal("Doe");
+        })));
+
+        it("should return entity by a given id and find options", () => Promise.all(connections.map(async connection => {
+            const userRepository = connection.getRepository<User>("User");
+            const promises: Promise<User>[] = [];
+            for (let i = 0; i < 100; i++) {
+                const user: User = {
+                    id: i,
+                    firstName: "name #" + i,
+                    secondName: "Doe"
+                };
+                promises.push(userRepository.save(user));
+            }
+
+            const savedUsers = await Promise.all(promises);
+            savedUsers.length.should.be.equal(100); // check if they all are saved
+
+            let loadedUser = await userRepository.findOneOrFail(0, {
+                where: {
+                    secondName: "Doe"
+                }
+            });
+            loadedUser!.id.should.be.equal(0);
+            loadedUser!.firstName.should.be.equal("name #0");
+            loadedUser!.secondName.should.be.equal("Doe");
+
+            await userRepository.findOneOrFail(1, {
+                where: {
+                    secondName: "Dorian"
+                }
+            }).should.eventually.be.rejectedWith(EntityNotFoundError);
+        })));
+
+        it("should throw an error if nothing was found", () => Promise.all(connections.map(async connection => {
+            const userRepository = connection.getRepository<User>("User");
+            const promises: Promise<User>[] = [];
+            for (let i = 0; i < 100; i++) {
+                const user: User = {
+                    id: i,
+                    firstName: "name #" + i,
+                    secondName: "Doe"
+                };
+                promises.push(userRepository.save(user));
+            }
+
+            const savedUsers = await Promise.all(promises);
+            savedUsers.length.should.be.equal(100); // check if they all are saved
+
+            await userRepository.findOneOrFail(100).should.eventually.be.rejectedWith(EntityNotFoundError);
+        })));
     });
 
 });

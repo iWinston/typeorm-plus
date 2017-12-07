@@ -1,4 +1,7 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
+import {Category} from "./Category";
+import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
+import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 
 @Entity()
 export class Animal {
@@ -8,4 +11,9 @@ export class Animal {
 
     @Column()
     name: string;
+
+    @ManyToMany(type => Category)
+    @JoinTable()
+    categories: Category[];
+
 }
