@@ -290,7 +290,7 @@ export class EntityMetadata {
      * If this entity metadata's table using one of the inheritance patterns,
      * then this will contain what pattern it uses.
      */
-    inheritanceType?: "single-table"|"class-table";
+    inheritancePattern?: "STI"/*|"CTI"*/;
 
     /**
      * If this entity metadata is a child table of some table, it should have a discriminator value.
@@ -347,11 +347,6 @@ export class EntityMetadata {
      * Gets the primary columns.
      */
     primaryColumns: ColumnMetadata[] = [];
-
-    /**
-     * Id columns in the parent table (used in table inheritance).
-     */
-    parentIdColumns: ColumnMetadata[] = [];
 
     /**
      * Gets only one-to-one relations of the entity.
@@ -436,18 +431,6 @@ export class EntityMetadata {
     isEmbeddable: boolean;
 
     /**
-     * Checks if this table is a single table child.
-     * Special table type for tables that are mapped into single table using Single Table Inheritance pattern.
-     */
-    isSingleTableChild: boolean;
-
-    /**
-     * Checks if this table is a class table child.
-     * Special table type for tables that are mapped into multiple tables using Class Table Inheritance pattern.
-     */
-    isClassTableChild: boolean;
-
-    /**
      * Map of columns and relations of the entity.
      *
      * example: Post{ id: number, name: string, counterEmbed: { count: number }, category: Category }.
@@ -463,13 +446,13 @@ export class EntityMetadata {
     constructor(options: {
         connection: Connection,
         inheritanceTree?: Function[],
-        inheritanceType?: "single-table"|"class-table",
+        inheritancePattern?: "STI"/*|"CTI"*/,
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
         this.connection = options.connection;
         this.inheritanceTree = options.inheritanceTree || [];
-        this.inheritanceType = options.inheritanceType;
+        this.inheritancePattern = options.inheritancePattern;
         this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.tableMetadataArgs = options.args;
@@ -548,16 +531,14 @@ export class EntityMetadata {
      * Checks if there is an embedded with a given property path.
      */
     hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
-        return !!this.findEmbeddedWithPropertyPath(propertyPath);
+        return this.allEmbeddeds.some(embedded => embedded.propertyPath === propertyPath);
     }
 
     /**
      * Finds embedded with a given property path.
      */
     findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
-        return this.allEmbeddeds.find(embedded => {
-            return embedded.propertyPath === propertyPath;
-        });
+        return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
     }
 
     /**
@@ -700,24 +681,6 @@ export class EntityMetadata {
     }
 
     /**
-     * Same as getEntityIdMap, but instead of id column property names it returns database column names.
-     */
-    getDatabaseEntityIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {
-        const map: ObjectLiteral = {};
-        this.primaryColumns.forEach(column => {
-            const entityValue = column.getEntityValue(entity);
-            if (entityValue === null || entityValue === undefined)
-                return;
-
-            map[column.databaseName] = entityValue;
-        });
-        const hasAllIds = Object.keys(map).every(key => {
-            return map[key] !== undefined && map[key] !== null;
-        });
-        return hasAllIds ? map : undefined;
-    }
-
-    /**
      * Creates a "mixed id map".
      * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
      * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
@@ -775,7 +738,6 @@ export class EntityMetadata {
     registerColumn(column: ColumnMetadata) {
         this.ownColumns.push(column);
         this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
-        this.parentIdColumns = this.columns.filter(column => column.isParentId);
         this.primaryColumns = this.columns.filter(column => column.isPrimary);
         this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
         this.hasUUIDGeneratedColumns = this.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
@@ -807,12 +769,12 @@ export class EntityMetadata {
         this.engine = this.tableMetadataArgs.engine;
         this.database = this.tableMetadataArgs.database;
         this.schema = this.tableMetadataArgs.schema;
-        this.givenTableName = this.tableType === "single-table-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
+        this.givenTableName = this.tableType === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
         this.skipSync = this.tableMetadataArgs.skipSync || false;
         this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
         if (this.tableType === "closure-junction") {
             this.tableNameWithoutPrefix = namingStrategy.closureJunctionTableName(this.givenTableName!);
-        } else if (this.tableType === "single-table-child" && this.parentEntityMetadata) {
+        } else if (this.tableType === "entity-child" && this.parentEntityMetadata) {
             this.tableNameWithoutPrefix = namingStrategy.tableName(this.parentEntityMetadata.targetName, this.parentEntityMetadata.givenTableName);
         } else {
             this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
@@ -824,8 +786,6 @@ export class EntityMetadata {
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
 
-        this.isClassTableChild = this.tableType === "class-table-child";
-        this.isSingleTableChild = this.tableType === "single-table-child";
         this.isEmbeddable = this.tableType === "embeddable";
         this.isJunction = this.tableType === "closure-junction" || this.tableType === "junction";
         this.isClosureJunction = this.tableType === "closure-junction";

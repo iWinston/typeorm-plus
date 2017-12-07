@@ -695,13 +695,6 @@ export abstract class QueryBuilder<Entity> {
                 this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id);
                 parameterIndex++;
             });
-            metadata.parentIdColumns.forEach((parentIdColumn, secondIndex) => {
-                // whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + "=:parentId_" + index + "_" + secondIndex);
-                const parameterName = "parentId_" + index + "_" + secondIndex;
-                whereSubStrings.push(alias + this.escape(parentIdColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
-                this.expressionMap.nativeParameters[parameterName] = parentIdColumn.getEntityValue(id);
-                parameterIndex++;
-            });
             return whereSubStrings.join(" AND ");
         });
 

@@ -31,7 +31,6 @@ npm i typeorm@next
 - [ ] implement soft deletion 
 - [ ] research ability to create one-to-many relations without inverse sides
 - [ ] research ability to create a single relation with multiple entities at once
-- [ ] fix all table-inheritance issues, better class-table and single-table inheritance support
 - [ ] add more tree-table features: nested set and materialized path; more repository methods
 - [ ] cli: create database backup command
 - [ ] extend `query` method functionality
@@ -50,3 +49,4 @@ npm i typeorm@next
 - [x] fix all issues with cascades and make stable functionality
 - [ ] implement API for manual migration creation
 - [x] add sql.js driver
+- [x] fix inheritance support issues

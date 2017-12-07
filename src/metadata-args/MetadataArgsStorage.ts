@@ -153,7 +153,7 @@ export class MetadataArgsStorage {
             return table.target instanceof Function
                 && target instanceof Function
                 && MetadataUtils.isInherited(table.target, target)
-                && table.type === "single-table-child";
+                && table.type === "entity-child";
         });
     }
 

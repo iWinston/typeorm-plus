@@ -38,7 +38,6 @@ export class SubjectChangedColumnsComputer {
 
             // ignore special columns
             if (column.isVirtual ||
-                column.isParentId ||
                 column.isDiscriminator ||
                 column.isUpdateDate ||
                 column.isVersion ||

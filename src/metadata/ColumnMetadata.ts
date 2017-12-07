@@ -176,11 +176,6 @@ export class ColumnMetadata {
     isVirtual: boolean = false;
 
     /**
-     * Indicates if column is a parent id. Parent id columns are not mapped to the entity.
-     */
-    isParentId: boolean = false;
-
-    /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
      */
     isDiscriminator: boolean = false;
@@ -286,8 +281,6 @@ export class ColumnMetadata {
             this.isArray = options.args.options.array;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
-            this.isParentId = options.args.mode === "parentId";
-            this.isDiscriminator = options.args.mode === "discriminator";
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";

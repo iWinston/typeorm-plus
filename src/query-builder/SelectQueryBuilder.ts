@@ -1331,39 +1331,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
             });
 
-        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                metadata.parentEntityMetadata.columns.forEach(column => {
-                    // TODO implement partial select
-                    allSelects.push({ selection: this.escape(alias) + "." + this.escape(column.databaseName), aliasName: alias + "_" + column.databaseName });
-                });
-            }
-        }
-
-        // add selects from relation id joins
-        // this.relationIdAttributes.forEach(relationIdAttr => {
-        // });
-
-        /*if (this.enableRelationIdValues) {
-         const parentMetadata = this.aliasMap.getEntityMetadataByAlias(this.aliasMap.mainAlias);
-         if (!parentMetadata)
-         throw new Error("Cannot get entity metadata for the given alias " + this.aliasMap.mainAlias.name);
-
-         const metadata = this.connection.entityMetadatas.findByTarget(this.aliasMap.mainAlias.target);
-         metadata.manyToManyRelations.forEach(relation => {
-
-         const junctionMetadata = relation.junctionEntityMetadata;
-         junctionMetadata.columns.forEach(column => {
-         const select = ea(this.aliasMap.mainAlias.name + "_" + junctionMetadata.table.name + "_ids") + "." +
-         ec(column.name) + " AS " +
-         ea(this.aliasMap.mainAlias.name + "_" + relation.name + "_ids_" + column.name);
-         allSelects.push(select);
-         });
-         });
-         }*/
-
         // add all other selects
         this.expressionMap.selects
             .filter(select => excludedSelects.indexOf(select) === -1)
@@ -1486,18 +1453,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             }
         });
-
-        if (!this.expressionMap.ignoreParentTablesJoins && this.expressionMap.mainAlias!.hasMetadata) {
-            const metadata = this.expressionMap.mainAlias!.metadata;
-            if (metadata.parentEntityMetadata && metadata.parentEntityMetadata.inheritanceType === "class-table" && metadata.parentIdColumns) {
-                const alias = "parentIdColumn_" + metadata.parentEntityMetadata.tableName;
-                const condition = metadata.parentIdColumns.map(parentIdColumn => {
-                    return this.expressionMap.mainAlias!.name + "." + parentIdColumn.propertyPath + " = " + this.escape(alias) + "." + this.escape(parentIdColumn.referencedColumn!.propertyPath);
-                }).join(" AND ");
-                const join = " JOIN " + this.getTableName(metadata.parentEntityMetadata.tableName) + " " + this.escape(alias) + " ON " + this.replacePropertyNames(condition);
-                joins.push(join);
-            }
-        }
 
         return joins.join(" ");
     }
@@ -1721,7 +1676,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         const results = await this.clone()
-            .mergeExpressionMap({ ignoreParentTablesJoins: true })
             .orderBy()
             .groupBy()
             .offset(undefined)

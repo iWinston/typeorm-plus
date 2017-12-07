@@ -69,11 +69,6 @@ export interface NamingStrategyInterface {
     foreignKeyName(tableName: string, columnNames: string[], referencedTableName: string, referencedColumnNames: string[]): string;
 
     /**
-     * Gets the column name of the column with foreign key to the parent table used in the class table inheritance.
-     */
-    classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string;
-
-    /**
      * Adds globally set prefix to the table name.
      * This method is executed no matter if prefix was set or not.
      * Table name is either user's given table name, either name generated from entity target.

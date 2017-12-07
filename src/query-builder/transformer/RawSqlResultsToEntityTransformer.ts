@@ -111,7 +111,7 @@ export class RawSqlResultsToEntityTransformer {
                 return;
 
             const value = rawResults[0][alias.name + "_" + column.databaseName];
-            if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
+            if (value === undefined || column.isVirtual)
                 return;
 
             // if user does not selected the whole entity or he used partial selection and does not select this particular column
@@ -123,18 +123,6 @@ export class RawSqlResultsToEntityTransformer {
             if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true;
         });
-
-        if (metadata.parentEntityMetadata) { // todo: revisit
-            metadata.parentEntityMetadata.columns.forEach(column => {
-                const value = rawResults[0]["parentIdColumn_" + metadata.parentEntityMetadata.tableName + "_" + column.databaseName];
-                if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
-                    return;
-
-                column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
-                if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-                    hasData = true;
-            });
-        }
         return hasData;
     }
 

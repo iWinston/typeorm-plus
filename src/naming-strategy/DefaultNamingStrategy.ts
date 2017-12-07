@@ -69,10 +69,6 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "fk_" + RandomGenerator.sha1(key).substr(0, 27); // todo: use crypto instead?
     }
 
-    classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string {
-        return camelCase(parentTableName + "_" + parentTableIdPropertyName);
-    }
-
     /**
      * Adds globally set prefix to the table name.
      * This method is executed no matter if prefix was set or not.
