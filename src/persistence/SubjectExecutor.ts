@@ -419,6 +419,11 @@ export class SubjectExecutor {
 
             // set values to "null" for nullable columns that did not have values
             subject.metadata.columns.forEach(column => {
+
+                // if table inheritance is used make sure this column is not child's column
+                if (subject.metadata.childEntityMetadatas.length > 0 && subject.metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
+                    return;
+
                 if (!column.isNullable || column.isVirtual)
                     return;
 

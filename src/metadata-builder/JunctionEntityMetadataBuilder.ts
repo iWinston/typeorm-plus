@@ -47,6 +47,7 @@ export class JunctionEntityMetadataBuilder {
                 schema: joinTable.schema || relation.entityMetadata.schema,
             }
         });
+        entityMetadata.build();
 
         // create original side junction columns
         const junctionColumns = referencedColumns.map(referencedColumn => {

@@ -351,6 +351,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // newly inserted entities always have a version equal to 1 (first version)
                     if (column.isVersion) {
                         expression += "1";
+
+                    } else if (column.isDiscriminator) {
+                        this.expressionMap.nativeParameters["discriminator_value"] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
+                        expression += this.connection.driver.createParameter("discriminator_value", parametersCount);
+                        parametersCount++;
                         // return "1";
 
                     // for create and update dates we insert current date

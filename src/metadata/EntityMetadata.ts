@@ -14,7 +14,6 @@ import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
-import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
@@ -26,6 +25,16 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
     // Properties
     // -------------------------------------------------------------------------
+
+    /**
+     * Connection where this entity metadata is created.
+     */
+    connection: Connection;
+
+    /**
+     * Metadata arguments used to build this entity metadata.
+     */
+    tableMetadataArgs: TableMetadataArgs;
 
     /**
      * Used to wrap lazy relations.
@@ -63,6 +72,13 @@ export class EntityMetadata {
      * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
      */
     target: Function|string;
+
+    /**
+     * All "inheritance tree" from a target entity.
+     * For example for target Post < ContentModel < Unit it will be an array of [Post, ContentModel, Unit].
+     * It also contains child entities for single table inheritance.
+     */
+    inheritanceTree: Function[] = [];
 
     /**
      * Indicates if this entity metadata of a junction table, or not.
@@ -446,37 +462,19 @@ export class EntityMetadata {
 
     constructor(options: {
         connection: Connection,
+        inheritanceTree?: Function[],
+        inheritanceType?: "single-table"|"class-table",
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
-        const namingStrategy = options.connection.namingStrategy;
-        const entityPrefix = options.connection.options.entityPrefix;
+        this.connection = options.connection;
+        this.inheritanceTree = options.inheritanceTree || [];
+        this.inheritanceType = options.inheritanceType;
         this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
-        this.target = options.args.target;
-        this.tableType = options.args.type;
-        this.engine = options.args.engine;
-        this.database = options.args.database;
-        this.schema = options.args.schema;
-        this.givenTableName = options.args.name;
-        this.skipSync = options.args.skipSync || false;
-        this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
-        this.tableNameWithoutPrefix = this.tableType === "closure-junction" ? namingStrategy.closureJunctionTableName(this.givenTableName!) : namingStrategy.tableName(this.targetName, this.givenTableName);
-        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
-        this.target = this.target ? this.target : this.tableName;
-        this.name = this.targetName ? this.targetName : this.tableName;
-        this.tablePath = this.buildTablePath(options.connection.driver);
-        this.schemaPath = this.buildSchemaPath(options.connection.driver);
-
-        this.isClassTableChild = this.tableType === "class-table-child";
-        this.isSingleTableChild = this.tableType === "single-table-child";
-        this.isEmbeddable = this.tableType === "embeddable";
-        this.isJunction = this.tableType === "closure-junction" || this.tableType === "junction";
-        this.isClosureJunction = this.tableType === "closure-junction";
-        this.isClosure = this.tableType === "closure";
-        this.isAbstract = this.tableType === "abstract";
-        this.isRegular = this.tableType === "regular";
-        this.orderBy = (options.args.orderBy instanceof Function) ? options.args.orderBy(this.propertiesMap) : options.args.orderBy;
+        this.tableMetadataArgs = options.args;
+        this.target = this.tableMetadataArgs.target;
+        this.tableType = this.tableMetadataArgs.type;
     }
 
     // -------------------------------------------------------------------------
@@ -799,19 +797,52 @@ export class EntityMetadata {
         return map;
     }
 
-    // ---------------------------------------------------------------------
-    // Protected Methods
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Builder Methods
+    // -------------------------------------------------------------------------
+
+    build() {
+        const namingStrategy = this.connection.namingStrategy;
+        const entityPrefix = this.connection.options.entityPrefix;
+        this.engine = this.tableMetadataArgs.engine;
+        this.database = this.tableMetadataArgs.database;
+        this.schema = this.tableMetadataArgs.schema;
+        this.givenTableName = this.tableType === "single-table-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
+        this.skipSync = this.tableMetadataArgs.skipSync || false;
+        this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
+        if (this.tableType === "closure-junction") {
+            this.tableNameWithoutPrefix = namingStrategy.closureJunctionTableName(this.givenTableName!);
+        } else if (this.tableType === "single-table-child" && this.parentEntityMetadata) {
+            this.tableNameWithoutPrefix = namingStrategy.tableName(this.parentEntityMetadata.targetName, this.parentEntityMetadata.givenTableName);
+        } else {
+            this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
+        }
+        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
+        this.target = this.target ? this.target : this.tableName;
+        this.name = this.targetName ? this.targetName : this.tableName;
+        this.tablePath = this.buildTablePath();
+        this.schemaPath = this.buildSchemaPath();
+        this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
+
+        this.isClassTableChild = this.tableType === "class-table-child";
+        this.isSingleTableChild = this.tableType === "single-table-child";
+        this.isEmbeddable = this.tableType === "embeddable";
+        this.isJunction = this.tableType === "closure-junction" || this.tableType === "junction";
+        this.isClosureJunction = this.tableType === "closure-junction";
+        this.isClosure = this.tableType === "closure";
+        this.isAbstract = this.tableType === "abstract";
+        this.isRegular = this.tableType === "regular";
+    }
 
     /**
      * Builds table path using database name and schema name and table name.
      */
-    protected buildTablePath(driver: Driver): string {
+    protected buildTablePath(): string {
         let tablePath = this.tableName;
         if (this.schema)
             tablePath = this.schema + "." + tablePath;
-        if (this.database && !(driver instanceof PostgresDriver)) {
-            if (!this.schema && driver instanceof SqlServerDriver) {
+        if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
+            if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
                 tablePath = this.database + ".." + tablePath;
             } else {
                 tablePath = this.database + "." + tablePath;
@@ -824,11 +855,11 @@ export class EntityMetadata {
     /**
      * Builds table path using schema name and database name.
      */
-    protected buildSchemaPath(driver: Driver): string|undefined {
+    protected buildSchemaPath(): string|undefined {
         if (!this.schema)
             return undefined;
 
-        return this.database && !(driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
+        return this.database && !(this.connection.driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
     }
 
 }

@@ -197,7 +197,8 @@ describe("repository > find options > relations", () => {
             counters: {
                 stars: 3,
                 commentCount: 20
-            }
+            },
+            user: null
         });
         loadedPost!.photos.should.include({
             id: 3,
@@ -205,7 +206,8 @@ describe("repository > find options > relations", () => {
             counters: {
                 stars: 4,
                 commentCount: 21
-            }
+            },
+            user: null
         });
         loadedPost!.user.should.be.eql({
             id: 1,
@@ -245,7 +247,8 @@ describe("repository > find options > relations", () => {
             counters: {
                 stars: 3,
                 commentCount: 20
-            }
+            },
+            user: null
         });
         loadedPost!.photos.should.include({
             id: 3,
@@ -253,7 +256,8 @@ describe("repository > find options > relations", () => {
             counters: {
                 stars: 4,
                 commentCount: 21
-            }
+            },
+            user: null
         });
         loadedPost!.user.should.be.eql({
             id: 1,
@@ -292,16 +296,20 @@ describe("repository > find options > relations", () => {
             filename: "photo2.jpg",
             counters: {
                 stars: 3,
-                commentCount: 20
-            }
+                commentCount: 20,
+                author: null
+            },
+            user: null
         });
         loadedPost!.photos.should.include({
             id: 3,
             filename: "photo3.jpg",
             counters: {
                 stars: 4,
-                commentCount: 21
-            }
+                commentCount: 21,
+                author: null
+            },
+            user: null
         });
         loadedPost!.user.should.be.eql({
             id: 1,
