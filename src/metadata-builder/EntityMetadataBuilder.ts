@@ -296,6 +296,15 @@ export class EntityMetadataBuilder {
             }
         }
 
+        // add discriminator column to the child entity metadatas
+        // discriminator column will not be there automatically since we are creating it in the code above
+        if (entityMetadata.tableType === "entity-child") {
+            const discriminatorColumn = entityMetadata.parentEntityMetadata.ownColumns.find(column => column.isDiscriminator);
+            if (discriminatorColumn && !entityMetadata.ownColumns.find(column => column === discriminatorColumn)) {
+                entityMetadata.ownColumns.push(discriminatorColumn);
+            }
+        }
+
         entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(entityMetadata.inheritanceTree).map(args => {
 
             // for single table children we reuse relations created for their parents
