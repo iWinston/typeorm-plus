@@ -6,7 +6,7 @@ import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
 
-describe.only("database schema > column types > oracle", () => {
+describe("database schema > column types > oracle", () => {
 
     let connections: Connection[];
     before(async () => {

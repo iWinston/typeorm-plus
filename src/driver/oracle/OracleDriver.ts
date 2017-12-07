@@ -343,7 +343,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number|string, precision?: number, scale?: number, isArray?: boolean }): string {
         if (column.type === Number) {
             return "number";
 
@@ -360,7 +360,7 @@ export class OracleDriver implements Driver {
             return "char";
 
         } else if (column.type === "uuid") {
-            column.length = 16;
+            column.length = 36;
             return "varchar2";
 
         } else if (column.type === "simple-array") {
@@ -405,7 +405,7 @@ export class OracleDriver implements Driver {
     getColumnLength(column: ColumnMetadata): string {
 
         if (column.length)
-            return column.length;
+            return column.length.toString();
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
@@ -510,6 +510,36 @@ export class OracleDriver implements Driver {
      */
     createParameter(parameterName: string, index: number): string {
         return ":" + parameterName;
+    }
+
+    /**
+     * Converts column type in to native oracle type.
+     */
+    columnTypeToNativeParameter(type: ColumnType): any {
+        switch (this.normalizeType({ type: type as any })) {
+            case "number":
+            case "numeric":
+            case "int":
+            case "integer":
+            case "smallint":
+            case "dec":
+            case "decimal":
+                return this.oracle.NUMBER;
+            case "char":
+            case "nchar":
+            case "nvarchar2":
+            case "varchar2":
+                return this.oracle.STRING;
+            case "blob":
+                return this.oracle.BLOB;
+            case "clob":
+                return this.oracle.CLOB;
+            case "date":
+            case "timestamp":
+            case "timestamp with time zone":
+            case "timestamp with local time zone":
+                return this.oracle.DATE;
+        }
     }
 
     // -------------------------------------------------------------------------

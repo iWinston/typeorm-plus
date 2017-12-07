@@ -370,7 +370,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     getColumnLength(column: ColumnMetadata): string {
         
         if (column.length)
-            return column.length;
+            return column.length.toString();
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)

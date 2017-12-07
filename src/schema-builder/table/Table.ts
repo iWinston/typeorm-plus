@@ -288,7 +288,7 @@ export class Table {
             // if we found something to compare with then do it, else skip it
             // use use case insensitive comparison to catch "MAX" vs "Max" case
             if (metadataLength)
-                return tableColumn.length.toLowerCase() === metadataLength.toLowerCase();
+                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
         }
 
         return true;

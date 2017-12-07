@@ -608,12 +608,13 @@ export abstract class QueryBuilder<Entity> {
      */
     protected createReturningExpression(): string {
         const columns = this.getReturningColumns();
+        const driver = this.connection.driver;
 
         // also add columns we must auto-return to perform entity updation
         // if user gave his own returning
         if (typeof this.expressionMap.returning !== "string" &&
             this.expressionMap.extraReturningColumns.length > 0 &&
-            this.connection.driver.isReturningSqlSupported()) {
+            driver.isReturningSqlSupported()) {
             columns.push(...this.expressionMap.extraReturningColumns.filter(column => {
                 return columns.indexOf(column) === -1;
             }));
@@ -622,7 +623,7 @@ export abstract class QueryBuilder<Entity> {
         if (columns.length) {
             let columnsExpression = columns.map(column => {
                 const name = this.escape(column.databaseName);
-                if (this.connection.driver instanceof SqlServerDriver) {
+                if (driver instanceof SqlServerDriver) {
                     if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
                         return "INSERTED." + name;
                     } else {
@@ -633,10 +634,10 @@ export abstract class QueryBuilder<Entity> {
                 }
             }).join(", ");
 
-            if (this.connection.driver instanceof OracleDriver) {
+            if (driver instanceof OracleDriver) {
                 columnsExpression += " INTO " + columns.map(column => {
                     const parameterName = "output_" + column.databaseName;
-                    this.expressionMap.nativeParameters[parameterName] = { type: (this.connection.driver as OracleDriver).oracle.NUMBER, dir: ( this.connection.driver as OracleDriver).oracle.BIND_OUT };
+                    this.expressionMap.nativeParameters[parameterName] = { type: driver.columnTypeToNativeParameter(column.type), dir: driver.oracle.BIND_OUT };
                     return this.connection.driver.createParameter(parameterName, Object.keys(this.expressionMap.nativeParameters).length);
                 }).join(", ");
             }
