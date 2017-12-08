@@ -209,7 +209,14 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new this.sqlite.Database();
         }
 
-        return Promise.resolve(this.databaseConnection);
+        return new Promise<void>(async (ok, fail) => {
+            // we need to enable foreign keys in sqlite to make sure all foreign key related features
+            // working properly. this also makes onDelete to work with sqlite.
+            this.databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
+                if (err) return fail(err);
+                ok(this.databaseConnection);
+            });
+        });
     }
 
     /**
