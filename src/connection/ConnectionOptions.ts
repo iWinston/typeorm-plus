@@ -40,11 +40,11 @@ export const ConnectionTypes = tuple("cordova", "mariadb", "mongodb", "mssql", "
  * This function should never be called or imported so it can pruned during tree shaking.
  */
 export function __ensureConnectionTypesIsCorrect() {
-    // Force the TS compiler to fetch the full enum type across all definitions
-    const a: ConnectionOptions = { type: "mysql" } as any;
+    // Force the TS compiler to fetch the full union type across all definitions
+    const a: ConnectionOptions = {} as any;
     type RealType = typeof a.type;
 
-    // This line ensures all values in the enum are acceptable
+    // This line ensures all values in the union are acceptable
     // If there is a compile error here, then there is an extra value in ConnectionTypes or a typo.
     const b: RealType = ConnectionTypes[0 as number];
 
