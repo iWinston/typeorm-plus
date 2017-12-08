@@ -442,7 +442,7 @@ export class SubjectExecutor {
                             if (column.isVirtual === true)
                                 return;
 
-                            column.setEntityValue(subject.entity!, column.referencedColumn!.getEntityValue(updatedRelationMap.value));
+                            column.setEntityValue(subject.entity!, updatedRelationMap.value instanceof Object ? column.referencedColumn!.getEntityValue(updatedRelationMap.value) : updatedRelationMap.value);
                         });
                     });
                 }
