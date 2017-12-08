@@ -75,16 +75,16 @@ export class EntityMetadata {
     target: Function|string;
 
     /**
+     * Gets the name of the target.
+     */
+    targetName: string;
+
+    /**
      * Entity's name.
      * Equal to entity target class's name if target is set to table.
      * If target class is not then then it equals to table name.
      */
     name: string;
-
-    /**
-     * Gets the name of the target.
-     */
-    targetName: string;
 
     /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
@@ -498,10 +498,31 @@ export class EntityMetadata {
      * For primary keys inside embeds it returns complex object literal with keys in them.
      */
     getEntityIdMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
-        if (!entity) // todo: shall it accept an empty entity? try to remove this
+        if (!entity)
             return undefined;
 
         return EntityMetadata.getValueMap(entity, this.primaryColumns);
+    }
+
+    /**
+     * Creates a "mixed id map".
+     * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
+     * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
+     * This is called mixed id map.
+     */
+    getEntityIdMixedMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+        if (!entity)
+            return entity;
+
+        const idMap = this.getEntityIdMap(entity);
+        if (this.hasMultiplePrimaryKeys) {
+            return idMap;
+
+        } else if (idMap) {
+            return this.primaryColumns[0].getEntityValue(idMap); // todo: what about parent primary column?
+        }
+
+        return idMap;
     }
 
     /**
@@ -570,47 +591,6 @@ export class EntityMetadata {
      */
     findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
         return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
-    }
-
-    /**
-     * Replaces in a new object all property name of the given entity into their database names.
-     */
-    convertPropertiesMapToDatabaseMap(entity: ObjectLiteral) {
-        const map: ObjectLiteral = {};
-        this.columns.forEach(column => {
-            if (column.isVirtual) return;
-
-            OrmUtils.mergeDeep(map, column.createValueMap(column.getEntityValue(entity)));
-        });
-        this.relations.forEach(relation => {
-            let relationValue = relation.getEntityValue(entity);
-            if (relationValue instanceof Object)
-                relationValue = relation.createValueMap(this.convertPropertiesMapToDatabaseMap(relationValue));
-
-            OrmUtils.mergeDeep(map, relationValue);
-        });
-        return map;
-    }
-
-    /**
-     * Creates a "mixed id map".
-     * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
-     * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
-     * This is called mixed id map.
-     */
-    getEntityIdMixedMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
-        if (!entity) // todo: undefined entities should not go there??
-            return entity;
-
-        const idMap = this.getEntityIdMap(entity);
-        if (this.hasMultiplePrimaryKeys) {
-            return idMap;
-
-        } else if (idMap) {
-            return this.primaryColumns[0].getEntityValue(idMap); // todo: what about parent primary column?
-        }
-
-        return idMap;
     }
 
     /**
