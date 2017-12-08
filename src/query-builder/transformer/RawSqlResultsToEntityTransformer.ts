@@ -6,8 +6,8 @@ import {Alias} from "../Alias";
 import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -193,7 +193,7 @@ export class RawSqlResultsToEntityTransformer {
 
             const idMaps = rawRelationIdResult.results.map(result => {
                 const entityPrimaryIds = this.extractEntityPrimaryIds(relation, result);
-                if (!metadata.compareIds(entityPrimaryIds, valueMap))
+                if (EntityMetadata.compareIds(entityPrimaryIds, valueMap) === false)
                     return;
 
                 let columns: ColumnMetadata[];

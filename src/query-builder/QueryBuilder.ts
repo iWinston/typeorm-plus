@@ -16,7 +16,7 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 
@@ -725,7 +725,7 @@ export abstract class QueryBuilder<Entity> {
 
             if (this.expressionMap.mainAlias!.hasMetadata) {
                 andConditions = wheres.map((where, whereIndex) => {
-                    const propertyPaths = EntityMetadataUtils.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
+                    const propertyPaths = EntityMetadata.createPropertyPath(this.expressionMap.mainAlias!.metadata, where);
 
                     return propertyPaths.map((propertyPath, propertyIndex) => {
                         const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);

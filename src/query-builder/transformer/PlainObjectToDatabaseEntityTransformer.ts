@@ -31,10 +31,6 @@ class LoadMapItem {
         return this.metadata.getEntityIdMixedMap(this.plainEntity);
     }
 
-    compareEntities(entity1: any, entity2: any) {
-        return this.metadata.compareEntities(entity1, entity2);
-    }
-
 }
 
 class LoadMap {
@@ -54,7 +50,7 @@ class LoadMap {
     fillEntities(target: Function|string, entities: any[]) {
         entities.forEach(entity => {
             const item = this.loadMapItems.find(loadMapItem => {
-                return loadMapItem.target === target && loadMapItem.compareEntities(entity, loadMapItem.plainEntity);
+                return loadMapItem.target === target && loadMapItem.metadata.compareEntities(entity, loadMapItem.plainEntity);
             });
             if (item)
                 item.entity = entity;

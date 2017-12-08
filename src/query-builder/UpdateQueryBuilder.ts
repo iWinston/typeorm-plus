@@ -6,7 +6,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpression} from "./WhereExpression";
 import {Brackets} from "./Brackets";
-import {EntityMetadataUtils} from "../metadata/EntityMetadataUtils";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 import {UpdateResult} from "./result/UpdateResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
@@ -293,7 +293,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                                 this.connection.driver instanceof WebsqlDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
-            EntityMetadataUtils.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
+            EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
                 // todo: make this and other query builder to work with properly with tables without metadata
                 const columns = metadata.findColumnsWithPropertyPath(propertyPath);
                 columns.forEach(column => {

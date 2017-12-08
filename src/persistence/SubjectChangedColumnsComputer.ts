@@ -1,6 +1,7 @@
 import {Subject} from "./Subject";
 import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -141,7 +142,7 @@ export class SubjectChangedColumnsComputer {
                 const databaseRelatedEntityRelationIdMap = relation.getEntityValue(subject.databaseEntity);
 
                 // if relation ids are equal then we don't need to update anything
-                const areRelatedIdsEqual = relation.inverseEntityMetadata.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
+                const areRelatedIdsEqual = EntityMetadata.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
                 if (areRelatedIdsEqual)
                     return;
             }

@@ -14,6 +14,7 @@ import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 
 /**
  * Contains all entity metadata.
@@ -475,49 +476,47 @@ export class EntityMetadata {
     }
 
     /**
-     * Compares ids of the two entities.
-     * Returns true if they match, false otherwise.
-     *
-     * todo: extract into Utils all those static methods
+     * Ensures that given object is an entity id map.
+     * If given id is an object then it means its already id map.
+     * If given id isn't an object then it means its a value of the id column
+     * and it creates a new id map with this value and name of the primary column.
      */
-    compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
-        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
-            return false;
+    ensureEntityIdMap(id: any): ObjectLiteral {
+        if (id instanceof Object)
+            return id;
 
-        return OrmUtils.deepCompare(firstId, secondId);
+        if (this.hasMultiplePrimaryKeys)
+            throw new CannotCreateEntityIdMapError(this, id);
+
+        return this.primaryColumns[0].createValueMap(id);
     }
 
     /**
-     * Compares two different entity instances by their ids.
+     * Gets primary keys of the entity and returns them in a literal object.
+     * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
+     * For multiple primary keys it returns multiple keys in object.
+     * For primary keys inside embeds it returns complex object literal with keys in them.
+     */
+    getEntityIdMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+        if (!entity) // todo: shall it accept an empty entity? try to remove this
+            return undefined;
+
+        return EntityMetadata.getValueMap(entity, this.primaryColumns);
+    }
+
+    /**
+     * Compares two different entities by their ids.
      * Returns true if they match, false otherwise.
-     *
-     * @deprecated performance bottleneck
      */
     compareEntities(firstEntity: ObjectLiteral, secondEntity: ObjectLiteral): boolean {
 
-        // if any entity ids are empty then they aren't equal
-        const isFirstEntityEmpty = this.isEntityIdMapEmpty(firstEntity);
-        const isSecondEntityEmpty = this.isEntityIdMapEmpty(secondEntity);
-        if (isFirstEntityEmpty || isSecondEntityEmpty)
-            return false;
+        const firstEntityIdMap = this.getEntityIdMap(firstEntity);
+        if (!firstEntityIdMap) return false;
 
-        const firstEntityIds = this.getEntityIdMap(firstEntity);
-        const secondEntityIds = this.getEntityIdMap(secondEntity);
-        return this.compareIds(firstEntityIds, secondEntityIds);
-    }
+        const secondEntityIdMap = this.getEntityIdMap(secondEntity);
+        if (!secondEntityIdMap) return false;
 
-    /**
-     * Checks if there is an embedded with a given property path.
-     */
-    hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
-        return this.allEmbeddeds.some(embedded => embedded.propertyPath === propertyPath);
-    }
-
-    /**
-     * Finds embedded with a given property path.
-     */
-    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
-        return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
+        return EntityMetadata.compareIds(firstEntityIdMap, secondEntityIdMap);
     }
 
     /**
@@ -528,8 +527,15 @@ export class EntityMetadata {
     }
 
     /**
+     * Finds column with a given database name.
+     */
+    findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
+        return this.columns.find(column => column.databaseName === databaseName);
+    }
+
+    /**
      * Finds columns with a given property path.
-     * Relations can contain multiple columns.
+     * Property path can match a relation, and relations can contain multiple columns.
      */
     findColumnsWithPropertyPath(propertyPath: string): ColumnMetadata[] {
         const column = this.columns.find(column => column.propertyPath === propertyPath);
@@ -546,22 +552,6 @@ export class EntityMetadata {
     }
 
     /**
-     * Finds column with a given database name.
-     */
-    findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
-        return this.columns.find(column => column.databaseName === databaseName);
-    }
-
-    /**
-     * Finds relation with the given name.
-     */
-    findRelationWithDbName(dbName: string): RelationMetadata|undefined {
-        return this.relationsWithJoinColumns.find(relation => {
-            return !!relation.joinColumns.find(column => column.databaseName === dbName);
-        });
-    }
-
-    /**
      * Finds relation with the given property path.
      */
     findRelationWithPropertyPath(propertyPath: string): RelationMetadata|undefined {
@@ -569,58 +559,17 @@ export class EntityMetadata {
     }
 
     /**
-     * Ensures that given object is an entity id map.
-     * If given id is an object then it means its already id map.
-     * If given id isn't an object then it means its a value of the id column
-     * and it creates a new id map with this value and name of the primary column.
+     * Checks if there is an embedded with a given property path.
      */
-    ensureEntityIdMap(id: any): ObjectLiteral {
-        if (id instanceof Object)
-            return id;
-
-        if (this.hasMultiplePrimaryKeys)
-            throw new Error(`Cannot create entity id map for a single value because this entity metadata contains multiple primary columns.`);
-
-        return this.primaryColumns[0].createValueMap(id);
+    hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
+        return this.allEmbeddeds.some(embedded => embedded.propertyPath === propertyPath);
     }
 
     /**
-     * Checks each id in the given entity id map if they all aren't empty.
-     * If they all aren't empty it returns true.
-     * If at least one id in the given map is empty it returns false.
+     * Finds embedded with a given property path.
      */
-    isEntityIdMapEmpty(entity: ObjectLiteral): boolean {
-        return !this.primaryColumns.every(column => {
-            const value = column.getEntityValue(entity);
-            return value !== null && value !== undefined;
-        });
-    }
-
-    /**
-     * Gets primary keys of the entity and returns them in a literal object.
-     * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
-     * For multiple primary keys it returns multiple keys in object.
-     * For primary keys inside embeds it returns complex object literal with keys in them.
-     */
-    getEntityIdMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
-        if (!entity) // todo: shall it accept an empty entity? try to remove this
-            return undefined;
-
-        return this.getValueMap(entity, this.primaryColumns);
-    }
-
-    /**
-     * Creates value map from the given values and columns.
-     * Examples of usages are primary columns map and join columns map.
-     */
-    getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
-        const map = columns.reduce((map, column) => {
-            if (column.isObjectId)
-                return Object.assign(map, column.getEntityValueMap(entity));
-
-            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
-        }, {});
-        return Object.keys(map).length > 0 ? map : undefined;
+    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
+        return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
     }
 
     /**
@@ -679,6 +628,66 @@ export class EntityMetadata {
             }
         });
         return relationsAndValues;
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a property paths for a given entity.
+     */
+    static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
+        const paths: string[] = [];
+        Object.keys(entity).forEach(key => {
+
+            // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
+            // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
+            const parentPath = prefix ? prefix + "." + key : key;
+            if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {
+                const subPaths = this.createPropertyPath(metadata, entity[key], parentPath);
+                paths.push(...subPaths);
+            } else {
+                const path = prefix ? prefix + "." + key : key;
+                paths.push(path);
+            }
+        });
+        return paths;
+    }
+
+    /**
+     * Finds difference between two entity id maps.
+     * Returns items that exist in the first array and absent in the second array.
+     */
+    static difference(firstIdMaps: ObjectLiteral[], secondIdMaps: ObjectLiteral[]): ObjectLiteral[] {
+        return firstIdMaps.filter(firstIdMap => {
+            return !secondIdMaps.find(secondIdMap => OrmUtils.deepCompare(firstIdMap, secondIdMap));
+        });
+    }
+
+    /**
+     * Compares ids of the two entities.
+     * Returns true if they match, false otherwise.
+     */
+    static compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
+        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
+            return false;
+
+        return OrmUtils.deepCompare(firstId, secondId);
+    }
+
+    /**
+     * Creates value map from the given values and columns.
+     * Examples of usages are primary columns map and join columns map.
+     */
+    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
+        const map = columns.reduce((map, column) => {
+            if (column.isObjectId)
+                return Object.assign(map, column.getEntityValueMap(entity));
+
+            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
+        }, {} as ObjectLiteral);
+        return Object.keys(map).length > 0 ? map : undefined;
     }
 
     // ---------------------------------------------------------------------

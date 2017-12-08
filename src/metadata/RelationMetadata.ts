@@ -290,7 +290,7 @@ export class RelationMetadata {
         const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
         // console.log("entity", entity);
         // console.log("referencedColumns", referencedColumns);
-        return this.inverseEntityMetadata.getValueMap(entity, referencedColumns);
+        return EntityMetadata.getValueMap(entity, referencedColumns);
     }
 
     /**
