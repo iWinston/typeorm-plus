@@ -38,8 +38,6 @@ describe("table-inheritance > single-table > non-virtual-discriminator-column", 
             .createQueryBuilder(Person, "person")
             .getMany();
 
-        console.log(persons);
-
         persons[0].id.should.be.equal(1);
         persons[0].type.should.be.equal("student-type");
         persons[0].name.should.be.equal("Alice");

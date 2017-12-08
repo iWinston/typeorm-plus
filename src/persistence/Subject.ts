@@ -2,6 +2,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SubjectChangeMap} from "./SubjectChangeMap";
 import {OrmUtils} from "../util/OrmUtils";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Subject is a subject of persistence.
@@ -80,6 +81,11 @@ export class Subject {
      * This means that this subject either was removed, either was removed by cascades.
      */
     mustBeRemoved: boolean = false;
+
+    /**
+     * Relations updated by the change maps.
+     */
+    updatedRelationMaps: { relation: RelationMetadata, value: ObjectLiteral }[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -191,9 +197,11 @@ export class Subject {
                         return updateMap;
                     }
                     valueMap = changeMap.relation!.createValueMap(relationId);
+                    this.updatedRelationMaps.push({ relation: changeMap.relation, value: relationId });
 
                 } else { // value can be "null" or direct relation id here
                     valueMap = changeMap.relation!.createValueMap(value);
+                    this.updatedRelationMaps.push({ relation: changeMap.relation, value: value });
                 }
             }
 
