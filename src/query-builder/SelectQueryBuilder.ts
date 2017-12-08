@@ -54,7 +54,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         sql += this.createOrderByExpression();
         sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createLimitOffsetOracleSpecificExpression(sql);
         sql = sql.trim();
         if (this.expressionMap.subQuery)
             sql = "(" + sql + ")";
@@ -1396,9 +1395,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return this.getTableName(alias.tableName!) + " " + this.escape(alias.name);
             });
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
-        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
-            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + froms.join(", ") + lock;
-
         return "SELECT " + selection + " FROM " + froms.join(", ") + lock;
     }
 
@@ -1531,28 +1527,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Creates "LIMIT" and "OFFSET" parts of SQL query for Oracle database.
-     */
-    protected createLimitOffsetOracleSpecificExpression(sql: string): string {
-        if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
-            sql = "SELECT * FROM (" + sql + ") WHERE ";
-            if (this.expressionMap.offset) {
-                sql += this.escape("RN") + " >= " + this.expressionMap.offset;
-            }
-            if (this.expressionMap.limit) {
-                sql += (this.expressionMap.offset ? " AND " : "") + this.escape("RN") + " <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
-            }
-        }
-        return sql;
-    }
-
-    /**
      * Creates "LIMIT" and "OFFSET" parts of SQL query.
      */
     protected createLimitOffsetExpression(): string {
-        if (this.connection.driver instanceof OracleDriver)
-            return "";
-
         // in the case if nothing is joined in the query builder we don't need to make two requests to get paginated results
         // we can use regular limit / offset, that's why we add offset and limit construction here based on skip and take values
         let offset: number|undefined = this.expressionMap.offset,
@@ -1588,6 +1565,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return " LIMIT " + limit;
             if (offset)
                 return " LIMIT -1 OFFSET " + offset;
+
+        } else if (this.connection.driver instanceof OracleDriver) {
+
+            if (limit && offset)
+                return " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (limit)
+                return " FETCH NEXT " + limit + " ROWS ONLY";
+            if (offset)
+                return " OFFSET " + offset + " ROWS";
 
         } else {
             if (limit && offset)

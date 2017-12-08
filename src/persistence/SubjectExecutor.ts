@@ -12,6 +12,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SaveOptions} from "../repository/SaveOptions";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -219,6 +220,10 @@ export class SubjectExecutor {
                     bulkInsertSubjects.push(subject);
                     bulkInsertMaps.push(subject.entity!);
                 });
+            } else if (this.queryRunner.connection.driver instanceof OracleDriver) {
+                subjects.forEach(subject => {
+                    singleInsertSubjects.push(subject);
+                });
             } else {
                 subjects.forEach(subject => {
                     if (subject.changeMaps.length === 0) {
@@ -269,7 +274,7 @@ export class SubjectExecutor {
                 // insert subjects which must be inserted in separate requests (all default values)
                 if (singleInsertSubjects.length > 0) {
                     await Promise.all(singleInsertSubjects.map(subject => {
-                        const updatedEntity = {}; // important to have because query builder sets inserted values into it
+                        const updatedEntity = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
                         return this.queryRunner
                             .manager
                             .createQueryBuilder()
