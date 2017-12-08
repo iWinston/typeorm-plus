@@ -613,7 +613,12 @@ export class MongoEntityManager extends EntityManager {
      */
     protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
         if (idMap instanceof Object) {
-            return metadata.getValueDatabasePaths(idMap);
+            return metadata.columns.reduce((query, column) => {
+                const columnValue = column.getEntityValue(idMap);
+                if (columnValue !== undefined)
+                    query[column.databasePath] = columnValue;
+                return query;
+            }, {} as any);
         }
 
         // means idMap is just object id

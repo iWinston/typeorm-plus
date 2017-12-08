@@ -12,7 +12,7 @@ export function ClosureEntity(name?: string, options?: EntityOptions) {
             name: name,
             type: "closure",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
-            skipSync: !!(options && options.skipSync === true)
+            synchronize: options && options.synchronize === false ? false : true
         };
         getMetadataArgsStorage().tables.push(args);
     };

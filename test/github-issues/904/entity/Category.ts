@@ -4,6 +4,8 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {TreeParent} from "../../../../src/decorator/tree/TreeParent";
 import {TreeChildren} from "../../../../src/decorator/tree/TreeChildren";
 
+// @Entity()
+// @Tree("closure")
 @ClosureEntity()
 export class Category {
 

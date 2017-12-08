@@ -14,7 +14,6 @@ import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetad
 import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -172,8 +171,7 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter(relation => relation.isLazy)
                     .forEach(relation => {
-                        const lazyRelationsWrapper = new LazyRelationsWrapper(this.connection);
-                        lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                        this.connection.relationLoader.enableLazyLoad(relation, (entityMetadata.target as Function).prototype);
                     });
             });
 

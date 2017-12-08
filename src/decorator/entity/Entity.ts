@@ -31,7 +31,7 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
             engine: options && options.engine ? options.engine : undefined,
             database: options && options.database ? options.database : undefined,
             schema: options && options.schema ? options.schema : undefined,
-            skipSync: !!(options && options.skipSync === true)
+            synchronize: options && options.synchronize === false ? false : true
         };
         getMetadataArgsStorage().tables.push(args);
     };

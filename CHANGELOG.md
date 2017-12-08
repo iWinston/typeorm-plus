@@ -50,7 +50,8 @@ Use `findOne(id)` method instead now.
 * `@SingleEntityChild` has been renamed to `@ChildEntity`
 * `@DiscriminatorValue` has been removed, instead parameter in `@ChildEntity` must be used, e.g. `@ChildEntity("value")`
 * `@DiscriminatorColumn` decorator has been removed, use `@TableInheritance` options instead now
-
+* `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
+By default its true.
 
 ## 0.1.7
 

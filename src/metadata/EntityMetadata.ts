@@ -4,7 +4,6 @@ import {IndexMetadata} from "./IndexMetadata";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 import {RelationIdMetadata} from "./RelationIdMetadata";
 import {RelationCountMetadata} from "./RelationCountMetadata";
 import {TableType} from "./types/TableTypes";
@@ -13,7 +12,6 @@ import {OrmUtils} from "../util/OrmUtils";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
-import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
@@ -37,11 +35,6 @@ export class EntityMetadata {
     tableMetadataArgs: TableMetadataArgs;
 
     /**
-     * Used to wrap lazy relations.
-     */
-    lazyRelationsWrapper: LazyRelationsWrapper;
-
-    /**
      * If entity's table is a closure-typed table, then this entity will have a closure junction table metadata.
      */
     closureJunctionTable: EntityMetadata;
@@ -62,6 +55,13 @@ export class EntityMetadata {
     childEntityMetadatas: EntityMetadata[] = [];
 
     /**
+     * All "inheritance tree" from a target entity.
+     * For example for target Post < ContentModel < Unit it will be an array of [Post, ContentModel, Unit].
+     * It also contains child entities for single table inheritance.
+     */
+    inheritanceTree: Function[] = [];
+
+    /**
      * Table type. Tables can be abstract, closure, junction, embedded, etc.
      */
     tableType: TableType = "regular";
@@ -72,21 +72,6 @@ export class EntityMetadata {
      * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
      */
     target: Function|string;
-
-    /**
-     * All "inheritance tree" from a target entity.
-     * For example for target Post < ContentModel < Unit it will be an array of [Post, ContentModel, Unit].
-     * It also contains child entities for single table inheritance.
-     */
-    inheritanceTree: Function[] = [];
-
-    /**
-     * Indicates if this entity metadata of a junction table, or not.
-     * Junction table is a table created by many-to-many relationship.
-     *
-     * Its also possible to understand if entity is junction via tableType.
-     */
-    isJunction: boolean = false;
 
     /**
      * Entity's name.
@@ -135,9 +120,9 @@ export class EntityMetadata {
     tableNameWithoutPrefix: string;
 
     /**
-     * Indicates if schema sync is skipped for this entity.
+     * Indicates if schema will be synchronized for this entity or not.
      */
-    skipSync: boolean;
+    synchronize: boolean = true;
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
@@ -160,39 +145,56 @@ export class EntityMetadata {
     orderBy?: OrderByCondition;
 
     /**
+     * If this entity metadata's table using one of the inheritance patterns,
+     * then this will contain what pattern it uses.
+     */
+    inheritancePattern?: "STI"/*|"CTI"*/;
+
+    /**
+     * Checks if there any non-nullable column exist in this entity.
+     */
+    hasNonNullableRelations: boolean = false;
+
+    /**
+     * Indicates if this entity metadata of a junction table, or not.
+     * Junction table is a table created by many-to-many relationship.
+     *
+     * Its also possible to understand if entity is junction via tableType.
+     */
+    isJunction: boolean = false;
+
+    /**
+     * Checks if this table is a closure table.
+     * Closure table is one of the tree-specific tables that supports closure database pattern.
+     */
+    isClosure: boolean = false;
+
+    /**
+     * Checks if this table is a junction table of the closure table.
+     * This type is for tables that contain junction metadata of the closure tables.
+     */
+    isClosureJunction: boolean = false;
+
+    /**
+     * Checks if entity's table has multiple primary columns.
+     */
+    hasMultiplePrimaryKeys: boolean = false;
+
+    /**
+     * Indicates if this entity metadata has uuid generated columns.
+     */
+    hasUUIDGeneratedColumns: boolean = false;
+
+    /**
+     * If this entity metadata is a child table of some table, it should have a discriminator value.
+     * Used to store a value in a discriminator column.
+     */
+    discriminatorValue?: string;
+
+    /**
      * Entity's column metadatas defined by user.
      */
     ownColumns: ColumnMetadata[] = [];
-
-    /**
-     * Entity's relation metadatas.
-     */
-    ownRelations: RelationMetadata[] = [];
-
-    /**
-     * Entity's own listener metadatas.
-     */
-    ownListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Entity's own indices.
-     */
-    ownIndices: IndexMetadata[] = [];
-
-    /**
-     * Relations of the entity, including relations that are coming from the embeddeds of this entity.
-     */
-    relations: RelationMetadata[] = [];
-
-    /**
-     * List of eager relations this metadata has.
-     */
-    eagerRelations: RelationMetadata[] = [];
-
-    /**
-     * List of eager relations this metadata has.
-     */
-    lazyRelations: RelationMetadata[] = [];
 
     /**
      * Columns of the entity, including columns that are coming from the embeddeds of this entity.
@@ -215,98 +217,6 @@ export class EntityMetadata {
      * this will contain all referenced columns of inverse entity.
      */
     inverseColumns: ColumnMetadata[] = [];
-
-    /**
-     * Entity's relation id metadatas.
-     */
-    relationIds: RelationIdMetadata[] = [];
-
-    /**
-     * Entity's relation id metadatas.
-     */
-    relationCounts: RelationCountMetadata[] = [];
-
-    /**
-     * Entity's index metadatas.
-     */
-    indices: IndexMetadata[] = [];
-
-    /**
-     * Entity's foreign key metadatas.
-     */
-    foreignKeys: ForeignKeyMetadata[] = [];
-
-    /**
-     * Entity's embedded metadatas.
-     */
-    embeddeds: EmbeddedMetadata[] = [];
-
-    /**
-     * All embeddeds - embeddeds from this entity metadata and from all child embeddeds, etc.
-     */
-    allEmbeddeds: EmbeddedMetadata[] = [];
-
-    /**
-     * Entity listener metadatas.
-     */
-    listeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER LOAD" type.
-     */
-    afterLoadListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER INSERT" type.
-     */
-    beforeInsertListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER INSERT" type.
-     */
-    afterInsertListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER UPDATE" type.
-     */
-    beforeUpdateListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER UPDATE" type.
-     */
-    afterUpdateListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER REMOVE" type.
-     */
-    beforeRemoveListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * Listener metadatas with "AFTER REMOVE" type.
-     */
-    afterRemoveListeners: EntityListenerMetadata[] = [];
-
-    /**
-     * If this entity metadata's table using one of the inheritance patterns,
-     * then this will contain what pattern it uses.
-     */
-    inheritancePattern?: "STI"/*|"CTI"*/;
-
-    /**
-     * If this entity metadata is a child table of some table, it should have a discriminator value.
-     * Used to store a value in a discriminator column.
-     */
-    discriminatorValue?: string;
-
-    /**
-     * Checks if entity's table has multiple primary columns.
-     */
-    hasMultiplePrimaryKeys: boolean;
-
-    /**
-     * Indicates if this entity metadata has uuid generated columns.
-     */
-    hasUUIDGeneratedColumns: boolean;
 
     /**
      * Gets the column with generated flag.
@@ -347,6 +257,26 @@ export class EntityMetadata {
      * Gets the primary columns.
      */
     primaryColumns: ColumnMetadata[] = [];
+
+    /**
+     * Entity's relation metadatas.
+     */
+    ownRelations: RelationMetadata[] = [];
+
+    /**
+     * Relations of the entity, including relations that are coming from the embeddeds of this entity.
+     */
+    relations: RelationMetadata[] = [];
+
+    /**
+     * List of eager relations this metadata has.
+     */
+    eagerRelations: RelationMetadata[] = [];
+
+    /**
+     * List of eager relations this metadata has.
+     */
+    lazyRelations: RelationMetadata[] = [];
 
     /**
      * Gets only one-to-one relations of the entity.
@@ -394,41 +324,84 @@ export class EntityMetadata {
     treeChildrenRelation?: RelationMetadata;
 
     /**
-     * Checks if there any non-nullable column exist in this entity.
+     * Entity's relation id metadatas.
      */
-    hasNonNullableRelations: boolean;
+    relationIds: RelationIdMetadata[] = [];
 
     /**
-     * Checks if this table is regular.
-     * All non-specific tables are just regular tables. Its a default table type.
+     * Entity's relation id metadatas.
      */
-    isRegular: boolean;
+    relationCounts: RelationCountMetadata[] = [];
 
     /**
-     * Checks if this table is abstract.
-     * This type is for the tables that does not exist in the database,
-     * but provide columns and relations for the tables of the child classes who inherit them.
+     * Entity's foreign key metadatas.
      */
-    isAbstract: boolean;
+    foreignKeys: ForeignKeyMetadata[] = [];
 
     /**
-     * Checks if this table is a closure table.
-     * Closure table is one of the tree-specific tables that supports closure database pattern.
+     * Entity's embedded metadatas.
      */
-    isClosure: boolean;
+    embeddeds: EmbeddedMetadata[] = [];
 
     /**
-     * Checks if this table is a junction table of the closure table.
-     * This type is for tables that contain junction metadata of the closure tables.
+     * All embeddeds - embeddeds from this entity metadata and from all child embeddeds, etc.
      */
-    isClosureJunction: boolean;
+    allEmbeddeds: EmbeddedMetadata[] = [];
 
     /**
-     * Checks if this table is an embeddable table.
-     * Embeddable tables are not stored in the database as separate tables.
-     * Instead their columns are embed into tables who owns them.
+     * Entity's own indices.
      */
-    isEmbeddable: boolean;
+    ownIndices: IndexMetadata[] = [];
+
+    /**
+     * Entity's index metadatas.
+     */
+    indices: IndexMetadata[] = [];
+
+    /**
+     * Entity's own listener metadatas.
+     */
+    ownListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Entity listener metadatas.
+     */
+    listeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER LOAD" type.
+     */
+    afterLoadListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER INSERT" type.
+     */
+    beforeInsertListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER INSERT" type.
+     */
+    afterInsertListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER UPDATE" type.
+     */
+    beforeUpdateListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER UPDATE" type.
+     */
+    afterUpdateListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER REMOVE" type.
+     */
+    beforeRemoveListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER REMOVE" type.
+     */
+    afterRemoveListeners: EntityListenerMetadata[] = [];
 
     /**
      * Map of columns and relations of the entity.
@@ -453,7 +426,6 @@ export class EntityMetadata {
         this.connection = options.connection;
         this.inheritanceTree = options.inheritanceTree || [];
         this.inheritancePattern = options.inheritancePattern;
-        this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;
@@ -468,17 +440,13 @@ export class EntityMetadata {
      * Creates a new entity.
      */
     create(): any {
-
         // if target is set to a function (e.g. class) that can be created then create it
         if (this.target instanceof Function)
             return new (<any> this.target)();
 
         // otherwise simply return a new empty object
         const newObject = {};
-        this.relations
-            .filter(relation => relation.isLazy)
-            .forEach(relation => this.lazyRelationsWrapper.wrap(newObject, relation));
-
+        this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, newObject));
         return newObject;
     }
 
@@ -489,9 +457,20 @@ export class EntityMetadata {
         if (!entity)
             return false;
 
-        return this.primaryColumns.every(primaryColumn => { /// todo: this.metadata.parentEntityMetadata ?
+        return this.primaryColumns.every(primaryColumn => {
             const value = primaryColumn.getEntityValue(entity);
             return value !== null && value !== undefined && value !== "";
+        });
+    }
+
+    /**
+     * Checks if given entity / object contains ALL primary keys entity must have.
+     * Returns true if it contains all of them, false if at least one of them is not defined.
+     */
+    hasAllPrimaryKeys(entity: ObjectLiteral): boolean {
+        return this.primaryColumns.every(primaryColumn => {
+            const value = primaryColumn.getEntityValue(entity);
+            return value !== null && value !== undefined;
         });
     }
 
@@ -590,13 +569,6 @@ export class EntityMetadata {
     }
 
     /**
-     * Computes property name of the entity using given PropertyTypeInFunction.
-     */
-    computePropertyPath(nameOrFn: PropertyTypeFactory<any>) {
-        return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.propertiesMap);
-    }
-
-    /**
      * Ensures that given object is an entity id map.
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
@@ -651,15 +623,6 @@ export class EntityMetadata {
         return Object.keys(map).length > 0 ? map : undefined;
     }
 
-    getValueDatabasePaths(entity: ObjectLiteral): ObjectLiteral {
-        return this.columns.reduce((query, column) => {
-            const columnValue = column.getEntityValue(entity);
-            if (columnValue !== undefined)
-                query[column.databasePath] = columnValue;
-            return query;
-        }, {} as any);
-    }
-
     /**
      * Replaces in a new object all property name of the given entity into their database names.
      */
@@ -702,17 +665,7 @@ export class EntityMetadata {
     }
 
     /**
-     * Checks if given object contains ALL primary keys entity must have.
-     * Returns true if it contains all of them, false if at least one of them is not defined.
-     */
-    checkIfObjectContainsAllPrimaryKeys(object: ObjectLiteral) {
-        return this.primaryColumns.every(primaryColumn => {
-            return object.hasOwnProperty(primaryColumn.propertyName);
-        });
-    }
-
-    /**
-     * Iterates throw entity and finds and extracts all values from relations in the entity.
+     * Iterates through entity and finds and extracts all values from relations in the entity.
      * If relation value is an array its being flattened.
      */
     extractRelationValuesFromEntity(entity: ObjectLiteral, relations: RelationMetadata[]): [RelationMetadata, any, EntityMetadata][] {
@@ -731,6 +684,34 @@ export class EntityMetadata {
     // ---------------------------------------------------------------------
     // Public Builder Methods
     // ---------------------------------------------------------------------
+
+    build() {
+        const namingStrategy = this.connection.namingStrategy;
+        const entityPrefix = this.connection.options.entityPrefix;
+        this.engine = this.tableMetadataArgs.engine;
+        this.database = this.tableMetadataArgs.database;
+        this.schema = this.tableMetadataArgs.schema;
+        this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
+        this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
+        this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
+        if (this.tableMetadataArgs.type === "closure-junction") {
+            this.tableNameWithoutPrefix = namingStrategy.closureJunctionTableName(this.givenTableName!);
+        } else if (this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata) {
+            this.tableNameWithoutPrefix = namingStrategy.tableName(this.parentEntityMetadata.targetName, this.parentEntityMetadata.givenTableName);
+        } else {
+            this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
+        }
+        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
+        this.target = this.target ? this.target : this.tableName;
+        this.name = this.targetName ? this.targetName : this.tableName;
+        this.tablePath = this.buildTablePath();
+        this.schemaPath = this.buildSchemaPath();
+        this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
+
+        this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
+        this.isClosureJunction = this.tableMetadataArgs.type === "closure-junction";
+        this.isClosure = this.tableMetadataArgs.type === "closure";
+    }
 
     /**
      * Registers a new column in the entity and recomputes all depend properties.
@@ -757,41 +738,6 @@ export class EntityMetadata {
         this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
-    }
-
-    // -------------------------------------------------------------------------
-    // Builder Methods
-    // -------------------------------------------------------------------------
-
-    build() {
-        const namingStrategy = this.connection.namingStrategy;
-        const entityPrefix = this.connection.options.entityPrefix;
-        this.engine = this.tableMetadataArgs.engine;
-        this.database = this.tableMetadataArgs.database;
-        this.schema = this.tableMetadataArgs.schema;
-        this.givenTableName = this.tableType === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
-        this.skipSync = this.tableMetadataArgs.skipSync || false;
-        this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
-        if (this.tableType === "closure-junction") {
-            this.tableNameWithoutPrefix = namingStrategy.closureJunctionTableName(this.givenTableName!);
-        } else if (this.tableType === "entity-child" && this.parentEntityMetadata) {
-            this.tableNameWithoutPrefix = namingStrategy.tableName(this.parentEntityMetadata.targetName, this.parentEntityMetadata.givenTableName);
-        } else {
-            this.tableNameWithoutPrefix = namingStrategy.tableName(this.targetName, this.givenTableName);
-        }
-        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
-        this.target = this.target ? this.target : this.tableName;
-        this.name = this.targetName ? this.targetName : this.tableName;
-        this.tablePath = this.buildTablePath();
-        this.schemaPath = this.buildSchemaPath();
-        this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
-
-        this.isEmbeddable = this.tableType === "embeddable";
-        this.isJunction = this.tableType === "closure-junction" || this.tableType === "junction";
-        this.isClosureJunction = this.tableType === "closure-junction";
-        this.isClosure = this.tableType === "closure";
-        this.isAbstract = this.tableType === "abstract";
-        this.isRegular = this.tableType === "regular";
     }
 
     /**

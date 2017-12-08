@@ -44,8 +44,10 @@ export interface TableMetadataArgs {
     schema?: string;
 
     /**
-     * Whether table must be synced during schema build or not
+     * Indicates if schema synchronization is enabled or disabled for this entity.
+     * If it will be set to false then schema sync will and migrations ignore this entity.
+     * By default schema synchronization is enabled for all entities.
      */
-    skipSync?: boolean;
+    synchronize?: boolean;
 
 }
