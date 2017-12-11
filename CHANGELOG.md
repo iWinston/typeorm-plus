@@ -52,6 +52,7 @@ Use `findOne(id)` method instead now.
 * `@DiscriminatorColumn` decorator has been removed, use `@TableInheritance` options instead now
 * `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
 By default its true.
+* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`).
 
 ## 0.1.7
 
@@ -83,7 +84,9 @@ By default its true.
 
 ## 0.1.3
 
-* added support for `sql.js`. To use it you just need to install `npm i sql.js` and use `sqljs` as driver type ([#894](https://github.com/typeorm/typeorm/pull/894)).
+* added support for `
+
+`. To use it you just need to install `npm i sql.js` and use `sqljs` as driver type ([#894](https://github.com/typeorm/typeorm/pull/894)).
 * added explicit require() statements for drivers ([#1143](https://github.com/typeorm/typeorm/pull/1143))
 * fixed bug where wrong query is generated with multiple primary keys ([#1146](https://github.com/typeorm/typeorm/pull/1146))
 * fixed bug for oracle driver where connect method was wrong ([#1177](https://github.com/typeorm/typeorm/pull/1177))
