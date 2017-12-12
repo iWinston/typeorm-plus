@@ -74,5 +74,5 @@
     "type": "sqljs",
     "logging": false,
     "autoSave": false
-  },
+  }
 ]
