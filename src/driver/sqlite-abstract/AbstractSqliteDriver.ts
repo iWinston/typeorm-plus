@@ -326,6 +326,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             return "boolean";
 
         } else if (column.type === "uuid") {
+            column.length = 36;
             return "varchar";
 
         } else if (column.type === "simple-array") {

@@ -374,6 +374,7 @@ export class MysqlDriver implements Driver {
             return "tinyint";
 
         } else if (column.type === "uuid") {
+            column.length = 36;
             return "varchar";
 
         } else if (column.type === "simple-array") {

@@ -576,7 +576,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // If column is non-primary, we can not make it generated.
         // If column marked as generated and column also changed to primary, we must first create primary key, and then make column generated.
         // If column marked as non-generated and isPrimary also changed to false, we must first make column non-generated and then drop primary key.
-        if (newColumn.isGenerated !== oldColumn.isGenerated) {
+        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
             if (newColumn.isGenerated === true) {
                 if (newColumn.isPrimary === false)
                     throw new Error(`Can not specify AUTO_INCREMENT on to non-primary column.`);

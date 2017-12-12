@@ -709,7 +709,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (newColumn.isGenerated !== oldColumn.isGenerated) {
+        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
             throw new Error(`Changing column's "isGenerated" property is not supported in SqlServer driver. Drop column and recreate it with a new "isGenerated" property instead.`);
 
         } else {

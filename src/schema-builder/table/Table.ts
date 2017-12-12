@@ -212,17 +212,17 @@ export class Table {
             if (!columnMetadata)
                 return false; // we don't need new columns, we only need exist and changed
 
-            // console.log(tableColumn.name, "!==", columnMetadata.databaseName); //  ||
-            // console.log(tableColumn.type, "!==", driver.normalizeType(columnMetadata)); // ||
-            // console.log(tableColumn.comment, "!==", columnMetadata.comment); //  ||
-            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata), tableColumn.default)); // || // we included check for generated here, because generated columns already can have default values
-            // console.log(tableColumn.isNullable, "!==", columnMetadata.isNullable); //  ||
-            // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique); //  ||
+            // console.log(tableColumn.name, "!==", columnMetadata.databaseName);
+            // console.log(tableColumn.type, "!==", driver.normalizeType(columnMetadata));
+            // console.log(tableColumn.comment, "!==", columnMetadata.comment);
+            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default));
+            // console.log(tableColumn.isNullable, "!==", columnMetadata.isNullable);
+            // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique);
             // console.log(tableColumn.isGenerated, "!==", columnMetadata.isGenerated);
 
             return  tableColumn.name !== columnMetadata.databaseName ||
                     tableColumn.type !== driver.normalizeType(columnMetadata) ||
-                    tableColumn.comment !== columnMetadata.comment ||
+                    // tableColumn.comment !== columnMetadata.comment || // todo
                     (!tableColumn.isGenerated && !this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
                     tableColumn.isNullable !== columnMetadata.isNullable ||
                     tableColumn.isUnique !== driver.normalizeIsUnique(columnMetadata) ||

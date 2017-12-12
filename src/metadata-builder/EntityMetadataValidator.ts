@@ -22,6 +22,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 // todo: MetadataArgsStorage: check on build for duplicate names, since naming checking was removed from MetadataStorage
 // todo: MetadataArgsStorage: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
 // todo: MetadataArgsStorage: check for duplicate targets too since this check has been removed too
+// todo: check if relation decorator contains primary: true and nullable: true
 
 /**
  * Validates built entity metadatas.

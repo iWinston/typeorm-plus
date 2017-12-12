@@ -558,7 +558,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
 
             // rename column sequence
-            if (oldColumn.isGenerated === true) {
+            if (oldColumn.isGenerated === true && newColumn.generationStrategy === "increment") {
                 const schema = this.extractSchema(table);
 
                 // building sequence name. Sequence without schema needed because it must be supplied in RENAME TO without
@@ -698,7 +698,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
         }
 
-        if (oldColumn.isGenerated !== newColumn.isGenerated) {
+        if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy === "increment") {
             if (newColumn.isGenerated && newColumn.type !== "uuid") {
                 upQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`);
                 downQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`);
