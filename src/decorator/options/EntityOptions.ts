@@ -35,4 +35,8 @@ export interface EntityOptions {
      */
     synchronize?: boolean;
 
+    /**
+     * Table name
+     */
+    name ?: string;
 }

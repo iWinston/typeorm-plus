@@ -201,7 +201,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Creates connection with an optional database.
      * If database is specified it is loaded, otherwise a new empty database is created.
      */
-    protected createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
+    protected async createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
         if (database && database.length > 0) {
             this.databaseConnection = new this.sqlite.Database(database);
         }
@@ -209,14 +209,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new this.sqlite.Database();
         }
 
-        return new Promise<void>((ok, fail) => {
-            // we need to enable foreign keys in sqlite to make sure all foreign key related features
-            // working properly. this also makes onDelete to work with sqlite.
-            this.databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                if (err) return fail(err);
-                ok(this.databaseConnection);
-            });
-        });
+        const queryRunner = this.createQueryRunner("master");
+        await queryRunner.query(`PRAGMA foreign_keys = ON;`);
+        return this.databaseConnection;
     }
 
     /**

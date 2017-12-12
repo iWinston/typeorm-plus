@@ -11,14 +11,10 @@ import {ObjectType} from "../common/ObjectType";
 import {Alias} from "./Alias";
 import {Brackets} from "./Brackets";
 import {QueryPartialEntity} from "./QueryPartialEntity";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -469,13 +465,13 @@ export abstract class QueryBuilder<Entity> {
      * Gets escaped table name with schema name if SqlServer driver used with custom
      * schema name, otherwise returns escaped table name.
      */
-    protected getTableName(tableName: string): string {
-        let tablePath = tableName;
-        const driver = this.connection.driver;
-        const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
-        const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
+    protected getTableName(tablePath: string): string {
+        // let tablePath = tableName;
+        // const driver = this.connection.driver;
+        // const schema = (driver.options as SqlServerConnectionOptions|PostgresConnectionOptions).schema;
+        // const metadata = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName) : undefined;
 
-        if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
+        /*if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof MysqlDriver) {
             if (metadata) {
                 if (metadata.schema) {
                     tablePath = `${metadata.schema}.${tableName}`;
@@ -494,7 +490,7 @@ export abstract class QueryBuilder<Entity> {
             } else if (schema) {
                 tablePath = `${schema!}.${tableName}`;
             }
-        }
+        }*/
         return tablePath.split(".")
             .map(i => {
                 // this condition need because in SQL Server driver when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
@@ -512,9 +508,9 @@ export abstract class QueryBuilder<Entity> {
             throw new Error(`Entity where values should be inserted is not specified. Call "qb.into(entity)" method to specify it.`);
 
         if (this.expressionMap.mainAlias.hasMetadata)
-            return this.expressionMap.mainAlias.metadata.tableName;
+            return this.expressionMap.mainAlias.metadata.tablePath;
 
-        return this.expressionMap.mainAlias.tableName!;
+        return this.expressionMap.mainAlias.tablePath!;
     }
 
     /**
@@ -532,7 +528,7 @@ export abstract class QueryBuilder<Entity> {
                 type: "from",
                 name: aliasName,
                 metadata: this.connection.getMetadata(entityTarget),
-                tableName: metadata.tableName
+                tablePath: metadata.tablePath
             });
 
         } else {
@@ -549,7 +545,7 @@ export abstract class QueryBuilder<Entity> {
             return this.expressionMap.createAlias({
                 type: "from",
                 name: aliasName,
-                tableName: isSubQuery === false ? entityTarget as string : undefined,
+                tablePath: isSubQuery === false ? entityTarget as string : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,
             });
         }

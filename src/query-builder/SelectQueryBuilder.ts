@@ -1291,7 +1291,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
                 name: aliasName,
-                tableName: isSubQuery === false ? entityOrProperty as string : undefined,
+                tablePath: isSubQuery === false ? entityOrProperty as string : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,
             });
         }
@@ -1354,12 +1354,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // create a selection query
         const froms = this.expressionMap.aliases
-            .filter(alias => alias.type === "from" && (alias.tableName || alias.subQuery))
+            .filter(alias => alias.type === "from" && (alias.tablePath || alias.subQuery))
             .map(alias => {
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name);
 
-                return this.getTableName(alias.tableName!) + " " + this.escape(alias.name);
+                return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
         if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
@@ -1384,7 +1384,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const joins = this.expressionMap.joinAttributes.map(joinAttr => {
 
             const relation = joinAttr.relation;
-            const destinationTableName = joinAttr.tableName;
+            const destinationTableName = joinAttr.tablePath;
             const destinationTableAlias = joinAttr.alias.name;
             const appendedCondition = joinAttr.condition ? " AND (" + joinAttr.condition + ")" : "";
             const parentAlias = joinAttr.parentAlias;
@@ -1419,7 +1419,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else { // means many-to-many
-                const junctionTableName = relation.junctionEntityMetadata!.tableName;
+                const junctionTableName = relation.junctionEntityMetadata!.tablePath;
 
                 const junctionAlias = joinAttr.junctionAlias;
                 let junctionCondition = "", destinationCondition = "";

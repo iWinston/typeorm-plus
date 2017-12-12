@@ -576,7 +576,14 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        return FindOptionsUtils.isFindManyOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions))
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
+            return typeof optionsOrConditions.where === "string"
+                ? {}
+                : optionsOrConditions.where;
+
+        return optionsOrConditions;
     }
 
     /**
@@ -586,7 +593,14 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        return FindOptionsUtils.isFindOneOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
+        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions))
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
+            return typeof optionsOrConditions.where === "string"
+                ? {}
+                : optionsOrConditions.where;
+
+        return optionsOrConditions;
     }
 
     /**
