@@ -254,7 +254,7 @@ export class RelationMetadata {
         this.isCascadeInsert = args.options.cascadeInsert || args.options.cascadeAll || false;
         this.isCascadeUpdate = args.options.cascadeUpdate || args.options.cascadeAll || false;
         this.isCascadeRemove = args.options.cascadeRemove || args.options.cascadeAll || false;
-        this.isNullable = args.options.nullable !== false;
+        this.isNullable = args.options.nullable === false || this.isPrimary ? false : true;
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;
         this.isEager = args.options.eager || false;
