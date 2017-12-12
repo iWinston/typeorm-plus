@@ -6,7 +6,10 @@ If we missed a note on some change or you have a questions on migrating from old
 feel free to ask us and community.
 
 ## 0.1.8
+
 * New DebugLogger ([#1302](https://github.com/typeorm/typeorm/pull/1302))
+* fixed issue with primary relations being nullable by default - now they are not nullable always
+* fixed issue with multiple databases support when tables with same name are used across multiple databases 
 
 ## 0.1.7
 
