@@ -19,8 +19,8 @@ export function Entity(name?: string, options?: EntityOptions): Function;
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
 export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: EntityOptions): Function {
-    const name = typeof nameOrOptions === "string" ? nameOrOptions : undefined;
-    const options = typeof nameOrOptions === "object" ? nameOrOptions as EntityOptions : maybeOptions;
+    const options = (typeof nameOrOptions === "object" ? nameOrOptions as EntityOptions : maybeOptions) || {};
+    const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
 
     return function (target: Function) {
         const args: TableMetadataArgs = {
@@ -31,7 +31,7 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
             engine: options && options.engine ? options.engine : undefined,
             database: options && options.database ? options.database : undefined,
             schema: options && options.schema ? options.schema : undefined,
-            skipSync: !!(options && options.skipSync === true)
+            synchronize: options && options.synchronize === false ? false : true
         };
         getMetadataArgsStorage().tables.push(args);
     };

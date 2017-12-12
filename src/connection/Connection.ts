@@ -28,6 +28,7 @@ import {LoggerFactory} from "../logger/LoggerFactory";
 import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
+import {RelationLoader} from "../query-builder/RelationLoader";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -95,6 +96,11 @@ export class Connection {
      */
     readonly queryResultCache?: QueryResultCache;
 
+    /**
+     * Used to load relations and work with lazy relations.
+     */
+    readonly relationLoader: RelationLoader;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -107,6 +113,7 @@ export class Connection {
         this.manager = this.createEntityManager();
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
+        this.relationLoader = new RelationLoader(this);
     }
 
     // -------------------------------------------------------------------------

@@ -6,8 +6,8 @@ import {Alias} from "../Alias";
 import {RelationCountLoadResult} from "../relation-count/RelationCountLoadResult";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {abbreviate} from "../../util/StringUtils";
 
 /**
@@ -112,7 +112,7 @@ export class RawSqlResultsToEntityTransformer {
                 return;
 
             const value = rawResults[0][this.buildColumnAlias(alias.name, column.databaseName)];
-            if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
+            if (value === undefined || column.isVirtual)
                 return;
 
             // if user does not selected the whole entity or he used partial selection and does not select this particular column
@@ -124,18 +124,6 @@ export class RawSqlResultsToEntityTransformer {
             if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true;
         });
-
-        if (metadata.parentEntityMetadata) { // todo: revisit
-            metadata.parentEntityMetadata.columns.forEach(column => {
-                const value = rawResults[0]["parentIdColumn_" + this.buildColumnAlias(metadata.parentEntityMetadata.tableName, column.databaseName)];
-                if (value === undefined || column.isVirtual || column.isParentId || column.isDiscriminator)
-                    return;
-
-                column.setEntityValue(entity, this.driver.prepareHydratedValue(value, column));
-                if (value !== null) // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-                    hasData = true;
-            });
-        }
         return hasData;
     }
 
@@ -206,7 +194,7 @@ export class RawSqlResultsToEntityTransformer {
 
             const idMaps = rawRelationIdResult.results.map(result => {
                 const entityPrimaryIds = this.extractEntityPrimaryIds(relation, result);
-                if (!metadata.compareIds(entityPrimaryIds, valueMap))
+                if (EntityMetadata.compareIds(entityPrimaryIds, valueMap) === false)
                     return;
 
                 let columns: ColumnMetadata[];

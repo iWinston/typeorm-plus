@@ -576,7 +576,14 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        return FindOptionsUtils.isFindManyOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
+        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions))
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
+            return typeof optionsOrConditions.where === "string"
+                ? {}
+                : optionsOrConditions.where;
+
+        return optionsOrConditions;
     }
 
     /**
@@ -586,7 +593,14 @@ export class MongoEntityManager extends EntityManager {
         if (!optionsOrConditions)
             return undefined;
 
-        return FindOptionsUtils.isFindOneOptions(optionsOrConditions) ? optionsOrConditions.where : optionsOrConditions;
+        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions))
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
+            return typeof optionsOrConditions.where === "string"
+                ? {}
+                : optionsOrConditions.where;
+
+        return optionsOrConditions;
     }
 
     /**
@@ -613,7 +627,12 @@ export class MongoEntityManager extends EntityManager {
      */
     protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
         if (idMap instanceof Object) {
-            return metadata.getValueDatabasePaths(idMap);
+            return metadata.columns.reduce((query, column) => {
+                const columnValue = column.getEntityValue(idMap);
+                if (columnValue !== undefined)
+                    query[column.databasePath] = columnValue;
+                return query;
+            }, {} as any);
         }
 
         // means idMap is just object id

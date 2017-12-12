@@ -429,12 +429,28 @@ export class SubjectExecutor {
                 if (subject.metadata.childEntityMetadatas.length > 0 && subject.metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
                     return;
 
-                if (!column.isNullable || column.isVirtual)
+                // entities does not have virtual columns
+                if (column.isVirtual)
                     return;
 
-                const columnValue = column.getEntityValue(subject.entity!);
-                if (columnValue === undefined)
-                    column.setEntityValue(subject.entity!, null);
+                // update nullable columns
+                if (column.isNullable) {
+                    const columnValue = column.getEntityValue(subject.entity!);
+                    if (columnValue === undefined)
+                        column.setEntityValue(subject.entity!, null);
+                }
+
+                // update relational columns
+                if (subject.updatedRelationMaps.length > 0) {
+                    subject.updatedRelationMaps.forEach(updatedRelationMap => {
+                        updatedRelationMap.relation.joinColumns.forEach(column => {
+                            if (column.isVirtual === true)
+                                return;
+
+                            column.setEntityValue(subject.entity!, updatedRelationMap.value instanceof Object ? column.referencedColumn!.getEntityValue(updatedRelationMap.value) : updatedRelationMap.value);
+                        });
+                    });
+                }
             });
 
             // merge into entity all generated values returned by a database

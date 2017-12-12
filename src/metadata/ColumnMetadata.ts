@@ -80,11 +80,6 @@ export class ColumnMetadata {
     isGenerated: boolean = false;
 
     /**
-     * Specifies generation strategy if this column will use auto increment.
-     */
-    generationStrategy: "uuid"|"increment";
-
-    /**
      * Indicates if column value in the database should be unique or not.
      */
     isUnique: boolean = false;
@@ -103,6 +98,11 @@ export class ColumnMetadata {
      * Indicates if column is protected from updates or not.
      */
     isReadonly: boolean = false;
+
+    /**
+     * Specifies generation strategy if this column will use auto increment.
+     */
+    generationStrategy?: "uuid"|"increment";
 
     /**
      * Column comment.
@@ -134,10 +134,8 @@ export class ColumnMetadata {
 
     /**
      * Indicates if this column is an array.
-     * Can be simply set to true or array length can be specified.
-     * Supported only by postgres.
      */
-    isArray?: boolean;
+    isArray: boolean = false;
 
     /**
      * Gets full path to this column property (including column property name).
@@ -174,11 +172,6 @@ export class ColumnMetadata {
      * Indicates if column is virtual. Virtual columns are not mapped to the entity.
      */
     isVirtual: boolean = false;
-
-    /**
-     * Indicates if column is a parent id. Parent id columns are not mapped to the entity.
-     */
-    isParentId: boolean = false;
 
     /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
@@ -280,14 +273,10 @@ export class ColumnMetadata {
                 this.enum = options.args.options.enum;
             }
         }
-        if (options.args.options.isArray)
-            this.isArray = options.args.options.isArray;
         if (options.args.options.array)
             this.isArray = options.args.options.array;
         if (options.args.mode) {
             this.isVirtual = options.args.mode === "virtual";
-            this.isParentId = options.args.mode === "parentId";
-            this.isDiscriminator = options.args.mode === "discriminator";
             this.isTreeLevel = options.args.mode === "treeLevel";
             this.isCreateDate = options.args.mode === "createDate";
             this.isUpdateDate = options.args.mode === "updateDate";
@@ -534,10 +523,6 @@ export class ColumnMetadata {
         return this;
     }
 
-    // ---------------------------------------------------------------------
-    // Protected Methods
-    // ---------------------------------------------------------------------
-
     protected buildPropertyPath(): string {
         let path = "";
         if (this.embeddedMetadata && this.embeddedMetadata.parentPropertyNames.length)
@@ -564,7 +549,7 @@ export class ColumnMetadata {
         // we add reference column to property path only if this column is virtual
         // because if its not virtual it means user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!    this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.databaseName !== this.databaseName)
+        if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.databaseName !== this.databaseName)
             path += "." + this.referencedColumn.databaseName;
 
         return path;

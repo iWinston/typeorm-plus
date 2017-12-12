@@ -48,12 +48,12 @@ export class EntityMetadataValidator {
     validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[], driver: Driver) {
 
         // check if table metadata has an id
-        if (!entityMetadata.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
+        if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata);
 
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
-        if (entityMetadata.inheritanceType === "single-table") {
+        if (entityMetadata.inheritancePattern === "STI") {
             if (!entityMetadata.discriminatorColumn)
                 throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put @DiscriminatorColumn decorator?`);
 

@@ -17,7 +17,7 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
 
     /**
      * Enables the autoSave mechanism which either saves to location
-     * or callls autoSaveCallback every time a change to the database is made.
+     * or calls autoSaveCallback every time a change to the database is made.
      */
     readonly autoSave?: boolean;
 

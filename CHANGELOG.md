@@ -18,7 +18,6 @@ feel free to ask us and community.
 * now you can disable persistence on any relation by setting `@OneToMany(type => Post, post => tag, { persistence: false })`. This can dramatically improve entity save performance.
 * `loadAllRelationIds` method of `QueryBuilder` now accepts list of relation paths that needs to be loaded, also `disableMixedMap` option is now by default set to false, but you can enable it via new method parameter `options`
 * lot of changes affect closure table pattern which is planned for fix in 0.3.0 
-* lot of changes affect table inheritance patterns which are planned for fix in 0.3.0 
 * now `returning` and `output` statements of `InsertQueryBuilder` support array of columns as argument
 * now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
 * fixed issues with relation updation from one-to-one non-owner side
@@ -46,8 +45,22 @@ Use `findOne(id)` method instead now.
 * added ability to disable listeners and subscribers in `save` and `remove` operations
 * added ability to save and remove objects in chunks
 * added ability to disable entity reloading after insertion and updation
+* class table inheritance functionality has been completely dropped
+* single table inheritance functionality has been fixed
+* `@SingleEntityChild` has been renamed to `@ChildEntity`
+* `@DiscriminatorValue` has been removed, instead parameter in `@ChildEntity` must be used, e.g. `@ChildEntity("value")`
+* `@DiscriminatorColumn` decorator has been removed, use `@TableInheritance` options instead now
+* `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
+By default its true.
+* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`).
 * added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
+
+## 0.1.8
+
+* New DebugLogger ([#1302](https://github.com/typeorm/typeorm/pull/1302))
+* fixed issue with primary relations being nullable by default - now they are not nullable always
+* fixed issue with multiple databases support when tables with same name are used across multiple databases 
 
 ## 0.1.7
 
@@ -55,7 +68,7 @@ composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", 
 * added support for more complex ordering in paginated results ([#1259](https://github.com/typeorm/typeorm/issues/1259))
 * MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied 
 * fixed issue when relation query builder methods execute operations with empty arrays ([#1241](https://github.com/typeorm/typeorm/issues/1241))
-* Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--018) for the needed changes. ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
+* Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--017) for the needed changes. To use webpack for non-Ionic browser webpack projects, the needed configuration can be found in the [docs]( http://typeorm.io/#/supported-platforms) ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
 * added support for loading sub-relations in via find options ([#1270](https://github.com/typeorm/typeorm/issues/1270))
 
 ## 0.1.6

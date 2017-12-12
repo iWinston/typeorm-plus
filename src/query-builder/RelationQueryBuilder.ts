@@ -1,7 +1,6 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {RelationUpdater} from "./RelationUpdater";
 import {RelationRemover} from "./RelationRemover";
-import {RelationLoader} from "./RelationLoader";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
@@ -154,8 +153,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
             of = metadata.primaryColumns[0].createValueMap(of);
         }
 
-        const relationLoader = new RelationLoader(this.connection);
-        return relationLoader.load(this.expressionMap.relationMetadata, of);
+        return this.connection.relationLoader.load(this.expressionMap.relationMetadata, of);
     }
 
     /**

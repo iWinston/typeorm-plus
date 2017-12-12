@@ -121,7 +121,7 @@ export class IndexMetadata {
                     return columnName;
                 });
                 columnPropertyPaths.forEach(propertyPath => map[propertyPath] = 1);
-            } else { // todo: indices in embeddeds are not implemented in this syntax. deprecate this syntax?
+            } else { // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(this.entityMetadata.propertiesMap);
                 if (columnsFnResult instanceof Array) {

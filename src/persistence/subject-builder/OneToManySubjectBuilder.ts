@@ -1,7 +1,7 @@
 import {Subject} from "../Subject";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {EntityMetadataUtils} from "../../metadata/EntityMetadataUtils";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
 
 /**
@@ -150,7 +150,7 @@ export class OneToManySubjectBuilder {
         });
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        EntityMetadataUtils
+        EntityMetadata
             .difference(relatedEntityDatabaseRelationIds, relatedPersistedEntityRelationIds)
             .forEach(removedRelatedEntityRelationId => { // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 

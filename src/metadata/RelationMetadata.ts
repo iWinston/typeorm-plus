@@ -261,7 +261,7 @@ export class RelationMetadata {
         this.isLazy = args.isLazy || false;
         this.isCascadeInsert = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("insert") !== -1);
         this.isCascadeUpdate = args.options.cascade === true || (args.options.cascade instanceof Array && args.options.cascade.indexOf("update") !== -1);
-        this.isNullable = args.options.nullable !== false;
+        this.isNullable = args.options.nullable === false || this.isPrimary ? false : true;
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;
         this.isEager = args.options.eager || false;
@@ -290,7 +290,7 @@ export class RelationMetadata {
         const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
         // console.log("entity", entity);
         // console.log("referencedColumns", referencedColumns);
-        return this.inverseEntityMetadata.getValueMap(entity, referencedColumns);
+        return EntityMetadata.getValueMap(entity, referencedColumns);
     }
 
     /**

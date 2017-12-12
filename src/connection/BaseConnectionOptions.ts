@@ -61,7 +61,7 @@ export interface BaseConnectionOptions {
     /**
      * Logger instance used to log queries and events in the ORM.
      */
-    readonly logger?: "advanced-console"|"simple-console"|"file"|Logger;
+    readonly logger?: "advanced-console"|"simple-console"|"file"|"debug"|Logger;
 
     /**
      * Maximum number of milliseconds query should be executed before logger log a warning.

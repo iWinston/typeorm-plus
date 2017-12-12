@@ -22,6 +22,7 @@ export class FindOptionsUtils {
                 (
                     possibleOptions.select instanceof Array ||
                     possibleOptions.where instanceof Object ||
+                    typeof possibleOptions.where === "string" ||
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||

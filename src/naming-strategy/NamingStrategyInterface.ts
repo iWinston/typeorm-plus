@@ -1,9 +1,9 @@
+import {Table} from "../schema-builder/table/Table";
+
 /**
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
  * generated.
  */
-import {Table} from "../schema-builder/table/Table";
-
 export interface NamingStrategyInterface {
 
     /**
@@ -87,13 +87,16 @@ export interface NamingStrategyInterface {
 
     /**
      * Gets the name of the column used for columns in the junction tables.
+     *
+     * The reverse?:boolean parameter denotes if the joinTableColumnName is called for the junctionColumn (false)
+     * or the inverseJunctionColumns (true)
      */
     joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string;
 
     /**
-     * Gets the column name of the column with foreign key to the parent table used in the class table inheritance.
+     * Gets the name of the column used for columns in the junction tables from the invers side of the relationship.
      */
-    classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string;
+    joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string;
 
     /**
      * Adds globally set prefix to the table name.

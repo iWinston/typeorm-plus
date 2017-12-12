@@ -44,7 +44,7 @@ export class SubjectDatabaseEntityLoader {
                     return;
 
                 // we only need entity id
-                if (subject.metadata.isEntityIdMapEmpty(subject.entity!)) // can we use getEntityIdMap instead
+                if (!subject.metadata.hasAllPrimaryKeys(subject.entity!)) // can we use getEntityIdMap instead
                     return;
 
                 allIds.push(subject.metadata.getEntityIdMap(subject.entity!)!);
@@ -99,7 +99,7 @@ export class SubjectDatabaseEntityLoader {
                 if (subject) {
                     subject.databaseEntity = entity;
                     if (!subject.identifier)
-                        subject.identifier = subject.metadata.isEntityIdMapEmpty(entity) ? undefined : subject.metadata.getEntityIdMap(entity);
+                        subject.identifier = subject.metadata.hasAllPrimaryKeys(entity) ? subject.metadata.getEntityIdMap(entity) : undefined;
                 }
             });
 

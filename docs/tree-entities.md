@@ -60,7 +60,7 @@ export class Category {
     description: string;
 
     @TreeChildren()
-    children: Category;
+    children: Category[];
 
     @TreeParent()
     parent: Category;

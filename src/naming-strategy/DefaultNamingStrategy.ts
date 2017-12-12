@@ -114,8 +114,8 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return camelCase(tableName + "_" + (columnName ? columnName : propertyName));
     }
 
-    classTableInheritanceParentColumnName(parentTableName: any, parentTableIdPropertyName: any): string {
-        return camelCase(parentTableName + "_" + parentTableIdPropertyName);
+    joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string {
+        return this.joinTableColumnName(tableName, propertyName, columnName);
     }
 
     /**
