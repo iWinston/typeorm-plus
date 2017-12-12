@@ -17,6 +17,8 @@ import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
 import {Driver} from "../driver/Driver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 
 /**
  * Contains all entity metadata.
@@ -407,7 +409,7 @@ export class EntityMetadata {
         this.tableType = options.args.type;
         this.engine = options.args.engine;
         this.database = options.args.database;
-        this.schema = options.args.schema;
+        this.schema = options.args.schema || (options.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
         this.givenTableName = options.args.name;
         this.skipSync = options.args.skipSync || false;
         this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
