@@ -14,13 +14,11 @@ import {Faculty} from "./entity/Faculty";
 import {Specialization} from "./entity/Specialization";
 import {Department} from "./entity/Department";
 
-describe.skip("table-inheritance > single-table > relations > many-to-many", () => {
+describe("table-inheritance > single-table > relations > many-to-many", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

@@ -29,7 +29,7 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds migration instances for the given classes or directories.
      */
-    buildMigrations(migrations: Function[]|string[]): MigrationInterface[] {
+    buildMigrations(migrations: (Function|string)[]): MigrationInterface[] {
         const [migrationClasses, migrationDirectories] = OrmUtils.splitClassesAndStrings(migrations);
         const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(migrationDirectories)];
         return allMigrationClasses.map(migrationClass => getFromContainer<MigrationInterface>(migrationClass));
@@ -38,7 +38,7 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds subscriber instances for the given classes or directories.
      */
-    buildSubscribers(subscribers: Function[]|string[]): EntitySubscriberInterface<any>[] {
+    buildSubscribers(subscribers: (Function|string)[]): EntitySubscriberInterface<any>[] {
         const [subscriberClasses, subscriberDirectories] = OrmUtils.splitClassesAndStrings(subscribers || []);
         const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(subscriberDirectories)];
         return getMetadataArgsStorage()
@@ -49,7 +49,7 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds entity metadatas for the given classes or directories.
      */
-    buildEntityMetadatas(entities: Function[]|string[], schemas: EntitySchema[]|string[]): EntityMetadata[] {
+    buildEntityMetadatas(entities: (Function|string)[], schemas: (EntitySchema|string)[]): EntityMetadata[] {
         const [entityClasses, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
         const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(entityDirectories)];
         const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);

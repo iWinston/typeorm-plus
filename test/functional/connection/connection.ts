@@ -178,10 +178,10 @@ describe("Connection", () => {
             const post = new Post();
             post.title = "new post";
             await postRepository.save(post);
-            const loadedPost = await postRepository.findOneById(post.id);
+            const loadedPost = await postRepository.findOne(post.id);
             expect(loadedPost).to.be.eql(post);
             await connection.synchronize(true);
-            const againLoadedPost = await postRepository.findOneById(post.id);
+            const againLoadedPost = await postRepository.findOne(post.id);
             expect(againLoadedPost).to.be.empty;
         })));
 
@@ -221,7 +221,7 @@ describe("Connection", () => {
 
     });
 
-    describe("skip schema generation when skipSync option is used", function() {
+    describe("skip schema generation when synchronize option is set to false", function() {
 
         let connections: Connection[];
         beforeEach(() => createTestingConnections({ entities: [View], dropSchema: true }).then(all => connections = all));

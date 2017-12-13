@@ -1,3 +1,5 @@
+import {ColumnOptions} from "../decorator/options/ColumnOptions";
+
 /**
  * Arguments for InheritanceMetadata class.
  */
@@ -9,8 +11,13 @@ export interface InheritanceMetadataArgs {
     readonly target?: Function|string;
 
     /**
-     * Inheritance type.
+     * Inheritance pattern.
      */
-    readonly type: "single-table"|"class-table";
+    readonly pattern: "STI"/*|"CTI"*/;
+
+    /**
+     * Column used as inheritance discriminator column.
+     */
+    readonly column?: ColumnOptions;
 
 }

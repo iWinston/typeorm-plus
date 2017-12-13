@@ -31,10 +31,6 @@ class LoadMapItem {
         return this.metadata.getEntityIdMixedMap(this.plainEntity);
     }
 
-    compareEntities(entity1: any, entity2: any) {
-        return this.metadata.compareEntities(entity1, entity2);
-    }
-
 }
 
 class LoadMap {
@@ -54,7 +50,7 @@ class LoadMap {
     fillEntities(target: Function|string, entities: any[]) {
         entities.forEach(entity => {
             const item = this.loadMapItems.find(loadMapItem => {
-                return loadMapItem.target === target && loadMapItem.compareEntities(entity, loadMapItem.plainEntity);
+                return loadMapItem.target === target && loadMapItem.metadata.compareEntities(entity, loadMapItem.plainEntity);
             });
             if (item)
                 item.entity = entity;
@@ -93,7 +89,7 @@ export class PlainObjectToDatabaseEntityTransformer {
     async transform(plainObject: ObjectLiteral, metadata: EntityMetadata): Promise<ObjectLiteral|undefined> {
 
         // if plain object does not have id then nothing to load really
-        if (!metadata.checkIfObjectContainsAllPrimaryKeys(plainObject))
+        if (!metadata.hasAllPrimaryKeys(plainObject))
             return Promise.reject("Given object does not have a primary column, cannot transform it to database entity.");
 
         // create a special load map that will hold all metadata that will be used to operate with entities easily

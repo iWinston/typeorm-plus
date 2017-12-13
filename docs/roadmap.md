@@ -7,7 +7,7 @@ See what amazing new features we are expecting to land in the next TypeORM versi
 We are planning to release a final stable `1.0.0` version somewhere in summer 2018.
 However TypeORM is already actively used in number of big production systems.
 Main API is already very stable, there are only few issues currently we have in following areas:
-`cascades`, `class and single table inheritance`, `naming strategy`, `subscribers`, `tree tables`.
+`class and single table inheritance`, `naming strategy`, `subscribers`, `tree tables`.
 All issues in those areas are planning to be fixed in next minor versions.
 Your donations and contribution play a big role in achieving this goal.
 TypeORM follows a semantic versioning and until `1.0.0` breaking changes may appear in `0.x.x` versions,
@@ -31,7 +31,6 @@ npm i typeorm@next
 - [ ] implement soft deletion 
 - [ ] research ability to create one-to-many relations without inverse sides
 - [ ] research ability to create a single relation with multiple entities at once
-- [ ] fix all table-inheritance issues, better class-table and single-table inheritance support
 - [ ] add more tree-table features: nested set and materialized path; more repository methods
 - [ ] cli: create database backup command
 - [ ] extend `query` method functionality
@@ -46,7 +45,8 @@ npm i typeorm@next
 - [ ] create example how to use TypeORM in Electron apps
 - [ ] finish naming strategy implementation
 - [ ] finish subscribers and listeners implementation
-- [ ] refactor persistence mechanizm
-- [ ] fix all issues with cascades and make stable functionality
+- [x] refactor persistence mechanism
+- [x] fix all issues with cascades and make stable functionality
 - [ ] implement API for manual migration creation
-- [ ] add sql.js driver
+- [x] add sql.js driver
+- [x] fix inheritance support issues

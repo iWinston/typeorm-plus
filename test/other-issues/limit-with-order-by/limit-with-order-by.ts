@@ -10,8 +10,6 @@ describe("other issues > using limit in conjunction with order by", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -19,7 +17,6 @@ describe("other issues > using limit in conjunction with order by", () => {
     it("should persist successfully and return persisted entity", () => Promise.all(connections.map(async function(connection) {
 
         // generate bulk array of posts with categories
-        const promises: Promise<any>[] = [];
         for (let i = 1; i <= 100; i++) {
 
             const post = new Post();
@@ -31,10 +28,8 @@ describe("other issues > using limit in conjunction with order by", () => {
                 category.name = "category #" + i;
                 post.categories.push(category);
             }
-            promises.push(connection.manager.save(post));
+            await connection.manager.save(post);
         }
-
-        await Promise.all(promises);
 
         // check if ordering by main object works correctly
 

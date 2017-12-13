@@ -254,36 +254,43 @@ export class MigrationExecutor {
      * Inserts new executed migration's data into migrations table.
      */
     protected async insertExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
+        const values: ObjectLiteral = {};
         if (this.connection.driver instanceof SqlServerDriver) {
-            await queryRunner.insert("migrations", {
-                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
-                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
-            });
-
+            values["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
+            values["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
         } else {
-            await queryRunner.insert("migrations", {
-                timestamp: migration.timestamp,
-                name: migration.name,
-            });
+            values["timestamp"] = migration.timestamp;
+            values["name"] = migration.name;
         }
+
+        await queryRunner.manager
+            .createQueryBuilder()
+            .insert()
+            .into("migrations")
+            .values(values)
+            .execute();
     }
 
     /**
      * Delete previously executed migration's data from the migrations table.
      */
     protected async deleteExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
-        if (this.connection.driver instanceof SqlServerDriver) {
-            await queryRunner.delete("migrations", {
-                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
-                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
-            });
 
+        const conditions: ObjectLiteral = {};
+        if (this.connection.driver instanceof SqlServerDriver) {
+            conditions["timestamp"] = new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any);
+            conditions["name"] = new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any);
         } else {
-            await queryRunner.delete("migrations", {
-                timestamp: migration.timestamp,
-                name: migration.name,
-            });
+            conditions["timestamp"] = migration.timestamp;
+            conditions["name"] = migration.name;
         }
+
+        await queryRunner.manager
+            .createQueryBuilder()
+            .delete()
+            .from("migrations")
+            .where(conditions)
+            .execute();
     }
 
 }

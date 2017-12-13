@@ -6,6 +6,9 @@ import {Connection} from "../../connection/Connection";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
+import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -154,6 +157,30 @@ export class SqljsDriver extends AbstractSqliteDriver {
         return this.databaseConnection.export();
     }
 
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
+            if (generatedColumn.isPrimary && generatedColumn.generationStrategy === "increment") {
+                const query = "SELECT last_insert_rowid()";
+                try {
+                    let result = this.databaseConnection.exec(query);
+                    this.connection.logger.logQuery(query);
+                    return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(result[0].values[0][0]));
+                }
+                catch (e) {
+                    this.connection.logger.logQueryError(e, query, []);
+                }
+            }
+
+            return map;
+        }, {} as ObjectLiteral);
+
+        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -174,7 +201,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Creates connection with an optional database.
      * If database is specified it is loaded, otherwise a new empty database is created.
      */
-    protected createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
+    protected async createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
         if (database && database.length > 0) {
             this.databaseConnection = new this.sqlite.Database(database);
         }
@@ -182,7 +209,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new this.sqlite.Database();
         }
 
-        return Promise.resolve(this.databaseConnection);
+        const queryRunner = this.createQueryRunner("master");
+        await queryRunner.query(`PRAGMA foreign_keys = ON;`);
+        return this.databaseConnection;
     }
 
     /**

@@ -59,7 +59,12 @@ export class QueryExpressionMap {
     /**
      * Optional returning (or output) clause for insert, update or delete queries.
      */
-    returning: string = "";
+    returning: string|string[];
+
+    /**
+     * Extra returning columns to be added to the returning statement if driver supports it.
+     */
+    extraReturningColumns: ColumnMetadata[] = [];
 
     /**
      * Optional on conflict statement used in insertion query in postgres.
@@ -144,11 +149,6 @@ export class QueryExpressionMap {
     disableEscaping: boolean = true;
 
     /**
-     * todo: needs more information.
-     */
-    ignoreParentTablesJoins: boolean = false;
-
-    /**
      * Indicates if virtual columns should be included in entity result.
      *
      * todo: what to do with it? is it properly used? what about persistence?
@@ -211,6 +211,33 @@ export class QueryExpressionMap {
      * Used in INSERT query.
      */
     insertColumns: string[] = [];
+
+    /**
+     * Used if user wants to update or delete a specific entities.
+     */
+    whereEntities: ObjectLiteral[] = [];
+
+    /**
+     * Indicates if entity must be updated after insertion / updation.
+     * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
+     */
+    updateEntity: boolean = true;
+
+    /**
+     * Indicates if listeners and subscribers must be called before and after query execution.
+     */
+    callListeners: boolean = true;
+
+    /**
+     * Indicates if query must be wrapped into transaction.
+     */
+    useTransaction: boolean = false;
+
+    /**
+     * Extra parameters.
+     * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
+     */
+    nativeParameters: ObjectLiteral = {};
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -350,7 +377,6 @@ export class QueryExpressionMap {
         map.lockVersion = this.lockVersion;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
-        map.ignoreParentTablesJoins = this.ignoreParentTablesJoins;
         map.enableRelationIdValues = this.enableRelationIdValues;
         map.extraAppendedAndWhereCondition = this.extraAppendedAndWhereCondition;
         map.subQuery = this.subQuery;
@@ -360,6 +386,12 @@ export class QueryExpressionMap {
         map.cacheDuration = this.cacheDuration;
         map.relationPropertyPath = this.relationPropertyPath;
         map.of = this.of;
+        map.insertColumns = this.insertColumns;
+        map.whereEntities = this.whereEntities;
+        map.updateEntity = this.updateEntity;
+        map.callListeners = this.callListeners;
+        map.useTransaction = this.useTransaction;
+        map.nativeParameters = this.nativeParameters;
         return map;
     }
 

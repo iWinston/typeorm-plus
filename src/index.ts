@@ -26,7 +26,6 @@ export * from "./common/ObjectLiteral";
 export * from "./error/QueryFailedError";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
-export * from "./decorator/columns/DiscriminatorColumn";
 export * from "./decorator/columns/PrimaryGeneratedColumn";
 export * from "./decorator/columns/PrimaryColumn";
 export * from "./decorator/columns/UpdateDateColumn";
@@ -56,9 +55,8 @@ export * from "./decorator/relations/OneToOne";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/RelationId";
 export * from "./decorator/entity/Entity";
-export * from "./decorator/entity/ClassEntityChild";
 export * from "./decorator/entity/ClosureEntity";
-export * from "./decorator/entity/SingleEntityChild";
+export * from "./decorator/entity/ChildEntity";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
 export * from "./decorator/transaction/TransactionManager";
@@ -68,7 +66,6 @@ export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
 export * from "./decorator/Generated";
-export * from "./decorator/DiscriminatorValue";
 export * from "./decorator/EntityRepository";
 export * from "./find-options/FindOneOptions";
 export * from "./find-options/FindManyOptions";
@@ -76,7 +73,7 @@ export * from "./logger/Logger";
 export * from "./logger/AdvancedConsoleLogger";
 export * from "./logger/SimpleConsoleLogger";
 export * from "./logger/FileLogger";
-export * from "./metadata/EntityMetadataUtils";
+export * from "./metadata/EntityMetadata";
 export * from "./entity-manager/EntityManager";
 export * from "./repository/AbstractRepository";
 export * from "./repository/Repository";
@@ -107,6 +104,9 @@ export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
 export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
 export {Brackets} from "./query-builder/Brackets";
 export {WhereExpression} from "./query-builder/WhereExpression";
+export {InsertResult} from "./query-builder/result/InsertResult";
+export {UpdateResult} from "./query-builder/result/UpdateResult";
+export {DeleteResult} from "./query-builder/result/DeleteResult";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
 export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
@@ -224,6 +224,11 @@ export function getMongoManager(connectionName: string = "default"): MongoEntity
     return getConnectionManager().get(connectionName).manager as MongoEntityManager;
 }
 
+/**
+ * Gets Sqljs entity manager from connection name.
+ * "default" connection is used, when no name is specified.
+ * Only works when Sqljs driver is used.
+ */
 export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
     return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }

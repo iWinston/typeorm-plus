@@ -1,14 +1,16 @@
 import {getMetadataArgsStorage} from "../../index";
 import {InheritanceMetadataArgs} from "../../metadata-args/InheritanceMetadataArgs";
+import {ColumnOptions} from "../options/ColumnOptions";
 
 /**
- * Sets what kind of table-inheritance table will use.
+ * Sets for entity to use table inheritance pattern.
  */
-export function TableInheritance(type: "single-table"|"class-table") { // todo: create two decorators instead?
+export function TableInheritance(options?: { pattern?: "STI"/*|"CTI"*/, column?: string|ColumnOptions }) {
     return function (target: Function) {
         const args: InheritanceMetadataArgs = {
             target: target,
-            type: type
+            pattern: options && options.pattern ? options.pattern : "STI",
+            column: options && options.column ? typeof options.column === "string" ? { name: options.column } : options.column : undefined
         };
         getMetadataArgsStorage().inheritances.push(args);
     };

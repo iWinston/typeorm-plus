@@ -14,9 +14,6 @@ import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetad
 import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
-import {ColumnOptions} from "../decorator/options/ColumnOptions";
-import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -67,20 +64,43 @@ export class EntityMetadataBuilder {
         const allTables = entityClasses ? this.metadataArgsStorage.filterTables(entityClasses) : this.metadataArgsStorage.tables;
 
         // filter out table metadata args for those we really create entity metadatas and tables in the db
-        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "class-table-child" || table.type === "single-table-child");
+        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "entity-child");
 
         // create entity metadatas for a user defined entities (marked with @Entity decorator or loaded from entity schemas)
         const entityMetadatas = realTables.map(tableArgs => this.createEntityMetadata(tableArgs));
 
+        // compute parent entity metadatas for table inheritance
+        entityMetadatas.forEach(entityMetadata => this.computeParentEntityMetadata(entityMetadatas, entityMetadata));
+
+        // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
+        entityMetadatas
+            .filter(entityMetadata => entityMetadata.tableType !== "entity-child")
+            .forEach(entityMetadata => entityMetadata.build());
+
+        // build entity metadata (step0), now for single-table-inherited entity metadatas (dependant)
+        entityMetadatas
+            .filter(entityMetadata => entityMetadata.tableType === "entity-child")
+            .forEach(entityMetadata => entityMetadata.build());
+
+        // compute entity metadata columns, relations, etc. first for the regular, non-single-table-inherited entity metadatas
+        entityMetadatas
+            .filter(entityMetadata => entityMetadata.tableType !== "entity-child")
+            .forEach(entityMetadata => this.computeEntityMetadataStep1(entityMetadatas, entityMetadata));
+
+        // then do it for single table inheritance children (since they are depend on their parents to be built)
+        entityMetadatas
+            .filter(entityMetadata => entityMetadata.tableType === "entity-child")
+            .forEach(entityMetadata => this.computeEntityMetadataStep1(entityMetadatas, entityMetadata));
+
         // calculate entity metadata computed properties and all its sub-metadatas
-        entityMetadatas.forEach(entityMetadata => this.computeEntityMetadata(entityMetadata));
+        entityMetadatas.forEach(entityMetadata => this.computeEntityMetadataStep2(entityMetadata));
 
         // calculate entity metadata's inverse properties
         entityMetadatas.forEach(entityMetadata => this.computeInverseProperties(entityMetadata, entityMetadatas));
 
         // go through all entity metadatas and create foreign keys / junction entity metadatas for their relations
         entityMetadatas
-            .filter(entityMetadata => entityMetadata.tableType !== "single-table-child")
+            .filter(entityMetadata => entityMetadata.tableType !== "entity-child")
             .forEach(entityMetadata => {
 
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
@@ -95,7 +115,7 @@ export class EntityMetadataBuilder {
 
                 // create junction entity metadatas for entity many-to-many relations
                 entityMetadata.relations.filter(relation => relation.isManyToMany).forEach(relation => {
-                    const joinTable = this.metadataArgsStorage.findJoinTable(relation.target, relation.propertyName);
+                    const joinTable = this.metadataArgsStorage.findJoinTable(relation.target, relation.propertyName)!;
                     if (!joinTable) return; // no join table set - no need to do anything (it means this is many-to-many inverse side)
 
                     // here we create a junction entity metadata for a new junction table of many-to-many relation
@@ -104,7 +124,7 @@ export class EntityMetadataBuilder {
                     relation.registerJunctionEntityMetadata(junctionEntityMetadata);
 
                     // compute new entity metadata properties and push it to entity metadatas pool
-                    this.computeEntityMetadata(junctionEntityMetadata);
+                    this.computeEntityMetadataStep2(junctionEntityMetadata);
                     this.computeInverseProperties(junctionEntityMetadata, entityMetadatas);
                     entityMetadatas.push(junctionEntityMetadata);
                 });
@@ -120,31 +140,12 @@ export class EntityMetadataBuilder {
             .forEach(entityMetadata => {
                 const closureJunctionEntityMetadata = this.closureJunctionEntityMetadataBuilder.build(entityMetadata);
                 entityMetadata.closureJunctionTable = closureJunctionEntityMetadata;
-                this.computeEntityMetadata(closureJunctionEntityMetadata);
+                this.computeEntityMetadataStep2(closureJunctionEntityMetadata);
                 this.computeInverseProperties(closureJunctionEntityMetadata, entityMetadatas);
                 entityMetadatas.push(closureJunctionEntityMetadata);
             });
 
-        // after all metadatas created we set parent entity metadata for class-table inheritance
-        entityMetadatas
-            .filter(metadata => metadata.tableType === "single-table-child" || metadata.tableType === "class-table-child")
-            .forEach(entityMetadata => {
-                const inheritanceTree: any[] = entityMetadata.target instanceof Function
-                    ? MetadataUtils.getInheritanceTree(entityMetadata.target)
-                    : [entityMetadata.target];
-
-                const parentMetadata = entityMetadatas.find(metadata => {
-                    return inheritanceTree.find(inheritance => inheritance === metadata.target) && (metadata.inheritanceType === "single-table" || metadata.inheritanceType === "class-table");
-                });
-
-                if (parentMetadata) {
-                    entityMetadata.parentEntityMetadata = parentMetadata;
-                    if (parentMetadata.inheritanceType === "single-table")
-                        entityMetadata.tableName = parentMetadata.tableName;
-                }
-            });
-
-        // after all metadatas created we set child entity metadatas for class-table inheritance
+        // after all metadatas created we set child entity metadatas for table inheritance
         entityMetadatas.forEach(metadata => {
             metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
                 return metadata.target instanceof Function
@@ -155,53 +156,13 @@ export class EntityMetadataBuilder {
 
         // generate keys for tables with single-table inheritance
         entityMetadatas
-            .filter(metadata => metadata.inheritanceType === "single-table" && metadata.discriminatorColumn)
+            .filter(metadata => metadata.inheritancePattern === "STI" && metadata.discriminatorColumn)
             .forEach(entityMetadata => this.createKeysForTableInheritance(entityMetadata));
 
         // build all indices (need to do it after relations and their join columns are built)
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.indices.forEach(index => index.build(this.connection.namingStrategy));
         });
-
-        entityMetadatas
-            .filter(metadata => !!metadata.parentEntityMetadata && metadata.tableType === "class-table-child")
-            .forEach(metadata => {
-                const parentPrimaryColumns = metadata.parentEntityMetadata.primaryColumns;
-                const parentRelationColumns = parentPrimaryColumns.map(parentPrimaryColumn => {
-                    const columnName = this.connection.namingStrategy.classTableInheritanceParentColumnName(metadata.parentEntityMetadata.tableName, parentPrimaryColumn.propertyPath);
-                    const column = new ColumnMetadata({
-                        connection: this.connection,
-                        entityMetadata: metadata,
-                        referencedColumn: parentPrimaryColumn,
-                        args: {
-                            target: metadata.target,
-                            propertyName: columnName,
-                            mode: "parentId",
-                            options: <ColumnOptions> {
-                                name: columnName,
-                                type: parentPrimaryColumn.type,
-                                unique: false,
-                                nullable: false,
-                                primary: true
-                            }
-                        }
-                    });
-                    metadata.registerColumn(column);
-                    column.build(this.connection);
-                    return column;
-                });
-
-                metadata.foreignKeys = [
-                    new ForeignKeyMetadata({
-                        entityMetadata: metadata,
-                        referencedEntityMetadata: metadata.parentEntityMetadata,
-                        namingStrategy: this.connection.namingStrategy,
-                        columns: parentRelationColumns,
-                        referencedColumns: parentPrimaryColumns,
-                        onDelete: "CASCADE"
-                    })
-                ];
-            });
 
         // add lazy initializer for entity relations
         entityMetadatas
@@ -210,8 +171,7 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter(relation => relation.isLazy)
                     .forEach(relation => {
-                        const lazyRelationsWrapper = new LazyRelationsWrapper(this.connection);
-                        lazyRelationsWrapper.wrap((entityMetadata.target as Function).prototype, relation);
+                        this.connection.relationLoader.enableLazyLoad(relation, (entityMetadata.target as Function).prototype);
                     });
             });
 
@@ -224,7 +184,7 @@ export class EntityMetadataBuilder {
                     column.generationStrategy = generated.strategy;
                     column.type = generated.strategy === "increment" ? (column.type || Number) : "uuid";
                     column.build(this.connection);
-                    this.computeEntityMetadata(entityMetadata);
+                    this.computeEntityMetadataStep2(entityMetadata);
                 }
             });
 
@@ -250,63 +210,129 @@ export class EntityMetadataBuilder {
             ? MetadataUtils.getInheritanceTree(tableArgs.target)
             : [tableArgs.target]; // todo: implement later here inheritance for string-targets
 
+        const tableInheritance = this.metadataArgsStorage.findInheritanceType(tableArgs.target);
+
         // if single table inheritance used, we need to copy all children columns in to parent table
         let singleTableChildrenTargets: any[];
-        if (tableArgs.type === "single-table-child") {
+        if ((tableInheritance && tableInheritance.pattern === "STI") || tableArgs.type === "entity-child") {
             singleTableChildrenTargets = this.metadataArgsStorage
                 .filterSingleTableChildren(tableArgs.target)
                 .map(args => args.target)
                 .filter(target => target instanceof Function);
 
             inheritanceTree.push(...singleTableChildrenTargets);
-
-        } else if (tableArgs.type === "class-table-child") {
-            inheritanceTree.forEach(inheritanceTreeItem => {
-                const isParent = !!this.metadataArgsStorage.inheritances.find(i => i.target === inheritanceTreeItem);
-                if (isParent)
-                    inheritanceTree.splice(inheritanceTree.indexOf(inheritanceTreeItem), 1);
-            });
         }
 
-        const entityMetadata = new EntityMetadata({
+        return new EntityMetadata({
             connection: this.connection,
-            args: tableArgs
+            args: tableArgs,
+            inheritanceTree: inheritanceTree,
+            inheritancePattern: tableInheritance ? tableInheritance.pattern : undefined
         });
+    }
 
-        const inheritanceType = this.metadataArgsStorage.findInheritanceType(tableArgs.target);
-        entityMetadata.inheritanceType = inheritanceType ? inheritanceType.type : undefined;
+    protected computeParentEntityMetadata(allEntityMetadatas: EntityMetadata[], entityMetadata: EntityMetadata) {
 
-        const discriminatorValue = this.metadataArgsStorage.findDiscriminatorValue(tableArgs.target);
-        entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (tableArgs.target as any).name; // todo: pass this to naming strategy to generate a name
+        // after all metadatas created we set parent entity metadata for table inheritance
+        if (entityMetadata.tableType === "entity-child") {
+            entityMetadata.parentEntityMetadata = allEntityMetadatas.find(allEntityMetadata => {
+                return allEntityMetadata.inheritanceTree.indexOf(entityMetadata.target as Function) !== -1 && allEntityMetadata.inheritancePattern === "STI";
+            })!;
+        }
+    }
 
-        entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(inheritanceTree));
+    protected computeEntityMetadataStep1(allEntityMetadatas: EntityMetadata[], entityMetadata: EntityMetadata) {
+
+        const entityInheritance = this.metadataArgsStorage.findInheritanceType(entityMetadata.target);
+
+        const discriminatorValue = this.metadataArgsStorage.findDiscriminatorValue(entityMetadata.target);
+        entityMetadata.discriminatorValue = discriminatorValue ? discriminatorValue.value : (entityMetadata.target as any).name; // todo: pass this to naming strategy to generate a name
+
+        entityMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(entityMetadata.inheritanceTree));
         entityMetadata.ownColumns = this.metadataArgsStorage
-            .filterColumns(inheritanceTree)
+            .filterColumns(entityMetadata.inheritanceTree)
             .map(args => {
+
+                // for single table children we reuse columns created for their parents
+                if (entityMetadata.tableType === "entity-child")
+                    return entityMetadata.parentEntityMetadata.ownColumns.find(column => column.propertyName === args.propertyName)!;
+
                 const column = new ColumnMetadata({ connection: this.connection, entityMetadata, args });
-                // console.log(column.propertyName);
+
                 // if single table inheritance used, we need to mark all inherit table columns as nullable
-                if (singleTableChildrenTargets && singleTableChildrenTargets.indexOf(args.target) !== -1)
+                const columnInSingleTableInheritedChild = allEntityMetadatas.find(otherEntityMetadata => otherEntityMetadata.tableType === "entity-child" && otherEntityMetadata.target === args.target);
+                if (columnInSingleTableInheritedChild)
                     column.isNullable = true;
                 return column;
             });
 
-        entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(inheritanceTree).map(args => {
+        // for table inheritance we need to add a discriminator column
+        //
+        if (entityInheritance && entityInheritance.column) {
+            const discriminatorColumnName = entityInheritance.column && entityInheritance.column.name ? entityInheritance.column.name : "type";
+            let discriminatorColumn = entityMetadata.ownColumns.find(column => column.propertyName === discriminatorColumnName);
+            if (!discriminatorColumn) {
+                discriminatorColumn = new ColumnMetadata({
+                    connection: this.connection,
+                    entityMetadata: entityMetadata,
+                    args: {
+                        target: entityMetadata.target,
+                        mode: "virtual",
+                        propertyName: discriminatorColumnName,
+                        options: entityInheritance.column || {
+                            name: "type",
+                            type: "varchar",
+                            nullable: false
+                        }
+                    }
+                });
+                discriminatorColumn.isVirtual = true;
+                discriminatorColumn.isDiscriminator = true;
+                entityMetadata.ownColumns.push(discriminatorColumn);
+            } else {
+                discriminatorColumn.isDiscriminator = true;
+            }
+        }
+
+        // add discriminator column to the child entity metadatas
+        // discriminator column will not be there automatically since we are creating it in the code above
+        if (entityMetadata.tableType === "entity-child") {
+            const discriminatorColumn = entityMetadata.parentEntityMetadata.ownColumns.find(column => column.isDiscriminator);
+            if (discriminatorColumn && !entityMetadata.ownColumns.find(column => column === discriminatorColumn)) {
+                entityMetadata.ownColumns.push(discriminatorColumn);
+            }
+        }
+
+        entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(entityMetadata.inheritanceTree).map(args => {
+
+            // for single table children we reuse relations created for their parents
+            if (entityMetadata.tableType === "entity-child")
+                return entityMetadata.parentEntityMetadata.ownRelations.find(relation => relation.propertyName === args.propertyName)!;
+
             return new RelationMetadata({ entityMetadata, args });
         });
-        entityMetadata.relationIds = this.metadataArgsStorage.filterRelationIds(inheritanceTree).map(args => {
+        entityMetadata.relationIds = this.metadataArgsStorage.filterRelationIds(entityMetadata.inheritanceTree).map(args => {
+
+            // for single table children we reuse relation ids created for their parents
+            if (entityMetadata.tableType === "entity-child")
+                return entityMetadata.parentEntityMetadata.relationIds.find(relationId => relationId.propertyName === args.propertyName)!;
+
             return new RelationIdMetadata({ entityMetadata, args });
         });
-        entityMetadata.relationCounts = this.metadataArgsStorage.filterRelationCounts(inheritanceTree).map(args => {
+        entityMetadata.relationCounts = this.metadataArgsStorage.filterRelationCounts(entityMetadata.inheritanceTree).map(args => {
+
+            // for single table children we reuse relation counts created for their parents
+            if (entityMetadata.tableType === "entity-child")
+                return entityMetadata.parentEntityMetadata.relationCounts.find(relationCount => relationCount.propertyName === args.propertyName)!;
+
             return new RelationCountMetadata({ entityMetadata, args });
         });
-        entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(inheritanceTree).map(args => {
+        entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
         });
-        entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(inheritanceTree).map(args => {
+        entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
-        return entityMetadata;
     }
 
     /**
@@ -338,6 +364,7 @@ export class EntityMetadataBuilder {
             });
             embeddedMetadata.embeddeds = this.createEmbeddedsRecursively(entityMetadata, this.metadataArgsStorage.filterEmbeddeds(targets));
             embeddedMetadata.embeddeds.forEach(subEmbedded => subEmbedded.parentEmbeddedMetadata = embeddedMetadata);
+            entityMetadata.allEmbeddeds.push(embeddedMetadata);
             return embeddedMetadata;
         });
     }
@@ -345,7 +372,7 @@ export class EntityMetadataBuilder {
     /**
      * Computes all entity metadata's computed properties, and all its sub-metadatas (relations, columns, embeds, etc).
      */
-    protected computeEntityMetadata(entityMetadata: EntityMetadata) {
+    protected computeEntityMetadataStep2(entityMetadata: EntityMetadata) {
         entityMetadata.embeddeds.forEach(embedded => embedded.build(this.connection));
         entityMetadata.embeddeds.forEach(embedded => {
             embedded.columnsFromTree.forEach(column => column.build(this.connection));
@@ -366,16 +393,24 @@ export class EntityMetadataBuilder {
         entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren);
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
         entityMetadata.listeners = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
+        entityMetadata.afterLoadListeners = entityMetadata.listeners.filter(listener => listener.type === "after-load");
+        entityMetadata.afterInsertListeners = entityMetadata.listeners.filter(listener => listener.type === "after-insert");
+        entityMetadata.afterUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === "after-update");
+        entityMetadata.afterRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === "after-remove");
+        entityMetadata.beforeInsertListeners = entityMetadata.listeners.filter(listener => listener.type === "before-insert");
+        entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === "before-update");
+        entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === "before-remove");
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
+        entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.isObjectId);
+        entityMetadata.hasUUIDGeneratedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
         entityMetadata.createDateColumn = entityMetadata.columns.find(column => column.isCreateDate);
         entityMetadata.updateDateColumn = entityMetadata.columns.find(column => column.isUpdateDate);
         entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);
         entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.isDiscriminator);
         entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.isTreeLevel);
-        entityMetadata.parentIdColumns = entityMetadata.columns.filter(column => column.isParentId);
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();
@@ -431,134 +466,3 @@ export class EntityMetadataBuilder {
     }
 
 }
-
-// generate virtual column with foreign key for class-table inheritance
-/*entityMetadatas.forEach(entityMetadata => {
- if (!entityMetadata.parentEntityMetadata)
- return;
-
- const parentPrimaryColumns = entityMetadata.parentEntityMetadata.primaryColumns;
- const parentIdColumns = parentPrimaryColumns.map(primaryColumn => {
- const columnName = this.namingStrategy.classTableInheritanceParentColumnName(entityMetadata.parentEntityMetadata.tableName, primaryColumn.propertyName);
- const column = new ColumnMetadataBuilder(entityMetadata);
- column.type = primaryColumn.type;
- column.propertyName = primaryColumn.propertyName; // todo: check why needed
- column.givenName = columnName;
- column.mode = "parentId";
- column.isUnique = true;
- column.isNullable = false;
- // column.entityTarget = entityMetadata.target;
- return column;
- });
-
- // add foreign key
- const foreignKey = new ForeignKeyMetadataBuilder(
- entityMetadata,
- parentIdColumns,
- entityMetadata.parentEntityMetadata,
- parentPrimaryColumns,
- "CASCADE"
- );
- entityMetadata.ownColumns.push(...parentIdColumns);
- entityMetadata.foreignKeys.push(foreignKey);
- });*/
-
-
-/*protected createEntityMetadata(metadata: EntityMetadata, options: {
- userSpecifiedTableName?: string,
- closureOwnerTableName?: string,
- }) {
-
- const tableNameUserSpecified = options.userSpecifiedTableName;
- const isClosureJunction = metadata.tableType === "closure-junction";
- const targetName = metadata.target instanceof Function ? (metadata.target as any).name : metadata.target;
- const tableNameWithoutPrefix = isClosureJunction
- ? this.namingStrategy.closureJunctionTableName(options.closureOwnerTableName!)
- : this.namingStrategy.tableName(targetName, options.userSpecifiedTableName);
-
- const tableName = this.namingStrategy.prefixTableName(this.driver.options.tablesPrefix, tableNameWithoutPrefix);
-
- // for virtual tables (like junction table) target is equal to undefined at this moment
- // we change this by setting virtual's table name to a target name
- // todo: add validation so targets with same schema names won't conflicts with virtual table names
- metadata.target = metadata.target ? metadata.target : tableName;
- metadata.targetName = targetName;
- metadata.givenTableName = tableNameUserSpecified;
- metadata.tableNameWithoutPrefix = tableNameWithoutPrefix;
- metadata.tableName = tableName;
- metadata.name = targetName ? targetName : tableName;
- // metadata.namingStrategy = this.namingStrategy;
- }*/
-
-/*protected createEntityMetadata(tableArgs: any, argsForTable: any, ): EntityMetadata {
- const metadata = new EntityMetadata({
- junction: false,
- target: tableArgs.target,
- tablesPrefix: this.driver.options.tablesPrefix,
- namingStrategy: this.namingStrategy,
- tableName: argsForTable.name,
- tableType: argsForTable.type,
- orderBy: argsForTable.orderBy,
- engine: argsForTable.engine,
- skipSchemaSync: argsForTable.skipSchemaSync,
- columnMetadatas: columns,
- relationMetadatas: relations,
- relationIdMetadatas: relationIds,
- relationCountMetadatas: relationCounts,
- indexMetadatas: indices,
- embeddedMetadatas: embeddeds,
- inheritanceType: mergedArgs.inheritance ? mergedArgs.inheritance.type : undefined,
- discriminatorValue: discriminatorValueArgs ? discriminatorValueArgs.value : (tableArgs.target as any).name // todo: pass this to naming strategy to generate a name
- }, this.lazyRelationsWrapper);
- return metadata;
- }*/
-
-
-// const tables = [mergedArgs.table].concat(mergedArgs.children);
-// tables.forEach(tableArgs => {
-
-// find embeddable tables for embeddeds registered in this table and create EmbeddedMetadatas from them
-// const findEmbeddedsRecursively = (embeddedArgs: EmbeddedMetadataArgs[]) => {
-//     const embeddeds: EmbeddedMetadata[] = [];
-//     embeddedArgs.forEach(embedded => {
-//         const embeddableTable = embeddableMergedArgs.find(embeddedMergedArgs => embeddedMergedArgs.table.target === embedded.type());
-//         if (embeddableTable) {
-//             const columns = embeddableTable.columns.toArray().map(args => new ColumnMetadata(args));
-//             const relations = embeddableTable.relations.toArray().map(args => new RelationMetadata(args));
-//             const subEmbeddeds = findEmbeddedsRecursively(embeddableTable.embeddeds.toArray());
-//             embeddeds.push(new EmbeddedMetadata(columns, relations, subEmbeddeds, embedded));
-//         }
-//     });
-//     return embeddeds;
-// };
-// const embeddeds = findEmbeddedsRecursively(mergedArgs.embeddeds.toArray());
-
-// create metadatas from args
-// const argsForTable = mergedArgs.inheritance && mergedArgs.inheritance.type === "single-table" ? mergedArgs.table : tableArgs;
-
-// const table = new TableMetadata(argsForTable);
-// const columns = mergedArgs.columns.toArray().map(args => {
-//
-//     // if column's target is a child table then this column should have all nullable columns
-//     if (mergedArgs.inheritance &&
-//         mergedArgs.inheritance.type === "single-table" &&
-//         args.target !== mergedArgs.table.target && !!mergedArgs.children.find(childTable => childTable.target === args.target)) {
-//         args.options.nullable = true;
-//     }
-//     return new ColumnMetadata(args);
-// });
-// const discriminatorValueArgs = mergedArgs.discriminatorValues.find(discriminatorValueArgs => {
-//     return discriminatorValueArgs.target === tableArgs.target;
-// });
-
-
-
-// after all metadatas created we set parent entity metadata for class-table inheritance
-// entityMetadatas.forEach(entityMetadata => {
-//     const mergedArgs = realTables.find(args => args.target === entityMetadata.target);
-//     if (mergedArgs && mergedArgs.parent) {
-//         const parentEntityMetadata = entityMetadatas.find(entityMetadata => entityMetadata.target === (mergedArgs!.parent! as any).target); // todo: weird compiler error here, thats why type casing is used
-//         if (parentEntityMetadata)
-//             entityMetadata.parentEntityMetadata = parentEntityMetadata;
-//     }
-// });

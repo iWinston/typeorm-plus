@@ -5,6 +5,56 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.0 (next: `npm i typeorm@next`)
+
+* completely refactored, improved and optimized persistence process and performance.
+* removed cascade remove functionality, refactored how cascades are working.
+* removed `cascadeRemove` option from relation options.
+* replaced `cascadeAll` with `cascade: true` syntax from relation options.
+* replaced `cascadeInsert` with `cascade: ["insert"]` syntax from relation options.
+* replaced `cascadeUpdate` with `cascade: ["update"]` syntax from relation options.
+* now when one-to-one or many-to-one relation is loaded and its not set (set to null) ORM returns you entity with relation set to `null` instead of `undefined property` as before.
+* now relation id can be set directly to relation, e.g. `Post { @ManyToOne(type => Tag) tag: Tag|number }` with `post.tag = 1` usage.
+* now you can disable persistence on any relation by setting `@OneToMany(type => Post, post => tag, { persistence: false })`. This can dramatically improve entity save performance.
+* `loadAllRelationIds` method of `QueryBuilder` now accepts list of relation paths that needs to be loaded, also `disableMixedMap` option is now by default set to false, but you can enable it via new method parameter `options`
+* lot of changes affect closure table pattern which is planned for fix in 0.3.0 
+* now `returning` and `output` statements of `InsertQueryBuilder` support array of columns as argument
+* now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
+* fixed issues with relation updation from one-to-one non-owner side
+* now version column is updated on the database level, not by ORM anymore
+* now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `CURRENT_TIMESTAMP` as a default value)
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` automatically update entities after execution.
+This only happens if real entity objects are passed. 
+Some databases (like mysql and sqlite) requires a separate query to perform this operation.
+If you want to disable this behavior use `queryBuilder.updateEntity(false)` method.
+This feature is convenient for users who have uuid, create/update date, version columns or columns with DEFAULT value set.
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners. 
+You can disable this behavior by setting `queryBuilder.callListeners(false)` method. 
+* `Repository` and `EntityManager` method `.findOne` is deprecated and will be removed in next 0.3.0 version.
+Use `findOne(id)` method instead now.
+* `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
+* `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
+* `DeleteQueryBuilder` now returns `DeleteResult` which contains extended information and metadata about runned query
+* now insert / update / delete queries built with QueryBuilder can be wrapped into a transaction using `useTransaction(true)` method of the QueryBuilder.
+* `insert`, `update` and `delete` methods of `QueryRunner` now use `InsertQueryRunner`, `UpdateQueryRunner` and `DeleteQueryRunner` inside
+* removed deprecated `removeById`, `removeByIds` methods
+* removed `deleteById` method - use `delete(id)` method instead now
+* removed `updateById` method - use `update(id)` method instead now
+* changed `snakeCase` utility - check table names after upgrading
+* added ability to disable transaction in `save` and `remove` operations
+* added ability to disable listeners and subscribers in `save` and `remove` operations
+* added ability to save and remove objects in chunks
+* added ability to disable entity reloading after insertion and updation
+* class table inheritance functionality has been completely dropped
+* single table inheritance functionality has been fixed
+* `@SingleEntityChild` has been renamed to `@ChildEntity`
+* `@DiscriminatorValue` has been removed, instead parameter in `@ChildEntity` must be used, e.g. `@ChildEntity("value")`
+* `@DiscriminatorColumn` decorator has been removed, use `@TableInheritance` options instead now
+* `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
+By default its true.
+* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`).
+* now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
+
 ## 0.1.9
 
 * fixed bug with sqlite and mysql schema synchronization when uuid column is used ([#1332](https://github.com/typeorm/typeorm/issues/1332))
@@ -291,7 +341,7 @@ from two sides of `@OneToOne` relationship now.
     `addParameters` now is deprecated
     * `getOne` returns `Promise<Entity|undefined>`
 * breaking changes in `Repository` and `EntityManager`:
-    * `findOne` and `findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
+    * `findOne` and .findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
 * now typeorm is compiled into `ES5` instead of `ES6` - this allows to run it on older versions of node.js
 * fixed multiple issues with dates and utc-related stuff
 * multiple bugfixes
