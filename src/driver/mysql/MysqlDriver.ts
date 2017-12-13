@@ -171,6 +171,8 @@ export class MysqlDriver implements Driver {
         // load mysql package
         this.loadDependencies();
 
+        this.database = this.options.replication ? this.options.replication.master.database : this.options.database;
+
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)) && !this.options.socketPath)
@@ -198,11 +200,9 @@ export class MysqlDriver implements Driver {
                 this.poolCluster.add("SLAVE" + index, this.createConnectionOptions(this.options, slave));
             });
             this.poolCluster.add("MASTER", this.createConnectionOptions(this.options, this.options.replication.master));
-            this.database = this.options.replication.master.database;
 
         } else {
             this.pool = await this.createPool(this.createConnectionOptions(this.options, this.options));
-            this.database = this.options.database;
         }
     }
 

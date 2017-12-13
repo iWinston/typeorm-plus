@@ -53,6 +53,7 @@ Use `findOne(id)` method instead now.
 * `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
 By default its true.
 * `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`).
+* now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
 
 ## 0.1.8
 
