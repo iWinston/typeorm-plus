@@ -90,6 +90,12 @@ export interface ColumnOptions {
     enum?: any[]|Object;
 
     /**
+     * Return type of HSTORE column.
+     * Returns value as string or as object.
+     */
+    hstoreType?: string;
+
+    /**
      * Indicates if this column is an array.
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.

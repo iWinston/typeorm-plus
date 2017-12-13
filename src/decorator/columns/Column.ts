@@ -1,9 +1,7 @@
 import {ColumnOptions} from "../options/ColumnOptions";
 import {getMetadataArgsStorage} from "../../index";
 import {
-    ColumnType,
-    SimpleColumnType,
-    WithLengthColumnType,
+    ColumnType, SimpleColumnType, WithLengthColumnType,
     WithPrecisionColumnType
 } from "../../driver/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
@@ -13,6 +11,7 @@ import {ColumnNumericOptions} from "../options/ColumnNumericOptions";
 import {ColumnEnumOptions} from "../options/ColumnEnumOptions";
 import {ColumnEmbeddedOptions} from "../options/ColumnEmbeddedOptions";
 import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
+import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -49,6 +48,12 @@ export function Column(type: WithPrecisionColumnType, options?: ColumnCommonOpti
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(type: "enum", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHstoreOptions): Function;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -90,11 +95,10 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             getMetadataArgsStorage().embeddeds.push(args);
 
         } else {
+            const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
             // if type is not given implicitly then try to guess it
-            if (!type) {
-                const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-                if (reflectMetadataType)
-                    type = reflectMetadataType; // todo: need to determine later on driver level
+            if (!type && reflectMetadataType) {
+                type = reflectMetadataType; // todo: need to determine later on driver level
             }
 
             // if column options are not given then create a new empty options
@@ -103,6 +107,14 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             // check if there is no type in column options then set type from first function argument, or guessed one
             if (!options.type && type)
                 options = Object.assign({ type: type } as ColumnOptions, options);
+
+            if (options.type === "hstore" && !options.hstoreType) {
+                if (reflectMetadataType) {
+                    options = Object.assign({ hstoreType: reflectMetadataType === Object ? "object" : "string" } as ColumnOptions, options);
+                } else if (reflectMetadataType) {
+                    options = Object.assign({ hstoreType: "string" } as ColumnOptions, options);
+                }
+            }
 
             // create and register a new column metadata
             const args: ColumnMetadataArgs = {

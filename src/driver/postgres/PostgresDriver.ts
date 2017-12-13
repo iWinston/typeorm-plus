@@ -100,6 +100,7 @@ export class PostgresDriver implements Driver {
         "char",
         "text",
         "citext",
+        "hstore",
         "bytea",
         "bit",
         "bit varying",
@@ -230,6 +231,9 @@ export class PostgresDriver implements Driver {
         const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "citext").length > 0;
         });
+        const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "hstore").length > 0;
+        });
 
         if (hasUuidColumns || hasCitextColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
@@ -237,9 +241,11 @@ export class PostgresDriver implements Driver {
                     pool.connect(async (err: any, connection: any, release: Function) => {
                         if (err) return fail(err);
                         if (hasUuidColumns)
-                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
+                            await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
                         if (hasCitextColumns)
-                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
+                            await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
+                        if (hasHstoreColumns)
+                            await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
 
                         release();
                         ok();
@@ -307,6 +313,15 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
             return JSON.stringify(value);
 
+        } else if (columnMetadata.type === "hstore") {
+            if (typeof value === "string") {
+                return value;
+            } else {
+                return Object.keys(value).map(key => {
+                    return `"${key}"=>"${value[key]}"`;
+                }).join(", ");
+            }
+
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
         }
@@ -339,6 +354,21 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "hstore") {
+            if (columnMetadata.hstoreType === "object") {
+                const regexp = /"(.*?)"=>"(.*?[^\\"])"/gi;
+                const matchValue = value.match(regexp);
+                const object: ObjectLiteral = {};
+                let match;
+                while (match = regexp.exec(matchValue)) {
+                    object[match[1].replace(`\\"`, `"`)] = match[2].replace(`\\"`, `"`);
+                }
+                return object;
+
+            } else {
+                return value;
+            }
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);

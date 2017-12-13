@@ -1108,12 +1108,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["column_name"];
                     tableColumn.type = dbColumn["data_type"].toLowerCase();
-                    tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
+
+                    if (tableColumn.type = "user-defined") {
+                        tableColumn.type = dbColumn["udt_name"].toLowerCase();
+                    }
 
                     if (tableColumn.type !== "integer") {
                         tableColumn.precision = dbColumn["numeric_precision"];
                         tableColumn.scale = dbColumn["numeric_scale"];
                     }
+
+                    tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
 
                     tableColumn.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";

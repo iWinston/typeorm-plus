@@ -133,6 +133,12 @@ export class ColumnMetadata {
     enum?: any[];
 
     /**
+     * Return type of HSTORE column.
+     * Returns value as string or as object.
+     */
+    hstoreType?: string;
+
+    /**
      * Indicates if this column is an array.
      */
     isArray: boolean = false;
@@ -273,6 +279,8 @@ export class ColumnMetadata {
                 this.enum = options.args.options.enum;
             }
         }
+        if (options.args.options.hstoreType)
+            this.hstoreType = options.args.options.hstoreType;
         if (options.args.options.array)
             this.isArray = options.args.options.array;
         if (options.args.mode) {
