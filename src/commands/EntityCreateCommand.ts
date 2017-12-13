@@ -1,5 +1,6 @@
-import * as fs from "fs";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {CommandUtils} from "./CommandUtils";
+const chalk = require("chalk");
 
 /**
  * Generates a new entity.
@@ -24,34 +25,37 @@ export class EntityCreateCommand {
                 alias: "dir",
                 describe: "Directory where entity should be created."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
-                default: "ormconfig.json",
+                default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
-        const fileContent = EntityCreateCommand.getTemplate(argv.name);
-        const filename = argv.name + ".ts";
-        let directory = argv.dir;
+        try {
+            const fileContent = EntityCreateCommand.getTemplate(argv.name);
+            const filename = argv.name + ".ts";
+            let directory = argv.dir;
 
-        // if directory is not set then try to open tsconfig and find default path there
-        if (!directory) {
-            try {
-                const connections: ConnectionOptions[] = require(process.cwd() + "/" + argv.config);
-                if (connections) {
-                    const connection = connections.find(connection => { // todo: need to implement "environment" support in the ormconfig too
-                        return connection.name === argv.connection || ((argv.connection === "default" || !argv.connection) && !connection.name);
-                    });
-                    if (connection && connection.cli) {
-                        directory = connection.cli.entitiesDir;
-                    }
-                }
-            } catch (err) { }
+            // if directory is not set then try to open tsconfig and find default path there
+            if (!directory) {
+                try {
+                    const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+                    const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                    directory = connectionOptions.cli ? connectionOptions.cli.entitiesDir : undefined;
+                } catch (err) { }
+            }
+
+            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            await CommandUtils.createFile(path, fileContent);
+            console.log(chalk.green(`Entity ${chalk.blue(path)} has been created successfully.`));
+
+        } catch (err) {
+            console.log(chalk.black.bgRed("Error during entity creation:"));
+            console.error(err);
+            process.exit(1);
         }
-
-        await EntityCreateCommand.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
@@ -59,21 +63,12 @@ export class EntityCreateCommand {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a file with the given content in the given path.
-     */
-    protected static createFile(path: string, content: string): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, content, err => err ? fail(err) : ok());
-        });
-    }
-
-    /**
      * Gets contents of the entity file.
      */
     protected static getTemplate(name: string): string {
-        return `import {Table} from "typeorm";
+        return `import {Entity} from "typeorm";
 
-@Table()
+@Entity()
 export class ${name} {
 
 }

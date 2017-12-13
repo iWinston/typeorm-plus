@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -12,7 +12,7 @@ describe("github issues > #58 relations with multiple primary keys", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -41,11 +41,11 @@ describe("github issues > #58 relations with multiple primary keys", () => {
         postCategory2.category = category2;
         postCategory2.post = post;
 
-        await connection.entityManager.persist(postCategory1);
-        await connection.entityManager.persist(postCategory2);
+        await connection.manager.save(postCategory1);
+        await connection.manager.save(postCategory2);
 
         // check that all persisted objects exist
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "postCategory")
             .innerJoinAndSelect("postCategory.category", "category")

@@ -1,17 +1,15 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    synchronize: true,
     entities: [__dirname + "/entity/*"]
 };
 
@@ -27,7 +25,7 @@ createConnection(options).then(connection => {
     mainCategory.manyCategories.push(category1);
     mainCategory.oneManyCategory = category1;
 
-    categoryRepository.persist(mainCategory)
+    categoryRepository.save(mainCategory)
         .then(savedCategory => {
             console.log("saved category: ", savedCategory);
         })

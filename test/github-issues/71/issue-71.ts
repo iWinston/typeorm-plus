@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import {Artikel} from "./entity/Artikel";
@@ -11,7 +11,7 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -28,9 +28,9 @@ describe("github issues > #71 ManyToOne relation with custom column name persist
         artikel.saison = "------";
         artikel.kollektion = kollektion;
 
-        await connection.entityManager.persist(artikel);
+        await connection.manager.save(artikel);
 
-        const loadedArtikel = await connection.entityManager
+        const loadedArtikel = await connection.manager
             .createQueryBuilder(Artikel, "artikel")
             .innerJoinAndSelect("artikel.kollektion", "kollektion")
             .where("artikel.id=:id", { id: 1 })

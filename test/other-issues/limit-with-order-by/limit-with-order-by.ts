@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
@@ -11,7 +11,7 @@ describe("other issues > using limit in conjunction with order by", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -31,17 +31,17 @@ describe("other issues > using limit in conjunction with order by", () => {
                 category.name = "category #" + i;
                 post.categories.push(category);
             }
-            promises.push(connection.entityManager.persist(post));
+            promises.push(connection.manager.save(post));
         }
 
         await Promise.all(promises);
 
         // check if ordering by main object works correctly
 
-        const loadedPosts1 = await connection.entityManager
+        const loadedPosts1 = await connection.manager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "categories")
-            .setMaxResults(10)
+            .take(10)
             .orderBy("post.id", "DESC")
             .getMany();
 

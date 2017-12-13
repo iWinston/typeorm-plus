@@ -1,9 +1,11 @@
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
 import {Connection} from "../connection/Connection";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {RelationLoader} from "../query-builder/RelationLoader";
 
 /**
- * This class wraps entities and provides functions there to lazily load its relations.
+ * Wraps entities and creates getters/setters for their relations
+ * to be able to lazily load relations when accessing these relations.
  */
 export class LazyRelationsWrapper {
 
@@ -18,100 +20,43 @@ export class LazyRelationsWrapper {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    wrap(object: Object, relation: RelationMetadata) {
-        const connection = this.connection;
-        const index = "__" + relation.propertyName + "__";
-        const promiseIndex = "__promise__" + relation.propertyName + "__";
-        const resolveIndex = "__has__" + relation.propertyName + "__";
+    /**
+     * Wraps given entity and creates getters/setters for its given relation
+     * to be able to lazily load data when accessing these relation.
+     */
+    wrap(object: ObjectLiteral, relation: RelationMetadata) {
+        const relationLoader = new RelationLoader(this.connection);
+        const dataIndex = "__" + relation.propertyName + "__"; // in what property of the entity loaded data will be stored
+        const promiseIndex = "__promise_" + relation.propertyName + "__"; // in what property of the entity loading promise will be stored
+        const resolveIndex = "__has_" + relation.propertyName + "__"; // indicates if relation data already was loaded or not, we need this flag if loaded data is empty
 
         Object.defineProperty(object, relation.propertyName, {
             get: function() {
-                if (this[resolveIndex] === true)
-                    return Promise.resolve(this[index]);
-                if (this[promiseIndex])
+                if (this[resolveIndex] === true) // if related data already was loaded then simply return it
+                    return Promise.resolve(this[dataIndex]);
+
+                if (this[promiseIndex]) // if related data is loading then return a promise relationLoader loads it
                     return this[promiseIndex];
 
-                // create shortcuts for better readability
-                const escapeAlias = (alias: string) => connection.driver.escapeAliasName(alias);
-                const escapeColumn = (column: string) => connection.driver.escapeColumnName(column);
+                // nothing is loaded yet, load relation data and save it in the model once they are loaded
+                this[promiseIndex] = relationLoader.load(relation, this).then(result => {
+                    this[dataIndex] = result;
+                    this[resolveIndex] = true;
+                    delete this[promiseIndex];
+                    return this[dataIndex];
 
-                const qb = new QueryBuilder(connection);
-                if (relation.isManyToMany) {
-
-                    qb.select(relation.propertyName)
-                        .from(relation.type, relation.propertyName)
-                        .innerJoin(relation.junctionEntityMetadata.table.name, relation.junctionEntityMetadata.name,
-                            `${escapeAlias(relation.junctionEntityMetadata.name)}.${escapeColumn(relation.name)}=:${relation.propertyName}Id`)
-                        .setParameter(relation.propertyName + "Id", this[relation.referencedColumnName]);
-
-                    this[promiseIndex] = qb.getMany().then(results => {
-                        this[index] = results;
-                        this[resolveIndex] = true;
-                        delete this[promiseIndex];
-                        return this[index];
-                    }).catch(err => {
-                        throw err;
-                    });
-                    return this[promiseIndex];
-
-                } else if (relation.isOneToMany) {
-
-                    qb.select(relation.propertyName)
-                        .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
-                        .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
-                        .andWhereInIds([relation.entityMetadata.getEntityIdMixedMap(this)]);
-
-                    this[promiseIndex] = qb.getMany().then(results => {
-                        this[index] = results;
-                        this[resolveIndex] = true;
-                        delete this[promiseIndex];
-                        return this[index];
-
-                    }).catch(err => {
-                        throw err;
-                    });
-                    return this[promiseIndex];
-
-                } else {
-
-                    if (relation.hasInverseSide) {
-                        qb.select(relation.propertyName)
-                            .from(relation.inverseRelation.entityMetadata.target, relation.propertyName)
-                            .innerJoin(`${relation.propertyName}.${relation.inverseRelation.propertyName}`, relation.entityMetadata.targetName)
-                            .where(relation.entityMetadata.targetName + "." + relation.joinColumn.referencedColumn.name + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
-
-                    } else {
-                        // (ow) post.category<=>category.post
-                        // loaded: category from post
-                        // example: SELECT category.id AS category_id, category.name AS category_name FROM category category
-                        //              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
-                        qb.select(relation.propertyName) // category
-                            .from(relation.type, relation.propertyName) // Category, category
-                            .innerJoin(relation.entityMetadata.target as Function, relation.entityMetadata.name,
-                                `${escapeAlias(relation.entityMetadata.name)}.${escapeColumn(relation.propertyName)}=${escapeAlias(relation.propertyName)}.${escapeColumn(relation.referencedColumn.propertyName)}`)
-                            .where(relation.entityMetadata.name + "." + relation.joinColumn.referencedColumn.name + "=:id", { id: relation.entityMetadata.getEntityIdMixedMap(this) }); // is referenced column usage is correct here?
-                    }
-
-                    this[promiseIndex] = qb.getOne().then(result => {
-                        this[index] = result;
-                        this[resolveIndex] = true;
-                        delete this[promiseIndex];
-                        return this[index];
-
-                    }).catch(err => {
-                        throw err;
-                    });
-                    return this[promiseIndex];
-                }
+                }); // .catch((err: any) => { throw err; });
+                return this[promiseIndex];
             },
             set: function(promise: Promise<any>) {
-                if (promise instanceof Promise) {
+                if (promise instanceof Promise) { // if set data is a promise then wait for its resolve and save in the object
                     promise.then(result => {
-                        this[index] = result;
+                        this[dataIndex] = result;
                         this[resolveIndex] = true;
                     });
-                } else {
-                    this[index] = promise;
+
+                } else { // if its direct data set (non promise, probably not safe-typed)
+                    this[dataIndex] = promise;
                     this[resolveIndex] = true;
                 }
             },

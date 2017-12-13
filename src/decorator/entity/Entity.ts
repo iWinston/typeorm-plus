@@ -6,7 +6,22 @@ import {EntityOptions} from "../options/EntityOptions";
  * This decorator is used to mark classes that will be an entity (table or document depend on database type).
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
-export function Entity(name?: string, options?: EntityOptions) {
+export function Entity(options?: EntityOptions): Function;
+
+/**
+ * This decorator is used to mark classes that will be an entity (table or document depend on database type).
+ * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ */
+export function Entity(name?: string, options?: EntityOptions): Function;
+
+/**
+ * This decorator is used to mark classes that will be an entity (table or document depend on database type).
+ * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ */
+export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: EntityOptions): Function {
+    const options = (typeof nameOrOptions === "object" ? nameOrOptions as EntityOptions : maybeOptions) || {};
+    const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
+
     return function (target: Function) {
         const args: TableMetadataArgs = {
             target: target,
@@ -14,8 +29,10 @@ export function Entity(name?: string, options?: EntityOptions) {
             type: "regular",
             orderBy: options && options.orderBy ? options.orderBy : undefined,
             engine: options && options.engine ? options.engine : undefined,
-            skipSchemaSync: !!(options && options.skipSchemaSync === true)
+            database: options && options.database ? options.database : undefined,
+            schema: options && options.schema ? options.schema : undefined,
+            skipSync: !!(options && options.skipSync === true)
         };
-        getMetadataArgsStorage().tables.add(args);
+        getMetadataArgsStorage().tables.push(args);
     };
 }

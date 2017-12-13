@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {expect} from "chai";
@@ -11,7 +11,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -26,7 +26,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
         token.user = user; // this is not necessary at all
 
         // save
-        await connection.getRepository(User).persist(user);
+        await connection.getRepository(User).save(user);
 
         // get to check
         const tokens = await connection.getRepository(AccessToken)
@@ -70,7 +70,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
         token.user = user; // this is necessary to cascades to work because we are saving token, not user
 
         // save
-        await connection.getRepository(AccessToken).persist(token);
+        await connection.getRepository(AccessToken).save(token);
 
         // get to check
         const tokens = await connection.getRepository(AccessToken)

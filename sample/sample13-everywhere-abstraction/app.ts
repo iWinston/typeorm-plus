@@ -1,24 +1,19 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
 import {PostAuthor} from "./entity/PostAuthor";
 import {Blog} from "./entity/Blog";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [__dirname + "/entity/*"]
 };
 
@@ -62,14 +57,14 @@ createConnection(options).then(connection => {
     let blogRepository = connection.getRepository(Blog);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved");
             return postRepository.findOneById(post.id);
         })
         .then(loadedPost => {
             console.log("post is loaded: ", loadedPost);
-            return blogRepository.persist(blog);
+            return blogRepository.save(blog);
         })
         .then(blog => {
             console.log("Blog has been saved");
@@ -77,7 +72,7 @@ createConnection(options).then(connection => {
         })
         .then(loadedBlog => {
             console.log("blog is loaded: ", loadedBlog);
-            return blogRepository.persist(blog);
+            return blogRepository.save(blog);
         })
         .catch(error => console.log("Cannot save. Error: ", error.stack ? error.stack : error));
 

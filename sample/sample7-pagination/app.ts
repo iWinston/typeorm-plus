@@ -1,19 +1,17 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    synchronize: true,
     entities: [__dirname + "/entity/*"]
 };
 
@@ -46,10 +44,10 @@ createConnection(options).then(connection => {
         .createQueryBuilder("p")
         .leftJoinAndSelect("p.author", "author")
         .leftJoinAndSelect("p.categories", "categories")
-        .setFirstResult(5)
-        .setMaxResults(10);
+        .skip(5)
+        .take(10);
 
-    Promise.all(posts.map(post => postRepository.persist(post)))
+    Promise.all(posts.map(post => postRepository.save(post)))
         .then(savedPosts => {
             console.log("Posts has been saved. Lets try to load some posts");
             return qb.getMany();

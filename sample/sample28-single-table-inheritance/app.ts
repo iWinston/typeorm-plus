@@ -1,25 +1,19 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Employee} from "./entity/Employee";
 import {Homesitter} from "./entity/Homesitter";
 import {Student} from "./entity/Student";
 import {Person} from "./entity/Person";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        // logQueries: true,
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [
         Person,
         Employee,
@@ -38,7 +32,7 @@ createConnection(options).then(async connection => {
     employee.salary = 200000;
 
     console.log("saving the employee: ");
-    await employeeRepository.persist(employee);
+    await employeeRepository.save(employee);
     console.log("employee has been saved: ", employee);
 
     console.log("now loading the employee: ");
@@ -55,7 +49,7 @@ createConnection(options).then(async connection => {
     homesitter.numberOfKids = 5;
 
     console.log("saving the homesitter: ");
-    await homesitterRepository.persist(homesitter);
+    await homesitterRepository.save(homesitter);
     console.log("homesitter has been saved: ", homesitter);
 
     console.log("now loading the homesitter: ");
@@ -72,7 +66,7 @@ createConnection(options).then(async connection => {
     student.faculty = "computer science";
 
     console.log("saving the student: ");
-    await studentRepository.persist(student);
+    await studentRepository.save(student);
     console.log("student has been saved: ", student);
 
     console.log("now loading the student: ");

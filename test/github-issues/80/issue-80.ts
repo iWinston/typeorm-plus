@@ -1,16 +1,16 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
 
-describe("github issues > #80 repository.persist fails when empty array is sent to the method", () => {
+describe("github issues > #80 repository.save fails when empty array is sent to the method", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -18,7 +18,7 @@ describe("github issues > #80 repository.persist fails when empty array is sent 
     it("should persist successfully and return persisted entity", () => Promise.all(connections.map(async connection => {
         const post = new Post();
         post.title = "Hello Post #1";
-        const returnedPost = await connection.entityManager.persist(post);
+        const returnedPost = await connection.manager.save(post);
 
         expect(returnedPost).not.to.be.empty;
         returnedPost.should.be.equal(post);
@@ -26,7 +26,7 @@ describe("github issues > #80 repository.persist fails when empty array is sent 
 
     it("should not fail if empty array is given to persist method", () => Promise.all(connections.map(async connection => {
         const posts: Post[] = [];
-        const returnedPosts = await connection.entityManager.persist(posts);
+        const returnedPosts = await connection.manager.save(posts);
         expect(returnedPosts).not.to.be.undefined;
         returnedPosts.should.be.equal(posts);
     })));

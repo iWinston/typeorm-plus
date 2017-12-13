@@ -1,9 +1,7 @@
 import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
-import { Project } from "./entity/Project";
-import { User } from "./entity/User";
-import { expect } from "chai";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {Connection} from "../../../src/connection/Connection";
+import {expect} from "chai";
 
 describe("github issues > #108 Error with constraint names on postgres", () => {
 
@@ -11,7 +9,7 @@ describe("github issues > #108 Error with constraint names on postgres", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchema: true,
     }));
     after(() => closeTestingConnections(connections));
 

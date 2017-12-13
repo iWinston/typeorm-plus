@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
@@ -11,7 +11,7 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -30,16 +30,16 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         post.categories = [category1, category2];
 
         // persist post (other are persisted by cascades)
-        await connection.entityManager.persist(post);
+        await connection.manager.save(post);
 
         // check that all persisted objects exist
-        const loadedPost = await connection.entityManager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .innerJoinAndSelect("post.categories", "category")
             .orderBy("post.id, category.id")
             .getOne()!;
 
-        const loadedCategories = await connection.entityManager
+        const loadedCategories = await connection.manager
             .createQueryBuilder(Category, "category")
             .orderBy("category.id")
             .getMany();
@@ -56,14 +56,14 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
         loadedCategories[1].id.should.be.equal(2);
 
         // now remove post. categories should be removed too
-        await connection.entityManager.remove(post);
+        await connection.manager.remove(post);
 
         // load them again to make sure they are not exist anymore
-        const loadedPosts2 = await connection.entityManager
+        const loadedPosts2 = await connection.manager
             .createQueryBuilder(Post, "post")
             .getMany();
 
-        const loadedCategories2 = await connection.entityManager
+        const loadedCategories2 = await connection.manager
             .createQueryBuilder(Category, "category")
             .getMany();
 

@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column} from "../../../src/index";
+import {Column, PrimaryGeneratedColumn} from "../../../src/index";
 import {TreeLevelColumn} from "../../../src/decorator/tree/TreeLevelColumn";
 import {ClosureEntity} from "../../../src/decorator/entity/ClosureEntity";
 import {TreeParent} from "../../../src/decorator/tree/TreeParent";

@@ -1,12 +1,12 @@
-import {TableSchema} from "../schema-builder/schema/TableSchema";
-import {ColumnSchema} from "../schema-builder/schema/ColumnSchema";
-import {ColumnTypes} from "../metadata/types/ColumnTypes";
-import {QueryBuilder} from "../query-builder/QueryBuilder";
+import {Table} from "../schema-builder/schema/Table";
+import {TableColumn} from "../schema-builder/schema/TableColumn";
 import {Connection} from "../connection/Connection";
-import {QueryRunnerProvider} from "../query-runner/QueryRunnerProvider";
 import {Migration} from "./Migration";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {PromiseUtils} from "../util/PromiseUtils";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -14,17 +14,11 @@ import {PromiseUtils} from "../util/PromiseUtils";
 export class MigrationExecutor {
 
     // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    protected queryRunnerProvider: QueryRunnerProvider;
-
-    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, queryRunnerProvider?: QueryRunnerProvider) {
-        this.queryRunnerProvider = queryRunnerProvider || new QueryRunnerProvider(connection.driver, true);
+    constructor(protected connection: Connection,
+                protected queryRunner?: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
@@ -36,14 +30,14 @@ export class MigrationExecutor {
      * thus not saved in the database.
      */
     async executePendingMigrations(): Promise<void> {
-        const queryRunner = await this.queryRunnerProvider.provide();
-        const entityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(this.queryRunnerProvider);
+
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
         // create migrations table if its not created yet
-        await this.createMigrationsTableIfNotExist();
+        await this.createMigrationsTableIfNotExist(queryRunner);
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations();
+        const executedMigrations = await this.loadExecutedMigrations(queryRunner);
 
         // get the time when last migration was executed
         let lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
@@ -68,33 +62,33 @@ export class MigrationExecutor {
 
         // if no migrations are pending then nothing to do here
         if (!pendingMigrations.length) {
-            this.connection.logger.log("info", `No migrations are pending`);
+            this.connection.logger.logSchemaBuild(`No migrations are pending`);
             return;
         }
 
         // log information about migration execution
-        this.connection.logger.log("info", `${executedMigrations.length} migrations are already loaded in the database.`);
-        this.connection.logger.log("info", `${allMigrations.length} migrations were found in the source code.`);
+        this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
+        this.connection.logger.logSchemaBuild(`${allMigrations.length} migrations were found in the source code.`);
         if (lastTimeExecutedMigration)
-            this.connection.logger.log("info", `${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
-        this.connection.logger.log("info", `${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
+            this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
+        this.connection.logger.logSchemaBuild(`${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive()) {
-            await queryRunner.beginTransaction();
+        if (!queryRunner.isTransactionActive) {
+            await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
 
         // run all pending migrations in a sequence
         try {
             await PromiseUtils.runInSequence(pendingMigrations, migration => {
-                return migration.instance!.up(queryRunner, this.connection, entityManager)
+                return migration.instance!.up(queryRunner)
                     .then(() => { // now when migration is executed we need to insert record about it into the database
-                        return this.insertExecutedMigration(migration);
+                        return this.insertExecutedMigration(queryRunner, migration);
                     })
                     .then(() => { // informative log about migration success
-                        this.connection.logger.log("info", `Migration ${migration.name} has been executed successfully.`);
+                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
                     });
             });
 
@@ -103,10 +97,19 @@ export class MigrationExecutor {
                 await queryRunner.commitTransaction();
 
         } catch (err) { // rollback transaction if we started it
-            if (transactionStartedByUs)
-                await queryRunner.rollbackTransaction();
+            if (transactionStartedByUs) {
+                try { // we throw original error even if rollback thrown an error
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
 
             throw err;
+
+        } finally {
+
+            // if query runner was created by us then release it
+            if (!this.queryRunner)
+                await queryRunner.release();
         }
 
     }
@@ -115,21 +118,21 @@ export class MigrationExecutor {
      * Reverts last migration that were run.
      */
     async undoLastMigration(): Promise<void> {
-        const queryRunner = await this.queryRunnerProvider.provide();
-        const entityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(this.queryRunnerProvider);
+
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
         // create migrations table if its not created yet
-        await this.createMigrationsTableIfNotExist();
+        await this.createMigrationsTableIfNotExist(queryRunner);
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations();
+        const executedMigrations = await this.loadExecutedMigrations(queryRunner);
 
         // get the time when last migration was executed
         let lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
 
         // if no migrations found in the database then nothing to revert
         if (!lastTimeExecutedMigration) {
-            this.connection.logger.log("info", `No migrations was found in the database. Nothing to revert!`);
+            this.connection.logger.logSchemaBuild(`No migrations was found in the database. Nothing to revert!`);
             return;
         }
 
@@ -144,31 +147,40 @@ export class MigrationExecutor {
             throw new Error(`No migration ${lastTimeExecutedMigration.name} was found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`);
 
         // log information about migration execution
-        this.connection.logger.log("info", `${executedMigrations.length} migrations are already loaded in the database.`);
-        this.connection.logger.log("info", `${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
-        this.connection.logger.log("info", `Now reverting it...`);
+        this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
+        this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
+        this.connection.logger.logSchemaBuild(`Now reverting it...`);
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive()) {
-            await queryRunner.beginTransaction();
+        if (!queryRunner.isTransactionActive) {
+            await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
 
         try {
-            await migrationToRevert.instance!.down(queryRunner, this.connection, entityManager);
-            await this.deleteExecutedMigration(migrationToRevert);
-            this.connection.logger.log("info", `Migration ${migrationToRevert.name} has been reverted successfully.`);
+            await migrationToRevert.instance!.down(queryRunner);
+            await this.deleteExecutedMigration(queryRunner, migrationToRevert);
+            this.connection.logger.logSchemaBuild(`Migration ${migrationToRevert.name} has been reverted successfully.`);
 
             // commit transaction if we started it
             if (transactionStartedByUs)
                 await queryRunner.commitTransaction();
 
         } catch (err) { // rollback transaction if we started it
-            if (transactionStartedByUs)
-                await queryRunner.rollbackTransaction();
+            if (transactionStartedByUs) {
+                try { // we throw original error even if rollback thrown an error
+                    await queryRunner.rollbackTransaction();
+                } catch (rollbackError) { }
+            }
 
             throw err;
+
+        } finally {
+
+            // if query runner was created by us then release it
+            if (!this.queryRunner)
+                await queryRunner.release();
         }
     }
 
@@ -179,24 +191,19 @@ export class MigrationExecutor {
     /**
      * Creates table "migrations" that will store information about executed migrations.
      */
-    protected async createMigrationsTableIfNotExist(): Promise<void> {
-        const queryRunner = await this.queryRunnerProvider.provide();
+    protected async createMigrationsTableIfNotExist(queryRunner: QueryRunner): Promise<void> {
         const tableExist = await queryRunner.hasTable("migrations"); // todo: table name should be configurable
         if (!tableExist) {
-            await queryRunner.createTable(new TableSchema("migrations", [
-                new ColumnSchema({
+            await queryRunner.createTable(new Table("migrations", [
+                new TableColumn({
                     name: "timestamp",
-                    type: queryRunner.normalizeType({
-                        type: ColumnTypes.NUMBER
-                    }),
+                    type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }),
                     isPrimary: true,
                     isNullable: false
                 }),
-                new ColumnSchema({
+                new TableColumn({
                     name: "name",
-                    type: queryRunner.normalizeType({
-                        type: ColumnTypes.STRING
-                    }),
+                    type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }),
                     isNullable: false
                 }),
             ]));
@@ -206,10 +213,11 @@ export class MigrationExecutor {
     /**
      * Loads all migrations that were executed and saved into the database.
      */
-    protected async loadExecutedMigrations(): Promise<Migration[]> {
-        const migrationsRaw: ObjectLiteral[] = await new QueryBuilder(this.connection, this.queryRunnerProvider)
+    protected async loadExecutedMigrations(queryRunner: QueryRunner): Promise<Migration[]> {
+        const migrationsRaw: ObjectLiteral[] = await this.connection.manager
+            .createQueryBuilder(queryRunner)
             .select()
-            .fromTable("migrations", "migrations")
+            .from("migrations", "migrations")
             .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
@@ -221,11 +229,11 @@ export class MigrationExecutor {
      * Gets all migrations that setup for this connection.
      */
     protected getMigrations(): Migration[] {
-        const migrations = this.connection.getMigrations().map(migration => {
+        const migrations = this.connection.migrations.map(migration => {
             const migrationClassName = (migration.constructor as any).name;
-            const migrationTimestamp = parseInt(migrationClassName.substr(-10));
+            const migrationTimestamp = parseInt(migrationClassName.substr(-13));
             if (!migrationTimestamp)
-                throw new Error(`Migration class name should contain a class name at the end of the file. ${migrationClassName} migration name is wrong.`);
+                throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a UNIX timestamp appended. `);
 
             return new Migration(migrationTimestamp, migrationClassName, migration);
         });
@@ -245,23 +253,37 @@ export class MigrationExecutor {
     /**
      * Inserts new executed migration's data into migrations table.
      */
-    protected async insertExecutedMigration(migration: Migration): Promise<void> {
-        const queryRunner = await this.queryRunnerProvider.provide();
-        await queryRunner.insert("migrations", {
-            timestamp: migration.timestamp,
-            name: migration.name,
-        });
+    protected async insertExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
+        if (this.connection.driver instanceof SqlServerDriver) {
+            await queryRunner.insert("migrations", {
+                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
+                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
+            });
+
+        } else {
+            await queryRunner.insert("migrations", {
+                timestamp: migration.timestamp,
+                name: migration.name,
+            });
+        }
     }
 
     /**
      * Delete previously executed migration's data from the migrations table.
      */
-    protected async deleteExecutedMigration(migration: Migration): Promise<void> {
-        const queryRunner = await this.queryRunnerProvider.provide();
-        await queryRunner.delete("migrations", {
-            timestamp: migration.timestamp,
-            name: migration.name,
-        });
+    protected async deleteExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
+        if (this.connection.driver instanceof SqlServerDriver) {
+            await queryRunner.delete("migrations", {
+                timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
+                name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
+            });
+
+        } else {
+            await queryRunner.delete("migrations", {
+                timestamp: migration.timestamp,
+                name: migration.name,
+            });
+        }
     }
 
 }

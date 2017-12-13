@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
@@ -9,7 +9,7 @@ describe("github issues > #190 too many SQL variables when using setMaxResults i
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
         enabledDrivers: ["sqlite"] // this issue only related to sqlite
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -20,13 +20,13 @@ describe("github issues > #190 too many SQL variables when using setMaxResults i
         for (let i = 0; i < 1000; i++) {
             const post1 = new Post();
             post1.title = "Hello Post #1";
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
         }
 
-        const loadedPosts = await connection.entityManager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
-            .setMaxResults(1000)
+            .take(1000)
             .getMany();
 
         loadedPosts.length.should.be.equal(1000);

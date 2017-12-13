@@ -1,5 +1,4 @@
 import {RelationOptions} from "../options/RelationOptions";
-import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ObjectType} from "../../common/ObjectType";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
@@ -9,7 +8,7 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
  * multiple instances of Entity1. To achieve it, this type of relation creates a junction table, where it storage
  * entity1 and entity2 ids. This is owner side of the relationship.
  */
-export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean }): Function;
+export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>, options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function;
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
@@ -18,7 +17,7 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>, optio
  */
 export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
                               inverseSide?: string|((object: T) => any),
-                              options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean }): Function;
+                              options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function;
 
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
@@ -26,8 +25,8 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
  * entity1 and entity2 ids. This is owner side of the relationship.
  */
 export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
-                              inverseSideOrOptions?: string|((object: T) => any)|{ cascadeInsert?: boolean, cascadeUpdate?: boolean },
-                              options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean }): Function {
+                              inverseSideOrOptions?: string|((object: T) => any)|{ cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean },
+                              options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function {
     let inverseSideProperty: string|((object: T) => any);
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;
@@ -38,20 +37,25 @@ export function ManyToMany<T>(typeFunction: (type?: any) => ObjectType<T>,
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
-        const isLazy = reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise";
+        // now try to determine it its lazy relation
+        let isLazy = options && options.lazy === true ? true : false;
+        if (!isLazy && Reflect && (Reflect as any).getMetadata) { // automatic determination
+            const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
+            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
+                isLazy = true;
+        }
 
         const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            propertyType: reflectedType,
-            relationType: RelationTypes.MANY_TO_MANY,
+            // propertyType: reflectedType,
+            relationType: "many-to-many",
             isLazy: isLazy,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }
 

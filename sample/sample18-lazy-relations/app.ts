@@ -1,23 +1,18 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post, Author, Category]
 };
 
@@ -37,7 +32,7 @@ createConnection(options).then(connection => {
     // same as: post.author = Promise.resolve(author);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved. Lets save post from inverse side.");
             console.log(post);
@@ -47,27 +42,27 @@ createConnection(options).then(connection => {
             secondPost.title = "About second post";
             author.posts = Promise.resolve([secondPost]);
             
-            return authorRepository.persist(author);
+            return authorRepository.save(author);
         })
-        .then(author => {
+        .then((author: any) => { // temporary
             console.log("Author with a new post has been saved. Lets try to update post in the author");
-        
-            return author.posts.then(posts => {
-                posts[0].title = "should be updated second post";
-                return authorRepository.persist(author);
+
+            return author.posts!.then((posts: any) => {  // temporary
+                posts![0]!.title = "should be updated second post";
+                return authorRepository.save(author!);
             });
         })
         .then(updatedAuthor => {
             console.log("Author has been updated: ", updatedAuthor);
             console.log("Now lets load all posts with their authors:");
-            return postRepository.find({ alias: "post", leftJoinAndSelect: { author: "post.author" } });
+            return postRepository.find({ join: { alias: "post", leftJoinAndSelect: { author: "post.author" } } });
         })
         .then(posts => {
             console.log("Posts are loaded: ", posts);
             console.log("Now lets delete a post");
             posts[0].author = Promise.resolve(null);
             posts[1].author = Promise.resolve(null);
-            return postRepository.persist(posts[0]);
+            return postRepository.save(posts[0]);
         })
         .then(posts => {
             console.log("Two post's author has been removed.");  
@@ -87,20 +82,20 @@ createConnection(options).then(connection => {
                 category2
             ]);
             
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(posts => {
             console.log("Post has been saved with its categories. ");
             console.log("Lets find it now. ");
-            return postRepository.find({ alias: "post", innerJoinAndSelect: { categories: "post.categories" } });
+            return postRepository.find({ join: { alias: "post", innerJoinAndSelect: { categories: "post.categories" } } });
         })
         .then(posts => {
             console.log("Post with categories are loaded: ", posts);
             console.log("Lets remove one of the categories: ");
-            return posts[0].categories.then(categories => {
-                categories.splice(0, 1);
+            return posts[0].categories.then((categories: any) => {  // temporary
+                categories!.splice(0, 1);
                 // console.log(posts[0]);
-                return postRepository.persist(posts[0]);
+                return postRepository.save(posts[0]);
             });
         })
         .then(posts => {

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {expect} from "chai";
@@ -12,7 +12,7 @@ describe("transaction > method wrapped into transaction decorator", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
         enabledDrivers: ["mysql"] // since @Transaction accepts a specific connection name we can use only one connection and its name
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -33,11 +33,11 @@ describe("transaction > method wrapped into transaction decorator", () => {
         await controller.save.apply(controller, [post, category]);
 
         // controller should have saved both post and category successfully
-        const loadedPost = await connection.entityManager.findOne(Post, { title: "successfully saved post" });
+        const loadedPost = await connection.manager.findOne(Post, { where: { title: "successfully saved post" } });
         expect(loadedPost).not.to.be.empty;
         loadedPost!.should.be.eql(post);
 
-        const loadedCategory = await connection.entityManager.findOne(Category, { name: "successfully saved category" });
+        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "successfully saved category" } });
         expect(loadedCategory).not.to.be.empty;
         loadedCategory!.should.be.eql(category);
 
@@ -59,10 +59,10 @@ describe("transaction > method wrapped into transaction decorator", () => {
         }
         expect(throwError).not.to.be.empty;
 
-        const loadedPost = await connection.entityManager.findOne(Post, { title: "successfully saved post" });
+        const loadedPost = await connection.manager.findOne(Post, { where: { title: "successfully saved post" }});
         expect(loadedPost).to.be.empty;
 
-        const loadedCategory = await connection.entityManager.findOne(Category, { name: "successfully saved category" });
+        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "successfully saved category" }});
         expect(loadedCategory).to.be.empty;
 
     })));
@@ -83,10 +83,10 @@ describe("transaction > method wrapped into transaction decorator", () => {
         }
         expect(throwError).not.to.be.empty;
 
-        const loadedPost = await connection.entityManager.findOne(Post, { title: "successfully saved post" });
+        const loadedPost = await connection.manager.findOne(Post, { where: { title: "successfully saved post" }});
         expect(loadedPost).to.be.empty;
 
-        const loadedCategory = await connection.entityManager.findOne(Category, { name: "successfully saved category" });
+        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "successfully saved category" }});
         expect(loadedCategory).to.be.empty;
 
     })));
@@ -101,7 +101,7 @@ describe("transaction > method wrapped into transaction decorator", () => {
         // call controller method and make its rejected since controller action should fail
         let throwError: any;
         try {
-            await controller.nonSafeSave.apply(controller, [connection.entityManager, post, category]);
+            await controller.nonSafeSave.apply(controller, [connection.manager, post, category]);
 
         } catch (err) {
             throwError = err;
@@ -109,13 +109,37 @@ describe("transaction > method wrapped into transaction decorator", () => {
         expect(throwError).not.to.be.empty;
 
         // controller should have saved both post and category successfully
-        const loadedPost = await connection.entityManager.findOne(Post, { title: "successfully saved post" });
+        const loadedPost = await connection.manager.findOne(Post, { where: { title: "successfully saved post" }});
         expect(loadedPost).not.to.be.empty;
         loadedPost!.should.be.eql(post);
 
-        const loadedCategory = await connection.entityManager.findOne(Category, { name: "successfully saved category" });
+        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "successfully saved category" }});
         expect(loadedCategory).to.be.empty;
 
+    })));
+
+    it("should inject repository and custom repository into method decorated with @Transaction", () => Promise.all(connections.map(async connection => {
+        const post = new Post();
+        post.title = "successfully saved post";
+
+        const category = new Category();
+        category.name = "successfully saved category";
+
+        // call controller method
+        const savedCategory = await controller.saveWithRepository.apply(controller, [post, category]);
+        
+        // controller should successfully call custom repository method and return the found entity
+        expect(savedCategory).not.to.be.empty;
+        savedCategory!.should.be.eql(category);
+
+        // controller should have saved both post and category successfully
+        const loadedPost = await connection.manager.findOne(Post, { where: { title: "successfully saved post" } });
+        expect(loadedPost).not.to.be.empty;
+        loadedPost!.should.be.eql(post);
+
+        const loadedCategory = await connection.manager.findOne(Category, { where: { name: "successfully saved category" } });
+        expect(loadedCategory).not.to.be.empty;
+        loadedCategory!.should.be.eql(category);
     })));
 
 });

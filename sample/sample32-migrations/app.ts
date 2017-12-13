@@ -2,21 +2,16 @@ import "reflect-metadata";
 import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
-import {MigrationExecutor} from "../../src/migration/MigrationExecutor";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    autoSchemaSync: true,
-    logging: {
-        logQueries: true,
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    synchronize: true,
+    logging: ["query", "error"],
     entities: [Post, Author],
 };
 
@@ -33,7 +28,7 @@ createConnection(options).then(async connection => {
 
     let postRepository = connection.getRepository(Post);
 
-    await postRepository.persist(post);
+    await postRepository.save(post);
     console.log("Database schema was created and data has been inserted into the database.");
 
     // close connection now
@@ -41,18 +36,14 @@ createConnection(options).then(async connection => {
 
     // now create a new connection
     connection = await createConnection({
+        type: "mysql",
         name: "mysql",
-        driver: {
-            type: "mysql",
-            host: "localhost",
-            port: 3306,
-            username: "test",
-            password: "test",
-            database: "test"
-        },
-        logging: {
-            logQueries: true
-        },
+        host: "localhost",
+        port: 3306,
+        username: "test",
+        password: "test",
+        database: "test",
+        logging: ["query", "error"],
         entities: [
             Post,
             Author

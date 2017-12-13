@@ -2,9 +2,9 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe("repository > removeById and removeByIds methods", function() {
+describe("repository > deleteById methods", function() {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -14,7 +14,7 @@ describe("repository > removeById and removeByIds methods", function() {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -23,9 +23,8 @@ describe("repository > removeById and removeByIds methods", function() {
     // Specifications
     // -------------------------------------------------------------------------
 
-    it("remove using removeById method should delete successfully", () => Promise.all(connections.map(async connection => {
+    it("remove using deleteById method should delete successfully", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        const specificPostRepository = connection.getSpecificRepository(Post);
 
         // save a new posts
         const newPost1 = postRepository.create();
@@ -38,14 +37,14 @@ describe("repository > removeById and removeByIds methods", function() {
         newPost4.title = "Super post #4";
 
         await Promise.all([
-            postRepository.persist(newPost1),
-            postRepository.persist(newPost2),
-            postRepository.persist(newPost3),
-            postRepository.persist(newPost4)
+            postRepository.save(newPost1),
+            postRepository.save(newPost2),
+            postRepository.save(newPost3),
+            postRepository.save(newPost4)
         ]);
 
         // remove one
-        await specificPostRepository.removeById(1);
+        await postRepository.deleteById(1);
 
         // load to check
         const loadedPosts = await postRepository.find();
@@ -60,7 +59,6 @@ describe("repository > removeById and removeByIds methods", function() {
 
     it("remove using removeByIds method should delete successfully",  () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
-        const specificPostRepository = connection.getSpecificRepository(Post);
 
         // save a new posts
         const newPost1 = postRepository.create();
@@ -73,14 +71,14 @@ describe("repository > removeById and removeByIds methods", function() {
         newPost4.title = "Super post #4";
 
         await Promise.all([
-            postRepository.persist(newPost1),
-            postRepository.persist(newPost2),
-            postRepository.persist(newPost3),
-            postRepository.persist(newPost4)
+            postRepository.save(newPost1),
+            postRepository.save(newPost2),
+            postRepository.save(newPost3),
+            postRepository.save(newPost4)
         ]);
 
         // remove multiple
-        await specificPostRepository.removeByIds([2, 3]);
+        await postRepository.removeByIds([2, 3]);
 
         // load to check
         const loadedPosts = await postRepository.find();

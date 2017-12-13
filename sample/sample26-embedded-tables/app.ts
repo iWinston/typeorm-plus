@@ -1,23 +1,18 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Question} from "./entity/Question";
 import {Counters} from "./entity/Counters";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post, Question, Counters]
 };
 
@@ -34,7 +29,7 @@ createConnection(options).then(connection => {
     question.counters.metadata = "#question #question-counter";
 
     questionRepository
-        .persist(question)
+        .save(question)
         .then(savedQuestion => {
             console.log("question has been saved: ", savedQuestion);
             
@@ -44,10 +39,10 @@ createConnection(options).then(connection => {
         .then(loadedQuestion => {
             console.log("question has been loaded: ", loadedQuestion);
 
-            loadedQuestion.counters.commentCount = 7;
-            loadedQuestion.counters.metadata = "#updated question";
+            loadedQuestion!.counters.commentCount = 7;
+            loadedQuestion!.counters.metadata = "#updated question";
             
-            return questionRepository.persist(loadedQuestion);
+            return questionRepository.save(loadedQuestion!);
         })
         .then(updatedQuestion => {
             console.log("question has been updated: ", updatedQuestion);

@@ -1,5 +1,6 @@
-import * as fs from "fs";
-import {ConnectionOptions} from "../connection/ConnectionOptions";
+import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {CommandUtils} from "./CommandUtils";
+const chalk = require("chalk");
 
 /**
  * Creates a new migration file.
@@ -25,35 +26,38 @@ export class MigrationCreateCommand {
                 alias: "dir",
                 describe: "Directory where migration should be created."
             })
-            .option("cf", {
+            .option("f", {
                 alias: "config",
-                default: "ormconfig.json",
+                default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
-        const timestamp = new Date().getTime();
-        const fileContent = MigrationCreateCommand.getTemplate(argv.name, timestamp);
-        const filename = timestamp + "-" + argv.name + ".ts";
-        let directory = argv.dir;
+        try {
+            const timestamp = new Date().getTime();
+            const fileContent = MigrationCreateCommand.getTemplate(argv.name, timestamp);
+            const filename = timestamp + "-" + argv.name + ".ts";
+            let directory = argv.dir;
 
-        // if directory is not set then try to open tsconfig and find default path there
-        if (!directory) {
-            try {
-                const connections: ConnectionOptions[] = require(process.cwd() + "/" + argv.config);
-                if (connections) {
-                    const connection = connections.find(connection => { // todo: need to implement "environment" support in the ormconfig too
-                        return connection.name === argv.connection || ((argv.connection === "default" || !argv.connection) && !connection.name);
-                    });
-                    if (connection && connection.cli) {
-                        directory = connection.cli.migrationsDir;
-                    }
-                }
-            } catch (err) { }
+            // if directory is not set then try to open tsconfig and find default path there
+            if (!directory) {
+                try {
+                    const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+                    const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                    directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
+                } catch (err) { }
+            }
+
+            const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+            await CommandUtils.createFile(path, fileContent);
+            console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
+
+        } catch (err) {
+            console.log(chalk.black.bgRed("Error during migration creation:"));
+            console.error(err);
+            process.exit(1);
         }
-
-        await MigrationCreateCommand.createFile(process.cwd() + "/" + (directory ? (directory + "/") : "") + filename, fileContent);
     }
 
     // -------------------------------------------------------------------------
@@ -61,26 +65,17 @@ export class MigrationCreateCommand {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a file with the given content in the given path.
-     */
-    protected static createFile(path: string, content: string): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, content, err => err ? fail(err) : ok());
-        });
-    }
-
-    /**
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import {MigrationInterface, QueryRunner, Connection} from "typeorm";
+        return `import {MigrationInterface, QueryRunner} from "typeorm";
 
 export class ${name}${timestamp} implements MigrationInterface {
 
-    async up(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+    public async up(queryRunner: QueryRunner): Promise<any> {
     }
 
-    async down(queryRunner: QueryRunner, connection: Connection, entityManager?: EntityManager): Promise<any> {
+    public async down(queryRunner: QueryRunner): Promise<any> {
     }
 
 }

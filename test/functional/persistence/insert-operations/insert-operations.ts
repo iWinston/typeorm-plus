@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -10,7 +10,7 @@ describe.skip("persistence > insert operations", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -40,12 +40,12 @@ describe.skip("persistence > insert operations", () => {
 
             // post1.category = category1;
             // post1.category.photos = [photo1, photo2];
-            await connection.entityManager.persist(post1);
-            await connection.entityManager.persist(category1);
+            await connection.manager.save(post1);
+            await connection.manager.save(category1);
 
             console.log("********************************************************");
 
-            /*const posts = await connection.entityManager
+            /*const posts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.category", "category")
                 // .innerJoinAndSelect("post.photos", "photos")
@@ -58,25 +58,25 @@ describe.skip("persistence > insert operations", () => {
 
             // posts[0].category = null; // todo: uncomment to check remove
             console.log("removing post's category: ", posts[0]);
-            await connection.entityManager.persist(posts[0]);*/
+            await connection.manager.save(posts[0]);*/
 
-           /* await connection.entityManager.persist([photo1, photo2]);
+           /* await connection.manager.save([photo1, photo2]);
 
             post1.photos = [photo1];
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("********************************************************");
 
             post1.photos = [photo1, photo2];
 
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("********************************************************");
 
             post1.title = "Updated Post";
-            await connection.entityManager.persist(post1);*/
+            await connection.manager.save(post1);*/
 
         })));
 

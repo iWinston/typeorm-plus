@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity, ManyToMany} from "../../../src/index";
+import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../src/index";
 import {Post} from "./Post";
 
 @Entity("sample4_post_details")
@@ -8,19 +8,22 @@ export class PostDetails {
     id: number;
 
     @Column({
+        type: String,
         nullable: true
     })
-    authorName: string;
+    authorName: string|null;
 
     @Column({
+        type: String,
         nullable: true
     })
-    comment: string;
+    comment: string|null;
 
     @Column({
+        type: String,
         nullable: true
     })
-    metadata: string;
+    metadata: string|null;
     
     @ManyToMany(type => Post, post => post.details, {
         cascadeInsert: true,

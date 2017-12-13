@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Student} from "./entity/Student";
 
@@ -9,7 +9,7 @@ describe("github issues > #144 Class Table Inheritance doesn't seem to work", ()
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchema: true,        
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -23,7 +23,7 @@ describe("github issues > #144 Class Table Inheritance doesn't seem to work", ()
         student.lastName = "World";
         student.faculty = "University";
 
-        await studentRepository.persist(student);
+        await studentRepository.save(student);
 
 
     })));

@@ -1,5 +1,8 @@
 import {EntityMetadata} from "./EntityMetadata";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
+import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
+import {ColumnMetadata} from "./ColumnMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * Index metadata contains all information about table's index.
@@ -15,86 +18,143 @@ export class IndexMetadata {
      */
     entityMetadata: EntityMetadata;
 
-    // ---------------------------------------------------------------------
-    // Readonly Properties
-    // ---------------------------------------------------------------------
+    /**
+     * Embedded metadata if this index was applied on embedded.
+     */
+    embeddedMetadata?: EmbeddedMetadata;
 
     /**
      * Indicates if this index must be unique.
      */
-    readonly isUnique: boolean;
+    isUnique: boolean = false;
+
+    /**
+     * If true, the index only references documents with the specified field.
+     * These indexes use less space but behave differently in some situations (particularly sorts).
+     * This option is only supported for mongodb database.
+     */
+    isSparse?: boolean;
 
     /**
      * Target class to which metadata is applied.
      */
-    readonly target?: Function|string;
-
-    // ---------------------------------------------------------------------
-    // Private Properties
-    // ---------------------------------------------------------------------
+    target?: Function|string;
 
     /**
-     * Composite index name.
+     * Indexed columns.
      */
-    private readonly _name: string|undefined;
+    columns: ColumnMetadata[] = [];
 
     /**
-     * Columns combination to be used as index.
+     * User specified index name.
      */
-    private readonly _columns: ((object: any) => any[])|string[];
+    givenName?: string;
+
+    /**
+     * User specified column names.
+     */
+    givenColumnNames?: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
+
+    /**
+     * Final index name.
+     * If index name was given by a user then it stores normalized (by naming strategy) givenName.
+     * If index name was not given then its generated.
+     */
+    name: string;
+
+    /**
+     * Gets the table name on which index is applied.
+     */
+    tableName: string;
+
+    /**
+     * Map of column names with order set.
+     * Used only by MongoDB driver.
+     */
+    columnNamesWithOrderingMap: { [key: string]: number } = {};
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: IndexMetadataArgs) {
-        this.target = args.target;
-        this._columns = args.columns;
-        this._name = args.name;
-        this.isUnique = args.unique;
+    constructor(options: {
+        entityMetadata: EntityMetadata,
+        embeddedMetadata?: EmbeddedMetadata,
+        columns?: ColumnMetadata[],
+        args?: IndexMetadataArgs
+    }) {
+        this.entityMetadata = options.entityMetadata;
+        this.embeddedMetadata = options.embeddedMetadata;
+        if (options.columns)
+            this.columns = options.columns;
+
+        if (options.args) {
+            this.target = options.args.target;
+            this.isUnique = options.args.unique;
+            this.isSparse = options.args.sparse;
+            this.givenName = options.args.name;
+            this.givenColumnNames = options.args.columns;
+        }
     }
 
     // ---------------------------------------------------------------------
-    // Accessors
+    // Public Build Methods
     // ---------------------------------------------------------------------
 
     /**
-     * Gets index's name.
+     * Builds some depend index properties.
+     * Must be called after all entity metadata's properties map, columns and relations are built.
      */
-    get name() {
-        return this.entityMetadata.namingStrategy.indexName(this._name, this.entityMetadata.table.name, this.columns);
-    }
+    build(namingStrategy: NamingStrategyInterface): this {
 
-    /**
-     * Gets the table name on which index is applied.
-     */
-    get tableName() {
-        return this.entityMetadata.table.name;
-    }
-
-    /**
-     * Gets the column names which are in this index.
-     */
-    get columns(): string[] {
+        const map: { [key: string]: number } = {};
+        this.tableName = this.entityMetadata.tableName;
 
         // if columns already an array of string then simply return it
-        let columnPropertyNames: string[] = [];
-        if (this._columns instanceof Array) {
-            columnPropertyNames = this._columns;
-        } else {
-            // if columns is a function that returns array of field names then execute it and get columns names from it
-            const propertiesMap = this.entityMetadata.createPropertiesMap();
-            columnPropertyNames = this._columns(propertiesMap).map((i: any) => String(i));
+        if (this.givenColumnNames) {
+            let columnPropertyPaths: string[] = [];
+            if (this.givenColumnNames instanceof Array) {
+                columnPropertyPaths = this.givenColumnNames.map(columnName => {
+                    if (this.embeddedMetadata)
+                        return this.embeddedMetadata.propertyPath + "." + columnName;
+
+                    return columnName;
+                });
+                columnPropertyPaths.forEach(propertyPath => map[propertyPath] = 1);
+            } else { // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
+                // if columns is a function that returns array of field names then execute it and get columns names from it
+                const columnsFnResult = this.givenColumnNames(this.entityMetadata.propertiesMap);
+                if (columnsFnResult instanceof Array) {
+                    columnPropertyPaths = columnsFnResult.map((i: any) => String(i));
+                    columnPropertyPaths.forEach(name => map[name] = 1);
+                } else {
+                    columnPropertyPaths = Object.keys(columnsFnResult).map((i: any) => String(i));
+                    Object.keys(columnsFnResult).forEach(columnName => map[columnName] = columnsFnResult[columnName]);
+                }
+            }
+
+            this.columns = columnPropertyPaths.map(propertyPath => {
+                const columnWithSameName = this.entityMetadata.columns.find(column => column.propertyPath === propertyPath);
+                if (columnWithSameName) {
+                    return [columnWithSameName];
+                }
+                const relationWithSameName = this.entityMetadata.relations.find(relation => relation.isWithJoinColumn && relation.propertyName === propertyPath);
+                if (relationWithSameName) {
+                    return relationWithSameName.joinColumns;
+                }
+                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyPath);
+            })
+            .reduce((a, b) => a.concat(b));
         }
 
-        const columns = this.entityMetadata.columns.filter(column => columnPropertyNames.indexOf(column.propertyName) !== -1);
-        const missingColumnNames = columnPropertyNames.filter(columnPropertyName => !this.entityMetadata.columns.find(column => column.propertyName === columnPropertyName));
-        if (missingColumnNames.length > 0) {
-            // console.log(this.entityMetadata.columns);
-            throw new Error(`Index ${this._name ? "\"" + this._name + "\" " : ""}contains columns that are missing in the entity: ` + missingColumnNames.join(", "));
-        }
-
-        return columns.map(column => column.name);
+        this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
+            const column = this.entityMetadata.columns.find(column => column.propertyPath === key);
+            if (column)
+                updatedMap[column.databaseName] = map[key];
+            return updatedMap;
+        }, {} as { [key: string]: number });
+        this.name = namingStrategy.indexName(this.givenName ? this.givenName : undefined, this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
+        return this;
     }
 
 }

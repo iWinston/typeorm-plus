@@ -9,24 +9,19 @@ import {PostInformation} from "./entity/PostInformation";
 import {PostAuthor} from "./entity/PostAuthor";
 
 const options: ConnectionOptions = {
-    driver: {
-        // type: "mssql",
-        // host: "192.168.1.10",
-        // username: "sa",
-        // password: "admin12345",
-        // database: "test",
-        type: "oracle",
-        host: "localhost",
-        username: "system",
-        password: "oracle",
-        port: 1521,
-        sid: "xe.oracle.docker",
-    },
-    autoSchemaSync: true,
-    logging: {
-        logQueries: true,
-        logFailedQueryError: true
-    },
+    // type: "mssql",
+    // host: "192.168.1.10",
+    // username: "sa",
+    // password: "admin12345",
+    // database: "test",
+    type: "oracle",
+    host: "localhost",
+    username: "system",
+    password: "oracle",
+    port: 1521,
+    sid: "xe.oracle.docker",
+    synchronize: true,
+    logging: ["query", "error"],
     entities: [Post, PostDetails, PostCategory, PostMetadata, PostImage, PostInformation, PostAuthor]
 };
 
@@ -44,7 +39,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"))
         .catch(error => console.log("Cannot save. Error: ", error));
 

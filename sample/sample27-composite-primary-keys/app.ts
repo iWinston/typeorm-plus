@@ -1,21 +1,16 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post]
 };
 
@@ -29,7 +24,7 @@ createConnection(options).then(async connection => {
     post.text = "this is test post!";
 
     console.log("saving the post: ");
-    await postRepository.persist(post);
+    await postRepository.save(post);
     console.log("Post has been saved: ", post);
 
     console.log("now loading the post: ");

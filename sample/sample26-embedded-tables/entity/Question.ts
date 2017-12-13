@@ -1,6 +1,5 @@
-import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
+import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
 import {Counters} from "./Counters";
-import {Embedded} from "../../../src/decorator/Embedded";
 
 @Entity("sample26_question")
 export class Question {
@@ -11,7 +10,7 @@ export class Question {
     @Column()
     title: string;
 
-    @Embedded(type => Counters)
+    @Column(type => Counters)
     counters: Counters;
     
 }

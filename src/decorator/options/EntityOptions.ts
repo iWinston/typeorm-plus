@@ -8,18 +8,33 @@ export interface EntityOptions {
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
-    readonly orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
+    orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
 
     /**
      * Table's database engine type (like "InnoDB", "MyISAM", etc).
-     * Note that it used only during table creation.
+     * It is used only during table creation.
      * If you update this value and table is already created, it will not change table's engine type.
+     * Note that not all databases support this option.
      */
-    readonly engine?: string;
+    engine?: string;
+
+    /**
+     * Database name. Used in Mysql and Sql Server.
+     */
+    database?: string;
+
+    /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
 
     /**
      * Specifies if this table will be skipped during schema synchronization.
      */
-    readonly skipSchemaSync?: boolean;
+    skipSync?: boolean;
 
+    /**
+     * Table name
+     */
+    name ?: string;
 }

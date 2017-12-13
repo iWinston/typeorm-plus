@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 import {Image} from "./entity/Image";
@@ -7,15 +7,13 @@ import {Cover} from "./entity/Cover";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    synchronize: true,
     entities: [__dirname + "/entity/*"]
 };
 
@@ -46,7 +44,7 @@ createConnection(options).then(connection => {
     post.images.push(image);
     post.categories = [category1, category2];
     
-    postRepository.persist(post).then(result => {
+    postRepository.save(post).then(result => {
 
         /*const qb = postRepository.createQueryBuilder("post")
             .leftJoinAndSelect("post.details", "details")
@@ -77,7 +75,7 @@ createConnection(options).then(connection => {
                 post.text = "Hello world of post#4";
                 post.categories = [category2, category1];
                 post.images.push(image);
-                return postRepository.persist(post);
+                return postRepository.save(post);
 
             })
             .then(() => qb.getSingleResult())
@@ -175,7 +173,7 @@ createConnection(options).then(connection => {
     //post.details = details;
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"))
         .catch(error => console.log("Cannot save. Error: ", error));*/
 

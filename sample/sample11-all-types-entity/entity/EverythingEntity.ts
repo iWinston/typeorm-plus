@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity} from "../../../src/index";
+import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
 import {CreateDateColumn} from "../../../src/decorator/columns/CreateDateColumn";
 import {UpdateDateColumn} from "../../../src/decorator/columns/UpdateDateColumn";
 
@@ -60,7 +60,7 @@ export class EverythingEntity {
     jsonColumn: any;
 
     @Column()
-    alsoJson: Object;
+    alsoJson: any;
 
     @Column("simple_array")
     simpleArrayColumn: string[];

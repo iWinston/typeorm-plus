@@ -21,7 +21,7 @@ describe("persistence > custom-column-names", function() {
     // clean up database before each test
     function reloadDatabase() {
         return connection
-            .syncSchema(true)
+            .synchronize(true)
             .catch(e => {
                 console.log("Error during schema re-creation: ", e);
                 throw e;
@@ -50,26 +50,26 @@ describe("persistence > custom-column-names", function() {
         before(function () {
             newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            return categoryRepository.persist(newCategory);
+            return categoryRepository.save(newCategory);
         });
 
         // save a new post
         before(function() {
             newPost = postRepository.create();
             newPost.title = "All about animals";
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // attach category to post and save it
         before(function() {
             newPost.category = newCategory;
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category" } })
+                .findOneById(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } }})
                 .then(post => loadedPost = post!);
         });
 
@@ -90,7 +90,7 @@ describe("persistence > custom-column-names", function() {
         before(function () {
             newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            return categoryRepository.persist(newCategory);
+            return categoryRepository.save(newCategory);
         });
 
         // save a new post and attach category
@@ -98,13 +98,13 @@ describe("persistence > custom-column-names", function() {
             newPost = postRepository.create();
             newPost.title = "All about animals";
             newPost.category = newCategory;
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category" } })
+                .findOneById(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } } })
                 .then(post => loadedPost = post!);
         });
 
@@ -128,13 +128,13 @@ describe("persistence > custom-column-names", function() {
             newPost = postRepository.create();
             newPost.title = "All about animals";
             newPost.category = newCategory;
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category" } })
+                .findOneById(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category" } }})
                 .then(post => loadedPost = post!);
         });
 
@@ -155,34 +155,34 @@ describe("persistence > custom-column-names", function() {
         before(function() {
             newPost = postRepository.create();
             newPost.title = "All about animals";
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // save a new category
         before(function () {
             newCategory = categoryRepository.create();
             newCategory.name = "Animals";
-            return categoryRepository.persist(newCategory);
+            return categoryRepository.save(newCategory);
         });
 
         // save a new metadata
         before(function() {
             newMetadata = metadataRepository.create();
             newMetadata.keyword = "animals";
-            return metadataRepository.persist(newMetadata);
+            return metadataRepository.save(newMetadata);
         });
 
         // attach metadata to category and category to post and save it
         before(function() {
             newCategory.metadata = newMetadata;
             newPost.category = newCategory;
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } })
+                .findOneById(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } } })
                 .then(post => loadedPost = post!);
         });
 
@@ -205,7 +205,7 @@ describe("persistence > custom-column-names", function() {
         before(function() {
             newPost = postRepository.create();
             newPost.title = "All about animals";
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // save a new category and new metadata
@@ -215,19 +215,19 @@ describe("persistence > custom-column-names", function() {
             newCategory = categoryRepository.create();
             newCategory.name = "Animals";
             newCategory.metadata = newMetadata;
-            return categoryRepository.persist(newCategory);
+            return categoryRepository.save(newCategory);
         });
 
         // attach metadata to category and category to post and save it
         before(function() {
             newPost.category = newCategory;
-            return postRepository.persist(newPost);
+            return postRepository.save(newPost);
         });
 
         // load a post
         before(function() {
             return postRepository
-                .findOneById(1, { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } })
+                .findOneById(1, { join: { alias: "post", leftJoinAndSelect: { category: "post.category", metadata: "category.metadata" } } })
                 .then(post => loadedPost = post!);
         });
 

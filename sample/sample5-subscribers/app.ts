@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
 import {PostAuthor} from "./entity/PostAuthor";
@@ -7,15 +7,13 @@ import {EverythingSubscriber} from "./subscriber/EverythingSubscriber";
 
 // first create a connection
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    synchronize: true,
     entities: [Post, PostAuthor, PostCategory],
     subscribers: [EverythingSubscriber]
 };
@@ -40,7 +38,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved");
             return postRepository.findOneById(post.id);
@@ -52,15 +50,15 @@ createConnection(options).then(connection => {
                 .createQueryBuilder("p")
                 .leftJoinAndSelect("p.author", "author")
                 .leftJoinAndSelect("p.categories", "categories")
-                .where("p.id = :id", { id: loadedPost.id })
+                .where("p.id = :id", { id: loadedPost!.id })
                 .getOne();
         })
         .then(loadedPost => {
             console.log("---------------------------");
             console.log("load finished. Now lets update entity");
-            loadedPost.text = "post updated";
-            loadedPost.author.name = "Bakha";
-            return postRepository.persist(loadedPost);
+            loadedPost!.text = "post updated";
+            loadedPost!.author.name = "Bakha";
+            return postRepository.save(loadedPost!);
         })
         .then(loadedPost => {
             console.log("---------------------------");

@@ -1,19 +1,17 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 
 // NOTE: this example is not working yet, only concepts of how this feature must work described here
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    synchronize: true,
     // entitySchemaDirectories: [__dirname + "/schemas"],
     entitySchemas: [
         require(__dirname + "/../../../../sample/sample24-schemas/schemas/post.json"),
@@ -39,7 +37,7 @@ createConnection(options).then(connection => {
     };
     
     postRepository
-        .persist(post)
+        .save(post)
         .then(result => {
             console.log(result);
         })

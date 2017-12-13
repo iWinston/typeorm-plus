@@ -4,18 +4,13 @@ import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mssql",
-        host: "192.168.1.10",
-        username: "sa",
-        password: "admin12345",
-        database: "test",
-    },
-    logging: {
-        logFailedQueryError: true,
-        // logQueries: true
-    },
-    autoSchemaSync: true,
+    type: "mssql",
+    host: "192.168.1.10",
+    username: "sa",
+    password: "admin12345",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [__dirname + "/entity/*"]
 };
 
@@ -34,7 +29,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"))
         .catch(error => console.log("Cannot save. Error: ", error));
 

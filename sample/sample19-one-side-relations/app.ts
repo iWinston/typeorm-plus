@@ -1,24 +1,19 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 import {PostMetadata} from "./entity/PostMetadata";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post, Author, Category, PostMetadata]
 };
 
@@ -49,25 +44,27 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved.");
             console.log(post);
 
             console.log("Now lets load posts with all their relations:");
             return postRepository.find({
-                alias: "post",
-                leftJoinAndSelect: {
-                    author: "post.author",
-                    metadata: "post.metadata",
-                    categories: "post.categories"
+                join: {
+                    alias: "post",
+                    leftJoinAndSelect: {
+                        author: "post.author",
+                        metadata: "post.metadata",
+                        categories: "post.categories"
+                    }
                 }
             });
 
             // let secondPost = postRepository.create();
             // secondPost.text = "Second post";
             // secondPost.title = "About second post";
-            // return authorRepository.persist(author);
+            // return authorRepository.save(author);
 
         }).then(post => {
             console.log("Loaded posts: ", post);
@@ -75,7 +72,7 @@ createConnection(options).then(connection => {
         /*    posts[0].title = "should be updated second post";
 
         return author.posts.then(posts => {
-                return authorRepository.persist(author);
+                return authorRepository.save(author);
             });
         })
         .then(updatedAuthor => {
@@ -88,7 +85,7 @@ createConnection(options).then(connection => {
             console.log("Now lets delete a post");
             posts[0].author = Promise.resolve(null);
             posts[1].author = Promise.resolve(null);
-            return postRepository.persist(posts[0]);
+            return postRepository.save(posts[0]);
         })
         .then(posts => {
             console.log("Two post's author has been removed.");  
@@ -108,7 +105,7 @@ createConnection(options).then(connection => {
                 category2
             ]);
             
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(posts => {
             console.log("Post has been saved with its categories. ");
@@ -121,7 +118,7 @@ createConnection(options).then(connection => {
             return posts[0].categories.then(categories => {
                 categories.splice(0, 1);
                 // console.log(posts[0]);
-                return postRepository.persist(posts[0]);
+                return postRepository.save(posts[0]);
             });
         })*/
         .then(posts => {

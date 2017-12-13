@@ -1,4 +1,4 @@
-import {PrimaryGeneratedColumn, Column, Entity, OneToMany, ManyToOne, ManyToMany, OneToOne} from "../../../src/index";
+import {Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn} from "../../../src/index";
 import {Image} from "./Image";
 import {Cover} from "./Cover";
 import {Category} from "./Category";

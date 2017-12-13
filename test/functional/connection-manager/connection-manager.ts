@@ -54,7 +54,7 @@ describe("ConnectionManager", () => {
 
     });
 
-    describe("createAndConnect", function() {
+    /*describe("createAndConnect", function() {
 
         it("should create a mysql connection when mysql driver is specified AND connect to it", async () => {
             const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
@@ -69,7 +69,7 @@ describe("ConnectionManager", () => {
             await connection.close();
         });
 
-    /*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
+    /!*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
             const options: ConnectionOptions = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
@@ -80,9 +80,9 @@ describe("ConnectionManager", () => {
             connection.driver.should.be.instanceOf(PostgresDriver);
             connection.isConnected.should.be.true;
             await connection.close();
-        });*/
+        });*!/
 
-    });
+    });*/
 
     describe("get", function() {
 
@@ -112,7 +112,7 @@ describe("ConnectionManager", () => {
 
     describe("create connection options", function() {
 
-        it("should not drop the database if dropSchemaOnConnection was not specified", async () => {
+        it("should not drop the database if dropSchema was not specified", async () => {
             const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
@@ -121,45 +121,45 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection
-            let connection = await connectionManager.createAndConnect(options);
+            let connection = await connectionManager.create(options).connect();
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
-            connection = await connectionManager.createAndConnect(options);
-            const loadedPost = (await connection.entityManager.findOneById(Post, 1))!;
+            connection = await connectionManager.create(options).connect();
+            const loadedPost = (await connection.manager.findOneById(Post, 1))!;
             loadedPost.should.be.instanceof(Post);
             loadedPost.should.be.eql({ id: 1, title: "Hello post" });
             await connection.close();
         });
 
-        it("should drop the database if dropSchemaOnConnection was set to true (mysql)", async () => {
+        it("should drop the database if dropSchema was set to true (mysql)", async () => {
             const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
                 name: "myMysqlConnection",
                 schemaCreate: true,
-                dropSchemaOnConnection: true,
+                dropSchema: true,
                 entities: [Post]
             });
             const connectionManager = new ConnectionManager();
 
             // create connection, save post and close connection
-            let connection = await connectionManager.createAndConnect(options);
+            let connection = await connectionManager.create(options).connect();
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
-            connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            connection = await connectionManager.create(options).connect();
+            const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
          });
 
-     /*   it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+     /*   it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
-                dropSchemaOnConnection: true,
-                autoSchemaSync: true,
+                dropSchema: true,
+                synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
@@ -168,21 +168,21 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
 
             await connection.close();
          });*/
 
-    /*    it("should drop the database if dropSchemaOnConnection was set to true (postgres)", async () => {
+    /*    it("should drop the database if dropSchema was set to true (postgres)", async () => {
             const options: ConnectionOptions = {
-                dropSchemaOnConnection: true,
-                autoSchemaSync: true,
+                dropSchema: true,
+                synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
                 entities: [Post]
             };
@@ -191,12 +191,12 @@ describe("ConnectionManager", () => {
             // create connection, save post and close connection
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
-            await connection.entityManager.persist(post);
+            await connection.manager.save(post);
             await connection.close();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
-            const loadedPost = await connection.entityManager.findOneById(Post, 1);
+            const loadedPost = await connection.manager.findOneById(Post, 1);
             expect(loadedPost).to.be.undefined;
             await connection.close();
          });*/

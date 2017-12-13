@@ -1,6 +1,5 @@
 /*!
  */
-import {DriverOptions} from "./driver/DriverOptions";
 import {ConnectionManager} from "./connection/ConnectionManager";
 import {Connection} from "./connection/Connection";
 import {MetadataArgsStorage} from "./metadata-args/MetadataArgsStorage";
@@ -10,12 +9,21 @@ import {ObjectType} from "./common/ObjectType";
 import {Repository} from "./repository/Repository";
 import {EntityManager} from "./entity-manager/EntityManager";
 import {PlatformTools} from "./platform/PlatformTools";
+import {TreeRepository} from "./repository/TreeRepository";
+import {MongoRepository} from "./repository/MongoRepository";
+import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
+import {PromiseUtils} from "./util/PromiseUtils";
+import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
+import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
 // -------------------------------------------------------------------------
 
 export * from "./container";
+export * from "./common/ObjectType";
+export * from "./common/ObjectLiteral";
+export * from "./error/QueryFailedError";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";
 export * from "./decorator/columns/DiscriminatorColumn";
@@ -23,6 +31,7 @@ export * from "./decorator/columns/PrimaryGeneratedColumn";
 export * from "./decorator/columns/PrimaryColumn";
 export * from "./decorator/columns/UpdateDateColumn";
 export * from "./decorator/columns/VersionColumn";
+export * from "./decorator/columns/ObjectIdColumn";
 export * from "./decorator/listeners/AfterInsert";
 export * from "./decorator/listeners/AfterLoad";
 export * from "./decorator/listeners/AfterRemove";
@@ -47,59 +56,84 @@ export * from "./decorator/relations/OneToOne";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/RelationId";
 export * from "./decorator/entity/Entity";
-export * from "./decorator/entity/AbstractEntity";
 export * from "./decorator/entity/ClassEntityChild";
 export * from "./decorator/entity/ClosureEntity";
-export * from "./decorator/entity/EmbeddableEntity";
 export * from "./decorator/entity/SingleEntityChild";
-export * from "./decorator/entity/Entity";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
-export * from "./decorator/transaction/TransactionEntityManager";
+export * from "./decorator/transaction/TransactionManager";
+export * from "./decorator/transaction/TransactionRepository";
 export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/Index";
-export * from "./decorator/NamingStrategy";
-export * from "./decorator/Embedded";
+export * from "./decorator/Generated";
 export * from "./decorator/DiscriminatorValue";
-export * from "./schema-builder/schema/ColumnSchema";
-export * from "./schema-builder/schema/ForeignKeySchema";
-export * from "./schema-builder/schema/IndexSchema";
-export * from "./schema-builder/schema/PrimaryKeySchema";
-export * from "./schema-builder/schema/TableSchema";
+export * from "./decorator/EntityRepository";
+export * from "./find-options/FindOneOptions";
+export * from "./find-options/FindManyOptions";
+export * from "./logger/Logger";
+export * from "./logger/AdvancedConsoleLogger";
+export * from "./logger/SimpleConsoleLogger";
+export * from "./logger/FileLogger";
+export * from "./metadata/EntityMetadataUtils";
+export * from "./entity-manager/EntityManager";
+export * from "./repository/AbstractRepository";
+export * from "./repository/Repository";
+export * from "./repository/BaseEntity";
+export * from "./repository/TreeRepository";
+export * from "./repository/MongoRepository";
+export * from "./repository/RemoveOptions";
+export * from "./repository/SaveOptions";
+export * from "./schema-builder/schema/TableColumn";
+export * from "./schema-builder/schema/TableForeignKey";
+export * from "./schema-builder/schema/TableIndex";
+export * from "./schema-builder/schema/TablePrimaryKey";
+export * from "./schema-builder/schema/Table";
+export * from "./driver/mongodb/typings";
+export * from "./driver/types/DatabaseType";
+export * from "./driver/sqlserver/MssqlParameter";
 
+export {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 export {Connection} from "./connection/Connection";
 export {ConnectionManager} from "./connection/ConnectionManager";
 export {ConnectionOptions} from "./connection/ConnectionOptions";
-export {DriverOptions} from "./driver/DriverOptions";
 export {Driver} from "./driver/Driver";
 export {QueryBuilder} from "./query-builder/QueryBuilder";
+export {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
+export {DeleteQueryBuilder} from "./query-builder/DeleteQueryBuilder";
+export {InsertQueryBuilder} from "./query-builder/InsertQueryBuilder";
+export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
+export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
+export {Brackets} from "./query-builder/Brackets";
+export {WhereExpression} from "./query-builder/WhereExpression";
 export {QueryRunner} from "./query-runner/QueryRunner";
 export {EntityManager} from "./entity-manager/EntityManager";
+export {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 export {MigrationInterface} from "./migration/MigrationInterface";
 export {DefaultNamingStrategy} from "./naming-strategy/DefaultNamingStrategy";
 export {NamingStrategyInterface} from "./naming-strategy/NamingStrategyInterface";
 export {Repository} from "./repository/Repository";
 export {TreeRepository} from "./repository/TreeRepository";
-export {SpecificRepository} from "./repository/SpecificRepository";
-export {FindOptions} from "./find-options/FindOptions";
+export {MongoRepository} from "./repository/MongoRepository";
+export {FindOneOptions} from "./find-options/FindOneOptions";
+export {FindManyOptions} from "./find-options/FindManyOptions";
 export {InsertEvent} from "./subscriber/event/InsertEvent";
 export {UpdateEvent} from "./subscriber/event/UpdateEvent";
 export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
+export {BaseEntity} from "./repository/BaseEntity";
+export {EntitySchema} from "./entity-schema/EntitySchema";
+export {EntitySchemaTable} from "./entity-schema/EntitySchemaTable";
+export {EntitySchemaColumn} from "./entity-schema/EntitySchemaColumn";
+export {EntitySchemaIndex} from "./entity-schema/EntitySchemaIndex";
+export {EntitySchemaRelation} from "./entity-schema/EntitySchemaRelation";
+export {ColumnType} from "./driver/types/ColumnTypes";
+export {PromiseUtils} from "./util/PromiseUtils";
 
 // -------------------------------------------------------------------------
 // Deprecated
 // -------------------------------------------------------------------------
-
-export * from "./decorator/tables/Table";
-export * from "./decorator/tables/AbstractTable";
-export * from "./decorator/tables/ClassTableChild";
-export * from "./decorator/tables/ClosureTable";
-export * from "./decorator/tables/EmbeddableTable";
-export * from "./decorator/tables/SingleTableChild";
-export * from "./decorator/tables/Table";
 
 // -------------------------------------------------------------------------
 // Commonly used functionality
@@ -125,6 +159,13 @@ export function getMetadataArgsStorage(): MetadataArgsStorage {
 }
 
 /**
+ * Reads connection options stored in ormconfig configuration file.
+ */
+export async function getConnectionOptions(connectionName: string = "default"): Promise<ConnectionOptions> {
+    return new ConnectionOptionsReader().get(connectionName);
+}
+
+/**
  * Gets a ConnectionManager which creates connections.
  */
 export function getConnectionManager(): ConnectionManager {
@@ -134,106 +175,29 @@ export function getConnectionManager(): ConnectionManager {
 /**
  * Creates a new connection and registers it in the manager.
  *
- * If connection options were not specified, then it will try to create connection automatically.
- *
- * First, it will try to find a "default" configuration from ormconfig.json.
- * You can also specify a connection name to use from ormconfig.json,
- * and you even can specify a path to your custom ormconfig.json.
- *
- * In the case if options were not specified, and ormconfig.json file also wasn't found,
- * it will try to create connection from environment variables.
- * There are several environment variables you can set:
- *
- * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
- * - TYPEORM_URL - database connection url. Should be a string.
- * - TYPEORM_HOST - database host. Should be a string.
- * - TYPEORM_PORT - database access port. Should be a number.
- * - TYPEORM_USERNAME - database username. Should be a string.
- * - TYPEORM_PASSWORD - database user's password. Should be a string.
- * - TYPEORM_SID - database's SID. Used only for oracle databases. Should be a string.
- * - TYPEORM_STORAGE - database's storage url. Used only for sqlite databases. Should be a string.
- * - TYPEORM_USE_POOL - indicates if connection pooling should be enabled. By default its enabled. Should be boolean-like value.
- * - TYPEORM_DRIVER_EXTRA - extra options to be passed to the driver. Should be a serialized json string of options.
- * - TYPEORM_AUTO_SCHEMA_SYNC - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
- * - TYPEORM_ENTITIES - list of directories containing entities to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_SUBSCRIBERS - list of directories containing subscribers to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_ENTITY_SCHEMAS - list of directories containing entity schemas to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_NAMING_STRATEGIES - list of directories containing custom naming strategies to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_LOGGING_QUERIES - indicates if each executed query must be logged. Should be boolean-like value.
- * - TYPEORM_LOGGING_FAILED_QUERIES - indicates if logger should log failed query's error. Should be boolean-like value.
- * - TYPEORM_LOGGING_ONLY_FAILED_QUERIES - indicates if only failed queries must be logged. Should be boolean-like value.
- *
- * TYPEORM_DRIVER_TYPE variable is required. Depend on the driver type some other variables may be required too.
+ * If connection options were not specified, then it will try to create connection automatically,
+ * based on content of ormconfig (json/js/yml/xml/env) file or environment variables.
+ * Only one connection from ormconfig will be created (name "default" or connection without name).
  */
-export function createConnection(): Promise<Connection>;
+export async function createConnection(options?: ConnectionOptions): Promise<Connection> {
+    if (!options)
+        options = await getConnectionOptions();
 
-/**
- * Creates connection from the given connection options and registers it in the manager.
- */
-export function createConnection(options?: ConnectionOptions): Promise<Connection>;
-
-/**
- * Creates connection with the given connection name from the ormconfig.json file and registers it in the manager.
- * Optionally you can specify a path to custom ormconfig.json file.
- */
-export function createConnection(connectionNameFromConfig: string, ormConfigPath?: string): Promise<Connection>;
-
-/**
- * Creates connection and and registers it in the manager.
- */
-export function createConnection(optionsOrConnectionNameFromConfig?: ConnectionOptions|string, ormConfigPath?: string): Promise<Connection> {
-    return getConnectionManager().createAndConnect(optionsOrConnectionNameFromConfig as any, ormConfigPath);
+    return getConnectionManager().create(options).connect();
 }
 
 /**
  * Creates new connections and registers them in the manager.
  *
- * If array of connection options were not specified, then it will try to create them automatically
- * from ormconfig.json. You can also specify path to your custom ormconfig.json.
- *
- * In the case if options were not specified, and ormconfig.json file also wasn't found,
- * it will try to create connection from environment variables.
- * There are several environment variables you can set:
- *
- * - TYPEORM_DRIVER_TYPE - driver type. Can be "mysql", "postgres", "mariadb", "sqlite", "oracle" or "mssql".
- * - TYPEORM_URL - database connection url. Should be a string.
- * - TYPEORM_HOST - database host. Should be a string.
- * - TYPEORM_PORT - database access port. Should be a number.
- * - TYPEORM_USERNAME - database username. Should be a string.
- * - TYPEORM_PASSWORD - database user's password. Should be a string.
- * - TYPEORM_SID - database's SID. Used only for oracle databases. Should be a string.
- * - TYPEORM_STORAGE - database's storage url. Used only for sqlite databases. Should be a string.
- * - TYPEORM_USE_POOL - indicates if connection pooling should be enabled. By default its enabled. Should be boolean-like value.
- * - TYPEORM_DRIVER_EXTRA - extra options to be passed to the driver. Should be a serialized json string of options.
- * - TYPEORM_AUTO_SCHEMA_SYNC - indicates if automatic schema synchronization will be performed on each application run. Should be boolean-like value.
- * - TYPEORM_ENTITIES - list of directories containing entities to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_SUBSCRIBERS - list of directories containing subscribers to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_ENTITY_SCHEMAS - list of directories containing entity schemas to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_NAMING_STRATEGIES - list of directories containing custom naming strategies to load. Should be string - directory names (can be patterns) split by a comma.
- * - TYPEORM_LOGGING_QUERIES - indicates if each executed query must be logged. Should be boolean-like value.
- * - TYPEORM_LOGGING_FAILED_QUERIES - indicates if logger should log failed query's error. Should be boolean-like value.
- * - TYPEORM_LOGGING_ONLY_FAILED_QUERIES - indicates if only failed queries must be logged. Should be boolean-like value.
- *
- * TYPEORM_DRIVER_TYPE variable is required. Depend on the driver type some other variables may be required too.
+ * If connection options were not specified, then it will try to create connection automatically,
+ * based on content of ormconfig (json/js/yml/xml/env) file or environment variables.
+ * All connections from the ormconfig will be created.
  */
-export function createConnections(): Promise<Connection[]>;
-
-/**
- * Creates connections from the given connection options and registers them in the manager.
- */
-export function createConnections(options?: ConnectionOptions[]): Promise<Connection[]>;
-
-/**
- * Creates connection with the given connection name from the ormconfig.json file and registers it in the manager.
- * Optionally you can specify a path to custom ormconfig.json file.
- */
-export function createConnections(ormConfigPath?: string): Promise<Connection[]>;
-
-/**
- * Creates connections and and registers them in the manager.
- */
-export function createConnections(optionsOrOrmConfigFilePath?: ConnectionOptions[]|string): Promise<Connection[]> {
-    return getConnectionManager().createAndConnectToAll(optionsOrOrmConfigFilePath as any);
+export async function createConnections(options?: ConnectionOptions[]): Promise<Connection[]> {
+    if (!options)
+        options = await new ConnectionOptionsReader().all();
+    const connections = options.map(options => getConnectionManager().create(options));
+    return PromiseUtils.runInSequence(connections, connection => connection.connect());
 }
 
 /**
@@ -248,23 +212,46 @@ export function getConnection(connectionName: string = "default"): Connection {
  * Gets entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getEntityManager(connectionName: string = "default"): EntityManager {
-    return getConnectionManager().get(connectionName).entityManager;
+export function getManager(connectionName: string = "default"): EntityManager {
+    return getConnectionManager().get(connectionName).manager;
+}
+
+/**
+ * Gets MongoDB entity manager from the connection.
+ * If connection name wasn't specified, then "default" connection will be retrieved.
+ */
+export function getMongoManager(connectionName: string = "default"): MongoEntityManager {
+    return getConnectionManager().get(connectionName).manager as MongoEntityManager;
+}
+
+export function getSqljsManager(connectionName: string = "default"): SqljsEntityManager {
+    return getConnectionManager().get(connectionName).manager as SqljsEntityManager;
 }
 
 /**
  * Gets repository for the given entity class.
  */
-export function getRepository<Entity>(entityClass: ObjectType<Entity>, connectionName: string): Repository<Entity>;
+export function getRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): Repository<Entity> {
+    return getConnectionManager().get(connectionName).getRepository<Entity>(entityClass);
+}
 
 /**
- * Gets repository for the given entity name.
+ * Gets tree repository for the given entity class.
  */
-export function getRepository<Entity>(entityName: string, connectionName: string): Repository<Entity>;
+export function getTreeRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): TreeRepository<Entity> {
+    return getConnectionManager().get(connectionName).getTreeRepository<Entity>(entityClass);
+}
 
 /**
- * Gets repository for the given entity class or name.
+ * Gets tree repository for the given entity class.
  */
-export function getRepository<Entity>(entityClassOrName: ObjectType<Entity>|string, connectionName: string = "default"): Repository<Entity> {
-    return getConnectionManager().get(connectionName).getRepository<Entity>(entityClassOrName as any);
+export function getCustomRepository<T>(customRepository: ObjectType<T>, connectionName: string = "default"): T {
+    return getConnectionManager().get(connectionName).getCustomRepository(customRepository);
+}
+
+/**
+ * Gets mongodb repository for the given entity class or name.
+ */
+export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
+    return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
 }

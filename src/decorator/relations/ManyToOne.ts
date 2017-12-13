@@ -1,5 +1,4 @@
 import {RelationOptions} from "../options/RelationOptions";
-import {RelationTypes} from "../../metadata/types/RelationTypes";
 import {getMetadataArgsStorage} from "../../index";
 import {ObjectType} from "../../common/ObjectType";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
@@ -38,19 +37,24 @@ export function ManyToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
-        const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
-        const isLazy = reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise";
+        // now try to determine it its lazy relation
+        let isLazy = options && options.lazy === true ? true : false;
+        if (!isLazy && Reflect && (Reflect as any).getMetadata) { // automatic determination
+            const reflectedType = (Reflect as any).getMetadata("design:type", object, propertyName);
+            if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
+                isLazy = true;
+        }
 
         const args: RelationMetadataArgs = {
             target: object.constructor,
             propertyName: propertyName,
-            propertyType: reflectedType,
-            relationType: RelationTypes.MANY_TO_ONE,
+            // propertyType: reflectedType,
+            relationType: "many-to-one",
             isLazy: isLazy,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
         };
-        getMetadataArgsStorage().relations.add(args);
+        getMetadataArgsStorage().relations.push(args);
     };
 }

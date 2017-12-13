@@ -4,11 +4,13 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Kollektion} from "./Kollektion";
 import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
+import {Generated} from "../../../../src/decorator/Generated";
 
 @Entity("artikel")
 export class Artikel {
 
-    @PrimaryColumn("int", { generated: true, name: "artikel_id" })
+    @PrimaryColumn("int", { name: "artikel_id" })
+    @Generated()
     id: number;
 
     @Column({ name: "artikel_nummer" })

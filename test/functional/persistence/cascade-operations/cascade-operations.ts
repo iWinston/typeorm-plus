@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
@@ -10,7 +10,7 @@ describe("persistence > cascade operations", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -51,7 +51,7 @@ describe("persistence > cascade operations", () => {
 
             // post1.category = category1;
             // post1.category.photos = [photo1, photo2];
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("updating: ", post1);
@@ -59,19 +59,19 @@ describe("persistence > cascade operations", () => {
 
             post1.title = "updated post #1";
             post1.oneCategory.name = "updated category";
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("removing: ", post1);
             console.log("********************************************************");
 
-            await connection.entityManager.remove(post1);
+            await connection.manager.remove(post1);
 
-            // await connection.entityManager.persist(post1);
+            // await connection.manager.save(post1);
 
             console.log("********************************************************");
 
-            /*const posts = await connection.entityManager
+            /*const posts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .leftJoinAndSelect("post.category", "category")
                 // .innerJoinAndSelect("post.photos", "photos")
@@ -84,25 +84,25 @@ describe("persistence > cascade operations", () => {
 
             // posts[0].category = null; // todo: uncomment to check remove
             console.log("removing post's category: ", posts[0]);
-            await connection.entityManager.persist(posts[0]);*/
+            await connection.manager.save(posts[0]);*/
 
-           /* await connection.entityManager.persist([photo1, photo2]);
+           /* await connection.manager.save([photo1, photo2]);
 
             post1.photos = [photo1];
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("********************************************************");
 
             post1.photos = [photo1, photo2];
 
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             console.log("********************************************************");
             console.log("********************************************************");
 
             post1.title = "Updated Post";
-            await connection.entityManager.persist(post1);*/
+            await connection.manager.save(post1);*/
 
         })));
 
@@ -116,7 +116,7 @@ describe("persistence > cascade operations", () => {
             post1.title = "Hello Post #1";
             post1.category = category1;
 
-            await connection.entityManager.persist(post1);
+            await connection.manager.save(post1);
 
             // create second category and post and save them
             const category2 = new Category();
@@ -126,16 +126,18 @@ describe("persistence > cascade operations", () => {
             post2.title = "Hello Post #2";
             post2.category = category2;
 
-            await connection.entityManager.persist(post2);
+            await connection.manager.save(post2);
 
             // now check
-            const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                innerJoinAndSelect: {
-                    category: "post.category"
+            const posts = await connection.manager.find(Post, {
+                join: {
+                    alias: "post",
+                    innerJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.id": "ASC"
+                order: {
+                    id: "ASC"
                 }
             });
 
@@ -166,7 +168,7 @@ describe("persistence > cascade operations", () => {
             category1.name = "Category saved by cascades #1";
             category1.posts = [post1];
 
-            await connection.entityManager.persist(category1);
+            await connection.manager.save(category1);
 
             // create first post and category and save them
             const post2 = new Post();
@@ -176,16 +178,18 @@ describe("persistence > cascade operations", () => {
             category2.name = "Category saved by cascades #2";
             category2.posts = [post2];
 
-            await connection.entityManager.persist(category2);
+            await connection.manager.save(category2);
 
             // now check
-            const posts = await connection.entityManager.find(Post, {
-                alias: "post",
-                innerJoinAndSelect: {
-                    category: "post.category"
+            const posts = await connection.manager.find(Post, {
+                join: {
+                    alias: "post",
+                    innerJoinAndSelect: {
+                        category: "post.category"
+                    }
                 },
-                orderBy: {
-                    "post.id": "ASC"
+                order: {
+                    id: "ASC"
                 }
             });
 

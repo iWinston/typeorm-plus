@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {Game} from "./entity/Game";
 import {Platform} from "./entity/Platform";
@@ -11,7 +11,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,        
+        dropSchema: true,        
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -28,16 +28,19 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
         republicCommando.searchTerms = "star-wars,shooter";
         republicCommando.isReviewed = false;
 
+        await connection.manager.save(battlefront);
+        await connection.manager.save(republicCommando);
+
         const platform = new Platform();
         platform.name = "Windows";
         platform.slug = "windows";
         platform.games = [battlefront, republicCommando];
 
-        await connection.entityManager.persist(platform);
+        await connection.manager.save(platform);
 
         const loadedPlatform = await connection
             .getRepository(Platform)
-            .findOne({ slug: "windows" });
+            .findOne({ where: { slug: "windows" } });
 
         let jediAcademy = new Game();
         jediAcademy.name = "SW Jedi Academy";
@@ -45,13 +48,15 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
         jediAcademy.platforms = [loadedPlatform!];
         jediAcademy.isReviewed = false;
 
-        await connection.entityManager.persist(jediAcademy);
+        await connection.manager.save(jediAcademy);
 
         const completePlatform = await connection
             .getRepository(Platform)
             .createQueryBuilder("platform")
-            .leftJoinAndSelect("platform.games", "games")
+            .leftJoinAndSelect("platform.games", "game")
             .where("platform.slug=:slug", { slug: "windows" })
+            .orderBy("platform.id")
+            .addOrderBy("game.id")
             .getOne();
 
         expect(completePlatform).not.to.be.empty;

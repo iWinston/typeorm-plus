@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
 import {Organisation} from "./entity/Organisation";
@@ -11,7 +11,7 @@ describe("github issues > #174 Embeded types confusing with order by", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -23,14 +23,14 @@ describe("github issues > #174 Embeded types confusing with order by", () => {
         organisation1.contact = new Contact();
         organisation1.contact.name = "Albert Cow";
         organisation1.contact.email = "ceo@mlkyway.com";
-        await connection.entityManager.persist(organisation1);
+        await connection.manager.save(organisation1);
 
         const organisation2 = new Organisation();
         organisation2.name = "ChockoWay";
         organisation2.contact = new Contact();
         organisation2.contact.name = "Brendan Late";
         organisation2.contact.email = "ceo@chockoway.com";
-        await connection.entityManager.persist(organisation2);
+        await connection.manager.save(organisation2);
 
         const organisations = await connection
             .getRepository(Organisation)

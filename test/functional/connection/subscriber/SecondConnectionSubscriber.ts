@@ -3,7 +3,7 @@ import {EventSubscriber} from "../../../../src/decorator/listeners/EventSubscrib
 import {InsertEvent} from "../../../../src/subscriber/event/InsertEvent";
 
 @EventSubscriber()
-export class SecondConnectionSubscriber implements EntitySubscriberInterface<any> {
+export class SecondConnectionSubscriber implements EntitySubscriberInterface {
     
     /**
      * Called after entity insertion.

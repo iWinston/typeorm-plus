@@ -6,21 +6,21 @@ import {PlatformTools} from "../platform/PlatformTools";
 export function importClassesFromDirectories(directories: string[], formats = [".js", ".ts"]): Function[] {
 
     function loadFileClasses(exported: any, allLoaded: Function[]) {
-        if (exported instanceof Function) {
+        if (typeof exported === "function") {
             allLoaded.push(exported);
 
-        } else if (exported instanceof Object) {
+        } else if (Array.isArray(exported)) {
+            exported.forEach((i: any) => loadFileClasses(i, allLoaded));
+
+        } else if (typeof exported === "object") {
             Object.keys(exported).forEach(key => loadFileClasses(exported[key], allLoaded));
 
-        } else if (exported instanceof Array) {
-            exported.forEach((i: any) => loadFileClasses(i, allLoaded));
         }
-
         return allLoaded;
     }
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormilize(dir)));
+        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
     const dirs = allFiles
@@ -39,7 +39,7 @@ export function importClassesFromDirectories(directories: string[], formats = ["
 export function importJsonsFromDirectories(directories: string[], format = ".json"): any[] {
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormilize(dir)));
+        return allDirs.concat(PlatformTools.load("glob").sync(PlatformTools.pathNormalize(dir)));
     }, [] as string[]);
 
     return allFiles

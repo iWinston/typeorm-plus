@@ -1,4 +1,9 @@
 import {createConnection} from "../index";
+import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
+import {Connection} from "../connection/Connection";
+import * as process from "process";
+const chalk = require("chalk");
+
 
 /**
  * Runs migration command.
@@ -10,37 +15,42 @@ export class MigrationRunCommand {
 
     builder(yargs: any) {
         return yargs
-            .option("c", {
-                alias: "connection",
+            .option("connection", {
+                alias: "c",
                 default: "default",
                 describe: "Name of the connection on which run a query."
             })
-            .option("cf", {
-                alias: "config",
-                default: "ormconfig.json",
+            .option("config", {
+                alias: "f",
+                default: "ormconfig",
                 describe: "Name of the file with connection configuration."
             });
     }
 
     async handler(argv: any) {
 
+        let connection: Connection|undefined = undefined;
         try {
-            process.env.SKIP_SCHEMA_CREATION = true;
-            process.env.SKIP_SUBSCRIBERS_LOADING = true;
-            const connection = await createConnection(argv.connection, process.cwd() + "/" + argv.config);
-            try {
-                await connection.runMigrations();
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
+            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            Object.assign(connectionOptions, {
+                subscribers: [],
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: ["schema"]
+            });
+            connection = await createConnection(connectionOptions);
 
-            } catch (err) {
-                connection.logger.log("error", err);
-
-            } finally {
-                await connection.close();
-            }
+            await connection.runMigrations();
+            await connection.close();
 
         } catch (err) {
+            if (connection) await (connection as Connection).close();
+
+            console.log(chalk.black.bgRed("Error during migration run:"));
             console.error(err);
-            throw err;
+            process.exit(1);
         }
     }
 

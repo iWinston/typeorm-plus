@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {PostDetails} from "./entity/PostDetails";
@@ -10,7 +10,7 @@ describe.skip("relations > relation mapped to relation with different name (#56)
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -20,19 +20,21 @@ describe.skip("relations > relation mapped to relation with different name (#56)
         // first create and save details
         const details = new PostDetails();
         details.keyword = "post-1";
-        await connection.entityManager.persist(details);
+        await connection.manager.save(details);
 
         // then create and save a post with details
         const post1 = new Post();
         post1.title = "Hello Post #1";
         post1.details = details;
-        await connection.entityManager.persist(post1);
+        await connection.manager.save(post1);
 
         // now check
-        const posts = await connection.entityManager.find(Post, {
-            alias: "post",
-            innerJoinAndSelect: {
-                details: "post.details"
+        const posts = await connection.manager.find(Post, {
+            join: {
+                alias: "post",
+                innerJoinAndSelect: {
+                    details: "post.details"
+                }
             }
         });
 

@@ -1,5 +1,8 @@
 import {EventListenerType} from "./types/EventListenerTypes";
 import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadataArgs";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {EntityMetadata} from "./EntityMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
 
 /**
  * This metadata contains all information about entity's listeners.
@@ -7,33 +10,87 @@ import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadat
 export class EntityListenerMetadata {
 
     // ---------------------------------------------------------------------
-    // Readonly Properties
+    // Properties
     // ---------------------------------------------------------------------
 
     /**
-     * Target class to which metadata is applied.
+     * Entity metadata of the listener.
      */
-    readonly target: Function|string;
+    entityMetadata: EntityMetadata;
+
+    /**
+     * Embedded metadata of the listener, in the case if listener is in embedded.
+     */
+    embeddedMetadata?: EmbeddedMetadata;
+
+    /**
+     * Target class to which metadata is applied.
+     * This can be different then entityMetadata.target in the case if listener is in the embedded.
+     */
+    target: Function|string;
 
     /**
      * Target's property name to which this metadata is applied.
      */
-    readonly propertyName: string;
+    propertyName: string;
 
     /**
      * The type of the listener.
      */
-    readonly type: EventListenerType;
+    type: EventListenerType;
 
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(args: EntityListenerMetadataArgs) {
-        this.target = args.target;
-        this.propertyName = args.propertyName;
-        this.type = args.type;
+    constructor(options: { entityMetadata: EntityMetadata, embeddedMetadata?: EmbeddedMetadata, args: EntityListenerMetadataArgs }) {
+        this.entityMetadata = options.entityMetadata;
+        this.embeddedMetadata = options.embeddedMetadata;
+        this.target = options.args.target;
+        this.propertyName = options.args.propertyName;
+        this.type = options.args.type;
     }
 
+    // ---------------------------------------------------------------------
+    // Public Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Checks if entity listener is allowed to be executed on the given entity.
+     */
+    isAllowed(entity: ObjectLiteral) { // todo: create in entity metadata method like isInherited?
+        return this.entityMetadata.target === entity.constructor || // todo: .constructor won't work for entity schemas, but there are no entity listeners in schemas since there are no objects, right?
+            (this.entityMetadata.target instanceof Function && entity.constructor.prototype instanceof this.entityMetadata.target); // todo: also need to implement entity schema inheritance
+    }
+
+    /**
+     * Executes listener method of the given entity.
+     */
+    execute(entity: ObjectLiteral) {
+        if (!this.embeddedMetadata)
+            return entity[this.propertyName]();
+
+        this.callEntityEmbeddedMethod(entity, this.embeddedMetadata.propertyPath.split("."));
+    }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Calls embedded entity listener method no matter how nested it is.
+     */
+    protected callEntityEmbeddedMethod(entity: ObjectLiteral, propertyPaths: string[]): void {
+        const propertyPath = propertyPaths.shift();
+        if (!propertyPath)
+            return;
+
+        if (propertyPaths.length === 0) {
+            entity[propertyPath][this.propertyName]();
+        } else {
+            if (entity[propertyPath])
+                this.callEntityEmbeddedMethod(entity[propertyPath], propertyPaths);
+        }
+    }
 
 }

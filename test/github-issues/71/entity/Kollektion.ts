@@ -1,11 +1,13 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
+import {Generated} from "../../../../src/decorator/Generated";
 
 @Entity("kollektion")
 export class Kollektion {
 
-    @PrimaryColumn("int", { generated: true, name: "kollektion_id" })
+    @PrimaryColumn("int", { name: "kollektion_id" })
+    @Generated()
     id: number;
 
     @Column({ name: "kollektion_name" })

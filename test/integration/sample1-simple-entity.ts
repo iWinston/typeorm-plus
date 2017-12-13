@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {expect} from "chai";
 import {Connection} from "../../src/connection/Connection";
 import {Post} from "../../sample/sample1-simple-entity/entity/Post";
-import {closeTestingConnections, reloadTestingDatabases, createTestingConnections} from "../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../utils/test-utils";
 
 describe("insertion", function() {
 
@@ -29,7 +29,7 @@ describe("insertion", function() {
         newPost.text = "Hello post";
         newPost.title = "this is post title";
         newPost.likesCount = 0;
-        const savedPost = await postRepository.persist(newPost);
+        const savedPost = await postRepository.save(newPost);
 
         savedPost.should.be.equal(newPost);
         expect(savedPost.id).not.to.be.empty;

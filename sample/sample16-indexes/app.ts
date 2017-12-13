@@ -1,31 +1,18 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
+import {BasePost} from "./entity/BasePost";
 
 const options: ConnectionOptions = {
-    driver: {
-        // type: "postgres",
-        // host: "localhost",
-        // port: 5432,
-        // username: "root",
-        // password: "admin",
-        // database: "test"
-        // type: "sqlite",
-        // storage: "temp/sqlitedb.db"
-        type: "mssql",
-        host: "192.168.1.10",
-        username: "sa",
-        password: "admin12345",
-        database: "test",
-    },
-    logging: {
-        logQueries: true,
-        logFailedQueryError: true,
-        logOnlyFailedQueries: true,
-        logSchemaCreation: true
-    },
-    autoSchemaSync: true,
-    entities: [Post]
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
+    entities: [Post, BasePost]
 };
 
 createConnection(options).then(connection => {
@@ -38,7 +25,7 @@ createConnection(options).then(connection => {
     let postRepository = connection.getRepository(Post);
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => console.log("Post has been saved"));
 
 }, error => console.log("Cannot connect: ", error));

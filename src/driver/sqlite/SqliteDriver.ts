@@ -1,74 +1,49 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Logger} from "../../logger/Logger";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {SqliteQueryRunner} from "./SqliteQueryRunner";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
+import {Connection} from "../../connection/Connection";
+import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
+import {ColumnType} from "../types/ColumnTypes";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
 
 /**
  * Organizes communication with sqlite DBMS.
  */
-export class SqliteDriver implements Driver {
+export class SqliteDriver extends AbstractSqliteDriver {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Naming strategy used in the connection where this driver is used.
+     * Connection options.
      */
-    namingStrategy: NamingStrategyInterface;
+    options: SqliteConnectionOptions;
 
     /**
-     * Driver connection options.
+     * SQLite underlying library.
      */
-    readonly options: DriverOptions;
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * SQLite library.
-     */
-    protected sqlite: any;
-
-    /**
-     * Connection to SQLite database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
-
-    /**
-     * Logger used go log queries and errors.
-     */
-    protected logger: Logger;
+    sqlite: any;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, sqlite?: any) {
+    constructor(connection: Connection) {
+        super(connection);
 
-        this.options = connectionOptions;
-        this.logger = logger;
-        this.sqlite = sqlite;
+        this.connection = connection;
+        this.options = connection.options as SqliteConnectionOptions;
+        this.database = this.options.database;
 
         // validate options to make sure everything is set
-        if (!this.options.storage)
-            throw new DriverOptionNotSetError("storage");
+        if (!this.options.database)
+            throw new DriverOptionNotSetError("database");
 
-        // if sqlite package instance was not set explicitly then try to load it
-        if (!sqlite)
-            this.loadDependencies();
+        // load sqlite package
+        this.loadDependencies();
     }
 
     // -------------------------------------------------------------------------
@@ -76,165 +51,31 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Performs connection to the database.
-     */
-    connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const connection = new this.sqlite.Database(this.options.storage, (err: any) => {
-                if (err)
-                    return fail(err);
-
-                this.databaseConnection = {
-                    id: 1,
-                    connection: connection,
-                    isTransactionActive: false
-                };
-
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                connection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    ok();
-                });
-            });
-        });
-    }
-
-    /**
      * Closes connection with database.
      */
-    disconnect(): Promise<void> {
+    async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            if (!this.databaseConnection)
-                return fail(new ConnectionIsNotSetError("sqlite"));
-            this.databaseConnection.connection.close(handler);
+            this.queryRunner = undefined;
+            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection)
-            return Promise.reject(new ConnectionIsNotSetError("sqlite"));
+    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
+        if (!this.queryRunner)
+            this.queryRunner = new SqliteQueryRunner(this);
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new SqliteQueryRunner(databaseConnection, this, this.logger);
+        return this.queryRunner;
     }
 
-    /**
-     * Access to the native implementation of the database.
-     */
-    nativeInterface() {
-        return {
-            driver: this.sqlite,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined
-        };
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
-     */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (value === null || value === undefined)
-            return null;
-
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
-
-            case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
-
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
-
-            case ColumnTypes.DATETIME:
-                if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
-
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
+        if ((column.type as any) === Buffer) {
+            return "blob";
         }
 
-        return value;
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type or metadata.
-     */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
-
-            case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
-
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
-
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
-        }
-
-        return value;
-    }
-
-    /**
-     * Replaces parameters in the given sql with special escaping character
-     * and an array of parameter names to be passed to a query.
-     */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
-        if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
-
-        const builtParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            const value = parameters[key.substr(1)];
-            if (value instanceof Array) {
-                return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "$" + builtParameters.length;
-                }).join(", ");
-            } else {
-                builtParameters.push(value);
-            }
-            return "$" + builtParameters.length;
-        }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
-    }
-
-    /**
-     * Escapes a column name.
-     */
-    escapeColumnName(columnName: string): string {
-        return "\"" + columnName + "\"";
-    }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return "\"" + aliasName + "\"";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return "\"" + tableName + "\"";
+        return super.normalizeType(column);
     }
 
     // -------------------------------------------------------------------------
@@ -242,15 +83,22 @@ export class SqliteDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
+     * Creates connection with the database.
      */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
+    protected createDatabaseConnection() {
+        return new Promise<void>(async (ok, fail) => {
+            await this.createDatabaseDirectory(this.options.database);
+            const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
+                if (err) return fail(err);
 
-        throw new ConnectionIsNotSetError("sqlite");
+                // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                // working properly. this also makes onDelete to work with sqlite.
+                databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
+                    if (err) return fail(err);
+                    ok(databaseConnection);
+                });
+            });
+        });
     }
 
     /**
@@ -260,9 +108,20 @@ export class SqliteDriver implements Driver {
         try {
             this.sqlite = PlatformTools.load("sqlite3").verbose();
 
-        } catch (e) { // todo: better error for browser env
+        } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
         }
+    }
+
+    /**
+     * Auto creates database directory if it does not exist.
+     */
+    protected createDatabaseDirectory(fullPath: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const mkdirp = PlatformTools.load("mkdirp");
+            const path = PlatformTools.load("path");
+            mkdirp(path.dirname(fullPath), (err: any) => err ? reject(err) : resolve());
+        });
     }
 
 }

@@ -4,7 +4,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {User} from "./entity/User";
-import {createTestingConnections, reloadTestingDatabases, closeTestingConnections} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 describe("persistence > many-to-many", function() {
 
@@ -16,7 +16,7 @@ describe("persistence > many-to-many", function() {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true
+        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -34,27 +34,29 @@ describe("persistence > many-to-many", function() {
         // save a new category
         const newCategory = categoryRepository.create();
         newCategory.name = "Animals";
-        await categoryRepository.persist(newCategory);
+        await categoryRepository.save(newCategory);
 
         // save a new post
         const newPost = postRepository.create();
         newPost.title = "All about animals";
-        await postRepository.persist(newPost);
+        await postRepository.save(newPost);
 
         // save a new user
         const newUser = userRepository.create();
         newUser.name = "Dima";
-        await userRepository.persist(newUser);
+        await userRepository.save(newUser);
 
         // now add a category to the post and attach post to a user and save a user
         newPost.categories = [newCategory];
         newUser.post = newPost;
-        await userRepository.persist(newUser);
+        await userRepository.save(newUser);
 
         // load a post
         const loadedUser = await userRepository.findOneById(1, {
-            alias: "user",
-            leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+            join: {
+                alias: "user",
+                leftJoinAndSelect: { post: "user.post", categories: "post.categories" }
+            }
         });
 
         expect(loadedUser!).not.to.be.empty;

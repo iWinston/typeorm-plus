@@ -1,64 +1,36 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
-import {DatabaseConnection} from "../DatabaseConnection";
 import {DriverUtils} from "../DriverUtils";
-import {Logger} from "../../logger/Logger";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
 import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-
-/**
- * Declare a global function that is only available in browsers that support WebSQL.
- */
-declare function openDatabase(...params: any[]): any;
+import {Connection} from "../../connection/Connection";
+import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
+import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
 
 /**
  * Organizes communication with WebSQL in the browser.
  */
-export class WebsqlDriver implements Driver {
+export class WebsqlDriver extends AbstractSqliteDriver {
 
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Naming strategy used in the connection where this driver is used.
+     * Connection options.
      */
-    namingStrategy: NamingStrategyInterface;
-
-    /**
-     * Driver connection options.
-     */
-    readonly options: DriverOptions;
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Connection to database.
-     */
-    protected databaseConnection: DatabaseConnection|undefined;
-
-    /**
-     * Logger used go log queries and errors.
-     */
-    protected logger: Logger;
+    options: WebSqlConnectionOptions;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(options: DriverOptions, logger: Logger) {
-
-        this.options = DriverUtils.buildDriverOptions(options);
-        this.logger = logger;
+    constructor(connection: Connection) {
+        super(connection);
+        
+        this.options = connection.options as WebSqlConnectionOptions;
+        Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        this.database = this.options.database;
 
         // validate options to make sure everything is set
         // if (!this.options.host)
@@ -76,64 +48,53 @@ export class WebsqlDriver implements Driver {
 
     /**
      * Performs connection to the database.
-     * Based on pooling options, it can either create connection immediately,
-     * either create a pool and create connection when needed.
      */
-    connect(): Promise<void> {
-
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            database: this.options.database,
-        }, this.options.extra || {});
-
-        return new Promise<void>((ok, fail) => {
-            const connection = openDatabase(
-                options.database,
-                options.version,
-                options.description,
-                options.size,
-            );
-            this.databaseConnection = {
-                id: 1,
-                connection: connection,
-                isTransactionActive: false
-            };
-            ok();
-        });
+    async connect(): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
      * Closes connection with the database.
      */
     disconnect(): Promise<void> {
-        if (!this.databaseConnection)
-            throw new ConnectionIsNotSetError("websql");
+        return Promise.resolve();
+        // if (!this.databaseConnection)
+        //     throw new ConnectionIsNotSetError("websql");
 
-        return new Promise<void>((ok, fail) => {
+        // return new Promise<void>((ok, fail) => {
             // const handler = (err: any) => err ? fail(err) : ok();
             // todo: find out how to close connection
-            ok();
-        });
+            // ok();
+        // });
     }
 
     /**
-     * Creates a query runner used for common queries.
+     * Creates a query runner used to execute database queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection)
-            return Promise.reject(new ConnectionIsNotSetError("websql"));
-
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new WebsqlQueryRunner(databaseConnection, this, this.logger);
+    createQueryRunner(mode: "master"|"slave" = "master"): WebsqlQueryRunner {
+        return new WebsqlQueryRunner(this);
     }
 
     /**
-     * Access to the native implementation of the database.
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    nativeInterface() {
-        return {
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined
-        };
+    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.type === "json") {
+            return JSON.stringify(value);
+        }
+
+        return super.preparePersistentValue(value, columnMetadata);
+    }
+
+    /**
+     * Prepares given value to a value to be persisted, based on its column type or metadata.
+     */
+    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.type === "json") {
+            return JSON.parse(value);
+        }
+
+        return super.prepareHydratedValue(value, columnMetadata);
     }
 
     /**
@@ -146,8 +107,14 @@ export class WebsqlDriver implements Driver {
         const escapedParameters: any[] = [];
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            escapedParameters.push(parameters[key.substr(1)]);
-            return "?";
+            const value = parameters[key.substr(1)];
+            if (value instanceof Function) {
+                return value();
+
+            } else {
+                escapedParameters.push(value);
+                return "?";
+            }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -155,96 +122,7 @@ export class WebsqlDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string {
+    escape(columnName: string): string {
         return columnName; // "`" + columnName + "`";
     }
-
-    /**
-     * Escapes an alias.
-     */
-    escapeAliasName(aliasName: string): string {
-        return aliasName; // "`" + aliasName + "`";
-    }
-
-    /**
-     * Escapes a table name.
-     */
-    escapeTableName(tableName: string): string {
-        return tableName; // "`" + tableName + "`";
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type and metadata.
-     */
-    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (value === null || value === undefined)
-            return null;
-
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
-
-            case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
-
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
-
-            case ColumnTypes.DATETIME:
-                if (columnMetadata.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
-
-            case ColumnTypes.JSON:
-                return JSON.stringify(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
-        }
-
-        return value;
-    }
-
-    /**
-     * Prepares given value to a value to be persisted, based on its column type or metadata.
-     */
-    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
-
-            case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
-
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
-
-            case ColumnTypes.JSON:
-                return JSON.parse(value);
-
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
-        }
-
-        return value;
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("websql");
-    }
-
 }

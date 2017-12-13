@@ -1,21 +1,16 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Category]
 };
 
@@ -42,7 +37,7 @@ createConnection(options).then(connection => {
     category1.childCategories = [childCategory1, childCategory2];
 
     return categoryRepository
-        .persist(category1)
+        .save(category1)
         .then(category => {
             console.log("Categories has been saved. Lets now load it and all its descendants:");
             return categoryRepository.findDescendants(category1);
@@ -107,9 +102,9 @@ createConnection(options).then(connection => {
     childChildCategory2.parentCategory = childCategory2;
 
     return categoryRepository
-        .persist(childChildCategory1)
+        .save(childChildCategory1)
         .then(category => {
-            return categoryRepository.persist(childChildCategory2);
+            return categoryRepository.save(childChildCategory2);
         })
         .then(category => {
             console.log("Categories has been saved. Lets load them now.");

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {expect} from "chai";
@@ -11,7 +11,7 @@ describe.skip("github issues > #56 relationships only work when both primary key
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -25,8 +25,8 @@ describe.skip("github issues > #56 relationships only work when both primary key
         user.email = "mwelnick@test.com";
         user.access_token = token;
 
-        return connection.getRepository(AccessToken).persist(token).then(token => {
-            return connection.getRepository(User).persist(user);
+        return connection.getRepository(AccessToken).save(token).then(token => {
+            return connection.getRepository(User).save(user);
         }).then (user => {
             expect(user).not.to.be.empty;
             user.should.be.eql({

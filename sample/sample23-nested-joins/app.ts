@@ -1,23 +1,18 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post, Author, Category]
 };
 
@@ -44,7 +39,7 @@ createConnection(options).then(connection => {
     author2.name = "Bakhrom";
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             return postRepository
                 .createQueryBuilder("post")
@@ -63,7 +58,7 @@ createConnection(options).then(connection => {
 
             post.author = author2;
             
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(updatedPost => {
             return postRepository
@@ -78,9 +73,9 @@ createConnection(options).then(connection => {
             console.log("Lets update a post - return old author back:");
 
             console.log("updating with: ", author);
-            loadedPost.title = "Umed's post";
-            loadedPost.author = author;
-            return postRepository.persist(loadedPost);
+            loadedPost!.title = "Umed's post";
+            loadedPost!.author = author;
+            return postRepository.save(loadedPost!);
         })
         .then(updatedPost => {
             return postRepository
@@ -94,7 +89,7 @@ createConnection(options).then(connection => {
             console.log(loadedPost);
             console.log("Now lets remove post's author:");
             post.author = null;
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(updatedPost => {
             return postRepository
@@ -108,7 +103,7 @@ createConnection(options).then(connection => {
             console.log(loadedPost);
             console.log("Finally bakhrom's post:");
             post.author = author2;
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(updatedPost => {
             return postRepository

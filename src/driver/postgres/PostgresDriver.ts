@@ -1,24 +1,21 @@
 import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../error/ConnectionIsNotSetError";
-import {DriverOptions} from "../DriverOptions";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {DatabaseConnection} from "../DatabaseConnection";
-import {DriverPackageNotInstalledError} from "../error/DriverPackageNotInstalledError";
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
-import {ColumnTypes} from "../../metadata/types/ColumnTypes";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {Logger} from "../../logger/Logger";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DriverOptionNotSetError} from "../error/DriverOptionNotSetError";
-import {DataTransformationUtils} from "../../util/DataTransformationUtils";
+import {DateUtils} from "../../util/DateUtils";
 import {PlatformTools} from "../../platform/PlatformTools";
-import {NamingStrategyInterface} from "../../naming-strategy/NamingStrategyInterface";
-
-// todo(tests):
-// check connection with url
-// check if any of required option is not set exception to be thrown
-//
+import {Connection} from "../../connection/Connection";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
+import {ColumnType} from "../types/ColumnTypes";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -30,77 +27,171 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Naming strategy used in the connection where this driver is used.
+     * Connection used by driver.
      */
-    namingStrategy: NamingStrategyInterface;
+    connection: Connection;
 
     /**
-     * Driver connection options.
+     * Postgres underlying library.
      */
-    readonly options: DriverOptions;
+    postgres: any;
+
+    /**
+     * Pool for master database.
+     */
+    master: any;
+
+    /**
+     * Pool for slave databases.
+     * Used in replication.
+     */
+    slaves: any[] = [];
+
+    /**
+     * We store all created query runners because we need to release them.
+     */
+    connectedQueryRunners: QueryRunner[] = [];
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Public Implemented Properties
     // -------------------------------------------------------------------------
 
     /**
-     * Postgres library.
+     * Connection options.
      */
-    protected postgres: any;
+    options: PostgresConnectionOptions;
 
     /**
-     * Connection to postgres database.
+     * Master database used to perform all write queries.
      */
-    protected databaseConnection: DatabaseConnection|undefined;
+    database?: string;
 
     /**
-     * Postgres pool.
+     * Indicates if replication is enabled.
      */
-    protected pool: any;
+    isReplicated: boolean = false;
 
     /**
-     * Pool of database connections.
+     * Indicates if tree tables are supported by this driver.
      */
-    protected databaseConnectionPool: DatabaseConnection[] = [];
+    treeSupport = true;
 
     /**
-     * Logger used go log queries and errors.
+     * Gets list of supported column data types by a driver.
+     *
+     * @see https://www.tutorialspoint.com/postgresql/postgresql_data_types.htm
+     * @see https://www.postgresql.org/docs/9.2/static/datatype.html
      */
-    protected logger: Logger;
+    supportedDataTypes: ColumnType[] = [
+        "smallint",
+        "integer",
+        "bigint",
+        "decimal",
+        "numeric",
+        "real",
+        "double precision",
+        "money",
+        "character varying",
+        "varchar",
+        "character",
+        "char",
+        "text",
+        "citext",
+        "bytea",
+        "bit",
+        "bit varying",
+        "timestamp",
+        "timestamp without time zone",
+        "timestamp with time zone",
+        "date",
+        "time",
+        "time without time zone",
+        "time with time zone",
+        "interval",
+        "boolean",
+        "enum",
+        "point",
+        "line",
+        "lseg",
+        "box",
+        "path",
+        "polygon",
+        "circle",
+        "cidr",
+        "inet",
+        "macaddr",
+        "tsvector",
+        "tsquery",
+        "uuid",
+        "xml",
+        "json",
+        "jsonb"
+    ];
 
     /**
-     * Schema name. (Only used in Postgres)
-     * default: "public"
+     * Gets list of column data types that support length by a driver.
      */
-    public schemaName?: string;
-    
+    withLengthColumnTypes: ColumnType[] = [
+        "character varying",
+        "varchar",
+        "character",
+        "char",
+        "bit",
+        "bit varying"
+    ];
+
+    /**
+     * Orm has special columns and we need to know what database column types should be for those types.
+     * Column types are driver dependant.
+     */
+    mappedDataTypes: MappedColumnTypes = {
+        createDate: "timestamp",
+        createDateDefault: "now()",
+        updateDate: "timestamp",
+        updateDateDefault: "now()",
+        version: "int",
+        treeLevel: "int",
+        migrationName: "varchar",
+        migrationTimestamp: "bigint",
+        cacheId: "int",
+        cacheIdentifier: "varchar",
+        cacheTime: "bigint",
+        cacheDuration: "int",
+        cacheQuery: "text",
+        cacheResult: "text",
+    };
+
+    /**
+     * Default values of length, precision and scale depends on column data type.
+     * Used in the cases when length/precision/scale is not specified by user.
+     */
+    dataTypeDefaults: DataTypeDefaults;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connectionOptions: DriverOptions, logger: Logger, postgres?: any) {
+    constructor(connection: Connection) {
+        this.connection = connection;
+        this.options = connection.options as PostgresConnectionOptions;
+        this.isReplicated = this.options.replication ? true : false;
 
-        this.options = DriverUtils.buildDriverOptions(connectionOptions);
-        this.logger = logger;
-        this.postgres = postgres;
-        this.schemaName = connectionOptions.schemaName || "public";
+        // load postgres package
+        this.loadDependencies();
 
+        // Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
-        if (!this.options.host)
-            throw new DriverOptionNotSetError("host");
-        if (!this.options.username)
-            throw new DriverOptionNotSetError("username");
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database");
-
-        // if postgres package instance was not set explicitly then try to load it
-        if (!postgres)
-            this.loadDependencies();
+        // todo: revisit validation with replication in mind
+        // if (!this.options.host)
+        //     throw new DriverOptionNotSetError("host");
+        // if (!this.options.username)
+        //     throw new DriverOptionNotSetError("username");
+        // if (!this.options.database)
+        //     throw new DriverOptionNotSetError("database");
     }
 
     // -------------------------------------------------------------------------
-    // Public Methods
+    // Public Implemented Methods
     // -------------------------------------------------------------------------
 
     /**
@@ -108,133 +199,110 @@ export class PostgresDriver implements Driver {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    connect(): Promise<void> {
+    async connect(): Promise<void> {
 
-        // build connection options for the driver
-        const options = Object.assign({}, {
-            host: this.options.host,
-            user: this.options.username,
-            password: this.options.password,
-            database: this.options.database,
-            port: this.options.port
-        }, this.options.extra || {});
-
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        if (this.options.usePool === undefined || this.options.usePool === true) {
-            this.pool = new this.postgres.Pool(options);
-            return Promise.resolve();
+        if (this.options.replication) {
+            this.slaves = await Promise.all(this.options.replication.slaves.map(slave => {
+                return this.createPool(this.options, slave);
+            }));
+            this.master = await this.createPool(this.options, this.options.replication.master);
+            this.database = this.options.replication.master.database;
 
         } else {
-            return new Promise<void>((ok, fail) => {
-                this.databaseConnection = {
-                    id: 1,
-                    connection: new this.postgres.Client(options),
-                    isTransactionActive: false
-                };
-                this.databaseConnection.connection.connect((err: any) => {
-                    if (err) {
-                        fail(err);
-                    } else {
-                        this.databaseConnection && this.databaseConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any, result: any) => {
-                            if (err) {
-                                this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                                this.logger.logQueryError(err);
-                                fail(err);
-                            } else {
-                                ok();
-                            }
-                        });
-                    }
-                });
-            });
+            this.master = await this.createPool(this.options, this.options);
+            this.database = this.options.database;
         }
+    }
+
+    /**
+     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     */
+    async afterConnect(): Promise<void> {
+        const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
+        });
+        const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => column.type === "citext").length > 0;
+        });
+
+        if (hasUuidColumns || hasCitextColumns) {
+            await Promise.all([this.master, ...this.slaves].map(pool => {
+                return new Promise((ok, fail) => {
+                    pool.connect(async (err: any, connection: any, release: Function) => {
+                        if (err) return fail(err);
+                        if (hasUuidColumns)
+                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
+                        if (hasCitextColumns)
+                            await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
+
+                        release();
+                        ok();
+                    });
+                });
+            }));
+        }
+
+        return Promise.resolve();
     }
 
     /**
      * Closes connection with database.
      */
-    disconnect(): Promise<void> {
-        if (!this.databaseConnection && !this.pool)
-            throw new ConnectionIsNotSetError("postgres");
-
-        return new Promise<void>((ok, fail) => {
-            const handler = (err: any) => err ? fail(err) : ok();
-
-            if (this.databaseConnection) {
-                this.databaseConnection.connection.end(/*handler*/); // todo: check if it can emit errors
-                this.databaseConnection = undefined;
-            }
-
-            if (this.databaseConnectionPool) {
-                this.databaseConnectionPool.forEach(dbConnection => {
-                    if (dbConnection && dbConnection.releaseCallback) {
-                        dbConnection.releaseCallback();
-                    }
-                });
-                this.pool.end(handler);
-                this.pool = undefined;
-                this.databaseConnectionPool = [];
-            }
-
-            ok();
-        });
-    }
-
-    /**
-     * Creates a query runner used for common queries.
-     */
-    async createQueryRunner(): Promise<QueryRunner> {
-        if (!this.databaseConnection && !this.pool)
+    async disconnect(): Promise<void> {
+        if (!this.master)
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
-        const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(databaseConnection, this, this.logger);
+        await this.closePool(this.master);
+        await Promise.all(this.slaves.map(slave => this.closePool(slave)));
+        this.master = undefined;
+        this.slaves = [];
     }
 
     /**
-     * Access to the native implementation of the database.
+     * Creates a schema builder used to build and sync a schema.
      */
-    nativeInterface() {
-        return {
-            driver: this.postgres,
-            connection: this.databaseConnection ? this.databaseConnection.connection : undefined,
-            pool: this.pool
-        };
+    createSchemaBuilder() {
+        return new RdbmsSchemaBuilder(this.connection);
+    }
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    createQueryRunner(mode: "master"|"slave" = "master") {
+        return new PostgresQueryRunner(this, mode);
     }
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    preparePersistentValue(value: any, column: ColumnMetadata): any {
+    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.to(value);
+
         if (value === null || value === undefined)
-            return null;
+            return value;
 
-        switch (column.type) {
-            case ColumnTypes.BOOLEAN:
-                return value === true ? 1 : 0;
+        if (columnMetadata.type === Boolean) {
+            return value === true ? 1 : 0;
 
-            case ColumnTypes.DATE:
-                return DataTransformationUtils.mixedDateToDateString(value);
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDateString(value);
 
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedDateToTimeString(value);
+        } else if (columnMetadata.type === "time") {
+            return DateUtils.mixedDateToTimeString(value);
 
-            case ColumnTypes.DATETIME:
-                if (column.localTimezone) {
-                    return DataTransformationUtils.mixedDateToDatetimeString(value);
-                } else {
-                    return DataTransformationUtils.mixedDateToUtcDatetimeString(value);
-                }
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === Date
+            || columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamp with time zone"
+            || columnMetadata.type === "timestamp without time zone") {
+            return DateUtils.mixedDateToDate(value, true);
 
-            case ColumnTypes.JSON:
-            case ColumnTypes.JSONB:
-                // pg(pg-types) have done JSON.parse conversion
-                // https://github.com/brianc/node-pg-types/blob/ed2d0e36e33217b34530727a98d20b325389e73a/lib/textParsers.js#L170
-                return value;
+        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
+            return JSON.stringify(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.simpleArrayToString(value);
+        } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -244,26 +312,30 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        switch (columnMetadata.type) {
-            case ColumnTypes.BOOLEAN:
-                return value ? true : false;
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
-            case ColumnTypes.DATETIME:
-                return DataTransformationUtils.normalizeHydratedDate(value, columnMetadata.localTimezone === true);
+        if (value === null || value === undefined)
+            return value;
 
-            case ColumnTypes.TIME:
-                return DataTransformationUtils.mixedTimeToString(value);
+        if (columnMetadata.type === Boolean) {
+            return value ? true : false;
 
-            case ColumnTypes.JSON:
-            case ColumnTypes.JSONB:
-                if (typeof value === "string") {
-                    return JSON.parse(value);
-                } else {
-                    return value;
-                }
+        } else if (columnMetadata.type === "datetime"
+            || columnMetadata.type === Date
+            || columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamp with time zone"
+            || columnMetadata.type === "timestamp without time zone") {
+            return DateUtils.normalizeHydratedDate(value);
 
-            case ColumnTypes.SIMPLE_ARRAY:
-                return DataTransformationUtils.stringToSimpleArray(value);
+        } else if (columnMetadata.type === "date") {
+            return DateUtils.mixedDateToDateString(value);
+
+        } else if (columnMetadata.type === "time") {
+            return DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "simple-array") {
+            return DateUtils.stringToSimpleArray(value);
         }
 
         return value;
@@ -286,10 +358,14 @@ export class PostgresDriver implements Driver {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
                 }).join(", ");
+
+            } else if (value instanceof Function) {
+                return value();
+
             } else {
                 builtParameters.push(value);
+                return "$" + builtParameters.length;
             }
-            return "$" + builtParameters.length;
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
     }
@@ -297,22 +373,211 @@ export class PostgresDriver implements Driver {
     /**
      * Escapes a column name.
      */
-    escapeColumnName(columnName: string): string {
+    escape(columnName: string): string {
         return "\"" + columnName + "\"";
     }
 
     /**
-     * Escapes an alias.
+     * Creates a database type from a given column metadata.
      */
-    escapeAliasName(aliasName: string): string {
-        return "\"" + aliasName + "\"";
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string {
+        let type = "";
+        if (column.type === Number) {
+            type += "integer";
+
+        } else if (column.type === String) {
+            type += "character varying";
+
+        } else if (column.type === Date) {
+            type += "timestamp";
+
+        } else if (column.type === Boolean) {
+            type += "boolean";
+
+        } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else {
+            type += column.type;
+        }
+
+        // normalize shortcuts
+        if (type === "int" || type === "int4") {
+            type = "integer";
+
+        } else if (type === "int2") {
+            type = "smallint";
+
+        } else if (type === "int8") {
+            type = "bigint";
+
+        } else if (type === "decimal") {
+            type = "numeric";
+
+        } else if (type === "float8") {
+            type = "double precision";
+
+        } else if (type === "float4") {
+            type = "real";
+
+        } else if (type === "citext") {
+            type = "citext";
+
+        } else if (type === "char") {
+            type = "character";
+
+        } else if (type === "varchar") {
+            type = "character varying";
+
+        } else if (type === "time") {
+            type = "time without time zone";
+
+        } else if (type === "timetz") {
+            type = "time with time zone";
+
+        } else if (type === "timestamptz") {
+            type = "timestamp with time zone";
+
+        } else if (type === "bool") {
+            type = "boolean";
+
+        } else if (type === "varbit") {
+            type = "bit varying";
+
+        } else if (type === "timestamp") {
+            type = "timestamp without time zone";
+        }
+
+        return type;
     }
 
     /**
-     * Escapes a table name.
+     * Normalizes "default" value of the column.
      */
-    escapeTableName(tableName: string): string {
-        return "\"" + tableName + "\"";
+    normalizeDefault(column: ColumnMetadata): string {
+        if (typeof column.default === "number") {
+            return "" + column.default;
+
+        } else if (typeof column.default === "boolean") {
+            return column.default === true ? "true" : "false";
+
+        } else if (typeof column.default === "function") {
+            return column.default();
+
+        } else if (typeof column.default === "string") {
+            return `'${column.default}'`;
+
+        } else if (typeof column.default === "object") {
+            return `'${JSON.stringify(column.default)}'`;
+
+        } else {
+            return column.default;
+        }
+    }
+
+    /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        return column.isUnique;
+    }
+
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        
+        if (column.length)
+            return column.length;
+
+        const normalizedType = this.normalizeType(column) as string;
+        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
+            return this.dataTypeDefaults[normalizedType].length!.toString();       
+
+        return "";
+    }
+
+    /**
+     * Normalizes "default" value of the column.
+     */
+    createFullType(column: TableColumn): string {
+        let type = column.type;
+
+        if (column.length) {
+            type += "(" + column.length + ")";
+        } else if (column.precision && column.scale) {
+            type += "(" + column.precision + "," + column.scale + ")";
+        } else if (column.precision) {
+            type +=  "(" + column.precision + ")";
+        } else if (column.scale) {
+            type +=  "(" + column.scale + ")";
+        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
+            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
+        }
+
+        if (column.type === "time without time zone") {
+            type = "TIME" + (column.precision ? "(" + column.precision + ")" : "");
+
+        } else if (column.type === "time with time zone") {
+            type = "TIME" + (column.precision ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
+
+        } else if (column.type === "timestamp without time zone") {
+            type = "TIMESTAMP" + (column.precision ? "(" + column.precision + ")" : "");
+
+        } else if (column.type === "timestamp with time zone") {
+            type = "TIMESTAMP" + (column.precision ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
+        }
+
+        if (column.isArray)
+            type += " array";
+
+        return type;
+    }
+
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return new Promise((ok, fail) => {
+            this.master.connect((err: any, connection: any, release: any) => {
+                err ? fail(err) : ok([connection, release]);
+            });
+        });
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        if (!this.slaves.length)
+            return this.obtainMasterConnection();
+
+        return new Promise((ok, fail) => {
+            const random = Math.floor(Math.random() * this.slaves.length);
+            this.slaves[random].connect((err: any, connection: any, release: any) => {
+                err ? fail(err) : ok([connection, release]);
+            });
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Loads postgres query stream package.
+     */
+    loadStreamDependency() {
+        try {
+            return PlatformTools.load("pg-query-stream");
+
+        } catch (e) { // todo: better error for browser env
+            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -320,64 +585,71 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Retrieves a new database connection.
-     * If pooling is enabled then connection from the pool will be retrieved.
-     * Otherwise active connection will be returned.
-     */
-    protected retrieveDatabaseConnection(): Promise<DatabaseConnection> {
-        if (this.pool) {
-            return new Promise((ok, fail) => {
-                this.pool.connect((err: any, connection: any, release: Function) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
-
-                    let dbConnection = this.databaseConnectionPool.find(dbConnection => dbConnection.connection === connection);
-                    if (!dbConnection) {
-                        dbConnection = {
-                            id: this.databaseConnectionPool.length,
-                            connection: connection,
-                            isTransactionActive: false
-                        };
-                        this.databaseConnectionPool.push(dbConnection);
-                    }
-                    dbConnection.releaseCallback = () => {
-                        if (dbConnection) {
-                            this.databaseConnectionPool.splice(this.databaseConnectionPool.indexOf(dbConnection), 1);
-                        }
-                        release();
-                        return Promise.resolve();
-                    };
-                    dbConnection.connection.query(`SET search_path TO '${this.schemaName}', 'public';`, (err: any) => {
-                        if (err) {
-                            this.logger.logFailedQuery(`SET search_path TO '${this.schemaName}', 'public';`);
-                            this.logger.logQueryError(err);
-                            fail(err);
-                        } else {
-                            ok(dbConnection);
-                        }
-                    });
-                });
-            });
-        }
-
-        if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        throw new ConnectionIsNotSetError("postgres");
-    }
-
-    /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
         try {
             this.postgres = PlatformTools.load("pg");
+            try {
+                const pgNative = PlatformTools.load("pg-native");
+                if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
+                
+            } catch (e) { }
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg");
         }
+    }
+
+    /**
+     * Creates a new connection pool for a given database credentials.
+     */
+    protected async createPool(options: PostgresConnectionOptions, credentials: PostgresConnectionCredentialsOptions): Promise<any> {
+
+        credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+
+        // build connection options for the driver
+        const connectionOptions = Object.assign({}, {
+            host: credentials.host,
+            user: credentials.username,
+            password: credentials.password,
+            database: credentials.database,
+            port: credentials.port,
+            ssl: credentials.ssl
+        }, options.extra || {});
+
+        // create a connection pool
+        const pool = new this.postgres.Pool(connectionOptions);
+
+        return new Promise((ok, fail) => {
+            pool.connect((err: any, connection: any, release: Function) => {
+                if (err) return fail(err);
+                release();
+                ok(pool);
+            });
+        });
+    }
+
+    /**
+     * Closes connection pool.
+     */
+    protected async closePool(pool: any): Promise<void> {
+        await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+        return new Promise<void>((ok, fail) => {
+            pool.end((err: any) => err ? fail(err) : ok());
+        });
+    }
+
+    /**
+     * Executes given query.
+     */
+    protected executeQuery(connection: any, query: string) {
+        return new Promise((ok, fail) => {
+            connection.query(query, (err: any, result: any) => {
+                if (err) return fail(err);
+                ok(result);
+            });
+        });
     }
 
 }

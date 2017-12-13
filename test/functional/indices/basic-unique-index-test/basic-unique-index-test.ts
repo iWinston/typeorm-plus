@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Customer} from "./entity/Customer";
 
@@ -9,7 +9,7 @@ describe("indices > basic unique index test", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
-        dropSchemaOnConnection: true,
+        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -20,7 +20,7 @@ describe("indices > basic unique index test", () => {
             const customer = new Customer();
             customer.nameEnglish = "Umed";
             customer.nameHebrew = "Uma";
-            await connection.entityManager.persist(customer);
+            await connection.manager.save(customer);
         })));
 
     });

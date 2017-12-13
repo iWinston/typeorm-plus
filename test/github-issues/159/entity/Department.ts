@@ -4,7 +4,6 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
 import {Employee} from "./Employee";
-import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 
 @Entity()
 export class Department {

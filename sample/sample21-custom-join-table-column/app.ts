@@ -1,23 +1,18 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post, Author, Category]
 };
 
@@ -41,13 +36,18 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     postRepository
-        .persist(post)
+        .save(post)
         .then(post => {
             console.log("Post has been saved. Lets load it now.");
-            return postRepository.find({ alias: "post", leftJoinAndSelect: { 
-                categories: "post.categories",
-                author: "post.user" // note that table column is used, not object property
-            }});
+            return postRepository.find({
+                join: {
+                    alias: "post",
+                    leftJoinAndSelect: {
+                        categories: "post.categories",
+                        author: "post.user" // note that table column is used, not object property
+                    }
+                }
+            });
         })
         .then(loadedPosts => {
             console.log("loadedPosts: ", loadedPosts);

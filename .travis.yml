@@ -2,11 +2,11 @@ sudo: required
 language: node_js
 node_js:
   - stable
-  - 6
-  - 5
-  - 4
-  #- 0.12
-  #- 0.11
+#  - 6
+#  - 5
+#  - 4
+#  - 0.12
+#  - 0.11
 
 services:
   - docker
@@ -15,7 +15,7 @@ before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
   - docker-compose up -d
-  - gulp createTravisOrmConfig
+  - npm run setup:config
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

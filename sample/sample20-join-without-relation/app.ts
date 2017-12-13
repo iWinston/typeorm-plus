@@ -1,29 +1,24 @@
 import "reflect-metadata";
-import {createConnection, ConnectionOptions} from "../../src/index";
+import {ConnectionOptions, createConnection} from "../../src/index";
 import {Post} from "./entity/Post";
 import {Author} from "./entity/Author";
 import {Category} from "./entity/Category";
 
 const options: ConnectionOptions = {
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
-    logging: {
-        logOnlyFailedQueries: true,
-        logFailedQueryError: true
-    },
-    autoSchemaSync: true,
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    logging: ["query", "error"],
+    synchronize: true,
     entities: [Post, Author, Category]
 };
 
 createConnection(options).then(connection => {
 
-    let entityManager = connection.entityManager;
+    let entityManager = connection.manager;
 
     let postRepository = connection.getRepository(Post);
     let authorRepository = connection.getRepository(Author);
@@ -46,12 +41,12 @@ createConnection(options).then(connection => {
     post.categories = [category1, category2];
 
     Promise.all<any>([
-        authorRepository.persist(author),
-        categoryRepository.persist(category1),
-        categoryRepository.persist(category2),
+        authorRepository.save(author),
+        categoryRepository.save(category1),
+        categoryRepository.save(category2),
     ])
         .then(() => {
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(() => {
             console.log("Everything has been saved.");
@@ -76,7 +71,7 @@ createConnection(options).then(connection => {
         /*    posts[0].title = "should be updated second post";
 
         return author.posts.then(posts => {
-                return authorRepository.persist(author);
+                return authorRepository.save(author);
             });
         })
         .then(updatedAuthor => {
@@ -89,7 +84,7 @@ createConnection(options).then(connection => {
             console.log("Now lets delete a post");
             posts[0].author = Promise.resolve(null);
             posts[1].author = Promise.resolve(null);
-            return postRepository.persist(posts[0]);
+            return postRepository.save(posts[0]);
         })
         .then(posts => {
             console.log("Two post's author has been removed.");  
@@ -109,7 +104,7 @@ createConnection(options).then(connection => {
                 category2
             ]);
             
-            return postRepository.persist(post);
+            return postRepository.save(post);
         })
         .then(posts => {
             console.log("Post has been saved with its categories. ");
@@ -122,7 +117,7 @@ createConnection(options).then(connection => {
             return posts[0].categories.then(categories => {
                 categories.splice(0, 1);
                 // console.log(posts[0]);
-                return postRepository.persist(posts[0]);
+                return postRepository.save(posts[0]);
             });
         })*/
         .then(posts => {

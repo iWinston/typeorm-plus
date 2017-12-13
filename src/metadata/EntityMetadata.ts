@@ -1,16 +1,24 @@
-import {TableMetadata} from "./TableMetadata";
 import {ColumnMetadata} from "./ColumnMetadata";
-import {RelationMetadata, PropertyTypeInFunction} from "./RelationMetadata";
+import {RelationMetadata} from "./RelationMetadata";
 import {IndexMetadata} from "./IndexMetadata";
-import {RelationTypes} from "./types/RelationTypes";
 import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {EntityMetadataArgs} from "../metadata-args/EntityMetadataArgs";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {LazyRelationsWrapper} from "../lazy-loading/LazyRelationsWrapper";
-
-// todo: IDEA. store all entity metadata in the EntityMetadata too? (this will open more features for metadata objects + no need to access connection in lot of places)
+import {RelationIdMetadata} from "./RelationIdMetadata";
+import {RelationCountMetadata} from "./RelationCountMetadata";
+import {TableType} from "./types/TableTypes";
+import {OrderByCondition} from "../find-options/OrderByCondition";
+import {OrmUtils} from "../util/OrmUtils";
+import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
+import {Connection} from "../connection/Connection";
+import {EntityListenerMetadata} from "./EntityListenerMetadata";
+import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import {Driver} from "../driver/Driver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 
 /**
  * Contains all entity metadata.
@@ -22,482 +30,405 @@ export class EntityMetadata {
     // -------------------------------------------------------------------------
 
     /**
+     * Used to wrap lazy relations.
+     */
+    lazyRelationsWrapper: LazyRelationsWrapper;
+
+    /**
      * If entity's table is a closure-typed table, then this entity will have a closure junction table metadata.
      */
     closureJunctionTable: EntityMetadata;
+
+    /**
+     * If this is entity metadata for a junction closure table then its owner closure table metadata will be set here.
+     */
+    parentClosureEntityMetadata: EntityMetadata;
 
     /**
      * Parent's entity metadata. Used in inheritance patterns.
      */
     parentEntityMetadata: EntityMetadata;
 
-    // -------------------------------------------------------------------------
-    // Public Readonly Properties
-    // -------------------------------------------------------------------------
+    /**
+     * Children entity metadatas. Used in inheritance patterns.
+     */
+    childEntityMetadatas: EntityMetadata[] = [];
 
     /**
-     * Naming strategy used to generate and normalize names.
+     * Table type. Tables can be abstract, closure, junction, embedded, etc.
      */
-    readonly namingStrategy: NamingStrategyInterface;
+    tableType: TableType = "regular";
 
     /**
      * Target class to which this entity metadata is bind.
      * Note, that when using table inheritance patterns target can be different rather then table's target.
+     * For virtual tables which lack of real entity (like junction tables) target is equal to their table name.
      */
-    readonly target: Function|string;
+    target: Function|string;
 
     /**
      * Indicates if this entity metadata of a junction table, or not.
+     * Junction table is a table created by many-to-many relationship.
+     *
+     * Its also possible to understand if entity is junction via tableType.
      */
-    readonly junction: boolean;
+    isJunction: boolean = false;
 
     /**
-     * Entity's table metadata.
+     * Entity's name.
+     * Equal to entity target class's name if target is set to table.
+     * If target class is not then then it equals to table name.
      */
-    readonly table: TableMetadata;
+    name: string;
+
+    /**
+     * Gets the name of the target.
+     */
+    targetName: string;
+
+    /**
+     * Original user-given table name (taken from schema or @Entity(tableName) decorator).
+     * If user haven't specified a table name this property will be undefined.
+     */
+    givenTableName?: string;
+
+    /**
+     * Entity table name in the database.
+     * This is final table name of the entity.
+     * This name already passed naming strategy, and generated based on
+     * multiple criteria, including user table name and global table prefix.
+     */
+    tableName: string;
+
+    /**
+     * Entity table path. Contains database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    tablePath: string;
+
+    /**
+     * Entity schema path. Contains database name and schema name.
+     * E.g. "myDB"."mySchema"
+     */
+    schemaPath?: string;
+
+    /**
+     * Gets the table name without global table prefix.
+     * When querying table you need a table name with prefix, but in some scenarios,
+     * for example when you want to name a junction table that contains names of two other tables,
+     * you may want a table name without prefix.
+     */
+    tableNameWithoutPrefix: string;
+
+    /**
+     * Indicates if schema sync is skipped for this entity.
+     */
+    skipSync: boolean;
+
+    /**
+     * Table's database engine type (like "InnoDB", "MyISAM", etc).
+     */
+    engine?: string;
+
+    /**
+     * Database name.
+     */
+    database?: string;
+
+    /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
+
+    /**
+     * Specifies a default order by used for queries from this table when no explicit order by is specified.
+     */
+    orderBy?: OrderByCondition;
+
+    /**
+     * Entity's column metadatas defined by user.
+     */
+    ownColumns: ColumnMetadata[] = [];
 
     /**
      * Entity's relation metadatas.
      */
-    readonly relations: RelationMetadata[];
+    ownRelations: RelationMetadata[] = [];
+
+    /**
+     * Entity's own listener metadatas.
+     */
+    ownListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Entity's own indices.
+     */
+    ownIndices: IndexMetadata[] = [];
+
+    /**
+     * Relations of the entity, including relations that are coming from the embeddeds of this entity.
+     */
+    relations: RelationMetadata[] = [];
+
+    /**
+     * List of eager relations this metadata has.
+     */
+    eagerRelations: RelationMetadata[] = [];
+
+    /**
+     * List of eager relations this metadata has.
+     */
+    lazyRelations: RelationMetadata[] = [];
+
+    /**
+     * Columns of the entity, including columns that are coming from the embeddeds of this entity.
+     */
+    columns: ColumnMetadata[] = [];
+
+    /**
+     * In the case if this entity metadata is junction table's entity metadata,
+     * this will contain all referenced columns of owner entity.
+     */
+    ownerColumns: ColumnMetadata[] = [];
+
+    /**
+     * In the case if this entity metadata is junction table's entity metadata,
+     * this will contain all referenced columns of inverse entity.
+     */
+    inverseColumns: ColumnMetadata[] = [];
+
+    /**
+     * Entity's relation id metadatas.
+     */
+    relationIds: RelationIdMetadata[] = [];
+
+    /**
+     * Entity's relation id metadatas.
+     */
+    relationCounts: RelationCountMetadata[] = [];
 
     /**
      * Entity's index metadatas.
      */
-    readonly indices: IndexMetadata[];
+    indices: IndexMetadata[] = [];
 
     /**
      * Entity's foreign key metadatas.
      */
-    readonly foreignKeys: ForeignKeyMetadata[] = [];
+    foreignKeys: ForeignKeyMetadata[] = [];
 
     /**
      * Entity's embedded metadatas.
      */
-    readonly embeddeds: EmbeddedMetadata[];
+    embeddeds: EmbeddedMetadata[] = [];
+
+    /**
+     * Entity listener metadatas.
+     */
+    listeners: EntityListenerMetadata[] = [];
 
     /**
      * If this entity metadata's table using one of the inheritance patterns,
      * then this will contain what pattern it uses.
      */
-    readonly inheritanceType?: "single-table"|"class-table";
+    inheritanceType?: "single-table"|"class-table";
 
     /**
      * If this entity metadata is a child table of some table, it should have a discriminator value.
      * Used to store a value in a discriminator column.
      */
-    readonly discriminatorValue?: string;
-
-    /**
-     * Global tables prefix. Customer can set a global table prefix for all tables in the database.
-     */
-    readonly tablesPrefix?: string;
-
-    // -------------------------------------------------------------------------
-    // Private properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Entity's column metadatas.
-     */
-    private readonly _columns: ColumnMetadata[];
-
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
-
-    constructor(args: EntityMetadataArgs,
-                private lazyRelationsWrapper: LazyRelationsWrapper) {
-        this.target = args.target;
-        this.junction = args.junction;
-        this.tablesPrefix = args.tablesPrefix;
-        this.namingStrategy = args.namingStrategy;
-        this.table = args.tableMetadata;
-        this._columns = args.columnMetadatas || [];
-        this.relations = args.relationMetadatas || [];
-        this.indices = args.indexMetadatas || [];
-        this.foreignKeys = args.foreignKeyMetadatas || [];
-        this.embeddeds = args.embeddedMetadatas || [];
-        this.discriminatorValue = args.discriminatorValue;
-        this.inheritanceType = args.inheritanceType;
-
-        this.table.entityMetadata = this;
-        this._columns.forEach(column => column.entityMetadata = this);
-        this.relations.forEach(relation => relation.entityMetadata = this);
-        this.foreignKeys.forEach(foreignKey => foreignKey.entityMetadata = this);
-        this.indices.forEach(index => index.entityMetadata = this);
-        this.embeddeds.forEach(embedded => {
-            embedded.entityMetadata = this;
-            embedded.columns.forEach(column => column.entityMetadata = this);
-        });
-    }
-
-    // -------------------------------------------------------------------------
-    // Accessors
-    // -------------------------------------------------------------------------
-
-    /**
-     * Entity's name. Equal to entity target class's name if target is set to table, or equals to table name if its set.
-     */
-    get name(): string {
-        if (!this.table)
-            throw new Error("No table target set to the entity metadata.");
-
-        return this.targetName ? this.targetName : this.table.name;
-    }
-
-    /**
-     * Columns of the entity, including columns that are coming from the embeddeds of this entity.
-     */
-    get columns(): ColumnMetadata[] {
-        let allColumns: ColumnMetadata[] = ([] as ColumnMetadata[]).concat(this._columns);
-        this.embeddeds.forEach(embedded => {
-            allColumns = allColumns.concat(embedded.columns);
-        });
-        return allColumns;
-    }
-
-    /**
-     * All columns of the entity, including columns that are coming from the embeddeds of this entity,
-     * and including columns from the parent entities.
-     */
-    get allColumns(): ColumnMetadata[] {
-        let columns = this.columns;
-        if (this.parentEntityMetadata)
-            columns = columns.concat(this.parentEntityMetadata.columns);
-
-        return columns;
-    }
-
-    /**
-     * All relations of the entity, including relations from the parent entities.
-     */
-    get allRelations(): RelationMetadata[] {
-        let relations = this.relations;
-        if (this.parentEntityMetadata)
-            relations = relations.concat(this.parentEntityMetadata.relations);
-
-        return relations;
-    }
-
-    /**
-     * Gets the name of the target.
-     */
-    get targetName(): string {
-        if (typeof this.target === "string")
-            return this.target;
-
-        if (this.target instanceof Function)
-            return (<any> this.target).name;
-
-        return "";
-    }
+    discriminatorValue?: string;
 
     /**
      * Checks if entity's table has multiple primary columns.
      */
-    get hasMultiplePrimaryKeys() {
-        return this.primaryColumns.length > 1;
-    }
-
-    /**
-     * Gets the primary column.
-     *
-     * @deprecated
-     */
-    get primaryColumn(): ColumnMetadata {
-        const primaryKey = this.primaryColumns[0];
-        if (!primaryKey)
-            throw new Error(`Primary key is not set for the ${this.name} entity.`);
-
-        return primaryKey;
-    }
-
-    /**
-     * Checks if table has generated column.
-     */
-    get hasGeneratedColumn(): boolean {
-        return !!this.generatedColumnIfExist;
-    }
+    hasMultiplePrimaryKeys: boolean;
 
     /**
      * Gets the column with generated flag.
      */
-    get generatedColumn(): ColumnMetadata {
-        const generatedColumn = this.generatedColumnIfExist;
-        if (!generatedColumn)
-            throw new Error(`Generated column was not found`);
-
-        return generatedColumn;
-    }
+    generatedColumns: ColumnMetadata[] = [];
 
     /**
-     * Gets the generated column if it exists, or returns undefined if it does not.
+     * Gets the object id column used with mongodb database.
      */
-    get generatedColumnIfExist(): ColumnMetadata|undefined {
-        return this._columns.find(column => column.isGenerated);
-    }
-
-    /**
-     * Gets first primary column. In the case if table contains multiple primary columns it
-     * throws error.
-     */
-    get firstPrimaryColumn(): ColumnMetadata {
-        if (this.hasMultiplePrimaryKeys)
-            throw new Error(`Entity ${this.name} has multiple primary keys. This operation is not supported on entities with multiple primary keys`);
-
-        return this.primaryColumns[0];
-    }
-
-    /**
-     * Gets the primary columns.
-     */
-    get primaryColumns(): ColumnMetadata[] {
-        // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
-        // const parentEntityPrimaryColumns = this.hasParentIdColumn ? [this.parentIdColumn] : [];
-        // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
-        return this._columns.filter(column => column.isPrimary);
-        // const originalPrimaryColumns = this._columns.filter(column => column.isPrimary);
-        // const parentEntityPrimaryColumns = this.parentEntityMetadata ? this.parentEntityMetadata.primaryColumns : [];
-        // return originalPrimaryColumns.concat(parentEntityPrimaryColumns);
-    }
-
-    get primaryColumnsWithParentIdColumns(): ColumnMetadata[] {
-        return this.primaryColumns.concat(this.parentIdColumns);
-    }
-
-    /**
-     * Gets all primary columns including columns from the parent entities.
-     */
-    get allPrimaryColumns(): ColumnMetadata[] {
-        return this.primaryColumns.concat(this.parentPrimaryColumns);
-    }
-
-    /**
-     * Gets the primary columns of the parent entity metadata.
-     * If parent entity metadata does not exist then it simply returns empty array.
-     */
-    get parentPrimaryColumns(): ColumnMetadata[] {
-        if (this.parentEntityMetadata)
-            return this.parentEntityMetadata.primaryColumns;
-
-        return [];
-    }
-
-    /**
-     * Gets only primary columns owned by this entity.
-     */
-    get ownPimaryColumns(): ColumnMetadata[] {
-        return this._columns.filter(column => column.isPrimary);
-    }
-
-    /**
-     * Checks if entity has a create date column.
-     */
-    get hasCreateDateColumn(): boolean {
-        return !!this._columns.find(column => column.mode === "createDate");
-    }
+    objectIdColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains a create date value.
      */
-    get createDateColumn(): ColumnMetadata {
-        const column = this._columns.find(column => column.mode === "createDate");
-        if (!column)
-            throw new Error(`CreateDateColumn was not found in entity ${this.name}`);
-
-        return column;
-    }
-
-    /**
-     * Checks if entity has an update date column.
-     */
-    get hasUpdateDateColumn(): boolean {
-        return !!this._columns.find(column => column.mode === "updateDate");
-    }
+    createDateColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains an update date value.
      */
-    get updateDateColumn(): ColumnMetadata {
-        const column = this._columns.find(column => column.mode === "updateDate");
-        if (!column)
-            throw new Error(`UpdateDateColumn was not found in entity ${this.name}`);
-
-        return column;
-    }
-
-    /**
-     * Checks if entity has a version column.
-     */
-    get hasVersionColumn(): boolean {
-        return !!this._columns.find(column => column.mode === "version");
-    }
+    updateDateColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains an entity version.
      */
-    get versionColumn(): ColumnMetadata {
-        const column = this._columns.find(column => column.mode === "version");
-        if (!column)
-            throw new Error(`VersionColumn was not found in entity ${this.name}`);
-
-        return column;
-    }
-
-    /**
-     * Checks if entity has a discriminator column.
-     */
-    get hasDiscriminatorColumn(): boolean {
-        return !!this._columns.find(column => column.mode === "discriminator");
-    }
+    versionColumn?: ColumnMetadata;
 
     /**
      * Gets the discriminator column used to store entity identificator in single-table inheritance tables.
      */
-    get discriminatorColumn(): ColumnMetadata {
-        const column = this._columns.find(column => column.mode === "discriminator");
-        if (!column)
-            throw new Error(`DiscriminatorColumn was not found in entity ${this.name}`);
-
-        return column;
-    }
+    discriminatorColumn?: ColumnMetadata;
 
     /**
-     * Checks if entity has a tree level column.
+     * Special column that stores tree level in tree entities.
      */
-    get hasTreeLevelColumn(): boolean {
-        return !!this._columns.find(column => column.mode === "treeLevel");
-    }
-
-    get treeLevelColumn(): ColumnMetadata {
-        const column = this._columns.find(column => column.mode === "treeLevel");
-        if (!column)
-            throw new Error(`TreeLevelColumn was not found in entity ${this.name}`);
-
-        return column;
-    }
+    treeLevelColumn?: ColumnMetadata;
 
     /**
-     * Checks if entity has a tree level column.
+     * Gets the primary columns.
      */
-    get hasParentIdColumn(): boolean {
-        return !!this._columns.find(column => column.mode === "parentId");
-    }
-
-    get parentIdColumn(): ColumnMetadata {
-        const column = this._columns.find(column => column.mode === "parentId");
-        if (!column)
-            throw new Error(`Parent id column was not found in entity ${this.name}`);
-
-        return column;
-    }
-
-    get parentIdColumns(): ColumnMetadata[] {
-        return this._columns.filter(column => column.mode === "parentId");
-    }
+    primaryColumns: ColumnMetadata[] = [];
 
     /**
-     * Gets single (values of which does not contain arrays) relations.
+     * Id columns in the parent table (used in table inheritance).
      */
-    get singleValueRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => {
-            return relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.ONE_TO_MANY;
-        });
-    }
-
-    /**
-     * Gets single (values of which does not contain arrays) relations.
-     */
-    get multiValueRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => {
-            return relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.ONE_TO_MANY;
-        });
-    }
+    parentIdColumns: ColumnMetadata[] = [];
 
     /**
      * Gets only one-to-one relations of the entity.
      */
-    get oneToOneRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_ONE);
-    }
+    oneToOneRelations: RelationMetadata[] = [];
 
     /**
      * Gets only owner one-to-one relations of the entity.
      */
-    get ownerOneToOneRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_ONE && relation.isOwning);
-    }
+    ownerOneToOneRelations: RelationMetadata[] = [];
 
     /**
      * Gets only one-to-many relations of the entity.
      */
-    get oneToManyRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => relation.relationType === RelationTypes.ONE_TO_MANY);
-    }
+    oneToManyRelations: RelationMetadata[] = [];
 
     /**
      * Gets only many-to-one relations of the entity.
      */
-    get manyToOneRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_ONE);
-    }
+    manyToOneRelations: RelationMetadata[] = [];
 
     /**
      * Gets only many-to-many relations of the entity.
      */
-    get manyToManyRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY);
-    }
+    manyToManyRelations: RelationMetadata[] = [];
 
     /**
      * Gets only owner many-to-many relations of the entity.
      */
-    get ownerManyToManyRelations(): RelationMetadata[] {
-        return this.relations.filter(relation => relation.relationType === RelationTypes.MANY_TO_MANY && relation.isOwning);
-    }
+    ownerManyToManyRelations: RelationMetadata[] = [];
 
     /**
      * Gets only owner one-to-one and many-to-one relations.
      */
-    get relationsWithJoinColumns() {
-        return this.ownerOneToOneRelations.concat(this.manyToOneRelations);
-    }
-
-    /**
-     * Checks if there is a tree parent relation. Used only in tree-tables.
-     */
-    get hasTreeParentRelation() {
-        return !!this.relations.find(relation => relation.isTreeParent);
-    }
+    relationsWithJoinColumns: RelationMetadata[] = [];
 
     /**
      * Tree parent relation. Used only in tree-tables.
      */
-    get treeParentRelation() {
-        const relation = this.relations.find(relation => relation.isTreeParent);
-        if (!relation)
-            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
-
-        return relation;
-    }
-
-    /**
-     * Checks if there is a tree children relation. Used only in tree-tables.
-     */
-    get hasTreeChildrenRelation() {
-        return !!this.relations.find(relation => relation.isTreeChildren);
-    }
+    treeParentRelation?: RelationMetadata;
 
     /**
      * Tree children relation. Used only in tree-tables.
      */
-    get treeChildrenRelation() {
-        const relation = this.relations.find(relation => relation.isTreeChildren);
-        if (!relation)
-            throw new Error(`TreeParent relation was not found in entity ${this.name}`);
+    treeChildrenRelation?: RelationMetadata;
 
-        return relation;
+    /**
+     * Checks if there any non-nullable column exist in this entity.
+     */
+    hasNonNullableRelations: boolean;
+
+    /**
+     * Checks if this table is regular.
+     * All non-specific tables are just regular tables. Its a default table type.
+     */
+    isRegular: boolean;
+
+    /**
+     * Checks if this table is abstract.
+     * This type is for the tables that does not exist in the database,
+     * but provide columns and relations for the tables of the child classes who inherit them.
+     */
+    isAbstract: boolean;
+
+    /**
+     * Checks if this table is a closure table.
+     * Closure table is one of the tree-specific tables that supports closure database pattern.
+     */
+    isClosure: boolean;
+
+    /**
+     * Checks if this table is a junction table of the closure table.
+     * This type is for tables that contain junction metadata of the closure tables.
+     */
+    isClosureJunction: boolean;
+
+    /**
+     * Checks if this table is an embeddable table.
+     * Embeddable tables are not stored in the database as separate tables.
+     * Instead their columns are embed into tables who owns them.
+     */
+    isEmbeddable: boolean;
+
+    /**
+     * Checks if this table is a single table child.
+     * Special table type for tables that are mapped into single table using Single Table Inheritance pattern.
+     */
+    isSingleTableChild: boolean;
+
+    /**
+     * Checks if this table is a class table child.
+     * Special table type for tables that are mapped into multiple tables using Class Table Inheritance pattern.
+     */
+    isClassTableChild: boolean;
+
+    /**
+     * Map of columns and relations of the entity.
+     *
+     * example: Post{ id: number, name: string, counterEmbed: { count: number }, category: Category }.
+     * This method will create following object:
+     * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
+     */
+    propertiesMap: ObjectLiteral;
+
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
+
+    constructor(options: {
+        connection: Connection,
+        parentClosureEntityMetadata?: EntityMetadata,
+        args: TableMetadataArgs
+    }) {
+        const namingStrategy = options.connection.namingStrategy;
+        const entityPrefix = options.connection.options.entityPrefix;
+        this.lazyRelationsWrapper = new LazyRelationsWrapper(options.connection);
+        this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
+        this.target = options.args.target;
+        this.tableType = options.args.type;
+        this.engine = options.args.engine;
+        this.database = options.args.database;
+        this.schema = options.args.schema || (options.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
+        this.givenTableName = options.args.name;
+        this.skipSync = options.args.skipSync || false;
+        this.targetName = options.args.target instanceof Function ? (options.args.target as any).name : options.args.target;
+        this.tableNameWithoutPrefix = this.tableType === "closure-junction" ? namingStrategy.closureJunctionTableName(this.givenTableName!) : namingStrategy.tableName(this.targetName, this.givenTableName);
+        this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
+        this.target = this.target ? this.target : this.tableName;
+        this.name = this.targetName ? this.targetName : this.tableName;
+        this.tablePath = this.buildTablePath(options.connection.driver);
+        this.schemaPath = this.buildSchemaPath(options.connection.driver);
+
+        this.isClassTableChild = this.tableType === "class-table-child";
+        this.isSingleTableChild = this.tableType === "single-table-child";
+        this.isEmbeddable = this.tableType === "embeddable";
+        this.isJunction = this.tableType === "closure-junction" || this.tableType === "junction";
+        this.isClosureJunction = this.tableType === "closure-junction";
+        this.isClosure = this.tableType === "closure";
+        this.isAbstract = this.tableType === "abstract";
+        this.isRegular = this.tableType === "regular";
+        this.orderBy = (options.args.orderBy instanceof Function) ? options.args.orderBy(this.propertiesMap) : options.args.orderBy;
     }
 
     // -------------------------------------------------------------------------
@@ -523,66 +454,156 @@ export class EntityMetadata {
     }
 
     /**
-     * Creates an object - map of columns and relations of the entity.
+     * Checks if given entity has an id.
      */
-    createPropertiesMap(): { [name: string]: string|any } {
-        const entity: { [name: string]: string|any } = {};
-        this._columns.forEach(column => entity[column.propertyName] = column.propertyName);
-        this.relations.forEach(relation => entity[relation.propertyName] = relation.propertyName);
-        return entity;
+    hasId(entity: ObjectLiteral): boolean {
+        if (!entity)
+            return false;
+
+        return this.primaryColumns.every(primaryColumn => { /// todo: this.metadata.parentEntityMetadata ?
+            const value = primaryColumn.getEntityValue(entity);
+            return value !== null && value !== undefined && value !== "";
+        });
+    }
+
+    /**
+     * Compares ids of the two entities.
+     * Returns true if they match, false otherwise.
+     */
+    compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
+        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
+            return false;
+
+        return OrmUtils.deepCompare(firstId, secondId);
+    }
+
+    /**
+     * Compares two different entity instances by their ids.
+     * Returns true if they match, false otherwise.
+     */
+    compareEntities(firstEntity: ObjectLiteral, secondEntity: ObjectLiteral): boolean {
+
+        // if any entity ids are empty then they aren't equal
+        const isFirstEntityEmpty = this.isEntityMapEmpty(firstEntity);
+        const isSecondEntityEmpty = this.isEntityMapEmpty(secondEntity);
+        if (isFirstEntityEmpty || isSecondEntityEmpty)
+            return false;
+
+        const firstEntityIds = this.getEntityIdMap(firstEntity);
+        const secondEntityIds = this.getEntityIdMap(secondEntity);
+        return this.compareIds(firstEntityIds, secondEntityIds);
+    }
+
+    /**
+     * Checks if there is an embedded with a given property path.
+     */
+    hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
+        return !!this.findEmbeddedWithPropertyPath(propertyPath);
+    }
+
+    /**
+     * Finds embedded with a given property path.
+     */
+    findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
+        return this.embeddeds.find(embedded => {
+            return embedded.propertyPath === propertyPath;
+        });
+    }
+
+    /**
+     * Finds column with a given property name.
+     */
+    findColumnWithPropertyName(propertyName: string): ColumnMetadata|undefined {
+        return this.columns.find(column => column.propertyName === propertyName);
+    }
+
+    /**
+     * Finds column with a given property path.
+     */
+    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
+        const column = this.columns.find(column => column.propertyPath === propertyPath);
+        if (column)
+            return column;
+
+        // in the case if column with property path was not found, try to find a relation with such property path
+        // if we find relation and it has a single join column then its the column user was seeking
+        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        if (relation && relation.joinColumns.length === 1)
+            return relation.joinColumns[0];
+
+        return undefined;
+    }
+
+    /**
+     * Finds column with a given database name.
+     */
+    findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
+        return this.columns.find(column => column.databaseName === databaseName);
+    }
+
+    /**
+     * Finds relation with the given name.
+     */
+    findRelationWithDbName(dbName: string): RelationMetadata|undefined {
+        return this.relationsWithJoinColumns.find(relation => {
+            return !!relation.joinColumns.find(column => column.databaseName === dbName);
+        });
+    }
+
+    /**
+     * Finds relation with the given property path.
+     */
+    findRelationWithPropertyPath(propertyPath: string): RelationMetadata|undefined {
+        return this.relations.find(relation => relation.propertyPath === propertyPath);
     }
 
     /**
      * Computes property name of the entity using given PropertyTypeInFunction.
      */
-    computePropertyName(nameOrFn: PropertyTypeInFunction<any>) {
-        return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.createPropertiesMap());
+    computePropertyPath(nameOrFn: PropertyTypeFactory<any>) {
+        return typeof nameOrFn === "string" ? nameOrFn : nameOrFn(this.propertiesMap);
     }
 
     /**
-     * todo: undefined entities should not go there
+     * Creates entity id map from the given entity ids array.
      */
-    getEntityIdMap(entity: any): ObjectLiteral|undefined {
-        if (!entity)
+    createEntityIdMap(ids: any|any[]) {
+        if (!(ids instanceof Array))
+            ids = [ids];
+
+        return this.primaryColumns.reduce((map, column, index) => {
+            return OrmUtils.mergeDeep(map, column.createValueMap(ids[index]));
+        }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Checks each id in the given entity id map if they all aren't empty.
+     * If they all aren't empty it returns true.
+     * If at least one id in the given map is empty it returns false.
+     */
+    isEntityMapEmpty(entity: ObjectLiteral): boolean {
+        return !this.primaryColumns.every(column => {
+            const value = column.getEntityValue(entity);
+            return value !== null && value !== undefined;
+        });
+    }
+
+    /**
+     * Gets primary keys of the entity and returns them in a literal object.
+     * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
+     * For multiple primary keys it returns multiple keys in object.
+     * For primary keys inside embeds it returns complex object literal with keys in them.
+     */
+    getEntityIdMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+        if (!entity) // todo: shall it accept an empty entity? try to remove this
             return undefined;
 
-        const map: ObjectLiteral = {};
-        if (this.parentEntityMetadata) {
-            this.primaryColumnsWithParentIdColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
+        const map = this.primaryColumns.reduce((map, column) => {
+            if (column.isObjectId)
+                return Object.assign(map, column.getEntityValueMap(entity));
 
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
-
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
-                } else {
-                    map[column.propertyName] = entityValue;
-                }
-            });
-
-        } else {
-            this.primaryColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
-
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
-
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.propertyName] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
-                } else {
-                    map[column.propertyName] = entityValue;
-                }
-            });
-        }
+            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
+        }, {});
         return Object.keys(map).length > 0 ? map : undefined;
     }
 
@@ -591,42 +612,13 @@ export class EntityMetadata {
      */
     getDatabaseEntityIdMap(entity: ObjectLiteral): ObjectLiteral|undefined {
         const map: ObjectLiteral = {};
-        if (this.parentEntityMetadata) {
-            this.primaryColumnsWithParentIdColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
+        this.primaryColumns.forEach(column => {
+            const entityValue = column.getEntityValue(entity);
+            if (entityValue === null || entityValue === undefined)
+                return;
 
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
-
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
-                } else {
-                    map[column.name] = entityValue;
-                }
-            });
-
-        } else {
-            this.primaryColumns.forEach(column => {
-                const entityValue = entity[column.propertyName];
-                if (entityValue === null || entityValue === undefined)
-                    return;
-
-                // if entity id is a relation, then extract referenced column from that relation
-                const columnRelation = this.relations.find(relation => relation.propertyName === column.propertyName);
-
-                if (columnRelation && columnRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.joinColumn.referencedColumn.propertyName];
-                } else if (columnRelation && columnRelation.inverseRelation.joinColumn) {
-                    map[column.name] = entityValue[columnRelation.inverseRelation.joinColumn.referencedColumn.propertyName];
-                } else {
-                    map[column.name] = entityValue;
-                }
-            });
-        }
+            map[column.databaseName] = entityValue;
+        });
         const hasAllIds = Object.keys(map).every(key => {
             return map[key] !== undefined && map[key] !== null;
         });
@@ -634,207 +626,33 @@ export class EntityMetadata {
     }
 
     /**
-
-    createSimpleIdMap(id: any): ObjectLiteral {
-        const map: ObjectLiteral = {};
-        if (this.parentEntityMetadata) {
-            this.primaryColumnsWithParentIdColumns.forEach(column => {
-                map[column.propertyName] = id;
-            });
-
-        } else {
-            this.primaryColumns.forEach(column => {
-                map[column.propertyName] = id;
-            });
-        }
-        return map;
-    } */
-
-    /**
-     * Same as createSimpleIdMap, but instead of id column property names it returns database column names.
-
-    createSimpleDatabaseIdMap(id: any): ObjectLiteral {
-        const map: ObjectLiteral = {};
-        if (this.parentEntityMetadata) {
-            this.primaryColumnsWithParentIdColumns.forEach(column => {
-                map[column.name] = id;
-            });
-
-        } else {
-            this.primaryColumns.forEach(column => {
-                map[column.name] = id;
-            });
-        }
-        return map;
-    }*/
-
-    /**
-     * todo: undefined entities should not go there??
-     * todo: shouldnt be entity ObjectLiteral here?
+     * Creates a "mixed id map".
+     * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
+     * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
+     * This is called mixed id map.
      */
-    getEntityIdMixedMap(entity: any): any {
-        if (!entity)
-            return undefined;
+    getEntityIdMixedMap(entity: ObjectLiteral|undefined): ObjectLiteral|undefined {
+        if (!entity) // todo: undefined entities should not go there??
+            return entity;
 
         const idMap = this.getEntityIdMap(entity);
         if (this.hasMultiplePrimaryKeys) {
             return idMap;
-
         } else if (idMap) {
-            return idMap[this.firstPrimaryColumn.propertyName]; // todo: what about parent primary column?
+            return idMap[this.primaryColumns[0].propertyName]; // todo: what about parent primary column?
         }
 
         return idMap;
     }
 
     /**
-     * Same as `getEntityIdMap` but the key of the map will be the column names instead of the property names.
+     * Checks if given object contains ALL primary keys entity must have.
+     * Returns true if it contains all of them, false if at least one of them is not defined.
      */
-    getEntityIdColumnMap(entity: any): ObjectLiteral|undefined {
-        return this.transformIdMapToColumnNames(this.getEntityIdMap(entity));
-    }
-
-    transformIdMapToColumnNames(idMap: ObjectLiteral|undefined) {
-        if (!idMap) {
-            return idMap;
-        }
-        const map: ObjectLiteral = {};
-        Object.keys(idMap).forEach(propertyName => {
-            const column = this.getColumnByPropertyName(propertyName);
-            if (column) {
-                map[column.name] = idMap[propertyName];
-            }
-        });
-        return map;
-    }
-
-    getColumnByPropertyName(propertyName: string) {
-        return this._columns.find(column => column.propertyName === propertyName);
-    }
-
-    /**
-     * Checks if column with the given property name exist.
-     */
-    hasColumnWithPropertyName(propertyName: string): boolean {
-        return !!this._columns.find(column => column.propertyName === propertyName);
-    }
-
-    /**
-     * Checks if column with the given database name exist.
-     */
-    hasColumnWithDbName(name: string): boolean {
-        return !!this._columns.find(column => column.name === name);
-    }
-
-    /**
-     * Checks if relation with the given property name exist.
-     */
-    hasRelationWithPropertyName(propertyName: string): boolean {
-        return !!this.relations.find(relation => relation.propertyName === propertyName);
-    }
-
-    /**
-     * Finds relation with the given property name.
-     */
-    findRelationWithPropertyName(propertyName: string): RelationMetadata {
-        const relation = this.relations.find(relation => relation.propertyName === propertyName);
-        if (!relation)
-            throw new Error(`Relation with property name ${propertyName} in ${this.name} entity was not found.`);
-
-        return relation;
-    }
-
-    /**
-     * Checks if relation with the given name exist.
-     */
-    hasRelationWithDbName(dbName: string): boolean {
-        return !!this.relationsWithJoinColumns.find(relation => relation.name === dbName);
-    }
-
-    /**
-     * Finds relation with the given name.
-     */
-    findRelationWithDbName(name: string): RelationMetadata {
-        const relation = this.relationsWithJoinColumns.find(relation => relation.name === name);
-        if (!relation)
-            throw new Error(`Relation with name ${name} in ${this.name} entity was not found.`);
-
-        return relation;
-    }
-
-    addColumn(column: ColumnMetadata) {
-        this._columns.push(column);
-        column.entityMetadata = this;
-    }
-
-    extractNonEmptyColumns(object: ObjectLiteral): ColumnMetadata[] {
-        return this.columns.filter(column => !!object[column.propertyName]);
-    }
-
-    extractNonEmptySingleValueRelations(object: ObjectLiteral): RelationMetadata[] {
-        return this.relations.filter(relation => {
-            return (relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.MANY_TO_ONE)
-                && !!object[relation.propertyName];
-        });
-    }
-
-    extractNonEmptyMultiValueRelations(object: ObjectLiteral): RelationMetadata[] {
-        return this.relations.filter(relation => {
-            return (relation.relationType === RelationTypes.MANY_TO_MANY || relation.relationType === RelationTypes.ONE_TO_MANY)
-                && !!object[relation.propertyName];
-        });
-    }
-
-    extractExistSingleValueRelations(object: ObjectLiteral): RelationMetadata[] {
-        return this.relations.filter(relation => {
-            return (relation.relationType === RelationTypes.ONE_TO_ONE || relation.relationType === RelationTypes.MANY_TO_ONE)
-                && object.hasOwnProperty(relation.propertyName);
-        });
-    }
-
-    extractExistMultiValueRelations(object: ObjectLiteral): RelationMetadata[] {
-        return this.relations.filter(relation => {
-            return (relation.relationType === RelationTypes.MANY_TO_MANY || relation.relationType === RelationTypes.ONE_TO_MANY)
-                && object.hasOwnProperty(relation.propertyName);
-        });
-    }
-
     checkIfObjectContainsAllPrimaryKeys(object: ObjectLiteral) {
         return this.primaryColumns.every(primaryColumn => {
             return object.hasOwnProperty(primaryColumn.propertyName);
         });
-    }
-
-    compareEntities(firstEntity: any, secondEntity: any) {
-        const firstEntityIds = this.getEntityIdMap(firstEntity);
-        const secondEntityIds = this.getEntityIdMap(secondEntity);
-        return this.compareIds(firstEntityIds, secondEntityIds);
-    }
-
-    compareIds(firstId: ObjectLiteral|undefined, secondId: ObjectLiteral|undefined): boolean {
-        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
-            return false;
-
-        return Object.keys(firstId).every(key => {
-            return firstId[key] === secondId[key];
-        });
-    }
-
-    /**
-     * Compares two entity ids.
-     * If any of the given value is empty then it will return false.
-     */
-    compareEntityMixedIds(firstId: any, secondId: any): boolean {
-        if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
-            return false;
-
-        if (this.hasMultiplePrimaryKeys) {
-            return Object.keys(firstId).every(key => {
-                return firstId[key] === secondId[key];
-            });
-        } else {
-            return firstId === secondId;
-        }
     }
 
     /**
@@ -854,39 +672,67 @@ export class EntityMetadata {
         return relationsAndValues;
     }
 
+    // ---------------------------------------------------------------------
+    // Public Builder Methods
+    // ---------------------------------------------------------------------
+
     /**
-     * Checks if given entity has an id.
+     * Registers a new column in the entity and recomputes all depend properties.
      */
-    hasId(entity: ObjectLiteral): boolean {
-
-        // if (this.metadata.parentEntityMetadata) {
-        //     return this.metadata.parentEntityMetadata.parentIdColumns.every(parentIdColumn => {
-        //         const columnName = parentIdColumn.propertyName;
-        //         return !!entity &&
-        //             entity.hasOwnProperty(columnName) &&
-        //             entity[columnName] !== null &&
-        //             entity[columnName] !== undefined &&
-        //             entity[columnName] !== "";
-        //     });
-
-        // } else {
-        return this.primaryColumns.every(primaryColumn => {
-            const columnName = primaryColumn.propertyName;
-            return !!entity &&
-                entity.hasOwnProperty(columnName) &&
-                entity[columnName] !== null &&
-                entity[columnName] !== undefined &&
-                entity[columnName] !== "";
-        });
-        // }
+    registerColumn(column: ColumnMetadata) {
+        this.ownColumns.push(column);
+        this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
+        this.parentIdColumns = this.columns.filter(column => column.isParentId);
+        this.primaryColumns = this.columns.filter(column => column.isPrimary);
+        this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
+        this.propertiesMap = this.createPropertiesMap();
     }
 
     /**
-     * Checks if there any non-nullable column exist in this entity.
+     * Creates a special object - all columns and relations of the object (plus columns and relations from embeds)
+     * in a special format - { propertyName: propertyName }.
+     *
+     * example: Post{ id: number, name: string, counterEmbed: { count: number }, category: Category }.
+     * This method will create following object:
+     * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
      */
-    get hasNonNullableColumns(): boolean {
-        return this.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
-        // return this.relationsWithJoinColumns.some(relation => relation.isNullable || relation.isPrimary);
+    createPropertiesMap(): { [name: string]: string|any } {
+        const map: { [name: string]: string|any } = {};
+        this.columns.forEach(column => OrmUtils.mergeDeep(map, column.createValueMap(column.propertyPath)));
+        this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
+        return map;
+    }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
+
+    /**
+     * Builds table path using database name and schema name and table name.
+     */
+    protected buildTablePath(driver: Driver): string {
+        let tablePath = this.tableName;
+        if (this.schema)
+            tablePath = this.schema + "." + tablePath;
+        if (this.database && !(driver instanceof PostgresDriver)) {
+            if (!this.schema && driver instanceof SqlServerDriver) {
+                tablePath = this.database + ".." + tablePath;
+            } else {
+                tablePath = this.database + "." + tablePath;
+            }
+        }
+
+        return tablePath;
+    }
+
+    /**
+     * Builds table path using schema name and database name.
+     */
+    protected buildSchemaPath(driver: Driver): string|undefined {
+        if (!this.schema)
+            return undefined;
+
+        return this.database && !(driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
     }
 
 }
