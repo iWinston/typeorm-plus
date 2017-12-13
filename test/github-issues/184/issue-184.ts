@@ -14,7 +14,7 @@ describe("github issues > #184 [Postgres] Single-Inheritance not working with in
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("single table inheritance should accept a Integer Type", () => Promise.all(connections.map(async connection => {
+    it("single table inheritance should accept a Integer Type", () => Promise.all(connections.map(async connection => {
 
         // Saving via subtype repository works
         let employeeRepository = connection.getRepository(Employee);
