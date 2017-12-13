@@ -113,6 +113,11 @@ export interface TestingOptions {
 
     };
 
+    /**
+     * Options that may be specific to a driver.
+     * They are passed down to the enabled drivers.
+     */
+    driverSpecific?: Object;
 }
 
 /**
@@ -184,7 +189,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
             return true;
         })
         .map(connectionOptions => {
-            const newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
+            let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
@@ -192,6 +197,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
             });
+            if (options && options.driverSpecific)
+                newOptions = Object.assign({}, options.driverSpecific, newOptions);
             if (options && options.schemaCreate)
                 newOptions.synchronize = options.schemaCreate;
             if (options && options.schema)

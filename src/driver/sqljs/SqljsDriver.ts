@@ -209,9 +209,16 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new this.sqlite.Database();
         }
 
-        const queryRunner = this.createQueryRunner("master");
-        await queryRunner.query(`PRAGMA foreign_keys = ON;`);
-        return this.databaseConnection;
+        // Enable foreign keys for database
+        return new Promise<any>((ok, fail) => {
+            try {
+                this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
+                ok(this.databaseConnection);
+            }
+            catch (e) {
+                fail(e);
+            }
+        });
     }
 
     /**
