@@ -89,13 +89,13 @@ export class OneToManySubjectBuilder {
             //             it does not make sense to perform difference operation for them for both add and remove actions
             if (!relationIdMap) {
 
-                // if related entity does not have a subject then it means user tries to bind entity which wasn't saved
-                // in this persistence because he didn't pass this entity for save or he did not set cascades
-                // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
+                // we decided to remove this error because it brings complications when saving object with non-saved entities
+                // if (!relatedEntitySubject)
+                //     throw new Error(`One-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
+                //         `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
+                //         `Please setup cascade insertion or save entities before binding it.`);
                 if (!relatedEntitySubject)
-                    throw new Error(`One-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
-                        `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
-                        `Please setup cascade insertion or save entities before binding it.`);
+                    return;
 
                 // okay, so related subject exist and its marked for insertion, then add a new change map
                 // by example: this will tell category to insert into its post relation our post we are working with
