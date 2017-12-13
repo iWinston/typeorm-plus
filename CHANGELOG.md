@@ -55,6 +55,10 @@ By default its true.
 * `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`).
 * now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
 
+## 0.1.9
+
+* fixed bug with sqlite and mysql schema synchronization when uuid column is used ([#1332](https://github.com/typeorm/typeorm/issues/1332))
+
 ## 0.1.8
 
 * New DebugLogger ([#1302](https://github.com/typeorm/typeorm/pull/1302))
