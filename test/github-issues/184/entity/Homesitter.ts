@@ -1,10 +1,8 @@
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Person, PersonType} from "./Person";
-import {DiscriminatorValue} from "../../../../src/decorator/DiscriminatorValue";
-import {SingleEntityChild} from "../../../../src/decorator/entity/SingleEntityChild";
+import {ChildEntity} from "../../../../src/decorator/entity/ChildEntity";
 
-@SingleEntityChild()
-@DiscriminatorValue(PersonType.Homesitter) // required
+@ChildEntity(PersonType.Homesitter) // required
 export class Homesitter extends Person {
 
     @Column()
@@ -14,8 +12,8 @@ export class Homesitter extends Person {
     shared: string;
 
     constructor() {
-        super()
-        this.type = 2
+        super();
+        this.type = 2;
     }
 
 }
