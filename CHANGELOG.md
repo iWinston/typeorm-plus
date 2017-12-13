@@ -7,7 +7,7 @@ feel free to ask us and community.
 
 ## 0.1.10
 
-* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`
+* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`)
 
 ## 0.1.9
 
