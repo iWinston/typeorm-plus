@@ -343,7 +343,7 @@ export class Connection {
      * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction(runInTransaction: (entityManger: EntityManager) => Promise<any>): Promise<any> {
+    async transaction(runInTransaction: (entityManager: EntityManager) => Promise<any>): Promise<any> {
         return this.manager.transaction(runInTransaction);
     }
 
