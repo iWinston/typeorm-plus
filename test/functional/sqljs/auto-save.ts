@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {createConnection} from "../../../src/index";
 import {Post} from "./entity/Post";
+import {createTestingConnections} from "../../utils/test-utils";
 
 describe("sqljs driver > autosave", () => {
     it("should call autoSaveCallback on insert, update and delete", async () => {
@@ -10,13 +10,17 @@ describe("sqljs driver > autosave", () => {
             saves++;
         };
 
-        let connection = await createConnection({
-            type: "sqljs",
+        let connections = await createTestingConnections({
+            enabledDrivers: ["sqljs"],
             entities: [Post],
-            synchronize: true,
-            autoSaveCallback: callback,
-            autoSave: true
+            schemaCreate: true,
+            driverSpecific: {
+                autoSaveCallback: callback,
+                autoSave: true
+            }
         });
+
+        const connection = connections[0];
 
         let posts = [
             {
@@ -56,14 +60,18 @@ describe("sqljs driver > autosave", () => {
         const callback = (database: Uint8Array) => {
             saves++;
         };
-
-        let connection = await createConnection({
-            type: "sqljs",
+        
+        let connections = await createTestingConnections({
+            enabledDrivers: ["sqljs"],
             entities: [Post],
-            synchronize: true,
-            autoSaveCallback: callback,
-            autoSave: false
+            schemaCreate: true,
+            driverSpecific: {
+                autoSaveCallback: callback,
+                autoSave: false
+            }
         });
+
+        let connection = connections[0];
         
         const repository = connection.getRepository(Post);
         let post = new Post();

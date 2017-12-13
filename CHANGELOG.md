@@ -5,6 +5,10 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.1.10
+
+* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`)
+
 ## 0.1.9
 
 * fixed bug with sqlite and mysql schema synchronization when uuid column is used ([#1332](https://github.com/typeorm/typeorm/issues/1332))
