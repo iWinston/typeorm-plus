@@ -265,7 +265,7 @@ export class RelationMetadata {
         this.onDelete = args.options.onDelete;
         this.isPrimary = args.options.primary || false;
         this.isEager = args.options.eager || false;
-        this.persistenceEnabled = args.options.persistence || true;
+        this.persistenceEnabled = args.options.persistence === false ? false : true;
         this.isTreeParent = args.isTreeParent || false;
         this.isTreeChildren = args.isTreeChildren || false;
         this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;

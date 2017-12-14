@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {ConnectionMetadataBuilder} from "../../../src/connection/ConnectionMetadataBuilder";
-import {EntityMetadataValidator} from "../../../src/metadata-builder/EntityMetadataValidator";
+import {Connection} from "../../../../src/connection/Connection";
+import {ConnectionMetadataBuilder} from "../../../../src/connection/ConnectionMetadataBuilder";
+import {EntityMetadataValidator} from "../../../../src/metadata-builder/EntityMetadataValidator";
 import {expect} from "chai";
 
 describe("entity-metadata-validator", () => {

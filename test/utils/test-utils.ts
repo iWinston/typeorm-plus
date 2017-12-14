@@ -113,6 +113,11 @@ export interface TestingOptions {
 
     };
 
+    /**
+     * Options that may be specific to a driver.
+     * They are passed down to the enabled drivers.
+     */
+    driverSpecific?: Object;
 }
 
 /**

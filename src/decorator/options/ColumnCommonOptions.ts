@@ -53,7 +53,7 @@ export interface ColumnCommonOptions {
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
      */
-    isArray?: boolean;
+    array?: boolean;
 
     /**
      * Specifies a value transformer that is to be used to (un)marshal

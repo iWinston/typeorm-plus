@@ -129,13 +129,17 @@ export class ManyToManySubjectBuilder {
             // if related entity relation id map is empty it means related entity is newly persisted
             if (!relatedEntityRelationIdMap) {
 
+                // we decided to remove this error because it brings complications when saving object with non-saved entities
                 // if related entity does not have a subject then it means user tries to bind entity which wasn't saved
                 // in this persistence because he didn't pass this entity for save or he did not set cascades
                 // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
+                // we decided to remove this error because it brings complications when saving object with non-saved entities
+                // if (!relatedEntitySubject)
+                //     throw new Error(`Many-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
+                //         `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
+                //         `Please setup cascade insertion or save entities before binding it.`);
                 if (!relatedEntitySubject)
-                    throw new Error(`Many-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
-                        `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
-                        `Please setup cascade insertion or save entities before binding it.`);
+                    return;
             }
 
             // try to find related entity in the database

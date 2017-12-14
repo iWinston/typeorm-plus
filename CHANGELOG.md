@@ -52,9 +52,17 @@ Use `findOne(id)` method instead now.
 * `@DiscriminatorColumn` decorator has been removed, use `@TableInheritance` options instead now
 * `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
 By default its true.
-* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`).
+* now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
 * added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
+
+## 0.1.10
+
+* `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`)
+
+## 0.1.9
+
+* fixed bug with sqlite and mysql schema synchronization when uuid column is used ([#1332](https://github.com/typeorm/typeorm/issues/1332))
 
 ## 0.1.8
 
