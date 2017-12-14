@@ -8,6 +8,7 @@ feel free to ask us and community.
 ## 0.1.10
 
 * `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`)
+* fixed issue that broke browser support in 0.1.8 because of the debug package ([#1344](https://github.com/typeorm/typeorm/pull/1344))
 
 ## 0.1.9
 
