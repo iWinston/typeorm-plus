@@ -18,6 +18,7 @@ import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ArrayParameter} from "../../query-builder/ArrayParameter";
+import {Table} from "../../index";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -492,6 +493,27 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[] {
+        return table.columns.filter(tableColumn => {
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
+            if (!columnMetadata)
+                return false; // we don't need new columns, we only need exist and changed
+
+            return tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                // || tableColumn.comment !== columnMetadata.comment || // todo
+                || this.normalizeDefault(columnMetadata.default) !== tableColumn.default
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
+                || !this.compareColumnLengths(tableColumn, columnMetadata);
+        });
+    }
+
+    /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
@@ -592,6 +614,23 @@ export class OracleDriver implements Driver {
             pool.close((err: any) => err ? fail(err) : ok());
             pool = undefined;
         });
+    }
+
+    /**
+     * Compare column lengths only if the datatype supports it.
+     */
+    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
+        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
+        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
+            let metadataLength = this.getColumnLength(columnMetadata);
+
+            // if we found something to compare with then do it, else skip it
+            // use use case insensitive comparison to catch "MAX" vs "Max" case
+            if (metadataLength)
+                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
+        }
+
+        return true;
     }
 
 }

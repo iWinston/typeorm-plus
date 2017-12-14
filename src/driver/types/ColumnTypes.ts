@@ -106,6 +106,8 @@ export type SimpleColumnType =
     |"image" // mssql
 
     // date types
+    |"timetz"
+    |"timestamptz"
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite

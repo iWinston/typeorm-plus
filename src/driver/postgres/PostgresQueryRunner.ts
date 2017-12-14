@@ -1031,7 +1031,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT * FROM "information_schema"."columns" WHERE ` + tablesCondition;
+        const columnsSql = `SELECT *, "udt_name"::"regtype" AS "regtype" FROM "information_schema"."columns" WHERE ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1107,20 +1107,27 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["column_name"];
-                    tableColumn.type = dbColumn["data_type"].toLowerCase();
-
-                    if (tableColumn.type = "user-defined") {
-                        tableColumn.type = dbColumn["udt_name"].toLowerCase();
-                    }
+                    tableColumn.type = dbColumn["regtype"].toLowerCase();
 
                     if (tableColumn.type !== "integer") {
                         tableColumn.precision = dbColumn["numeric_precision"];
                         tableColumn.scale = dbColumn["numeric_scale"];
                     }
 
-                    tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
+                    if (dbColumn["data_type"].toLowerCase() === "array") {
+                        tableColumn.isArray = true;
+                        const type = tableColumn.type.replace("[]", "");
+                        tableColumn.type = this.connection.driver.normalizeType({type: type});
+                    }
 
-                    tableColumn.default = dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined ? dbColumn["column_default"].replace(/::character varying/, "") : undefined;
+                    if (tableColumn.type === "time without time zone"
+                        || tableColumn.type === "time with time zone"
+                        || tableColumn.type === "timestamp without time zone"
+                        || tableColumn.type === "timestamp with time zone") {
+                        tableColumn.precision = dbColumn["datetime_precision"];
+                    }
+
+                    tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
@@ -1132,33 +1139,23 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         : false;
                     tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
 
-                    if (dbColumn["column_default"]) {
+                    if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
-                            tableColumn.default = undefined;
+
                         } else if (/^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
-                            tableColumn.default = undefined;
+
+                        } else {
+                            tableColumn.default = dbColumn["column_default"].replace(/::character varying/, "");
                         }
                     }
 
                     tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
                     tableColumn.charset = dbColumn["character_set_name"];
                     tableColumn.collation = dbColumn["collation_name"];
-                    if (tableColumn.type === "array") {
-                        tableColumn.isArray = true;
-                        const type = dbColumn["udt_name"].substring(1);
-                        tableColumn.type = this.connection.driver.normalizeType({type: type});
-                    }
-
-                    if (tableColumn.type === "time without time zone"
-                        || tableColumn.type === "time with time zone"
-                        || tableColumn.type === "timestamp without time zone"
-                        || tableColumn.type === "timestamp with time zone") {
-                        tableColumn.precision = dbColumn["datetime_precision"];
-                    }
                     return tableColumn;
                 });
 
@@ -1423,11 +1420,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected buildCreateColumnSql(column: TableColumn) {
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true && column.generationStrategy === "increment") {
-            if (column.type === "integer" || column.type === "int")
+            if (column.type === "integer" || column.type === "int" || column.type === "int4")
                 c += " SERIAL";
-            if (column.type === "smallint")
+            if (column.type === "smallint" || column.type === "int2")
                 c += " SMALLSERIAL";
-            if (column.type === "bigint")
+            if (column.type === "bigint" || column.type === "int8")
                 c += " BIGSERIAL";
         }
         if (!column.isGenerated || column.type === "uuid")

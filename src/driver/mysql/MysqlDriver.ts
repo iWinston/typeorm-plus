@@ -18,6 +18,7 @@ import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOpt
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ArrayParameter} from "../../query-builder/ArrayParameter";
+import {Table} from "../../";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -509,6 +510,35 @@ export class MysqlDriver implements Driver {
     }
 
     /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[] {
+        return table.columns.filter(tableColumn => {
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
+            if (!columnMetadata)
+                return false; // we don't need new columns, we only need exist and changed
+
+            // console.log(tableColumn.name, "!==", columnMetadata.databaseName);
+            // console.log(tableColumn.type, "!==", driver.normalizeType(columnMetadata));
+            // console.log(tableColumn.comment, "!==", columnMetadata.comment);
+            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default));
+            // console.log(tableColumn.isNullable, "!==", columnMetadata.isNullable);
+            // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique);
+            // console.log(tableColumn.isGenerated, "!==", columnMetadata.isGenerated);
+
+            return tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                // || tableColumn.comment !== columnMetadata.comment || // todo
+                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
+                || !this.compareColumnLengths(tableColumn, columnMetadata);
+        });
+    }
+
+    /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
@@ -600,6 +630,37 @@ export class MysqlDriver implements Driver {
                 ok(pool);
             });
         });
+    }
+
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     */
+    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+        if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
+            // we need to cut out "'" because in mysql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "");
+            databaseValue = databaseValue.replace(/^'+|'+$/g, "");
+        }
+
+        return columnMetadataValue === databaseValue;
+    }
+
+    /**
+     * Compare column lengths only if the datatype supports it.
+     */
+    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
+        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
+        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
+            let metadataLength = this.getColumnLength(columnMetadata);
+
+            // if we found something to compare with then do it, else skip it
+            // use use case insensitive comparison to catch "MAX" vs "Max" case
+            if (metadataLength)
+                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
+        }
+
+        return true;
     }
 
 }

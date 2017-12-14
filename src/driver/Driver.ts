@@ -8,6 +8,7 @@ import {DataTypeDefaults} from "./types/DataTypeDefaults";
 import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {Table} from "../index";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -114,7 +115,7 @@ export interface Driver {
     /**
      * Transforms type of the given column to a database column type.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string;
+    normalizeType(column: { type?: ColumnType|string, length?: number | string, precision?: number, scale?: number, isArray?: boolean }): string;
 
     /**
      * Normalizes "default" value of the column.
@@ -154,6 +155,12 @@ export interface Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any): ObjectLiteral|undefined;
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[];
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.

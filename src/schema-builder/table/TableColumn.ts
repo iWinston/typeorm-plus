@@ -111,6 +111,7 @@ export class TableColumn {
             this.generationStrategy = options.generationStrategy;
             this.isPrimary = options.isPrimary || false;
             this.isUnique = options.isUnique || false;
+            this.isArray = options.isArray || false;
             this.comment = options.comment;
             this.enum = options.enum;
         }

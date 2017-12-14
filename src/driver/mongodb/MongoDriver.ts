@@ -14,6 +14,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {Table} from "../../index";
 
 /**
  * Organizes communication with MongoDB.
@@ -303,6 +304,14 @@ export class MongoDriver implements Driver {
      */
     createGeneratedMap(metadata: EntityMetadata, insertedId: any) {
         return metadata.objectIdColumn!.createValueMap(insertedId);
+    }
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[] {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**

@@ -19,6 +19,7 @@ import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredenti
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ArrayParameter} from "../../query-builder/ArrayParameter";
+import {Table} from "../../";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -86,12 +87,17 @@ export class PostgresDriver implements Driver {
      * @see https://www.postgresql.org/docs/9.2/static/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
+        "int2",
+        "int4",
+        "int8",
         "smallint",
         "integer",
         "bigint",
         "decimal",
         "numeric",
         "real",
+        "float4",
+        "float8",
         "double precision",
         "money",
         "character varying",
@@ -103,7 +109,10 @@ export class PostgresDriver implements Driver {
         "hstore",
         "bytea",
         "bit",
+        "varbit",
         "bit varying",
+        "timetz",
+        "timestamptz",
         "timestamp",
         "timestamp without time zone",
         "timestamp with time zone",
@@ -112,6 +121,7 @@ export class PostgresDriver implements Driver {
         "time without time zone",
         "time with time zone",
         "interval",
+        "bool",
         "boolean",
         "enum",
         "point",
@@ -141,6 +151,7 @@ export class PostgresDriver implements Driver {
         "character",
         "char",
         "bit",
+        "varbit",
         "bit varying"
     ];
 
@@ -153,14 +164,14 @@ export class PostgresDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamp",
         updateDateDefault: "now()",
-        version: "int",
-        treeLevel: "int",
+        version: "int4",
+        treeLevel: "int4",
         migrationName: "varchar",
-        migrationTimestamp: "bigint",
-        cacheId: "int",
+        migrationTimestamp: "int8",
+        cacheId: "int4",
         cacheIdentifier: "varchar",
-        cacheTime: "bigint",
-        cacheDuration: "int",
+        cacheTime: "int8",
+        cacheDuration: "int4",
         cacheQuery: "text",
         cacheResult: "text",
     };
@@ -432,8 +443,17 @@ export class PostgresDriver implements Driver {
         } else if (column.type === String || column.type === "varchar") {
             return "character varying";
 
-        } else if (column.type === Date) {
-            return "timestamp";
+        } else if (column.type === Date || column.type === "timestamp") {
+            return "timestamp without time zone";
+
+        } else if (column.type === "timestamptz") {
+            return "timestamp with time zone";
+
+        } else if (column.type === "time") {
+            return "time without time zone";
+
+        } else if (column.type === "timetz") {
+            return "time with time zone";
 
         } else if (column.type === Boolean || column.type === "bool") {
             return "boolean";
@@ -459,20 +479,8 @@ export class PostgresDriver implements Driver {
         } else if (column.type === "char") {
             return "character";
 
-        } else if (column.type === "time") {
-            return "time without time zone";
-
-        } else if (column.type === "timetz") {
-            return "time with time zone";
-
-        } else if (column.type === "timestamptz") {
-            return "timestamp with time zone";
-
         } else if (column.type === "varbit") {
             return "bit varying";
-
-        } else if (column.type === "timestamp") {
-            return "timestamp without time zone";
 
         } else {
             return column.type as string || "";
@@ -514,13 +522,13 @@ export class PostgresDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length.toString();
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }
@@ -608,6 +616,27 @@ export class PostgresDriver implements Driver {
             }
             return map;
         }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[] {
+        return table.columns.filter(tableColumn => {
+            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
+            if (!columnMetadata)
+                return false; // we don't need new columns, we only need exist and changed
+
+            return  tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                // || tableColumn.comment !== columnMetadata.comment // todo
+                || (!tableColumn.isGenerated && this.normalizeDefault(columnMetadata.default) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isGenerated !== columnMetadata.isGenerated
+                || !this.compareColumnLengths(tableColumn, columnMetadata);
+        });
     }
 
     /**
@@ -717,6 +746,23 @@ export class PostgresDriver implements Driver {
                 ok(result);
             });
         });
+    }
+
+    /**
+     * Compare column lengths only if the datatype supports it.
+     */
+    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
+        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
+        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
+            let metadataLength = this.getColumnLength(columnMetadata);
+
+            // if we found something to compare with then do it, else skip it
+            // use use case insensitive comparison to catch "MAX" vs "Max" case
+            if (metadataLength)
+                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
+        }
+
+        return true;
     }
 
 }

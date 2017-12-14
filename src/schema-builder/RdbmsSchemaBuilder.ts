@@ -289,7 +289,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 return;
 
-            const updatedTableColumns = table.findChangedColumns(this.connection.driver, metadata.columns);
+            const updatedTableColumns = this.connection.driver.findChangedColumns(table, metadata.columns);
             if (updatedTableColumns.length === 0)
                 return;
 
