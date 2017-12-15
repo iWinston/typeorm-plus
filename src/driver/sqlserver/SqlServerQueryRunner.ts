@@ -310,8 +310,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {
-        const result = await this.query(`EXEC sp_databases`) as any[];
-        return result.map(db => db["DATABASE_NAME"]);
+        const results: ObjectLiteral[] = await this.query(`EXEC sp_databases`);
+        return results.map(result => result["DATABASE_NAME"]);
     }
 
     /**
@@ -320,8 +320,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async getSchemas(database?: string): Promise<string[]> {
         const query = database ? `SELECT * FROM "${database}"."sys"."schema"` : `SELECT * FROM "sys"."schemas"`;
-        const result = await this.query(query) as any[];
-        return result.map(schema => schema["name"]);
+        const results: ObjectLiteral[] = await this.query(query);
+        return results.map(result => result["name"]);
     }
 
     /**

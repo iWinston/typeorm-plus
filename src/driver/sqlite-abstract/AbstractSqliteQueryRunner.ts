@@ -502,7 +502,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
-        await this.createForeignKeys(tableOrName as any, [foreignKey]);
+        await this.createForeignKeys(tableOrName, [foreignKey]);
     }
 
     /**
@@ -528,7 +528,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!foreignKey)
             throw new Error(`Supplied foreign key does not found in table ${table.name}`);
 
-        await this.dropForeignKeys(tableOrName as any, [foreignKey]);
+        await this.dropForeignKeys(tableOrName, [foreignKey]);
     }
 
     /**

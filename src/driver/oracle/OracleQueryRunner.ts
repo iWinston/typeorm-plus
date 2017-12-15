@@ -475,7 +475,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const queries = columns.map(column => this.addColumn(tableOrName as any, column));
+        const queries = columns.map(column => this.addColumn(tableOrName, column));
         await Promise.all(queries);
     }
 
@@ -849,7 +849,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new foreign keys.
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName as any, foreignKey));
+        const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName, foreignKey));
         await Promise.all(promises);
     }
 
@@ -872,7 +872,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops a foreign keys from the table.
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName as any, foreignKey));
+        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName, foreignKey));
         await Promise.all(promises);
     }
 

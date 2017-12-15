@@ -318,6 +318,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
+        // if table have column with ENUM type, we must create this type in postgres.
+        await Promise.all(table.columns
+            .filter(column => column.type === "enum")
+            .map(async column => {
+                const hasEnum = await this.hasEnumType(table, column);
+                if (!hasEnum) {
+                    upQueries.push(this.createEnumTypeSql(table, column));
+                    downQueries.push(this.dropEnumTypeSql(table, column));
+                }
+                return Promise.resolve();
+            }));
+
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
 
@@ -442,6 +454,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             foreignKey.name = newForeignKeyName;
         });
 
+        // rename ENUM types
+        newTable.columns
+            .filter(column => column.type === "enum")
+            .forEach(column => {
+                upQueries.push(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`);
+                downQueries.push(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`);
+            });
+
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -454,7 +474,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column)}`);
+        if (column.type === "enum") {
+            const hasEnum = await this.hasEnumType(table, column);
+            if (!hasEnum) {
+                upQueries.push(this.createEnumTypeSql(table, column));
+                downQueries.push(this.dropEnumTypeSql(table, column));
+            }
+        }
+
+        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
 
         if (column.isPrimary) {
@@ -494,7 +522,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const queries = columns.map(column => this.addColumn(tableOrName as any, column));
+        const queries = columns.map(column => this.addColumn(tableOrName, column));
         await Promise.all(queries);
     }
 
@@ -537,6 +565,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             // rename column
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
+
+            // rename ENUM type
+            if (oldColumn.type === "enum") {
+                upQueries.push(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`);
+                downQueries.push(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`);
+            }
 
             // rename column primary key constraint
             if (oldColumn.isPrimary === true) {
@@ -627,8 +661,70 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.connection.driver.createFullType(newColumn)}`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.connection.driver.createFullType(oldColumn)}`);
+            let upType = this.connection.driver.createFullType(newColumn);
+            let downType = this.connection.driver.createFullType(oldColumn);
+
+            if (newColumn.type === "enum") {
+                // create new ENUM type
+                upQueries.push(this.createEnumTypeSql(table, newColumn));
+                downQueries.push(this.dropEnumTypeSql(table, newColumn));
+
+                // build ENUM name
+                const enumName = this.buildEnumName(table, newColumn, false);
+
+                // build new type
+                upType = `${enumName} USING "${newColumn.name}"::${enumName}`;
+
+                // change type
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`);
+
+            } else if (oldColumn.type === "enum") {
+                // build ENUM name
+                const enumName = this.buildEnumName(table, oldColumn, false);
+
+                // build old type
+                downType = `${enumName} USING "${oldColumn.name}"::${enumName}`;
+
+                // change type
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${upType}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${downType}`);
+
+                // remove ENUM type
+                upQueries.push(this.dropEnumTypeSql(table, oldColumn));
+                downQueries.push(this.createEnumTypeSql(table, oldColumn));
+
+            } else {
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`);
+            }
+        }
+
+        if (newColumn.type === "enum" && oldColumn.type === "enum" && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)) {
+            const enumName = this.buildEnumName(table, newColumn);
+            const enumNameWithoutSchema = this.buildEnumName(table, newColumn, false);
+            const oldEnumName = this.buildEnumName(table, newColumn, true, false, true);
+            const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
+
+            // rename old ENUM
+            upQueries.push(`ALTER TYPE ${enumName} RENAME TO ${oldEnumNameWithoutSchema}`);
+            downQueries.push(`ALTER TYPE ${oldEnumName} RENAME TO ${enumNameWithoutSchema}`);
+
+            // create new ENUM
+            upQueries.push(this.createEnumTypeSql(table, newColumn));
+            downQueries.push(this.dropEnumTypeSql(table, oldColumn));
+
+            // build column types
+            const upType = `${enumNameWithoutSchema} USING "${newColumn.name}"::"text"::${enumNameWithoutSchema}`;
+            const downType = `${oldEnumNameWithoutSchema} USING "${newColumn.name}"::"text"::${oldEnumNameWithoutSchema}`;
+
+            // update column to use new type
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`);
+
+            // remove old ENUM
+            upQueries.push(this.dropEnumTypeSql(table, newColumn, oldEnumName));
+            downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumName));
         }
 
         if (oldColumn.isNullable !== newColumn.isNullable) {
@@ -782,7 +878,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
-        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column)}`);
+        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
+
+        if (column.type === "enum") {
+            const hasEnum = await this.hasEnumType(table, column);
+            if (hasEnum) {
+                upQueries.push(this.dropEnumTypeSql(table, column));
+                downQueries.push(this.createEnumTypeSql(table, column));
+            }
+        }
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -907,7 +1011,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Creates a new foreign keys.
      */
     async createForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName as any, foreignKey));
+        const promises = foreignKeys.map(foreignKey => this.createForeignKey(tableOrName, foreignKey));
         await Promise.all(promises);
     }
 
@@ -930,7 +1034,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Drops a foreign keys from the table.
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
-        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName as any, foreignKey));
+        const promises = foreignKeys.map(foreignKey => this.dropForeignKey(tableOrName, foreignKey));
         await Promise.all(promises);
     }
 
@@ -995,6 +1099,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString})`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            await this.dropEnumTypes(schemaNamesString);
 
             await this.commitTransaction();
 
@@ -1087,7 +1192,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return [];
 
         // create tables for loaded tables
-        return dbTables.map(dbTable => {
+        return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
 
             // We do not need to join schema name, when database is by default.
@@ -1097,9 +1202,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 
             // create columns from the loaded columns
-            table.columns = dbColumns
+            table.columns = await Promise.all(dbColumns
                 .filter(dbColumn => this.driver.buildTableName(dbColumn["table_name"], dbColumn["table_schema"]) === tableFullName)
-                .map(dbColumn => {
+                .map(async dbColumn => {
 
                     const columnConstraints = dbConstraints.filter(dbConstraint => {
                         return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName && dbConstraint["column_name"] === dbColumn["column_name"];
@@ -1125,6 +1230,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         || tableColumn.type === "timestamp without time zone"
                         || tableColumn.type === "timestamp with time zone") {
                         tableColumn.precision = dbColumn["datetime_precision"];
+                    }
+
+                    if (tableColumn.type.indexOf("enum") !== -1) {
+                        tableColumn.type = "enum";
+                        const sql = `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
+                            `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
+                            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                            `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
+                        const results: ObjectLiteral[] = await this.query(sql);
+                        tableColumn.enum = results.map(result => result["value"]);
                     }
 
                     tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
@@ -1157,7 +1272,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.charset = dbColumn["character_set_name"];
                     tableColumn.collation = dbColumn["collation_name"];
                     return tableColumn;
-                });
+                }));
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
             const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
@@ -1207,14 +1322,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             });
 
             return table;
-        });
+        }));
     }
 
     /**
      * Builds create table sql.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): string {
-        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
+        const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
 
         table.columns
@@ -1277,6 +1392,50 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected extractSchema(target: Table|string): string|undefined {
         const tableName = target instanceof Table ? target.name : target;
         return tableName.indexOf(".") === -1 ? this.driver.options.schema : tableName.split(".")[0];
+    }
+
+    /**
+     * Drops ENUM type from given schemas.
+     */
+    protected async dropEnumTypes(schemaNames: string): Promise<void> {
+        const selectDropsQuery = `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '" CASCADE;' as "query" FROM "pg_type" "t" ` +
+            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`;
+        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
+        await Promise.all(dropQueries.map(q => this.query(q["query"])));
+    }
+
+    /**
+     * Checks if enum with the given name exist in the database.
+     */
+    protected async hasEnumType(table: Table, column: TableColumn): Promise<boolean> {
+        const schema = this.parseTableName(table).schema;
+        const enumName = this.buildEnumName(table, column, false, true);
+        const sql = `SELECT "n"."nspname", "t"."typname" FROM "pg_type" "t" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" = ${schema} AND "t"."typname" = '${enumName}'`;
+        const result = await this.query(sql);
+        return result.length ? true : false;
+    }
+
+    /**
+     * Builds create ENUM type sql.
+     */
+    protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): string {
+        if (!enumName)
+            enumName = this.buildEnumName(table, column);
+        const enumValues = column.enum!.map(value => `'${value}'`).join(", ");
+        return `CREATE TYPE ${enumName} AS ENUM(${enumValues})`;
+    }
+
+    /**
+     * Builds create ENUM type sql.
+     */
+    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): string {
+        if (!enumName)
+            enumName = this.buildEnumName(table, column);
+        return `DROP TYPE ${enumName}`;
     }
 
     /**
@@ -1385,6 +1544,21 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Builds ENUM type name from given table and column.
+     */
+    protected buildEnumName(table: Table, columnOrName: TableColumn|string, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
+        const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
+        const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
+        const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
+        let enumName = schema && withSchema ? `${schema}.${tableName}_${columnName.toLowerCase()}_enum` : `${tableName}_${columnName.toLowerCase()}_enum`;
+        if (toOld)
+            enumName = enumName + "_old";
+        return enumName.split(".").map(i => {
+            return disableEscape ? i : `"${i}"`;
+        }).join(".");
+    }
+
+    /**
      * Escapes given table path.
      */
     protected escapeTableName(target: Table|string, disableEscape?: boolean): string {
@@ -1399,7 +1573,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Returns object with table schema and table name.
      */
-    protected parseTableName(target: Table|string): any {
+    protected parseTableName(target: Table|string) {
         const tableName = target instanceof Table ? target.name : target;
         if (tableName.indexOf(".") === -1) {
             return {
@@ -1417,7 +1591,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: TableColumn) {
+    protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true && column.generationStrategy === "increment") {
             if (column.type === "integer" || column.type === "int" || column.type === "int4")
@@ -1427,8 +1601,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (column.type === "bigint" || column.type === "int8")
                 c += " BIGSERIAL";
         }
-        if (!column.isGenerated || column.type === "uuid")
+        if (column.type === "enum") {
+            c += " " + this.buildEnumName(table, column, false);
+
+        } else if (!column.isGenerated || column.type === "uuid") {
             c += " " + this.connection.driver.createFullType(column);
+        }
         if (column.charset)
             c += " CHARACTER SET \"" + column.charset + "\"";
         if (column.collation)

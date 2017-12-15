@@ -135,8 +135,8 @@ export class Post {
     // Enumerated Type
     // -------------------------------------------------------------------------
 
-    /*@Column("enum", { enum: ["A", "B", "C"] })
-    enum: string;*/
+    @Column("enum", { enum: ["A", "B", "C"] })
+    enum: string;
 
     // -------------------------------------------------------------------------
     // Geometric Type
