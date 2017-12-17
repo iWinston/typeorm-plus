@@ -6,7 +6,7 @@ import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {Tree} from "../../../../../src/decorator/tree/Tree";
 
 @Entity()
-@Tree("closure-table")
+@Tree("nested-set")
 export class Category {
 
     @PrimaryGeneratedColumn()
@@ -14,7 +14,7 @@ export class Category {
 
     @Column()
     name: string;
-    
+
     @TreeParent({ cascade: true })
     parentCategory: Category;
 

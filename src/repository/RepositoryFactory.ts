@@ -20,7 +20,7 @@ export class RepositoryFactory {
      */
     create(manager: EntityManager, metadata: EntityMetadata, queryRunner?: QueryRunner): Repository<any> {
 
-        if (metadata.isClosure) {
+        if (metadata.treeType) {
             // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
             // however we need these properties for internal work of the class
             const repository = new TreeRepository<any>();

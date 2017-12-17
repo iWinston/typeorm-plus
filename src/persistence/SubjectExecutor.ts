@@ -12,6 +12,10 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SaveOptions} from "../repository/SaveOptions";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {NestedSetSubjectExecutor} from "./tree/NestedSetSubjectExecutor";
+import {ClosureSubjectExecutor} from "./tree/ClosureSubjectExecutor";
+import {MaterializedPathSubjectExecutor} from "./tree/MaterializedPathSubjectExecutor";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -221,7 +225,9 @@ export class SubjectExecutor {
                 });
             } else {
                 subjects.forEach(subject => {
-                    if (subject.changeMaps.length === 0) {
+                    if (subject.changeMaps.length === 0 ||
+                        subject.metadata.treeType ||
+                        this.queryRunner.connection.driver instanceof OracleDriver) {
                         singleInsertSubjects.push(subject);
 
                     } else {
@@ -268,22 +274,34 @@ export class SubjectExecutor {
 
                 // insert subjects which must be inserted in separate requests (all default values)
                 if (singleInsertSubjects.length > 0) {
-                    await Promise.all(singleInsertSubjects.map(subject => {
-                        const updatedEntity = {}; // important to have because query builder sets inserted values into it
-                        return this.queryRunner
+                    await Promise.all(singleInsertSubjects.map(async subject => {
+                        subject.insertedValueSet = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
+
+                        // for nested set we execute additional queries
+                        if (subject.metadata.treeType === "nested-set")
+                            await new NestedSetSubjectExecutor(this.queryRunner).insert(subject);
+
+                        await this.queryRunner
                             .manager
                             .createQueryBuilder()
                             .insert()
                             .into(subject.metadata.target)
-                            .values(updatedEntity)
+                            .values(subject.insertedValueSet)
                             .updateEntity(this.options && this.options.reload === false ? false : true)
                             .callListeners(false)
                             .execute()
                             .then(insertResult => {
                                 subject.identifier = insertResult.identifiers[0];
                                 subject.generatedMap = insertResult.generatedMaps[0];
-                                subject.insertedValueSet = updatedEntity;
                             });
+
+                        // for tree tables we execute additional queries
+                        if (subject.metadata.treeType === "closure-table") {
+                            await new ClosureSubjectExecutor(this.queryRunner).insert(subject);
+
+                        } else if (subject.metadata.treeType === "materialized-path") {
+                            await new MaterializedPathSubjectExecutor(this.queryRunner).insert(subject);
+                        }
                     }));
                 }
             }

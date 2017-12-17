@@ -92,6 +92,8 @@ export interface Driver {
 
     /**
      * Escapes a table name, column name or an alias.
+     *
+     * todo: probably escape should be able to handle dots in the names and automatically escape them
      */
     escape(name: string): string;
 

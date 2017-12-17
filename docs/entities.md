@@ -516,9 +516,10 @@ To learn more about closure table take a look at [this awesome presentation by B
 Example:
 
 ```typescript
-import {ClosureEntity, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
 
-@ClosureEntity()
+@Entity()
+@Tree("closure-table")
 export class Category {
 
     @PrimaryGeneratedColumn()

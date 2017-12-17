@@ -17,6 +17,7 @@ import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
 import {TransactionRepositoryMetadataArgs} from "./TransactionRepositoryMetadataArgs";
 import {MetadataUtils} from "../metadata-builder/MetadataUtils";
 import {GeneratedMetadataArgs} from "./GeneratedMetadataArgs";
+import {TreeMetadataArgs} from "./TreeMetadataArgs";
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -30,6 +31,7 @@ export class MetadataArgsStorage {
     // -------------------------------------------------------------------------
 
     readonly tables: TableMetadataArgs[] = [];
+    readonly trees: TreeMetadataArgs[] = [];
     readonly entityRepositories: EntityRepositoryMetadataArgs[] = [];
     readonly transactionEntityManagers: TransactionEntityMetadataArgs[] = [];
     readonly transactionRepositories: TransactionRepositoryMetadataArgs[] = [];
@@ -69,6 +71,12 @@ export class MetadataArgsStorage {
     findGenerated(target: (Function|string)|(Function|string)[], propertyName: string): GeneratedMetadataArgs|undefined {
         return this.generations.find(generated => {
             return (target instanceof Array ? target.indexOf(generated.target) !== -1 : generated.target === target) && generated.propertyName === propertyName;
+        });
+    }
+
+    findTree(target: (Function|string)|(Function|string)[]): TreeMetadataArgs|undefined {
+        return this.trees.find(tree => {
+            return (target instanceof Array ? target.indexOf(tree.target) !== -1 : tree.target === target);
         });
     }
 

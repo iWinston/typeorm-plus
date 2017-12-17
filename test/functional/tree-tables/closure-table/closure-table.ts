@@ -3,20 +3,54 @@ import {Category} from "./entity/Category";
 import {Connection} from "../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-// todo: uncomment test once closure tables functionality is back
-describe.skip("closure-table", () => {
+describe("tree tables > closure-table", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Category],
+        entities: [Category]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should work correctly when saving using parent category", () => Promise.all(connections.map(async connection => {
+    it("attach should work properly", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);
 
         const a1 = new Category();
+        a1.name = "a1";
+        await categoryRepository.save(a1);
+
+        const a11 = new Category();
+        a11.name = "a11";
+        a11.parentCategory = a1;
+        await categoryRepository.save(a11);
+
+        const a12 = new Category();
+        a12.name = "a12";
+        a12.parentCategory = a1;
+        await categoryRepository.save(a12);
+
+        const rootCategories = await categoryRepository.findRoots();
+        rootCategories.should.be.eql([{
+            id: 1,
+            name: "a1"
+        }]);
+
+        const a11Parent = await categoryRepository.findAncestors(a11);
+        a11Parent.length.should.be.equal(2);
+        a11Parent.should.include({ id: 1, name: "a1" });
+        a11Parent.should.include({ id: 2, name: "a11" });
+
+        const a1Children = await categoryRepository.findDescendants(a1);
+        a1Children.length.should.be.equal(3);
+        a1Children.should.include({ id: 1, name: "a1" });
+        a1Children.should.include({ id: 2, name: "a11" });
+        a1Children.should.include({ id: 3, name: "a12" });
+    })));
+
+    it.skip("should work correctly when saving using parent category", () => Promise.all(connections.map(async connection => {
+        // await categoryRepository.attach(a1, a11);
+
+        /*const a1 = new Category();
         a1.name = "a1";
 
         const b1 = new Category();
@@ -79,11 +113,11 @@ describe.skip("closure-table", () => {
                 level: 2,
                 childCategories: []
             }]
-        });
+        });*/
 
     })));
 
-    it("should work correctly when saving using children categories", () => Promise.all(connections.map(async connection => {
+    it.skip("should work correctly when saving using children categories", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);
 
         const a1 = new Category();
@@ -153,7 +187,7 @@ describe.skip("closure-table", () => {
 
     })));
 
-    it("should be able to retrieve the whole tree", () => Promise.all(connections.map(async connection => {
+    it.skip("should be able to retrieve the whole tree", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);
 
         const a1 = new Category();

@@ -315,7 +315,7 @@ export class Connection {
 
     /**
      * Gets tree repository for the given entity class or name.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @ClosureEntity decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
     getTreeRepository<Entity>(target: ObjectType<Entity>|string): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target);

@@ -749,6 +749,6 @@ Learn more about [custom entity repositories](working-with-entity-manager.md).
 
 ----
 
-Note: some decorators (like `@ClosureEntity`, `@SingleEntityChild`, `@ClassEntityChild`, `@DiscriminatorColumn`, etc.) aren't 
+Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't 
 documented in this reference because they are treated as experimental at the moment. 
 Expect to see their documentation in the future.

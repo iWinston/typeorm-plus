@@ -17,7 +17,6 @@ feel free to ask us and community.
 * now relation id can be set directly to relation, e.g. `Post { @ManyToOne(type => Tag) tag: Tag|number }` with `post.tag = 1` usage.
 * now you can disable persistence on any relation by setting `@OneToMany(type => Post, post => tag, { persistence: false })`. This can dramatically improve entity save performance.
 * `loadAllRelationIds` method of `QueryBuilder` now accepts list of relation paths that needs to be loaded, also `disableMixedMap` option is now by default set to false, but you can enable it via new method parameter `options`
-* lot of changes affect closure table pattern which is planned for fix in 0.3.0 
 * now `returning` and `output` statements of `InsertQueryBuilder` support array of columns as argument
 * now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
 * fixed issues with relation updation from one-to-one non-owner side
@@ -53,6 +52,8 @@ Use `findOne(id)` method instead now.
 * `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
 By default its true.
 * now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
+* `@ClosureEntity` decorator has been removed. Instead `@Entity` + `@Tree("closure-table")` must be used
+* added support for nested set and materialized path tree hierarchy patterns 
 
 ## 0.1.10
 

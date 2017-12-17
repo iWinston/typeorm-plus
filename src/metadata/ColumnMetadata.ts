@@ -215,6 +215,30 @@ export class ColumnMetadata {
      */
     transformer?: ValueTransformer;
 
+    /**
+     * Column type in the case if this column is in the closure table.
+     * Column can be ancestor or descendant in the closure tables.
+     */
+    closureType?: "ancestor"|"descendant";
+
+    /**
+     * Indicates if this column is nested set's left column.
+     * Used only in tree entities with nested-set type.
+     */
+    isNestedSetLeft: boolean = false;
+
+    /**
+     * Indicates if this column is nested set's right column.
+     * Used only in tree entities with nested-set type.
+     */
+    isNestedSetRight: boolean = false;
+
+    /**
+     * Indicates if this column is materialized path's path column.
+     * Used only in tree entities with materialized path type.
+     */
+    isMaterializedPath: boolean = false;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -224,7 +248,11 @@ export class ColumnMetadata {
         entityMetadata: EntityMetadata,
         embeddedMetadata?: EmbeddedMetadata,
         referencedColumn?: ColumnMetadata,
-        args: ColumnMetadataArgs
+        args: ColumnMetadataArgs,
+        closureType?: "ancestor"|"descendant",
+        nestedSetLeft?: boolean,
+        nestedSetRight?: boolean,
+        materializedPath?: boolean,
     }) {
         this.entityMetadata = options.entityMetadata;
         this.embeddedMetadata = options.embeddedMetadata!;
@@ -303,6 +331,14 @@ export class ColumnMetadata {
         }
         if (this.isVersion)
             this.type = options.connection.driver.mappedDataTypes.version;
+        if (options.closureType)
+            this.closureType = options.closureType;
+        if (options.nestedSetLeft)
+            this.isNestedSetLeft = options.nestedSetLeft;
+        if (options.nestedSetRight)
+            this.isNestedSetRight = options.nestedSetRight;
+        if (options.materializedPath)
+            this.isMaterializedPath = options.materializedPath;
     }
 
     // ---------------------------------------------------------------------

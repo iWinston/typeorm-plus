@@ -17,6 +17,8 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
+import {TreeType} from "./types/TreeTypes";
+import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
 
 /**
  * Contains all entity metadata.
@@ -167,10 +169,9 @@ export class EntityMetadata {
     isJunction: boolean = false;
 
     /**
-     * Checks if this table is a closure table.
-     * Closure table is one of the tree-specific tables that supports closure database pattern.
+     * Indicates if this entity is a tree, what type of tree it is.
      */
-    isClosure: boolean = false;
+    treeType?: TreeType;
 
     /**
      * Checks if this table is a junction table of the closure table.
@@ -203,6 +204,16 @@ export class EntityMetadata {
      * Columns of the entity, including columns that are coming from the embeddeds of this entity.
      */
     columns: ColumnMetadata[] = [];
+
+    /**
+     * Ancestor columns used only in closure junction tables.
+     */
+    ancestorColumns: ColumnMetadata[] = [];
+
+    /**
+     * Descendant columns used only in closure junction tables.
+     */
+    descendantColumns: ColumnMetadata[] = [];
 
     /**
      * All columns except for virtual columns.
@@ -255,6 +266,24 @@ export class EntityMetadata {
      * Special column that stores tree level in tree entities.
      */
     treeLevelColumn?: ColumnMetadata;
+
+    /**
+     * Nested set's left value column.
+     * Used only in tree entities with nested set pattern applied.
+     */
+    nestedSetLeftColumn?: ColumnMetadata;
+
+    /**
+     * Nested set's right value column.
+     * Used only in tree entities with nested set pattern applied.
+     */
+    nestedSetRightColumn?: ColumnMetadata;
+
+    /**
+     * Materialized path column.
+     * Used only in tree entities with materialized path pattern applied.
+     */
+    materializedPathColumn?: ColumnMetadata;
 
     /**
      * Gets the primary columns.
@@ -423,12 +452,14 @@ export class EntityMetadata {
         connection: Connection,
         inheritanceTree?: Function[],
         inheritancePattern?: "STI"/*|"CTI"*/,
+        tableTree?: TreeMetadataArgs,
         parentClosureEntityMetadata?: EntityMetadata,
         args: TableMetadataArgs
     }) {
         this.connection = options.connection;
         this.inheritanceTree = options.inheritanceTree || [];
         this.inheritancePattern = options.inheritancePattern;
+        this.treeType = options.tableTree ? options.tableTree.type : undefined;
         this.parentClosureEntityMetadata = options.parentClosureEntityMetadata!;
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;
@@ -701,7 +732,6 @@ export class EntityMetadata {
 
         this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
         this.isClosureJunction = this.tableMetadataArgs.type === "closure-junction";
-        this.isClosure = this.tableMetadataArgs.type === "closure";
     }
 
     /**
