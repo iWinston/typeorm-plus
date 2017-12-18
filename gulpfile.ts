@@ -340,14 +340,11 @@ export class Gulpfile {
                 timeout: 15000
             }))
             //.pipe(istanbul.writeReports())
-            .on("error", () => {
-                console.error("An error occured while running mocha");
-                error = true;
-                process.exit(1);
-            })
-            .on("finish", () => {
-                console.log("mocha finished, error is " + error ? "true" : "false");
-            })
+            // .on("error", () => {
+            //     console.error("An error occured while running mocha");
+            //     error = true;
+            //     process.exit(1);
+            // })
     }
 
     /**
