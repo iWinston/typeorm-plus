@@ -3,11 +3,11 @@ import {Category} from "./entity/Category";
 import {Connection} from "../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
-describe.only("tree tables > closure-table", () => {
+describe("tree tables > closure-table", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Category],
+        entities: [Category]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -124,208 +124,68 @@ describe.only("tree tables > closure-table", () => {
         a1ChildrenNames.should.include("a112");
     })));
 
-    it.skip("should work correctly when saving using parent category", () => Promise.all(connections.map(async connection => {
-        // await categoryRepository.attach(a1, a11);
-
-        /*const a1 = new Category();
-        a1.name = "a1";
-
-        const b1 = new Category();
-        b1.name = "b1";
-
-        const c1 = new Category();
-        c1.name = "c1";
-
-        const c11 = new Category();
-        c11.name = "c11";
-
-        const c12 = new Category();
-        c12.name = "c12";
-
-        c11.parentCategory = c1;
-        c12.parentCategory = c1;
-
-        // todo: this case is not working:
-        // c1.childCategories = [c11, c12];
-
-        await categoryRepository.save(a1);
-        await categoryRepository.save(b1);
-        await categoryRepository.save(c1);
-        await categoryRepository.save(c11);
-        await categoryRepository.save(c12);
-
-        const roots = await categoryRepository.findRoots();
-        roots.should.be.eql([
-            {
-                id: 1,
-                name: "a1",
-                level: 1
-            },
-            {
-                id: 2,
-                name: "b1",
-                level: 1
-            },
-            {
-                id: 3,
-                name: "c1",
-                level: 1
-            },
-        ]);
-
-        const c1Tree = await categoryRepository.findDescendantsTree(c1);
-        c1Tree.should.be.equal(c1);
-        c1Tree!.should.be.eql({
-            id: 3,
-            name: "c1",
-            level: 1,
-            childCategories: [{
-                id: 4,
-                name: "c11",
-                level: 2,
-                childCategories: []
-            }, {
-                id: 5,
-                name: "c12",
-                level: 2,
-                childCategories: []
-            }]
-        });*/
-
-    })));
-
-    it.skip("should work correctly when saving using children categories", () => Promise.all(connections.map(async connection => {
+    // todo: finish implementation and implement on other trees
+    it.skip("categories should remove removed children", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);
 
         const a1 = new Category();
         a1.name = "a1";
-
-        const b1 = new Category();
-        b1.name = "b1";
-
-        const c1 = new Category();
-        c1.name = "c1";
-
-        const c11 = new Category();
-        c11.name = "c11";
-
-        const c12 = new Category();
-        c12.name = "c12";
-
+        const a11 = new Category();
+        a11.name = "a11";
+        const a12 = new Category();
+        a12.name = "a12";
+        a1.childCategories = [a11, a12];
         await categoryRepository.save(a1);
-        await categoryRepository.save(b1);
-        await categoryRepository.save(c1);
 
-        c1.childCategories = [c11];
-        await categoryRepository.save(c1);
+        const a1Children1 = await categoryRepository.findDescendants(a1);
+        const a1ChildrenNames1 = a1Children1.map(child => child.name);
+        a1ChildrenNames1.length.should.be.equal(3);
+        a1ChildrenNames1.should.include("a1");
+        a1ChildrenNames1.should.include("a11");
+        a1ChildrenNames1.should.include("a12");
 
-        c1.childCategories.push(c12);
-        await categoryRepository.save(c1);
-        // await categoryRepository.save(c11);
-        // await categoryRepository.save(c12);
-
-        const roots = await categoryRepository.findRoots();
-        roots.should.be.eql([
-            {
-                id: 1,
-                name: "a1",
-                level: 1
-            },
-            {
-                id: 2,
-                name: "b1",
-                level: 1
-            },
-            {
-                id: 3,
-                name: "c1",
-                level: 1
-            },
-        ]);
-
-        const c1Tree = await categoryRepository.findDescendantsTree(c1);
-        c1Tree.should.be.equal(c1);
-        c1Tree!.should.be.eql({
-            id: 3,
-            name: "c1",
-            level: 1,
-            childCategories: [{
-                id: 4,
-                name: "c11",
-                level: 2,
-                childCategories: []
-            }, {
-                id: 5,
-                name: "c12",
-                level: 2,
-                childCategories: []
-            }]
-        });
-
+        // a1.childCategories = [a11];
+        // await categoryRepository.save(a1);
+        //
+        // const a1Children2 = await categoryRepository.findDescendants(a1);
+        // const a1ChildrenNames2 = a1Children2.map(child => child.name);
+        // a1ChildrenNames2.length.should.be.equal(3);
+        // a1ChildrenNames2.should.include("a1");
+        // a1ChildrenNames2.should.include("a11");
+        // a1ChildrenNames2.should.include("a12");
     })));
 
-    it.skip("should be able to retrieve the whole tree", () => Promise.all(connections.map(async connection => {
+    // todo: finish implementation and implement on other trees
+    it.skip("sub-category should be removed with all its children", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getTreeRepository(Category);
 
         const a1 = new Category();
         a1.name = "a1";
-
-        const b1 = new Category();
-        b1.name = "b1";
-
-        const c1 = new Category();
-        c1.name = "c1";
-
-        const c11 = new Category();
-        c11.name = "c11";
-
-        const c12 = new Category();
-        c12.name = "c12";
-
+        const a11 = new Category();
+        a11.name = "a11";
+        const a12 = new Category();
+        a12.name = "a12";
+        a1.childCategories = [a11, a12];
         await categoryRepository.save(a1);
-        await categoryRepository.save(b1);
-        await categoryRepository.save(c1);
 
-        c1.childCategories = [c11];
-        await categoryRepository.save(c1);
+        const a1Children1 = await categoryRepository.findDescendants(a1);
+        const a1ChildrenNames1 = a1Children1.map(child => child.name);
+        a1ChildrenNames1.length.should.be.equal(3);
+        a1ChildrenNames1.should.include("a1");
+        a1ChildrenNames1.should.include("a11");
+        a1ChildrenNames1.should.include("a12");
 
-        c1.childCategories.push(c12);
-        await categoryRepository.save(c1);
+        await categoryRepository.remove(a1);
 
-        const tree = await categoryRepository.findTrees();
-        tree!.should.be.eql(
-            [
-                {
-                    id: 1,
-                    name: "a1",
-                    level: 1,
-                    childCategories: []
-                },
-                {
-                    id: 2,
-                    name: "b1",
-                    level: 1,
-                    childCategories: []
-                },
-                {
-                    id: 3,
-                    name: "c1",
-                    level: 1,
-                    childCategories: [{
-                        id: 4,
-                        name: "c11",
-                        level: 2,
-                        childCategories: []
-                    }, {
-                        id: 5,
-                        name: "c12",
-                        level: 2,
-                        childCategories: []
-                    }]
-                }
-            ]);
-
+        // a1.childCategories = [a11];
+        // await categoryRepository.save(a1);
+        //
+        // const a1Children2 = await categoryRepository.findDescendants(a1);
+        // const a1ChildrenNames2 = a1Children2.map(child => child.name);
+        // a1ChildrenNames2.length.should.be.equal(3);
+        // a1ChildrenNames2.should.include("a1");
+        // a1ChildrenNames2.should.include("a11");
+        // a1ChildrenNames2.should.include("a12");
     })));
-
 
 });

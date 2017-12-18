@@ -60,7 +60,7 @@ export interface EntitySchemaRelation {
      * If set to true then it means that related object can be allowed to be inserted / updated / removed to the db.
      * This is option a shortcut if you would like to set cascadeInsert, cascadeUpdate and cascadeRemove to true.
      */
-    cascade?: boolean|("insert"|"update")[];
+    cascade?: boolean|("insert"|"update"|"remove")[];
 
     /**
      * Default database value.

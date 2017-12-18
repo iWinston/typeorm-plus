@@ -178,7 +178,7 @@ await timber.remove();
 
     * for **MySQL** or **MariaDB**
     
-        `npm install mysql --save`
+        `npm install mysql --save` (you can install `mysql2` instead as well)
     
     * for **PostgreSQL**
     

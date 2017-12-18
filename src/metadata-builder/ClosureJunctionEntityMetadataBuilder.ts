@@ -50,7 +50,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                     propertyName: primaryColumn.propertyName + "_ancestor", // todo: naming strategy
                     options: {
                         length: primaryColumn.length,
-                        type: primaryColumn.type,
+                        type: primaryColumn.type
                     }
                 }
             }));
@@ -93,13 +93,15 @@ export class ClosureJunctionEntityMetadataBuilder {
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: parentClosureEntityMetadata,
                 columns: [entityMetadata.ownColumns[0]],
-                referencedColumns: parentClosureEntityMetadata.primaryColumns
+                referencedColumns: parentClosureEntityMetadata.primaryColumns,
+                onDelete: "CASCADE"
             }),
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: parentClosureEntityMetadata,
                 columns: [entityMetadata.ownColumns[1]],
-                referencedColumns: parentClosureEntityMetadata.primaryColumns
+                referencedColumns: parentClosureEntityMetadata.primaryColumns,
+                onDelete: "CASCADE"
             }),
         ];
 
