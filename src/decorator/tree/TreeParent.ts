@@ -5,9 +5,9 @@ import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 /**
  * Marks a specific property of the class as a parent of the tree.
  */
-export function TreeParent(options?: RelationOptions): Function {
+export function TreeParent(): Function {
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions;
+        const options = {} as RelationOptions;
 
         // now try to determine it its lazy relation
         let isLazy = options && options.lazy === true ? true : false;

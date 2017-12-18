@@ -274,7 +274,7 @@ export class SubjectExecutor {
 
                 // insert subjects which must be inserted in separate requests (all default values)
                 if (singleInsertSubjects.length > 0) {
-                    await Promise.all(singleInsertSubjects.map(async subject => {
+                    await PromiseUtils.runInSequence(singleInsertSubjects, async subject => {
                         subject.insertedValueSet = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
 
                         // for nested set we execute additional queries
@@ -297,12 +297,12 @@ export class SubjectExecutor {
 
                         // for tree tables we execute additional queries
                         if (subject.metadata.treeType === "closure-table") {
-                            await new ClosureSubjectExecutor(this.queryRunner).insert(subject);
+                            await new ClosureSubjectExecutor(this.queryRunner, this.allSubjects).insert(subject);
 
                         } else if (subject.metadata.treeType === "materialized-path") {
                             await new MaterializedPathSubjectExecutor(this.queryRunner).insert(subject);
                         }
-                    }));
+                    });
                 }
             }
         });

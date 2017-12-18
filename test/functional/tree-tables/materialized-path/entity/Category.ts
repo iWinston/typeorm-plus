@@ -15,7 +15,7 @@ export class Category {
     @Column()
     name: string;
 
-    @TreeParent({ cascade: true })
+    @TreeParent()
     parentCategory: Category;
 
     @TreeChildren({ cascade: true })

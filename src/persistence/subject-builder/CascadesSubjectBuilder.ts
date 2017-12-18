@@ -64,6 +64,7 @@ export class CascadesSubjectBuilder {
                 // and add to the array of subjects to load only if there is no same entity there already
                 const relationEntitySubject = new Subject({
                     metadata: relationEntityMetadata,
+                    parentSubject: subject,
                     entity: relationEntity,
                     canBeInserted: relation.isCascadeInsert === true,
                     canBeUpdated: relation.isCascadeUpdate === true

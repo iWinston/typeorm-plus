@@ -1,6 +1,7 @@
 import {Subject} from "../Subject";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {CannotAttachTreeChildrenEntityError} from "../../error/CannotAttachTreeChildrenEntityError";
 
 /**
  * Executes subject operations for closure entities.
@@ -11,7 +12,8 @@ export class ClosureSubjectExecutor {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected queryRunner: QueryRunner) {
+    constructor(protected queryRunner: QueryRunner,
+                protected allSubjects: Subject[]) {
     }
 
     // -------------------------------------------------------------------------
@@ -43,7 +45,10 @@ export class ClosureSubjectExecutor {
             .callListeners(false)
             .execute();
 
-        const parent = subject.metadata.treeParentRelation!.getEntityValue(subject.entity!);
+        let parent = subject.metadata.treeParentRelation!.getEntityValue(subject.entity!); // if entity was attached via parent
+        if (!parent && subject.parentSubject && subject.parentSubject.entity) // if entity was attached via children
+            parent = subject.parentSubject.insertedValueSet ? subject.parentSubject.insertedValueSet : subject.parentSubject.entity;
+
         if (parent) {
             const escape = (alias: string) => this.queryRunner.connection.driver.escape(alias);
             const tableName = escape(subject.metadata.closureJunctionTable.tablePath); // todo: make sure to properly escape table path, not just a table name
@@ -61,7 +66,11 @@ export class ClosureSubjectExecutor {
             });
             const whereCondition = subject.metadata.primaryColumns.map(column => {
                 const columnName = escape(column.databaseName + "_descendant");
-                firstQueryParameters.push(column.getEntityValue(parent));
+                const parentId = column.getEntityValue(parent);
+                if (!parentId)
+                    throw new CannotAttachTreeChildrenEntityError(subject.metadata.name);
+
+                firstQueryParameters.push(parentId);
                 const parameterName = this.queryRunner.connection.driver.createParameter("parent_entity_" + column.databaseName, firstQueryParameters.length - 1);
                 return columnName + " = " + parameterName;
             }).join(", ");

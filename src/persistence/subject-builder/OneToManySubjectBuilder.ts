@@ -129,6 +129,7 @@ export class OneToManySubjectBuilder {
                 if (!relatedEntitySubject) {
                     relatedEntitySubject = new Subject({
                         metadata: relation.inverseEntityMetadata,
+                        parentSubject: subject,
                         canBeUpdated: true,
                         identifier: relationIdMap
                     });
@@ -159,6 +160,7 @@ export class OneToManySubjectBuilder {
                 // we create a new subject which operations will be executed in subject operation executor
                 const removedRelatedEntitySubject = new Subject({
                     metadata: relation.inverseEntityMetadata,
+                    parentSubject: subject,
                     canBeUpdated: true,
                     identifier: removedRelatedEntityRelationId,
                     changeMaps: [{
