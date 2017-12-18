@@ -327,7 +327,7 @@ export class Gulpfile {
      */
     @Task("coveragePost", ["coveragePre"])
     coveragePost() {
-        let error = false;
+        //let error = false;
 
         chai.should();
         chai.use(require("sinon-chai"));
