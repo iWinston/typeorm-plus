@@ -327,8 +327,6 @@ export class Gulpfile {
      */
     @Task("coveragePost", ["coveragePre"])
     coveragePost() {
-        //let error = false;
-
         chai.should();
         chai.use(require("sinon-chai"));
         chai.use(require("chai-as-promised"));
@@ -339,12 +337,6 @@ export class Gulpfile {
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
                 timeout: 15000
             }))
-            //.pipe(istanbul.writeReports())
-            // .on("error", () => {
-            //     console.error("An error occured while running mocha");
-            //     error = true;
-            //     process.exit(1);
-            // })
     }
 
     /**
