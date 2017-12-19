@@ -337,7 +337,6 @@ export class Gulpfile {
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
                 timeout: 15000
             }))
-            .pipe(istanbul.writeReports());
     }
 
     /**
