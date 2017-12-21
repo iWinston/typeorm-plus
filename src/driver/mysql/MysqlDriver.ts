@@ -530,7 +530,9 @@ export class MysqlDriver implements Driver {
     protected loadDependencies(): void {
         try {
             this.mysql = PlatformTools.load("mysql");  // try to load first supported package
-
+            if (Object.keys(this.mysql).length === 0) {
+                throw new Error("'mysql' was found but it is empty. Falling back to 'mysql2'.");
+            }
         } catch (e) {
             try {
                 this.mysql = PlatformTools.load("mysql2"); // try to load second supported package
