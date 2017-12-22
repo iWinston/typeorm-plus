@@ -530,6 +530,13 @@ export class MysqlDriver implements Driver {
     protected loadDependencies(): void {
         try {
             this.mysql = PlatformTools.load("mysql");  // try to load first supported package
+            /*
+             * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
+             * if it was not installed. We check that the object we got actually contains something otherwise we treat
+             * it as if the `require` call failed.
+             *
+             * @see https://github.com/typeorm/typeorm/issues/1373
+             */
             if (Object.keys(this.mysql).length === 0) {
                 throw new Error("'mysql' was found but it is empty. Falling back to 'mysql2'.");
             }
