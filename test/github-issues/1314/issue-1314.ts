@@ -9,8 +9,6 @@ describe("github issues > #1314 UPDATE on json column stores string type", () =>
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
         enabledDrivers: ["postgres"] // because only postgres supports jsonb type
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -24,8 +22,9 @@ describe("github issues > #1314 UPDATE on json column stores string type", () =>
         record.data = { foo: "bar" };
 
         let persistedRecord = await recordRepo.save(record);
-        let foundRecord = await recordRepo.findOne(persistedRecord.id);
+        record.data.should.be.eql({ foo: "bar" });
 
+        let foundRecord = await recordRepo.findOne(persistedRecord.id);
         expect(foundRecord).to.be.not.undefined;
         expect(foundRecord!.data.foo).to.eq("bar");
 
@@ -35,7 +34,7 @@ describe("github issues > #1314 UPDATE on json column stores string type", () =>
         foundRecord = await recordRepo.findOne(persistedRecord.id);
 
         expect(foundRecord).to.be.not.undefined;
-        expect(foundRecord!.data).to.not.equal("{\"answer\":42}");
+        expect(foundRecord!.data).to.not.be.equal("{\"answer\":42}");
         expect(foundRecord!.data.answer).to.eq(42);
     })));
 

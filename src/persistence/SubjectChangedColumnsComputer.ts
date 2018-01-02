@@ -91,6 +91,12 @@ export class SubjectChangedColumnsComputer {
                 // if value is not changed - then do nothing
                 if (entityValue === databaseValue)
                     return;
+
+                // revert entity value back to its original value, because we need to save original value, not a string
+                // we used string only for comparision
+                if (column.type === "json" || column.type === "jsonb") {
+                    entityValue = column.getEntityValue(subject.entity!);
+                }
             }
 
             // find if there is already a column to be changed

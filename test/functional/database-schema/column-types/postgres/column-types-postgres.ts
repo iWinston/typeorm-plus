@@ -76,6 +76,7 @@ describe("database schema > column types > postgres", () => {
         post.bitVarying = "00";
         post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976";
         post.json = { id: 1, name: "Post" };
+        post.jsonb = { id: 1, name: "Post" };
         post.xml = "<book><title>Manual</title><chapter>...</chapter></book>";
         post.array = [1, 2, 3];
         post.simpleArray = ["A", "B", "C"];
@@ -135,6 +136,7 @@ describe("database schema > column types > postgres", () => {
         loadedPost.bitVarying.should.be.equal(post.bitVarying);
         loadedPost.uuid.should.be.equal(post.uuid);
         loadedPost.json.should.be.eql(post.json);
+        loadedPost.jsonb.should.be.eql(post.jsonb);
         loadedPost.xml.should.be.equal(post.xml);
         loadedPost.array[0].should.be.equal(post.array[0]);
         loadedPost.array[1].should.be.equal(post.array[1]);
@@ -194,6 +196,7 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("uuid")!.type.should.be.equal("uuid");
         table!.findColumnByName("xml")!.type.should.be.equal("xml");
         table!.findColumnByName("json")!.type.should.be.equal("json");
+        table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb");
         table!.findColumnByName("array")!.type.should.be.equal("integer");
         table!.findColumnByName("array")!.isArray!.should.be.true;
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
