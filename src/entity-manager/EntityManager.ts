@@ -25,7 +25,6 @@ import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
 import {EntityPersistExecutor} from "../persistence/EntityPersistExecutor";
 import {ObjectID} from "../driver/mongodb/typings";
@@ -442,7 +441,7 @@ export class EntityManager {
     async find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        this.joinEagerRelations(qb, qb.alias, metadata);
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -468,7 +467,7 @@ export class EntityManager {
     async findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        this.joinEagerRelations(qb, qb.alias, metadata);
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -496,7 +495,7 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        this.joinEagerRelations(qb, qb.alias, metadata);
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
         return qb.andWhereInIds(ids).getMany();
     }
 
@@ -529,7 +528,7 @@ export class EntityManager {
         }
         const qb = this.createQueryBuilder(entityClass, alias);
 
-        this.joinEagerRelations(qb, qb.alias, metadata);
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
 
         if (maybeOptions) {
             FindOptionsUtils.applyOptionsToQueryBuilder(qb, maybeOptions);
@@ -685,20 +684,4 @@ export class EntityManager {
 
         return this.queryRunner.release();
     }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Joins all eager relations recursively.
-     */
-    protected joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
-        metadata.eagerRelations.forEach(relation => {
-            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
-            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
-            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
-        });
-    }
-
 }
