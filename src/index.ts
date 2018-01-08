@@ -260,3 +260,14 @@ export function getCustomRepository<T>(customRepository: ObjectType<T>, connecti
 export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
 }
+
+/**
+ * Creates a new query builder.
+ */
+export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName: string = "default") {
+    if (entityClass) {
+        return getRepository(entityClass, connectionName).createQueryBuilder(alias);
+    }
+
+    return getConnection(connectionName).createQueryBuilder();
+}
