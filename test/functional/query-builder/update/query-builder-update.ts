@@ -150,4 +150,29 @@ describe("query builder > update", () => {
 
     })));
 
+    it("should perform update with limit correctly", () => Promise.all(connections.map(async connection => {
+
+        const user1 = new User();
+        user1.name = "Alex Messer";
+        const user2 = new User();
+        user2.name = "Muhammad Mirzoev";
+        const user3 = new User();
+        user3.name = "Brad Porter";        
+
+        await connection.manager.save([user1, user2, user3]);
+
+        const limitNum = 2;
+
+        await connection.createQueryBuilder()
+            .update(User)
+            .set({ name: "Dima Zotov" })
+            .limit(limitNum)
+            .execute();
+
+        const loadedUsers = await connection.getRepository(User).find({ name: "Dima Zotov" });
+        expect(loadedUsers).to.exist;
+        loadedUsers!.length.should.be.equal(limitNum);
+
+    })));
+
 });
