@@ -182,10 +182,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Set's LIMIT - maximum number of rows to be selected.
-     * NOTE that it may not work as you expect if you are using joins.
-     * If you want to implement pagination, and you are having join in your query,
-     * then use instead take method instead.
+     * Sets LIMIT - maximum number of rows to be selected.
      */
     limit(limit?: number): this {
         this.expressionMap.limit = limit;
@@ -292,15 +289,15 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected createLimitExpression(): string {
         let limit: number|undefined = this.expressionMap.limit;
 
-        if (this.connection.driver instanceof MysqlDriver) {
-            if (limit) {
+        if (limit) {
+            if (this.connection.driver instanceof MysqlDriver) {
                 return " LIMIT " + limit;
             } else {
-                return "";
+                throw new LimitOnUpdateNotSupportedError();
             }
-        } else {
-            throw new LimitOnUpdateNotSupportedError();
         }
+
+        return "";
     }
 
     /**
