@@ -125,9 +125,9 @@ await repository.remove([
 * `insert` - Inserts a new entity.
 
 ```typescript
-await repository.insert({ 
-    firstName: "Timber", 
-    lastName: "Timber" 
+await repository.insert({
+    firstName: "Timber",
+    lastName: "Timber"
 });
 ```
 

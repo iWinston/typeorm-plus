@@ -195,7 +195,7 @@ export class MysqlDriver implements Driver {
     async connect(): Promise<void> {
 
         if (this.options.replication) {
-            this.poolCluster = this.mysql.createPoolCluster();
+            this.poolCluster = this.mysql.createPoolCluster(this.options.replication);
             this.options.replication.slaves.forEach((slave, index) => {
                 this.poolCluster.add("SLAVE" + index, this.createConnectionOptions(this.options, slave));
             });

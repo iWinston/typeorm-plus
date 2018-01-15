@@ -23,12 +23,12 @@ feel free to ask us and community.
 * now version column is updated on the database level, not by ORM anymore
 * now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `CURRENT_TIMESTAMP` as a default value)
 * now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` automatically update entities after execution.
-This only happens if real entity objects are passed. 
+This only happens if real entity objects are passed.
 Some databases (like mysql and sqlite) requires a separate query to perform this operation.
 If you want to disable this behavior use `queryBuilder.updateEntity(false)` method.
 This feature is convenient for users who have uuid, create/update date, version columns or columns with DEFAULT value set.
-* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners. 
-You can disable this behavior by setting `queryBuilder.callListeners(false)` method. 
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners.
+You can disable this behavior by setting `queryBuilder.callListeners(false)` method.
 * `Repository` and `EntityManager` method `.findOne` is deprecated and will be removed in next 0.3.0 version.
 Use `findOne(id)` method instead now.
 * `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
@@ -53,11 +53,20 @@ Use `findOne(id)` method instead now.
 By default its true.
 * now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
 * `@ClosureEntity` decorator has been removed. Instead `@Entity` + `@Tree("closure-table")` must be used
-* added support for nested set and materialized path tree hierarchy patterns 
+* added support for nested set and materialized path tree hierarchy patterns
+
+## 0.1.12
+
+* EntitySubscriber now fires events on subclass entity ([#1369](https://github.com/typeorm/typeorm/issues/1369))
+
+## 0.1.11
+
+* postgres extensions now gracefully handled when user does not have rights to use them ([#1407](https://github.com/typeorm/typeorm/issues/1407))
 
 ## 0.1.10
 
 * `sqljs` driver now enforces FK integrity by default (same behavior as `sqlite`)
+* fixed issue that broke browser support in 0.1.8 because of the debug package ([#1344](https://github.com/typeorm/typeorm/pull/1344))
 
 ## 0.1.9
 
