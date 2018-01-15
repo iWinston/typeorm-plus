@@ -15,6 +15,7 @@ import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
+import {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -264,7 +265,7 @@ export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|strin
 /**
  * Creates a new query builder.
  */
-export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName: string = "default") {
+export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName: string = "default"): SelectQueryBuilder<Entity> {
     if (entityClass) {
         return getRepository(entityClass, connectionName).createQueryBuilder(alias);
     }
