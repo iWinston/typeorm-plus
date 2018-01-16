@@ -17,7 +17,7 @@ describe("entity-metadata-validator", () => {
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
         const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"], []);
         const entityMetadataValidator = new EntityMetadataValidator();
-        return entityMetadataValidator.validateMany(entityMetadatas, connection.driver).should.be.rejected;
+        expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
     });
 
 });
