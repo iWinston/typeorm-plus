@@ -3,7 +3,9 @@ import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
+import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
+import {LimitOnUpdateNotSupportedError} from "../../../../src/error/LimitOnUpdateNotSupportedError";
 import {Photo} from "./entity/Photo";
 
 describe("query builder > update", () => {
@@ -59,6 +61,8 @@ describe("query builder > update", () => {
             .set({ name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Dima Zotov', 1, 4)" : "SUBSTR('Dima Zotov', 1, 4)" })
             .where("name = :name", { name: () => connection.driver instanceof SqlServerDriver ? "SUBSTRING('Alex Messer Dimovich', 1, 11)" : "SUBSTR('Alex Messer Dimovich', 1, 11)" })
             .execute();
+
+        
 
         const loadedUser1 = await connection.getRepository(User).findOne({ name: "Dima" });
         expect(loadedUser1).to.exist;
@@ -162,17 +166,25 @@ describe("query builder > update", () => {
         await connection.manager.save([user1, user2, user3]);
 
         const limitNum = 2;
+        const nameToFind = "Dima Zotov";
 
-        await connection.createQueryBuilder()
+        if (connection.driver instanceof MysqlDriver) {
+            await connection.createQueryBuilder()
             .update(User)
-            .set({ name: "Dima Zotov" })
+            .set({ name: nameToFind })
             .limit(limitNum)
-            .execute();
+            .execute(); 
 
-        const loadedUsers = await connection.getRepository(User).find({ name: "Dima Zotov" });
-        expect(loadedUsers).to.exist;
-        loadedUsers!.length.should.be.equal(limitNum);
-
+            const loadedUsers = await connection.getRepository(User).find({ name: nameToFind });
+            expect(loadedUsers).to.exist;
+            loadedUsers!.length.should.be.equal(limitNum);
+        } else {
+            await connection.createQueryBuilder()
+            .update(User)
+            .set({ name: nameToFind })
+            .limit(limitNum)
+            .execute().should.be.rejectedWith(LimitOnUpdateNotSupportedError); 
+        }
     })));
 
 });
