@@ -8,6 +8,7 @@ feel free to ask us and community.
 ## 0.1.12
 
 * EntitySubscriber now fires events on subclass entity ([#1369](https://github.com/typeorm/typeorm/issues/1369))
+* fixed error with entity schema validator being async  ([#1448](https://github.com/typeorm/typeorm/issues/1448))
 
 ## 0.1.11
 
