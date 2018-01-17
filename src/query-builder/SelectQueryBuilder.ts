@@ -1622,6 +1622,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // if user used partial selection and did not select some primary columns which are required to be selected
         // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
         // to make entity contain exactly what user selected
+        // if (columns.length === 0) // however not in the case when nothing (even partial) was selected from this target (for example joins without selection)
+        //     return [];
+
         const nonSelectedPrimaryColumns = this.expressionMap.queryEntity ? metadata.primaryColumns.filter(primaryColumn => columns.indexOf(primaryColumn) === -1) : [];
         const allColumns = [...columns, ...nonSelectedPrimaryColumns];
 

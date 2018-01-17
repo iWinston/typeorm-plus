@@ -361,8 +361,8 @@ export class Gulpfile {
     @SequenceTask()
     tests() {
         return [
-            "compile",
-            "tslint",
+            "coveragePre",
+            "runTests",
             "coveragePost",
             "coverageRemap"
         ];
@@ -382,14 +382,6 @@ export class Gulpfile {
             "coveragePost",
             "coverageRemap"
         ];
-    }
-
-    /**
-     * Compiles the code and runs only mocha tests.
-     */
-    @SequenceTask()
-    mocha() {
-        return ["compile", "quickTests"];
     }
 
     // -------------------------------------------------------------------------
