@@ -90,7 +90,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
         ticket.request = request;
         request.ticket = ticket;
 
-        await connection.manager.save(request);
+        await connection.manager.save(ticket);
 
         const loadedRequest = await connection.manager.findOne(Request, 2, {
             join: {
