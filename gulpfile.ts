@@ -361,6 +361,7 @@ export class Gulpfile {
     @SequenceTask()
     tests() {
         return [
+            "compile",
             "coveragePre",
             "runTests",
             "coveragePost",
