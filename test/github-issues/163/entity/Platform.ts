@@ -22,9 +22,7 @@ export class Platform {
     })
     slug: string;
 
-    @ManyToMany(type => Game, game => game.platforms, {
-        cascade: true
-    })
+    @ManyToMany(type => Game, game => game.platforms)
     games: Game[];
 
 }
