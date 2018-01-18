@@ -316,7 +316,7 @@ This guide will show you how to setup TypeORM from scratch and make it to do wha
 
 ### Create a model
 
-Working with database starts from creating a tables. 
+Working with database starts from creating tables. 
 How do you tell TypeORM to create a database table?
 Answer is - thought the models. 
 Your models in your app - are your database tables.
