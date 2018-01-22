@@ -311,6 +311,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+            
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -344,6 +347,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.stringToSimpleJson(value);
         }
 
         return value;
@@ -403,6 +409,9 @@ export class PostgresDriver implements Driver {
             type += "boolean";
 
         } else if (column.type === "simple-array") {
+            type += "text";
+
+        } else if (column.type === "simple-json") {
             type += "text";
 
         } else {

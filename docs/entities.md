@@ -300,6 +300,34 @@ just like you stored them.
 
 Note you **MUST NOT** have any comma in values you write.
 
+### `simple-json` column type
+
+There is a special column type called `simple-json` which can store any values which can be stored in database
+via JSON.stringify.
+Very useful when you do not have json type in your database and you want to store and load object
+without any hustle.
+For example:
+
+```typescript
+@Entity()
+export class User {
+    
+    @PrimaryGeneratedColumn()
+    id: number;
+ 
+    @Column("simple-json")
+    profile: { name: string, nickname: string };
+    
+}
+```
+```typescript
+const user = new User();
+user.profile = { name: "John", nickname: "Malkovich" };
+```
+
+Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
+When you'll load data from the database, you will have your object/array/primitive back via JSON.parse
+
 ### Columns with generated values
 
 You can create column with generated value using `@Generated` decorator. For example:
