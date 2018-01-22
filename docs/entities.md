@@ -263,7 +263,7 @@ or
 
 `int`, `tinyint`, `smallint`, `bigint`, `dec`, `decimal`, `numeric`, `float`, `dec`, `decimal`, 
 `numeric`, `real`, `datetime`, `datetime2`, `datetimeoffset`, `time`, `timestamp`, 
-`int`, `tinyint`, `smallint`, `bigint`, `nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
+`nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
 `bit`, `smallmoney`, `money`, `text`, `ntext`, `image`, `smalldatetime`, `date`, `xml`, `varbinary`,
 `cursor`, `hierarchyid`, `sql_variant`, `table`
   
