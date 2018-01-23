@@ -810,10 +810,10 @@ export class PhotoMetadata {
 }
 ```
      
-Here, we are used a new decorator called `@OneToOne`. It allows us to create a one-to-one relation between two entities. 
-`type => Photo` is a function that returns the class of the entity with which we want to make our relation. 
+Here, we are using a new decorator called `@OneToOne`. It allows us to create a one-to-one relationship between two entities. 
+`type => Photo` is a function that returns the class of the entity with which we want to make our relationship. 
 We are forced to use a function that returns a class, instead of using class directly, because of the language specifics.
-We can also write it as a `() => Photo`, but we use `type => Photo` as convention to increase code readability.
+We can also write it as `() => Photo`, but we use `type => Photo` as a convention to increase code readability.
 The type variable itself does not contain anything.
 
 We also add a `@JoinColumn` decorator, which indicates that this side of the relationship will own the relationship.
