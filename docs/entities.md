@@ -10,6 +10,7 @@
     * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
+    * [`simple-json` column type](#simple-json-column-type)
     * [Columns with generated values](#columns-with-generated-values)
 * [Column options](#column-options)
 
