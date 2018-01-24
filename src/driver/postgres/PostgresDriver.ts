@@ -235,13 +235,13 @@ export class PostgresDriver implements Driver {
                             try {
                                 await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please it manually using superuser rights");
+                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasCitextColumns)
                             try {
                                 await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please it manually using superuser rights");
+                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         release();
                         ok();
