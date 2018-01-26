@@ -23,6 +23,7 @@
 * [Set locking](#set-locking)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
+* [Hidden Columns](#hidden-columns)
 
 ## What is `QueryBuilder`
 
@@ -912,3 +913,37 @@ const posts = await connection
     .from(Post, "post")
     .getRawMany();
 ```
+## Hidden Columns
+
+If the model you are querying has a column with a `select: false` column, you must use the `addSelect` function in order to retreive the information from the column.
+
+Let's say you have the following entity:
+
+```typescript
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+
+@Entity()
+export class User {
+    
+    @PrimaryGeneratedColumn()
+    id: number;
+    
+    @Column()
+    name: string;
+
+    @Column({select: false})
+    name: string;
+}
+```
+
+Using a standard `find` or query, you will not recieve the `name` property for the model. However, if you do the following:
+
+```typescript
+const users = await connection.getRepository(User)
+    .createQueryBuilder()
+    .select("user.id", "id")
+    .addSelect("user.password")
+    .getMany();
+```
+
+You will get the property `password` in your query.
