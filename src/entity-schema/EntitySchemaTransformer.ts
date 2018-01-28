@@ -53,6 +53,8 @@ export class EntitySchemaTransformer {
                     mode = "treeChildrenCount";
                 if (tableColumn.treeLevel)
                     mode = "treeLevel";
+                if (tableColumn.objectId)
+                    mode = "objectId";
 
                 const columnAgrs: ColumnMetadataArgs = {
                     target: schema.target || schema.name,
@@ -157,9 +159,9 @@ export class EntitySchemaTransformer {
                         sparse: tableIndex.sparse,
                         columns: tableIndex.columns
                     };
-                    metadataArgsStorage.indices.push(indexAgrs);                        
+                    metadataArgsStorage.indices.push(indexAgrs);
                 });
-            }    
+            }
 
         });
 
