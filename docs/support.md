@@ -12,7 +12,7 @@ If you have a question, you can ask it on [StackOverflow](https://stackoverflow.
 
 If you want community support, or simply want to chat with friendly TypeORM enthusiasts and users, you can do it in [gitter](https://gitter.im/typeorm/typeorm).
 
-### Want a professional commercial support?
+### Want professional commercial support?
 
 The TypeORM core team is always ready to provide professional commercial support.
 We are ready to work with any team in any part of the world.
