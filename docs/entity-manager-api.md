@@ -97,7 +97,7 @@ const user = await manager.preload(User, partialUser);
 If the entity already exists in the database, then it's updated.
 If the entity does not exist in the database yet, it's inserted.
 It saves all given entities in a single transaction (in the case of entity manager is not transactional).
-Also supports partial updating since all undefined properties are skipped.
+Also supports partial updating since all undefined properties are skipped. In order to make a value `NULL`, you must manually set the property to equal `null`.
 
 ```typescript
 await manager.save(user);

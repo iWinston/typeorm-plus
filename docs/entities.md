@@ -394,6 +394,7 @@ You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to
 marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
+* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
