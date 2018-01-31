@@ -155,7 +155,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `host` - Database host.
 
-* `port` - Database host port. Default mysql port is `5432`.
+* `port` - Database host port. Default postgres port is `5432`.
 
 * `username` - Database username.
 
