@@ -932,7 +932,7 @@ export class User {
     name: string;
 
     @Column({select: false})
-    name: string;
+    password: string;
 }
 ```
 
