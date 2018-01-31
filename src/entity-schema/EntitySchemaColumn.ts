@@ -1,11 +1,16 @@
 import {ColumnType} from "../driver/types/ColumnTypes";
 
 export interface EntitySchemaColumn {
-    
+
     /**
      * Indicates if this column is a primary column.
      */
     primary?: boolean;
+
+    /**
+     * Indicates if this column is of type ObjectID
+     */
+    objectId?: boolean;
 
     /**
      * Indicates if this column is a created date column.
