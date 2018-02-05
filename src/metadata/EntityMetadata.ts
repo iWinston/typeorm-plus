@@ -700,7 +700,10 @@ export class EntityMetadata {
 
             return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
         }, {} as ObjectLiteral);
-        return Object.keys(map).length > 0 ? map : undefined;
+
+        // comparing number of items in the generated map and number of columns makes sure that some
+        // of the values of the columns are not missing
+        return Object.keys(map).length === columns.length ? map : undefined;
     }
 
     // ---------------------------------------------------------------------
