@@ -694,16 +694,15 @@ export class EntityMetadata {
      * Examples of usages are primary columns map and join columns map.
      */
     static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
-        const map = columns.reduce((map, column) => {
-            if (column.isObjectId)
-                return Object.assign(map, column.getEntityValueMap(entity));
+        return columns.reduce((map, column) => {
+            const value = column.getEntityValueMap(entity);
 
-            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
-        }, {} as ObjectLiteral);
+            // make sure that none of the values of the columns are not missing
+            if (map === undefined || value === null || value === undefined)
+                return undefined;
 
-        // comparing number of items in the generated map and number of columns makes sure that some
-        // of the values of the columns are not missing
-        return Object.keys(map).length === columns.length ? map : undefined;
+            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
+        }, {} as ObjectLiteral|undefined);
     }
 
     // ---------------------------------------------------------------------
