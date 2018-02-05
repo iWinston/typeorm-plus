@@ -237,9 +237,9 @@ or
 ### Column types for `mysql` / `mariadb`
 
 `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `float`, `double`, 
-`decimal`, `real`, `datetime`, `time`, `timestamp`, `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, 
-`character`, `varchar`, `char`, `tinyblob`, `tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, 
-`longblob`, `longtext`, `date`, `year`, `enum`, `json`
+`real`, `datetime`, `time`, `timestamp`, `character`, `varchar`, `char`, `tinyblob`,
+`tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, `longblob`, `longtext`, `date`,
+`year`, `enum`, `json`
 
 ### Column types for `postgres`
 
