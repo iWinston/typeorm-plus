@@ -73,16 +73,16 @@ export class RelationIdLoader {
         relatedEntityOrEntities?: E2|E2[]
     ): Promise<{ entity: E1, related?: E2|E2[] }[]> {
 
-        console.log("relation:", relation.propertyName);
-        console.log("entitiesOrEntities", entitiesOrEntities);
+        // console.log("relation:", relation.propertyName);
+        // console.log("entitiesOrEntities", entitiesOrEntities);
 
         if (!relatedEntityOrEntities) {
             relatedEntityOrEntities = await this.connection.relationLoader.load(relation, entitiesOrEntities);
-            console.log("relatedEntityOrEntities", relatedEntityOrEntities);
+            // console.log("relatedEntityOrEntities", relatedEntityOrEntities);
         }
         // const relationIds = await this.load(relation, relatedEntityOrEntities!, entitiesOrEntities);
         const relationIds = await this.load(relation, entitiesOrEntities, relatedEntityOrEntities);
-        console.log("relationIds", relationIds);
+        // console.log("relationIds", relationIds);
 
         const entities: E1[] = entitiesOrEntities instanceof Array ? entitiesOrEntities : [entitiesOrEntities];
         const relatedEntities: E2[] = relatedEntityOrEntities instanceof Array ? relatedEntityOrEntities : [relatedEntityOrEntities!];
