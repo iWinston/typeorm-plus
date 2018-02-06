@@ -144,6 +144,14 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * You can also provide id of relational entity to filter by.
      */
     async loadOne<T = any>(): Promise<T|undefined> {
+        return this.loadMany<T>().then(results => results[0]);
+    }
+
+    /**
+     * Loads many entities (relational) from the relation.
+     * You can also provide ids of relational entities to filter by.
+     */
+    async loadMany<T = any>(): Promise<T[]> {
         let of = this.expressionMap.of;
         if (!(of instanceof Object)) {
             const metadata = this.expressionMap.mainAlias!.metadata;
@@ -154,14 +162,6 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         return this.connection.relationLoader.load(this.expressionMap.relationMetadata, of);
-    }
-
-    /**
-     * Loads many entities (relational) from the relation.
-     * You can also provide ids of relational entities to filter by.
-     */
-    async loadMany<T = any>(): Promise<T[]> {
-        return this.loadOne();
     }
 
 }
