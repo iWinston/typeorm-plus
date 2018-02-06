@@ -55,9 +55,14 @@ By default its true.
 * `@ClosureEntity` decorator has been removed. Instead `@Entity` + `@Tree("closure-table")` must be used
 * added support for nested set and materialized path tree hierarchy patterns
 
+## 0.1.13
+* added simple-json column type ([#1448](https://github.com/typeorm/typeorm/pull/1488))
+* fixed transform behaviour for timestamp columns ([#1140](https://github.com/typeorm/typeorm/issues/1140))
+
 ## 0.1.12
 
 * EntitySubscriber now fires events on subclass entity ([#1369](https://github.com/typeorm/typeorm/issues/1369))
+* fixed error with entity schema validator being async  ([#1448](https://github.com/typeorm/typeorm/issues/1448))
 
 ## 0.1.11
 
