@@ -231,6 +231,19 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     returning(returning: string|string[]): this;
 
     /**
+     * Optional returning/output clause.
+     */
+    returning(returning: string|string[]): this {
+
+        // not all databases support returning/output cause
+        if (!this.connection.driver.isReturningSqlSupported())
+            throw new ReturningStatementNotSupportedError();
+
+        this.expressionMap.returning = returning;
+        return this;
+    }
+
+    /**
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
@@ -292,19 +305,6 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     limit(limit?: number): this {
         this.expressionMap.limit = limit;
-        return this;
-    }
-
-    /**
-     * Optional returning/output clause.
-     */
-    returning(returning: string|string[]): this {
-
-        // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
-            throw new ReturningStatementNotSupportedError();
-
-        this.expressionMap.returning = returning;
         return this;
     }
 
