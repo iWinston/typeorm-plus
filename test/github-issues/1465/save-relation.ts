@@ -23,7 +23,7 @@ describe("save child and parent entity", () => {
   after(() => closeTestingConnections(connections));
 
   it("account property in accountActivationToken should not be null", () =>
-    Promise.all(
+    return Promise.all(
       connections.map(async function (connection) {
         const account = new Account();
         account.username = "test";
