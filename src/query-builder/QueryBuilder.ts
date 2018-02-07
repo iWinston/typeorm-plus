@@ -738,8 +738,8 @@ export abstract class QueryBuilder<Entity> {
                                 parameterIndex++;
                                 return `${aliasPath} = ${this.connection.driver.createParameter(parameterName, parameterIndex - 1)}`;
                             }
-                        }).join(" AND ");
-                    }).join(" AND ");
+                        }).filter(expression => !!expression).join(" AND ");
+                    }).filter(expression => !!expression).join(" AND ");
                 });
 
             } else {
