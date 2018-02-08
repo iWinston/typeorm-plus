@@ -83,11 +83,12 @@ export class EntityPersistExecutor {
                     });
 
                     // console.time("building cascades...");
-                    // go thought each entity with metadata and create subjects and subjects by cascades for them
+                    // go through each entity with metadata and create subjects and subjects by cascades for them
+                    const cascadesSubjectBuilder = new CascadesSubjectBuilder(subjects);
                     subjects.forEach(subject => {
                         // next step we build list of subjects we will operate with
                         // these subjects are subjects that we need to insert or update alongside with main persisted entity
-                        new CascadesSubjectBuilder(subject, subjects).build();
+                        cascadesSubjectBuilder.build(subject);
                     });
                     // console.timeEnd("building cascades...");
 

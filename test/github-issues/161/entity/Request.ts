@@ -19,9 +19,7 @@ export class Request {
     @Column()
     success: boolean;
 
-    @OneToOne(type => Ticket, ticket => ticket.request, {
-        cascade: true
-    })
+    @OneToOne(type => Ticket, ticket => ticket.request)
     ticket: Ticket;
 
 }

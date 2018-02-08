@@ -29,11 +29,11 @@ export class Gulpfile {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a delay and resolves after 30 seconds.
+     * Creates a delay and resolves after 15 seconds.
      */
     @Task()
     wait(cb: Function) {
-        setTimeout(() => cb(), 30000);
+        setTimeout(() => cb(), 15000);
     }
 
     /**
@@ -325,8 +325,17 @@ export class Gulpfile {
     /**
      * Runs post coverage operations.
      */
-    @Task("coveragePost", ["coveragePre"])
+    @Task()
     coveragePost() {
+        return gulp.src(["./build/compiled/test/**/*.js"])
+            .pipe(istanbul.writeReports());
+    }
+
+    /**
+     * Runs mocha tests.
+     */
+    @Task()
+    runTests() {
         chai.should();
         chai.use(require("sinon-chai"));
         chai.use(require("chai-as-promised"));
@@ -335,24 +344,7 @@ export class Gulpfile {
             .pipe(mocha({
                 bail: true,
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
-                timeout: 15000
-            }))
-            .pipe(istanbul.writeReports());
-    }
-
-    /**
-     * Runs tests the quick way.
-     */
-    @Task()
-    quickTests() {
-        chai.should();
-        chai.use(require("sinon-chai"));
-        chai.use(require("chai-as-promised"));
-
-        return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(mocha({
-                bail: true,
-                timeout: 35000
+                timeout: 25000
             }));
     }
 
@@ -370,7 +362,8 @@ export class Gulpfile {
     tests() {
         return [
             "compile",
-            "tslint",
+            "coveragePre",
+            "runTests",
             "coveragePost",
             "coverageRemap"
         ];
@@ -382,20 +375,15 @@ export class Gulpfile {
     @SequenceTask("ci-tests")
     ciTests() {
         return [
-            "wait",
+            "clean",
             "compile",
             "tslint",
+            "wait",
+            "coveragePre",
+            "runTests",
             "coveragePost",
             "coverageRemap"
         ];
-    }
-
-    /**
-     * Compiles the code and runs only mocha tests.
-     */
-    @SequenceTask()
-    mocha() {
-        return ["compile", "quickTests"];
     }
 
     // -------------------------------------------------------------------------

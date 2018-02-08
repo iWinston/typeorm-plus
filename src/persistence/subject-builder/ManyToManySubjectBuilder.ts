@@ -72,6 +72,7 @@ export class ManyToManySubjectBuilder {
             relatedEntityRelationIdsInDatabase.forEach(relationId => {
                 const junctionSubject = new Subject({
                     metadata: relation.junctionEntityMetadata!,
+                    parentSubject: subject,
                     mustBeRemoved: true,
                     identifier: this.buildJunctionIdentifier(subject, relation, relationId)
                 });
@@ -158,6 +159,7 @@ export class ManyToManySubjectBuilder {
             // create a new subject for insert operation of junction rows
             const junctionSubject = new Subject({
                 metadata: relation.junctionEntityMetadata!,
+                parentSubject: subject,
                 canBeInserted: true,
             });
             this.subjects.push(junctionSubject);
@@ -195,6 +197,7 @@ export class ManyToManySubjectBuilder {
         removedJunctionEntityIds.forEach(removedEntityRelationId => {
             const junctionSubject = new Subject({
                 metadata: relation.junctionEntityMetadata!,
+                parentSubject: subject,
                 mustBeRemoved: true,
                 identifier: this.buildJunctionIdentifier(subject, relation, removedEntityRelationId)
             });

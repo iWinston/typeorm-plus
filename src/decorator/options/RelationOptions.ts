@@ -14,7 +14,7 @@ export interface RelationOptions {
      *
      * cascade: ["insert", "update"] // include or exclude one of them
      */
-    cascade?: boolean|("insert"|"update")[];
+    cascade?: boolean|("insert"|"update"|"remove")[];
 
     /**
      * Indicates if relation column value can be nullable or not.

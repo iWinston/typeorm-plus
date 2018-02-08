@@ -321,6 +321,9 @@ export class OracleDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -330,9 +333,6 @@ export class OracleDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
@@ -340,7 +340,13 @@ export class OracleDriver implements Driver {
             return value === 1 ? true : false;
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
+
+        } else if (columnMetadata.type === "time") {
+            value = DateUtils.mixedTimeToString(value);
+
+        } else if (columnMetadata.type === "datetime") {
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
@@ -348,9 +354,18 @@ export class OracleDriver implements Driver {
             || columnMetadata.type === "timestamp with local time zone") {
             return DateUtils.normalizeHydratedDate(value);
 
+        } else if (columnMetadata.type === "json") {
+            value = JSON.parse(value);
+
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -380,6 +395,9 @@ export class OracleDriver implements Driver {
             return "varchar2";
 
         } else if (column.type === "simple-array") {
+            return "clob";
+
+        } else if (column.type === "simple-json") {
             return "clob";
 
         } else {

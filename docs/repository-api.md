@@ -70,16 +70,16 @@ const user = repository.create({
 }); // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `merge` - Merges multiple entities into a single entity
+* `merge` - Merges multiple entities into a single entity.
 
 ```typescript
 const user = new User();
 repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }); // same as user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
-* `preload` - Creates a new entity from the given plain javascript object. If the entity already exist in the database, then
-it loads it (and everything related to it), replaces all values with the new ones from the given object
-and returns the new entity. The new entity is actually an entity loaded from the db with all properties
+* `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
+it loads it (and everything related to it), replaces all values with the new ones from the given object,
+and returns the new entity. The new entity is actually an entity loaded from the database with all properties
 replaced from the new object.
 
 ```typescript
@@ -98,7 +98,7 @@ const user = await repository.preload(partialUser);
 * `save` - Saves a given entity or array of entities.
 If the entity already exist in the database, it is updated.
 If the entity does not exist in the database, it is inserted.
-It saves all given entities in a single transaction (in the case of entity manager is not transactional).
+It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
 Also supports partial updating since all undefined properties are skipped.
 
 ```typescript
@@ -111,7 +111,7 @@ await repository.save([
 ```
 
 * `remove` - Removes a given entity or array of entities.
-It removes all given entities in a single transaction (in the case of entity manager is not transactional).
+It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
 
 ```typescript
 await repository.remove(user);
@@ -125,9 +125,9 @@ await repository.remove([
 * `insert` - Inserts a new entity.
 
 ```typescript
-await repository.insert({ 
-    firstName: "Timber", 
-    lastName: "Timber" 
+await repository.insert({
+    firstName: "Timber",
+    lastName: "Timber"
 });
 ```
 
@@ -204,78 +204,7 @@ await repository.clear();
 
 ## `TreeRepository` API
 
-* `findTrees` - Gets complete tree for all roots in the table.
-
-```typescript
-const treeCategories = await repository.findTrees();
-// returns root categories with sub categories inside
-```
-
-* `findRoots` - Roots are entities that have no ancestors. Finds them all.
-Does not load children leafs.
-
-```typescript
-const rootCategories = await repository.findRoots();
-// returns root categories without sub categories inside
-```
-
-* `findDescendants` - Gets all children (descendants) of the given entity. Returns them all in a flat array.
-
-```typescript
-const childrens = await repository.findDescendants(parentCategory);
-// returns all direct subcategories (without its nested categories) of a parentCategory
-```
-
-* `findDescendantsTree` - Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
-
-```typescript
-const childrensTree = await repository.findDescendantsTree(parentCategory);
-// returns all direct subcategories (with its nested categories) of a parentCategory
-```
-
-* `createDescendantsQueryBuilder` - Creates a query builder used to get descendants of the entities in a tree.
-
-```typescript
-const childrens = await repository
-    .createDescendantsQueryBuilder("category", "categoryClosure", parentCategory)
-    .andWhere("category.type = 'secondary'")
-    .getMany();
-```
-
-* `countDescendants` - Gets number of descendants of the entity.
-
-```typescript
-const childrenCount = await repository.countDescendants(parentCategory);
-```
-
-* `findAncestors` - Gets all parent (ancestors) of the given entity. Returns them all in a flat array.
-
-```typescript
-const parents = await repository.findAncestors(childCategory);
-// returns all direct childCategory's parent categories (without "parent of parents")
-```
-
-* `findAncestorsTree` - Gets all parent (ancestors) of the given entity. Returns them in a tree - nested into each other.
-
-```typescript
-const parentsTree = await repository.findAncestorsTree(childCategory);
-// returns all direct childCategory's parent categories (with "parent of parents")
-```
-
-* `createAncestorsQueryBuilder` - Creates a query builder used to get ancestors of the entities in a tree.
-
-```typescript
-const parents = await repository
-    .createAncestorsQueryBuilder("category", "categoryClosure", childCategory)
-    .andWhere("category.type = 'secondary'")
-    .getMany();
-```
-
-* `countAncestors` - Gets the number of ancestors of the entity.
-
-```typescript
-const parentsCount = await repository.countAncestors(childCategory);
-```
+For `TreeRepository` API refer to [the Tree Entities documentation](./tree-entities.md#working-with-tree-entities).
 
 ## `MongoRepository` API
 

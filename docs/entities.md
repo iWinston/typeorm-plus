@@ -10,6 +10,7 @@
     * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
+    * [`simple-json` column type](#simple-json-column-type)
     * [Columns with generated values](#columns-with-generated-values)
 * [Column options](#column-options)
 
@@ -236,34 +237,33 @@ or
 ### Column types for `mysql` / `mariadb`
 
 `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `float`, `double`, 
-`decimal`, `real`, `datetime`, `time`, `timestamp`, `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, 
-`character`, `varchar`, `char`, `tinyblob`, `tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, 
-`longblob`, `longtext`, `date`, `year`, `enum`, `json`
+`real`, `datetime`, `time`, `timestamp`, `character`, `varchar`, `char`, `tinyblob`,
+`tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, `longblob`, `longtext`, `date`,
+`year`, `enum`, `json`
 
 ### Column types for `postgres`
 
-`int2`, `int2`, `int4`, `int8`, `integer`, `smallint`, `bigint`, `decimal`, `numeric`, `decimal`, 
-`numeric`, `real`, `double precision`, `time`, `time with time zone`, `time without time zone`,
-`timestamp`, `timestamp without time zone`, `timestamp with time zone`, `int`, `smallint`, `bigint`,
-`character varying`, `character`, `varchar`, `char`, `int2`, `integer`, `int4`, `int8`, 
-`float4`, `float8`, `smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
-`money`, `boolean`, `bool`, `text`, `citext`, `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
+`int`, `int2`, `int4`, `int8`, `integer`, `smallint`, `bigint`, `float4`, `float8`,
+`numeric`, `decimal`, `real`, `double precision`, `time`, `time with time zone`,
+`time without time zone`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
+`character varying`, `character`, `varchar`, `char`, `text`, `citext`,
+`smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
+`money`, `boolean`, `bool` `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
 `circle`, `path`, `polygon`, `cidr`, `enum`, `inet`, `macaddr`, `bit`, `bit varying`,
  `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
 
 ### Column types for `sqlite` / `websql` / `cordova`
 
-`int`, `int2`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
-`numeric`, `float`, `double`, `decimal`, `numeric`, `real`, `double precision`, `datetime`, 
-`int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `varying character`, `character`, `native character`, 
-`varchar`, `nchar`, `nvarchar2`, `int2`, `integer`, `int8`, `unsigned big int`, `boolean`, 
+`int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
+`numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
+`character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, 
 `blob`, `text`, `clob`, `date`
  
 ### Column types for `mssql`
 
 `int`, `tinyint`, `smallint`, `bigint`, `dec`, `decimal`, `numeric`, `float`, `dec`, `decimal`, 
 `numeric`, `real`, `datetime`, `datetime2`, `datetimeoffset`, `time`, `timestamp`, 
-`int`, `tinyint`, `smallint`, `bigint`, `nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
+`nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
 `bit`, `smallmoney`, `money`, `text`, `ntext`, `image`, `smalldatetime`, `date`, `xml`, `varbinary`,
 `cursor`, `hierarchyid`, `sql_variant`, `table`
   
@@ -299,6 +299,34 @@ When you'll load data from the database, the names will be returned as an array 
 just like you stored them.
 
 Note you **MUST NOT** have any comma in values you write.
+
+### `simple-json` column type
+
+There is a special column type called `simple-json` which can store any values which can be stored in database
+via JSON.stringify.
+Very useful when you do not have json type in your database and you want to store and load object
+without any hustle.
+For example:
+
+```typescript
+@Entity()
+export class User {
+    
+    @PrimaryGeneratedColumn()
+    id: number;
+ 
+    @Column("simple-json")
+    profile: { name: string, nickname: string };
+    
+}
+```
+```typescript
+const user = new User();
+user.profile = { name: "John", nickname: "Malkovich" };
+```
+
+Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
+When you'll load data from the database, you will have your object/array/primitive back via JSON.parse
 
 ### Columns with generated values
 
@@ -365,6 +393,7 @@ You can specify array of values or specify a enum class.
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to
 marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
+* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
@@ -516,9 +545,10 @@ To learn more about closure table take a look at [this awesome presentation by B
 Example:
 
 ```typescript
-import {ClosureEntity, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
 
-@ClosureEntity()
+@Entity()
+@Tree("closure-table")
 export class Category {
 
     @PrimaryGeneratedColumn()

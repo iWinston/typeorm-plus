@@ -35,12 +35,6 @@ exports.Column = Column;
 }
 exports.CreateDateColumn = CreateDateColumn;
 
-/* export */ function DiscriminatorColumn(discriminatorOptions) {
-    return function (object, propertyName) {
-    };
-}
-exports.DiscriminatorColumn = DiscriminatorColumn;
-
 /* export */ function ObjectIdColumn(columnOptions) {
     return function (object, propertyName) {
     };
@@ -73,35 +67,11 @@ exports.VersionColumn = VersionColumn;
 
 // entities
 
-/* export */ function AbstractEntity() {
+/* export */ function ChildEntity(tableName, options) {
     return function (object) {
     };
 }
-exports.AbstractEntity = AbstractEntity;
-
-/* export */ function ClassEntityChild(tableName, options) {
-    return function (object) {
-    };
-}
-exports.ClassEntityChild = ClassEntityChild;
-
-/* export */ function ClosureEntity(name, options) {
-    return function (object) {
-    };
-}
-exports.ClosureEntity = ClosureEntity;
-
-/* export */ function EmbeddableEntity() {
-    return function (object) {
-    };
-}
-exports.EmbeddableEntity = EmbeddableEntity;
-
-/* export */ function SingleEntityChild() {
-    return function (object) {
-    };
-}
-exports.SingleEntityChild = SingleEntityChild;
+exports.ChildEntity = ChildEntity;
 
 /* export */ function Entity(name, options) {
     return function (object) {
@@ -215,51 +185,25 @@ exports.RelationCount = RelationCount;
 }
 exports.RelationId = RelationId;
 
-// tables (deprecated)
-
-/* export */ function AbstractTable() {
-    return function (object) {
-    };
-}
-exports.AbstractTable = AbstractTable;
-
-/* export */ function ClassTableChild(tableName, options) {
-    return function (object) {
-    };
-}
-exports.ClassTableChild = ClassTableChild;
-
-/* export */ function ClosureTable(name, options) {
-    return function (object) {
-    };
-}
-exports.ClosureTable = ClosureTable;
-
-/* export */ function EmbeddableTable() {
-    return function (object) {
-    };
-}
-exports.EmbeddableTable = EmbeddableTable;
-
-/* export */ function SingleTableChild() {
-    return function (object) {
-    };
-}
-exports.SingleTableChild = SingleTableChild;
-
-/* export */ function Table(name, options) {
-    return function (object) {
-    };
-}
-exports.Table = Table;
-
 // tree
+
+/* export */ function Tree(name, options) {
+    return function (object) {
+    };
+}
+exports.Tree = Tree;
 
 /* export */ function TreeChildren(options) {
     return function (object, propertyName) {
     };
 }
 exports.TreeChildren = TreeChildren;
+
+/* export */ function TreeChildrenCount(options) {
+    return function (object, propertyName) {
+    };
+}
+exports.TreeChildrenCount = TreeChildrenCount;
 
 /* export */ function TreeLevelColumn() {
     return function (object, propertyName) {
@@ -275,11 +219,11 @@ exports.TreeParent = TreeParent;
 
 // other
 
-/* export */ function DiscriminatorValue(options) {
+/* export */ function Generated(options) {
     return function (object, propertyName) {
     };
 }
-exports.DiscriminatorValue = DiscriminatorValue;
+exports.Generated = Generated;
 
 /* export */ function Index(options) {
     return function (object, propertyName) {

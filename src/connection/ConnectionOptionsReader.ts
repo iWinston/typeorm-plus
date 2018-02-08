@@ -52,6 +52,15 @@ export class ConnectionOptionsReader {
         return targetOptions;
     }
 
+    /**
+     * Checks if there is a TypeORM configuration file.
+     */
+    async has(name: string): Promise<boolean> {
+        const allOptions = await this.all();
+        const targetOptions = allOptions.find(options => options.name === name || (name === "default" && !options.name));
+        return !!targetOptions;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

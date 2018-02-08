@@ -190,12 +190,26 @@ export class FindOptionsUtils {
             const selection = alias + "." + relation;
             qb.leftJoinAndSelect(selection, alias + "_" + relation);
 
+            // join the eager relations of the found relation
+            const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
+            if (relMetadata) {
+                this.joinEagerRelations(qb, alias + "_" + relation, relMetadata.inverseEntityMetadata);
+            }
+
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
             allRelations.splice(allRelations.indexOf(prefix ? prefix + "." + relation : relation), 1);
 
             // try to find sub-relations
             const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
             this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, relation);
+        });
+    }
+
+    public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
+        metadata.eagerRelations.forEach(relation => {
+            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
     }
 

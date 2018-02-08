@@ -11,8 +11,7 @@ export class CascadesSubjectBuilder {
     // Constructor
     // ---------------------------------------------------------------------
 
-    constructor(protected subject: Subject,
-                protected allSubjects: Subject[]) {
+    constructor(protected allSubjects: Subject[]) {
     }
 
     // ---------------------------------------------------------------------
@@ -22,18 +21,7 @@ export class CascadesSubjectBuilder {
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
      */
-    build() {
-        this.buildRecursively(this.subject);
-    }
-
-    // ---------------------------------------------------------------------
-    // Protected Methods
-    // ---------------------------------------------------------------------
-
-    /**
-     * Builds a cascade subjects recursively.
-     */
-    protected buildRecursively(subject: Subject) {
+    build(subject: Subject) {
 
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity!, subject.metadata.relations) // todo: we can create EntityMetadata.cascadeRelations
@@ -64,6 +52,7 @@ export class CascadesSubjectBuilder {
                 // and add to the array of subjects to load only if there is no same entity there already
                 const relationEntitySubject = new Subject({
                     metadata: relationEntityMetadata,
+                    parentSubject: subject,
                     entity: relationEntity,
                     canBeInserted: relation.isCascadeInsert === true,
                     canBeUpdated: relation.isCascadeUpdate === true
@@ -71,9 +60,13 @@ export class CascadesSubjectBuilder {
                 this.allSubjects.push(relationEntitySubject);
 
                 // go recursively and find other entities we need to insert/update
-                this.buildRecursively(relationEntitySubject);
+                this.build(relationEntitySubject);
             });
     }
+
+    // ---------------------------------------------------------------------
+    // Protected Methods
+    // ---------------------------------------------------------------------
 
     /**
      * Finds subject where entity like given subject's entity.

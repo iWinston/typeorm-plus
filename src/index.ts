@@ -15,6 +15,7 @@ import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
+import {SelectQueryBuilder} from "./query-builder/SelectQueryBuilder";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -55,7 +56,6 @@ export * from "./decorator/relations/OneToOne";
 export * from "./decorator/relations/RelationCount";
 export * from "./decorator/relations/RelationId";
 export * from "./decorator/entity/Entity";
-export * from "./decorator/entity/ClosureEntity";
 export * from "./decorator/entity/ChildEntity";
 export * from "./decorator/entity/TableInheritance";
 export * from "./decorator/transaction/Transaction";
@@ -64,6 +64,7 @@ export * from "./decorator/transaction/TransactionRepository";
 export * from "./decorator/tree/TreeLevelColumn";
 export * from "./decorator/tree/TreeParent";
 export * from "./decorator/tree/TreeChildren";
+export * from "./decorator/tree/Tree";
 export * from "./decorator/Index";
 export * from "./decorator/Unique";
 export * from "./decorator/Generated";
@@ -259,4 +260,15 @@ export function getCustomRepository<T>(customRepository: ObjectType<T>, connecti
  */
 export function getMongoRepository<Entity>(entityClass: ObjectType<Entity>|string, connectionName: string = "default"): MongoRepository<Entity> {
     return getConnectionManager().get(connectionName).getMongoRepository<Entity>(entityClass);
+}
+
+/**
+ * Creates a new query builder.
+ */
+export function createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|string, alias?: string, connectionName: string = "default"): SelectQueryBuilder<Entity> {
+    if (entityClass) {
+        return getRepository(entityClass, connectionName).createQueryBuilder(alias);
+    }
+
+    return getConnection(connectionName).createQueryBuilder();
 }

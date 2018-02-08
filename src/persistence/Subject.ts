@@ -34,6 +34,12 @@ export class Subject {
     identifier: ObjectLiteral|undefined = undefined;
 
     /**
+     * If subject was created by cascades this property will contain subject
+     * from where this subject was created.
+     */
+    parentSubject?: Subject;
+
+    /**
      * Gets entity sent to the persistence (e.g. changed entity).
      * If entity is not set then this subject is created only for the entity loaded from the database,
      * or this subject is used for the junction operation (junction operations are relying only on identifier).
@@ -93,6 +99,7 @@ export class Subject {
 
     constructor(options: {
         metadata: EntityMetadata,
+        parentSubject?: Subject,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
         canBeInserted?: boolean,
@@ -104,6 +111,7 @@ export class Subject {
         this.metadata = options.metadata;
         this.entity = options.entity;
         this.databaseEntity = options.databaseEntity;
+        this.parentSubject = options.parentSubject;
         if (options.canBeInserted !== undefined)
             this.canBeInserted = options.canBeInserted;
         if (options.canBeUpdated !== undefined)

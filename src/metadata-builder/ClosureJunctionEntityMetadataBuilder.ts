@@ -42,23 +42,27 @@ export class ClosureJunctionEntityMetadataBuilder {
             entityMetadata.ownColumns.push(new ColumnMetadata({
                 connection: this.connection,
                 entityMetadata: entityMetadata,
+                closureType: "ancestor",
+                referencedColumn: primaryColumn,
                 args: {
                     target: "",
                     mode: "virtual",
-                    propertyName: "ancestor", // todo: naming strategy
+                    propertyName: primaryColumn.propertyName + "_ancestor", // todo: naming strategy
                     options: {
                         length: primaryColumn.length,
-                        type: primaryColumn.type,
+                        type: primaryColumn.type
                     }
                 }
             }));
             entityMetadata.ownColumns.push(new ColumnMetadata({
                 connection: this.connection,
                 entityMetadata: entityMetadata,
+                closureType: "descendant",
+                referencedColumn: primaryColumn,
                 args: {
                     target: "",
                     mode: "virtual",
-                    propertyName: "descendant",
+                    propertyName: primaryColumn.propertyName + "_descendant",
                     options: {
                         length: primaryColumn.length,
                         type: primaryColumn.type,
@@ -89,13 +93,15 @@ export class ClosureJunctionEntityMetadataBuilder {
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: parentClosureEntityMetadata,
                 columns: [entityMetadata.ownColumns[0]],
-                referencedColumns: parentClosureEntityMetadata.primaryColumns
+                referencedColumns: parentClosureEntityMetadata.primaryColumns,
+                // onDelete: "CASCADE" // todo: does not work in mssql for some reason
             }),
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: parentClosureEntityMetadata,
                 columns: [entityMetadata.ownColumns[1]],
-                referencedColumns: parentClosureEntityMetadata.primaryColumns
+                referencedColumns: parentClosureEntityMetadata.primaryColumns,
+                // onDelete: "CASCADE" // todo: does not work in mssql for some reason
             }),
         ];
 

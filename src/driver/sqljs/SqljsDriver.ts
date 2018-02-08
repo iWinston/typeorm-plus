@@ -54,9 +54,14 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
-            this.databaseConnection.close();
-            ok();
+            try {
+                this.queryRunner = undefined;
+                this.databaseConnection.close();
+                ok();
+            }
+            catch (e)  {
+                fail(e);
+            }
         });
     }
 

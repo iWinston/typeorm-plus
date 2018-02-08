@@ -250,14 +250,26 @@ export class PostgresDriver implements Driver {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
+                        const { logger } = this.connection;
                         if (err) return fail(err);
                         if (hasUuidColumns)
-                            await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+                            try {
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
                         if (hasCitextColumns)
-                            await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
+                            try {
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
                         if (hasHstoreColumns)
-                            await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
-
+                            try {
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
                         release();
                         ok();
                     });
@@ -335,6 +347,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -344,27 +359,24 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
@@ -382,8 +394,14 @@ export class PostgresDriver implements Driver {
             }
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -459,6 +477,9 @@ export class PostgresDriver implements Driver {
             return "boolean";
 
         } else if (column.type === "simple-array") {
+            return "text";
+
+        } else if (column.type === "simple-json") {
             return "text";
 
         } else if (column.type === "int2") {

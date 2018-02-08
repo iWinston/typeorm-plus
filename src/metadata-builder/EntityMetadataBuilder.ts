@@ -137,7 +137,7 @@ export class EntityMetadataBuilder {
 
         // generate closure junction tables for all closure tables
         entityMetadatas
-            .filter(metadata => metadata.isClosure)
+            .filter(metadata => metadata.treeType === "closure-table")
             .forEach(entityMetadata => {
                 const closureJunctionEntityMetadata = this.closureJunctionEntityMetadataBuilder.build(entityMetadata);
                 entityMetadata.closureJunctionTable = closureJunctionEntityMetadata;
@@ -217,6 +217,7 @@ export class EntityMetadataBuilder {
             : [tableArgs.target]; // todo: implement later here inheritance for string-targets
 
         const tableInheritance = this.metadataArgsStorage.findInheritanceType(tableArgs.target);
+        const tableTree = this.metadataArgsStorage.findTree(tableArgs.target);
 
         // if single table inheritance used, we need to copy all children columns in to parent table
         let singleTableChildrenTargets: any[];
@@ -233,6 +234,7 @@ export class EntityMetadataBuilder {
             connection: this.connection,
             args: tableArgs,
             inheritanceTree: inheritanceTree,
+            tableTree: tableTree,
             inheritancePattern: tableInheritance ? tableInheritance.pattern : undefined
         });
     }
@@ -286,7 +288,7 @@ export class EntityMetadataBuilder {
                         mode: "virtual",
                         propertyName: discriminatorColumnName,
                         options: entityInheritance.column || {
-                            name: "type",
+                            name: discriminatorColumnName,
                             type: "varchar",
                             nullable: false
                         }
@@ -307,6 +309,60 @@ export class EntityMetadataBuilder {
             if (discriminatorColumn && !entityMetadata.ownColumns.find(column => column === discriminatorColumn)) {
                 entityMetadata.ownColumns.push(discriminatorColumn);
             }
+        }
+
+        // check if tree is used then we need to add extra columns for specific tree types
+        if (entityMetadata.treeType === "materialized-path") {
+            entityMetadata.ownColumns.push(new ColumnMetadata({
+                connection: this.connection,
+                entityMetadata: entityMetadata,
+                materializedPath: true,
+                args: {
+                    target: entityMetadata.target,
+                    mode: "virtual",
+                    propertyName: "mpath",
+                    options: /*tree.column || */ {
+                        name: "mpath",
+                        type: "varchar",
+                        nullable: false,
+                        default: ""
+                    }
+                }
+            }));
+
+        } else if (entityMetadata.treeType === "nested-set") {
+            entityMetadata.ownColumns.push(new ColumnMetadata({
+                connection: this.connection,
+                entityMetadata: entityMetadata,
+                nestedSetLeft: true,
+                args: {
+                    target: entityMetadata.target,
+                    mode: "virtual",
+                    propertyName: "nsleft",
+                    options: /*tree.column || */ {
+                        name: "nsleft",
+                        type: "integer",
+                        nullable: false,
+                        default: 1
+                    }
+                }
+            }));
+            entityMetadata.ownColumns.push(new ColumnMetadata({
+                connection: this.connection,
+                entityMetadata: entityMetadata,
+                nestedSetRight: true,
+                args: {
+                    target: entityMetadata.target,
+                    mode: "virtual",
+                    propertyName: "nsright",
+                    options: /*tree.column || */ {
+                        name: "nsright",
+                        type: "integer",
+                        nullable: false,
+                        default: 2
+                    }
+                }
+            }));
         }
 
         entityMetadata.ownRelations = this.metadataArgsStorage.filterRelations(entityMetadata.inheritanceTree).map(args => {
@@ -413,6 +469,8 @@ export class EntityMetadataBuilder {
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
+        entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");
+        entityMetadata.descendantColumns = entityMetadata.columns.filter(column => column.closureType === "descendant");
         entityMetadata.hasMultiplePrimaryKeys = entityMetadata.primaryColumns.length > 1;
         entityMetadata.generatedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.isObjectId);
         entityMetadata.hasUUIDGeneratedColumns = entityMetadata.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
@@ -421,6 +479,9 @@ export class EntityMetadataBuilder {
         entityMetadata.versionColumn = entityMetadata.columns.find(column => column.isVersion);
         entityMetadata.discriminatorColumn = entityMetadata.columns.find(column => column.isDiscriminator);
         entityMetadata.treeLevelColumn = entityMetadata.columns.find(column => column.isTreeLevel);
+        entityMetadata.nestedSetLeftColumn = entityMetadata.columns.find(column => column.isNestedSetLeft);
+        entityMetadata.nestedSetRightColumn = entityMetadata.columns.find(column => column.isNestedSetRight);
+        entityMetadata.materializedPathColumn = entityMetadata.columns.find(column => column.isMaterializedPath);
         entityMetadata.objectIdColumn = entityMetadata.columns.find(column => column.isObjectId);
         entityMetadata.foreignKeys.forEach(foreignKey => foreignKey.build(this.connection.namingStrategy));
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap();

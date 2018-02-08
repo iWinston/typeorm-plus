@@ -174,7 +174,7 @@ export class SubjectTopoligicalSorter {
 
         function visit(node: any, i: number, predecessors: any[]) {
             if (predecessors.indexOf(node) >= 0) {
-                throw new Error("Cyclic dependency: " + JSON.stringify(node));
+                throw new Error("Cyclic dependency: " + JSON.stringify(node)); // todo: better error
             }
 
             if (!~nodes.indexOf(node)) {

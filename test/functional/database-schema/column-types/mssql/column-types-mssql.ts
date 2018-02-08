@@ -62,6 +62,7 @@ describe("database schema > column types > mssql", () => {
         post.time = "15:30:00";
         post.datetimeoffset = new Date();
         post.simpleArray = ["A", "B", "C"];
+        post.simpleJson = { param: "VALUE" };
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -102,6 +103,7 @@ describe("database schema > column types > mssql", () => {
         loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0]);
         loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1]);
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
+        loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
@@ -143,6 +145,7 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("timeObj")!.type.should.be.equal("time");
         table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
+        table!.findColumnByName("simpleJson")!.type.should.be.equal("ntext");
 
     })));
 

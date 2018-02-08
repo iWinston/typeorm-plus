@@ -43,11 +43,11 @@ export class SubjectDatabaseEntityLoader {
                 if (subject.databaseEntity)
                     return;
 
-                // we only need entity id
-                if (!subject.metadata.hasAllPrimaryKeys(subject.entity!)) // can we use getEntityIdMap instead
+                const idMap = subject.metadata.getEntityIdMap(subject.entity!);
+                if (!idMap) // we don't need not-saved entities (entities without id set)
                     return;
 
-                allIds.push(subject.metadata.getEntityIdMap(subject.entity!)!);
+                allIds.push(idMap);
             });
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there

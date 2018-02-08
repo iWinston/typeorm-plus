@@ -354,6 +354,18 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (column.isVersion) {
                         expression += "1";
 
+                    // } else if (column.isNestedSetLeft) {
+                    //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+                    //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+                    //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+                    //     expression += subQuery;
+                    //
+                    // } else if (column.isNestedSetRight) {
+                    //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+                    //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+                    //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+                    //     expression += subQuery;
+
                     } else if (column.isDiscriminator) {
                         this.expressionMap.nativeParameters["discriminator_value"] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
                         expression += this.connection.driver.createParameter("discriminator_value", parametersCount);
