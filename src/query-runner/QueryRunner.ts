@@ -69,7 +69,7 @@ export interface QueryRunner {
      * Be careful with using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    clearDatabase(): Promise<void>;
+    clearDatabase(database?: string): Promise<void>;
 
     // todo: create clearSchema instead
 

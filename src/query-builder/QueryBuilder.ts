@@ -634,7 +634,7 @@ export abstract class QueryBuilder<Entity> {
                 }
             }).join(", ");
 
-            if (driver instanceof OracleDriver) {
+            if (driver instanceof OracleDriver && this.expressionMap.queryType === "insert") {
                 columnsExpression += " INTO " + columns.map(column => {
                     const parameterName = "output_" + column.databaseName;
                     this.expressionMap.nativeParameters[parameterName] = { type: driver.columnTypeToNativeParameter(column.type), dir: driver.oracle.BIND_OUT };

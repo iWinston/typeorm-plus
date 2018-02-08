@@ -7,7 +7,6 @@ import {Column} from "../../../../src/decorator/columns/Column";
 export class User {
 
     @PrimaryGeneratedColumn()
-    @Index()
     id: number;
 
     @Column()

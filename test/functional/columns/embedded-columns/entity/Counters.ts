@@ -1,5 +1,4 @@
 import { Column } from "../../../../../src/decorator/columns/Column";
-
 import { Information } from "./Information";
 
 export class Counters {
@@ -12,7 +11,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(type => Information)
+    @Column(type => Information, { prefix: "info" })
     information: Information;
 
     @Column(type => Information, { prefix: "testData" })

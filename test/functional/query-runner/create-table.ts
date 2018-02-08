@@ -54,7 +54,8 @@ describe("query runner > create table", () => {
         nameColumn!.should.be.exist;
         nameColumn!.isUnique.should.be.true;
         table!.should.exist;
-        table!.uniques.length.should.be.equal(1);
+        if (!(connection.driver instanceof MysqlDriver))
+            table!.uniques.length.should.be.equal(1);
 
         await queryRunner.executeMemoryDownSql();
         table = await queryRunner.getTable("category");
@@ -75,7 +76,9 @@ describe("query runner > create table", () => {
         const versionColumn = table!.findColumnByName("version");
         const nameColumn = table!.findColumnByName("name");
         table!.should.exist;
-        table!.uniques.length.should.be.equal(2);
+        if (!(connection.driver instanceof MysqlDriver))
+            table!.uniques.length.should.be.equal(2);
+
         idColumn!.isPrimary.should.be.true;
         versionColumn!.isUnique.should.be.true;
         nameColumn!.default!.should.be.exist;
@@ -205,8 +208,7 @@ describe("query runner > create table", () => {
         // Only composite Unique constraints listed in table.uniques array.
         if (connection.driver instanceof MysqlDriver) {
             // MySql driver does not have unique constraints. All unique constraints is unique indexes.
-            // Also we store unique indexes as TableUniques.
-            questionTable!.uniques.length.should.be.equal(2);
+            questionTable!.uniques.length.should.be.equal(0);
             questionTable!.indices.length.should.be.equal(2);
 
         } else {
@@ -226,7 +228,6 @@ describe("query runner > create table", () => {
         categoryTableIdColumn!.isGenerated.should.be.true;
         categoryTableIdColumn!.generationStrategy!.should.be.equal("increment");
         categoryTable!.should.exist;
-        categoryTable!.uniques.length.should.be.equal(3);
         categoryTable!.foreignKeys.length.should.be.equal(1);
 
         if (connection.driver instanceof MysqlDriver) {
@@ -238,6 +239,7 @@ describe("query runner > create table", () => {
             categoryTable!.indices.length.should.be.equal(0);
 
         } else {
+            categoryTable!.uniques.length.should.be.equal(3);
             categoryTable!.indices.length.should.be.equal(1);
         }
 

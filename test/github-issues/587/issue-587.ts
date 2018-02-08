@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 
-describe("github issues > #587 Ordering of fields in composite indexes defined using Index decorator", () => {
+describe.skip("github issues > #587 Ordering of fields in composite indexes defined using Index decorator", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

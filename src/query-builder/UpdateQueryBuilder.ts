@@ -15,6 +15,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -289,6 +290,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
+                                this.connection.driver instanceof OracleDriver ||
                                 this.connection.driver instanceof AbstractSqliteDriver ||
                                 this.connection.driver instanceof WebsqlDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
@@ -297,7 +299,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 // todo: make this and other query builder to work with properly with tables without metadata
                 const columns = metadata.findColumnsWithPropertyPath(propertyPath);
                 columns.forEach(column => {
-                    const paramName = "_updated_" + column.databaseName;
+                    const paramName = "updated_" + column.databaseName;
 
                     //
                     let value = column.getEntityValue(valuesSet);
@@ -318,6 +320,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }
 
                         if (this.connection.driver instanceof MysqlDriver ||
+                            this.connection.driver instanceof OracleDriver ||
                             this.connection.driver instanceof AbstractSqliteDriver ||
                             this.connection.driver instanceof WebsqlDriver) {
                             newParameters[paramName] = value;
@@ -350,6 +353,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     //     value = new ArrayParameter(value);
 
                     if (this.connection.driver instanceof MysqlDriver ||
+                        this.connection.driver instanceof OracleDriver ||
                         this.connection.driver instanceof AbstractSqliteDriver ||
                         this.connection.driver instanceof WebsqlDriver) {
                         newParameters[key] = value;
@@ -366,6 +370,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
         // because some drivers like mysql depend on order of parameters
         if (this.connection.driver instanceof MysqlDriver ||
+            this.connection.driver instanceof OracleDriver ||
             this.connection.driver instanceof AbstractSqliteDriver ||
             this.connection.driver instanceof WebsqlDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);

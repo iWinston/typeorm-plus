@@ -248,7 +248,7 @@ or
 `character varying`, `character`, `varchar`, `char`, `int2`, `integer`, `int4`, `int8`, 
 `float4`, `float8`, `smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
 `money`, `boolean`, `bool`, `text`, `citext`, `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
-`circle`, `path`, `polygon`, `cidr`, `inet`, `macaddr`, `bit`, `bit varying`,
+`circle`, `path`, `polygon`, `cidr`, `enum`, `inet`, `macaddr`, `bit`, `bit varying`,
  `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
 
 ### Column types for `sqlite` / `websql` / `cordova`

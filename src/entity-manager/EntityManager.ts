@@ -32,6 +32,7 @@ import {ObjectID} from "../driver/mongodb/typings";
 import {InsertResult} from "../query-builder/result/InsertResult";
 import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -343,6 +344,12 @@ export class EntityManager {
      * You can execute bulk inserts using this method.
      */
     async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|(QueryPartialEntity<Entity>[]), options?: SaveOptions): Promise<InsertResult> {
+
+        // TODO: Oracle does not support multiple values. Need to create another nice solution.
+        if (this.connection.driver instanceof OracleDriver && entity instanceof Array) {
+            const results = await Promise.all(entity.map(entity => this.insert(target, entity)));
+            return results.reduce((mergedResult, result) => Object.assign(mergedResult, result), {} as InsertResult);
+        }
         return this.createQueryBuilder()
             .insert()
             .into(target)

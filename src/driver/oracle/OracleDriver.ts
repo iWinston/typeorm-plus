@@ -247,15 +247,29 @@ export class OracleDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => {
+            if (typeof nativeParameters[key] === "boolean")
+                return nativeParameters[key] ? 1 : 0;
+            return nativeParameters[key];
+        });
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
         const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
             let value = parameters[key.substr(1)];
-            if (value instanceof Function) {
+
+            if (value instanceof Array) {
+                return value.map((v: any, index: number) => {
+                    escapedParameters.push(v);
+                    return key + index;
+                }).join(", ");
+
+            } else if (value instanceof Function) {
                 return value();
+
+            } else if (typeof value === "boolean") {
+                return value ? 1 : 0;
 
             } else {
                 if (value instanceof ArrayParameter) value = value.value;
@@ -292,7 +306,7 @@ export class OracleDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? "1" : "0";
+            return value ? 1 : 0;
 
         } else if (columnMetadata.type === "date") {
             if (typeof value === "string")
@@ -323,7 +337,7 @@ export class OracleDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value === "1" ? true : false;
+            return value === 1 ? true : false;
 
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value);
@@ -358,7 +372,8 @@ export class OracleDriver implements Driver {
             return "blob";
 
         } else if (column.type === Boolean) {
-            return "char";
+            column.precision = 1;
+            return "number";
 
         } else if (column.type === "uuid") {
             column.length = 36;
@@ -380,7 +395,7 @@ export class OracleDriver implements Driver {
             return "" + defaultValue;
 
         } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
+            return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
             return defaultValue();

@@ -6,7 +6,7 @@ import {Cat} from "./Cat";
 @Entity()
 export class Dog {
 
-    @PrimaryColumn({ unique: true })
+    @PrimaryColumn()
     DogID: string;
 
     @OneToMany(type => Cat, cat => cat.dog)

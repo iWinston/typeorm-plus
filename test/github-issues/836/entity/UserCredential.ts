@@ -1,5 +1,4 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Index} from "../../../../src/decorator/Index";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
@@ -16,7 +15,6 @@ export class UserCredential {
         name: "id",
         referencedColumnName: "id",
     })
-    @Index()
     user: User;
 
     @Column()

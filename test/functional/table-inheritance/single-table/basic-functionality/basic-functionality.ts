@@ -63,6 +63,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedStudents = await connection.manager
             .createQueryBuilder(Student, "students")
+            .orderBy("students.id")
             .getMany();
 
         loadedStudents[0].should.have.all.keys("id", "name", "faculty");
@@ -76,6 +77,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedTeachers = await connection.manager
             .createQueryBuilder(Teacher, "teachers")
+            .orderBy("teachers.id")
             .getMany();
 
         loadedTeachers[0].should.have.all.keys("id", "name", "specialization", "salary");
@@ -91,6 +93,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedAccountants = await connection.manager
             .createQueryBuilder(Accountant, "accountants")
+            .orderBy("accountants.id")
             .getMany();
 
         loadedAccountants[0].should.have.all.keys("id", "name", "department", "salary");
@@ -172,6 +175,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         loadedStudents = await connection.manager
             .createQueryBuilder(Student, "students")
+            .orderBy("students.id")
             .getMany();
 
         loadedStudents.length.should.equal(1);
@@ -184,6 +188,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         loadedTeachers = await connection.manager
             .createQueryBuilder(Teacher, "teachers")
+            .orderBy("teachers.id")
             .getMany();
 
         loadedTeachers.length.should.equal(1);
@@ -197,6 +202,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         loadedAccountants = await connection.manager
             .createQueryBuilder(Accountant, "accountants")
+            .orderBy("accountants.id")
             .getMany();
 
         loadedAccountants.length.should.equal(1);
@@ -230,6 +236,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
         const loadedPersons = await connection.manager
             .createQueryBuilder(Person, "persons")
+            .orderBy("persons.id")
             .getMany();
 
         loadedPersons[0].should.have.all.keys("id", "name", "faculty");

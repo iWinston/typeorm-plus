@@ -297,7 +297,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table.
      */
-    async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true, createIndices: boolean = true): Promise<void> {
+    async createTable(table: Table, ifNotExist: boolean = false, createForeignKeys: boolean = true): Promise<void> {
         if (ifNotExist) {
             const isTableExist = await this.hasTable(table);
             if (isTableExist) return Promise.resolve();
@@ -305,17 +305,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        upQueries.push(this.createTableSql(table, createForeignKeys, createIndices));
+        upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
 
         // we must first drop indices, than drop foreign keys, because drop queries runs in reversed order
         // and foreign keys will be dropped first as indices. This order is very important, because we can't drop index
         // if it related to the foreign key.
 
-        // if createIndices is true, we must drop created indices in down query.
         // createTable does not need separate method to create indices, because it create indices in the same query with table creation.
-        if (createIndices)
-            table.indices.forEach(index => downQueries.push(this.dropIndexSql(table, index)));
+        table.indices.forEach(index => downQueries.push(this.dropIndexSql(table, index)));
 
         // if createForeignKeys is true, we must drop created foreign keys in down query.
         // createTable does not need separate method to create foreign keys, because it create fk's in the same query with table creation.
@@ -328,11 +326,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drop the table.
      */
-    async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+    async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true): Promise<void> {
         // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
-        // if dropTable called with dropIndices = true, we must create indices in down query.
-        const createIndices: boolean = dropIndices;
         const tableName = target instanceof Table ? target.name : target;
         const table = await this.getCachedTable(tableName);
         const upQueries: string[] = [];
@@ -348,11 +344,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (dropForeignKeys)
             table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
 
-        if (dropIndices)
-            table.indices.forEach(index => upQueries.push(this.dropIndexSql(table, index)));
+        table.indices.forEach(index => upQueries.push(this.dropIndexSql(table, index)));
 
         upQueries.push(this.dropTableSql(table));
-        downQueries.push(this.createTableSql(table, createForeignKeys, createIndices));
+        downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
     }
@@ -914,14 +909,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
      */
-    async clearDatabase(): Promise<void> {
-        if (!this.driver.database)
+    async clearDatabase(database?: string): Promise<void> {
+        const dbName = database ? database : this.driver.database;
+        if (dbName) {
+            const isDatabaseExist = await this.hasDatabase(dbName);
+            if (!isDatabaseExist)
+                return Promise.resolve();
+        } else {
             throw new Error(`Can not clear database. No database is specified`);
+        }
 
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS query FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${this.driver.database}'`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS query FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
             await this.query(disableForeignKeysCheckQuery);
@@ -1120,20 +1121,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             table.indices = tableIndexConstraints.map(constraint => {
                 const indices = dbIndices.filter(index => index["INDEX_NAME"] === constraint["INDEX_NAME"]);
-                const tableIndex = new TableIndex(<TableIndexOptions>{
+                return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
                     isUnique: constraint["NON_UNIQUE"] === 0
                 });
-
-                if (tableIndex.isUnique === true)
-                    table.uniques.push(new TableUnique({
-                        name: tableIndex.name,
-                        columnNames: tableIndex.columnNames
-                    }));
-
-                return tableIndex;
             });
 
             return table;
@@ -1143,27 +1136,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds create table sql
      */
-    protected createTableSql(table: Table, createForeignKeys?: boolean, createIndices?: boolean): string {
+    protected createTableSql(table: Table, createForeignKeys?: boolean): string {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, true)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
 
-        // We create unique indexes instead of unique constraints, because MySql does not have unique constraints.
-        // If we mark column as Unique, it means that we create UNIQUE INDEX.
+        // we create unique indexes instead of unique constraints, because MySql does not have unique constraints.
+        // if we mark column as Unique, it means that we create UNIQUE INDEX.
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = !!table.indices.find(index => {
-                    return !!(index.columnNames.length === 1 && index.isUnique && index.columnNames.find(columnName => columnName === column.name));
+                const isUniqueExist = table.indices.some(index => {
+                    return index.columnNames.length === 1 && !!index.isUnique && index.columnNames.indexOf(column.name) !== -1;
                 });
                 if (!isUniqueExist)
                     table.indices.push(new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table.name, [column.name]),
+                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
                         columnNames: [column.name],
                         isUnique: true
                     }));
             });
 
-        // As MySql does not have unique constraints, we must create table indices from table uniques and mark them as unique.
+        // as MySql does not have unique constraints, we must create table indices from table uniques and mark them as unique.
         if (table.uniques.length > 0) {
             table.uniques.forEach(unique => {
                 table.indices.push(new TableIndex({
@@ -1174,7 +1167,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             });
         }
 
-        if (table.indices.length > 0 && createIndices) {
+        if (table.indices.length > 0) {
             const indicesSql = table.indices.map(index => {
                 const columnNames = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
                 if (!index.name)

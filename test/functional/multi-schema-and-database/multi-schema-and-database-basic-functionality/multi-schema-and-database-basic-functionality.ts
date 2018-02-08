@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {Connection} from "../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
@@ -207,7 +208,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                 .where("question.id = :id", {id: 1})
                 .andWhere("answer.questionId = question.id");
 
-            (await query.getRawOne())!.should.be.not.empty;
+            expect(await query.getRawOne()).to.be.not.empty;
 
             query.getSql().should.be.equal(`SELECT * FROM "testDB"."questions"."question" "question", "secondDB"."answers"."answer"` +
                 ` "answer" WHERE "question"."id" = @0 AND "answer"."questionId" = "question"."id"`);

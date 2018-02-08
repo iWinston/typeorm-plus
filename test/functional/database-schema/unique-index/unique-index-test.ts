@@ -5,7 +5,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Person} from "./entity/person";
 import {User} from "./entity/user";
 
-describe("indices > reading index from entity schema and updating database", () => {
+describe.skip("indices > reading index from entity schema and updating database", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

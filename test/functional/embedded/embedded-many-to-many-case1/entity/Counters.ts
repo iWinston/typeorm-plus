@@ -18,7 +18,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(() => Subcounters)
+    @Column(() => Subcounters, { prefix: "subcnt" })
     subcounters: Subcounters;
 
     @ManyToMany(type => User, user => user.likedPosts)

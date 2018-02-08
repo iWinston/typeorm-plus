@@ -302,6 +302,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (createIndices) {
             table.indices.forEach(index => {
+                const primaryColumnNames = table.primaryColumns.map(column => column.name).sort();
+                const indexColumnNames = [...index.columnNames].sort();
+                if (OrmUtils.isArraysEqual(primaryColumnNames, indexColumnNames))
+                    return;
 
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
@@ -333,6 +337,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (dropIndices) {
             table.indices.forEach(index => {
+                const primaryColumnNames = table.primaryColumns.map(column => column.name).sort();
+                if (OrmUtils.isArraysEqual(primaryColumnNames, index.columnNames.sort()))
+                    return;
+
                 upQueries.push(this.dropIndexSql(index));
                 downQueries.push(this.createIndexSql(table, index));
             });

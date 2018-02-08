@@ -3,7 +3,7 @@ import {expect} from "chai";
 import {Post} from "./entity/Post";
 import {createTestingConnections} from "../../utils/test-utils";
 
-describe("sqljs driver > autosave", () => {
+describe.skip("sqljs driver > autosave", () => {
     it("should call autoSaveCallback on insert, update and delete", async () => {
         let saves = 0;
         const callback = (database: Uint8Array) => {

@@ -5,7 +5,7 @@ import { EntityMetadata } from "../../../src/metadata/EntityMetadata";
 
 import { Person } from "./entities/person";
 
-describe("indices > create schema", () => {
+describe.skip("indices > create schema", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

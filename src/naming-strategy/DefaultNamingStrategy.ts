@@ -40,21 +40,21 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     primaryKeyName(tableOrName: Table|string, columnNames: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        // generates different constraint name
-        columnNames.sort();
+        const clonedColumnNames = [...columnNames];
+        clonedColumnNames.sort();
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
-        const key = `${replacedTableName}_${columnNames.join("_")}`;
+        const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "PK_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
     uniqueConstraintName(tableOrName: Table|string, columnNames: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        // generates different constraint name
-        columnNames.sort();
+        const clonedColumnNames = [...columnNames];
+        clonedColumnNames.sort();
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
-        const key = `${replacedTableName}_${columnNames.join("_")}`;
+        const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "UQ_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
@@ -67,31 +67,31 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     foreignKeyName(tableOrName: Table|string, columnNames: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        // generates different constraint name
-        columnNames.sort();
+        const clonedColumnNames = [...columnNames];
+        clonedColumnNames.sort();
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
-        const key = `${replacedTableName}_${columnNames.join("_")}`;
+        const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "FK_" + RandomGenerator.sha1(key).substr(0, 27);
     }
 
     indexName(tableOrName: Table|string, columnNames: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        // generates different constraint name
-        columnNames.sort();
+        const clonedColumnNames = [...columnNames];
+        clonedColumnNames.sort();
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
-        const key = `${replacedTableName}_${columnNames.join("_")}`;
+        const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "IDX_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
     checkConstraintName(tableOrName: Table|string, columnNames: string[]): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        // generates different constraint name
-        columnNames.sort();
+        const clonedColumnNames = [...columnNames];
+        clonedColumnNames.sort();
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
-        const key = `${replacedTableName}_${columnNames.join("_")}`;
+        const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "CK_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 

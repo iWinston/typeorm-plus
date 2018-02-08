@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {User} from "./entity/User";
 
-describe("persistence > basic functionality", function() {
+describe.skip("persistence > basic functionality", function() {
 
     let connections: Connection[];
     before(async () => {

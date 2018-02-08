@@ -29,6 +29,9 @@ import {QueryResultCacheFactory} from "../cache/QueryResultCacheFactory";
 import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {PromiseUtils} from "../";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -239,9 +242,19 @@ export class Connection {
      * Be careful with this method on production since this method will erase all your database tables and their data.
      * Can be used only after connection to the database is established.
      */
+    // TODO rename
     async dropDatabase(): Promise<void> {
         const queryRunner = await this.createQueryRunner("master");
-        await queryRunner.clearDatabase();
+        if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver) {
+            const databases: string[] = this.driver.database ? [this.driver.database] : [];
+            this.entityMetadatas.forEach(metadata => {
+                if (metadata.database && databases.indexOf(metadata.database) === -1)
+                    databases.push(metadata.database);
+            });
+            await PromiseUtils.runInSequence(databases, database => queryRunner.clearDatabase(database));
+        } else {
+            await queryRunner.clearDatabase();
+        }
         await queryRunner.release();
     }
 
@@ -250,7 +263,6 @@ export class Connection {
      * Can be used only after connection to the database is established.
      */
     async runMigrations(): Promise<void> {
-
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 

@@ -16,6 +16,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -153,11 +154,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (schema)
                 schemaPaths.push(schema);
         }
-        schemaPaths.forEach(schemaPath => this.queryRunner.createSchema(schemaPath, true));
+
+        await PromiseUtils.runInSequence(schemaPaths, schemaPath => this.queryRunner.createSchema(schemaPath, true));
 
         await this.dropOldForeignKeys();
-        // await this.dropOldIndexes();
-        // await this.dropOldUniqueConstraints();
+        await this.dropCompositeIndices();
+        // await this.dropCompositeUniqueConstraints();
         // await this.dropChangedGeneratedColumns();
         // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
         await this.createNewTables();
@@ -165,7 +167,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.addNewColumns();
         await this.updateExistColumns();
         // await this.updatePrimaryKeys();
-        await this.createIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
+        // await this.createCompositeIndexes();
+        // await this.createCompositeUniqueConstraints();
+        await this.createCompositeIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
         await this.createForeignKeys();
     }
 
@@ -193,6 +197,50 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         });
     }
 
+    protected async dropCompositeIndices(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName);
+            if (!table)
+                return;
+
+            const compositeTableIndices = table.indices.filter(index => index.columnNames.length > 1);
+            const dropQueries = compositeTableIndices
+                .filter(tableIndex => {
+
+                    const indexMetadata = metadata.indices.find(im => im.name === tableIndex.name);
+                    if (indexMetadata) {
+
+                        if (indexMetadata.isUnique !== tableIndex.isUnique)
+                            return true;
+
+                        if (indexMetadata.columns.length !== tableIndex.columnNames.length)
+                            return true;
+
+                        return !indexMetadata.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
+                    }
+
+                    // In MySql all unique constraints stores as indices.
+                    // So if we doesn't find index constraint, we also looking for unique columns and constraints.
+                    if (this.connection.driver instanceof MysqlDriver) {
+                        if (metadata.uniques.length === 0)
+                            return true;
+
+                        return !metadata.uniques.find(unique => {
+                            return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
+                        });
+                    }
+
+                    return true;
+                })
+                .map(async tableIndex => {
+                    this.connection.logger.logSchemaBuild(`dropping an index: ${tableIndex.name}`);
+                    await this.queryRunner.dropIndex(metadata.tablePath, tableIndex);
+                });
+
+            await Promise.all(dropQueries);
+        });
+    }
+
     /**
      * Creates tables that do not exist in the database yet.
      * New tables are created without foreign and primary keys.
@@ -215,8 +263,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // create a new table and sync it in the database
             const table = Table.create(metadata, this.connection.driver);
-            this.queryRunner.loadedTables.push(table);
             await this.queryRunner.createTable(table);
+            this.queryRunner.loadedTables.push(table);
         });
     }
 
@@ -383,6 +431,28 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * Creates composite indices which are missing in db yet.
+     */
+    protected createCompositeIndices() {
+        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName);
+            if (!table)
+                return;
+
+            const compositeIndices = metadata.indices.filter(index => index.columns.length > 1);
+            const addQueries = compositeIndices
+                .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name))
+                .map(async indexMetadata => {
+                    const tableIndex = TableIndex.create(indexMetadata);
+                    this.connection.logger.logSchemaBuild(`adding new index: ${tableIndex.name} in table "${table.name}"`);
+                    await this.queryRunner.createIndex(table, tableIndex);
+                });
+
+            await Promise.all(addQueries);
+        });
+    }
+
+    /**
      * Creates foreign keys which does not exist in the table yet.
      */
     protected createForeignKeys() {
@@ -398,82 +468,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return;
 
             const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata, table));
-            this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
+            this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")} on table "${table.name}"`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
         });
-    }
-
-    /**
-     * Creates indices which are missing in db yet, and drops indices which exist in the db,
-     * but does not exist in the metadata anymore.
-     */
-    protected createIndices() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName);
-            if (!table)
-                return;
-
-            // drop all indices that exist in the table, but does not exist in the given composite indices
-            const dropQueries = table.indices
-                .filter(tableIndex => {
-                    const metadataIndex = metadata.indices.find(indexMetadata => indexMetadata.name === tableIndex.name);
-                    if (!metadataIndex)
-                        return true;
-                    if (metadataIndex.isUnique !== tableIndex.isUnique)
-                        return true;
-                    if (metadataIndex.columns.length !== tableIndex.columnNames.length)
-                        return true;
-                    if (metadataIndex.columns.findIndex((col, i) => col.databaseName !== tableIndex.columnNames[i]) !== -1)
-                        return true;
-
-                    return false;
-                })
-                .map(async tableIndex => {
-                    this.connection.logger.logSchemaBuild(`dropping an index: ${tableIndex.name}`);
-                    table.removeIndex(tableIndex);
-                    await this.queryRunner.dropIndex(metadata.tablePath, tableIndex);
-                });
-
-            await Promise.all(dropQueries);
-
-            // then create table indices for all composite indices we have
-            const addQueries = metadata.indices
-                .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name))
-                .map(async indexMetadata => {
-                    const tableIndex = TableIndex.create(indexMetadata);
-                    table.indices.push(tableIndex);
-                    this.connection.logger.logSchemaBuild(`adding new index: ${tableIndex.name}`);
-                    await this.queryRunner.createIndex(table, tableIndex);
-                });
-
-            await Promise.all(addQueries);
-        });
-    }
-
-    /**
-     * Drops all indices where given column of the given table is being used.
-     */
-    protected async dropColumnReferencedIndices(tableName: string, columnName: string): Promise<void> {
-
-       /* const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
-        if (!table)
-            return;
-
-        // find depend indices to drop them
-        const dependIndicesInTable = table.indices.filter(tableIndex => {
-            return tableIndex.table.name === tableName && !!tableIndex.columnNames.find(columnDatabaseName => columnDatabaseName === columnName);
-        });
-        if (dependIndicesInTable.length === 0)
-            return;
-
-        this.connection.logger.logSchemaBuild(`dropping related indices of ${tableName}#${columnName}: ${dependIndicesInTable.map(index => index.name).join(", ")}`);
-
-        const dropPromises = dependIndicesInTable.map(index => {
-            table.removeIndex(index);
-            return this.queryRunner.dropIndex(table, index.name);
-        });
-
-        await Promise.all(dropPromises);*/
     }
 
     /**
