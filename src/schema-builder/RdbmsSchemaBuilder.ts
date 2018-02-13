@@ -284,16 +284,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (droppedTableColumns.length === 0)
                 return;
 
-            // drop all foreign keys that has column to be removed in its columns
-            /*await Promise.all(droppedTableColumns.map(droppedTableColumn => {
-                return this.dropColumnReferencedForeignKeys(metadata.tableName, droppedTableColumn.name);
-            }));*/
-
-            // drop all indices that point to this column
-           /* await Promise.all(droppedTableColumns.map(droppedTableColumn => {
-                return this.dropColumnReferencedIndices(metadata.tableName, droppedTableColumn.name);
-            }));*/
-
             this.connection.logger.logSchemaBuild(`columns dropped in ${table.name}: ` + droppedTableColumns.map(column => column.name).join(", "));
 
             // drop columns from the database
