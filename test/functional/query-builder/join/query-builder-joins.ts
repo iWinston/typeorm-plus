@@ -495,8 +495,8 @@ describe("query builder > joins", () => {
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndMapMany("post.removedCategories", "post.categories", "removedCategories", "removedCategories.isRemoved = :isRemoved")
-                .leftJoinAndMapMany("removedCategories.removedImages", "removedCategories.images", "removedImages", "removedImages.isRemoved = :isRemoved")
+                .leftJoinAndMapMany("post.removedCategories", "post.categories", "rc", "rc.isRemoved = :isRemoved")
+                .leftJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .leftJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:subcategoryIds)")
                 .leftJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
                 .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
@@ -525,8 +525,8 @@ describe("query builder > joins", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndMapMany("post.removedCategories", "post.categories", "removedCategories", "removedCategories.isRemoved = :isRemoved")
-                .leftJoinAndMapMany("removedCategories.removedImages", "removedCategories.images", "removedImages", "removedImages.isRemoved = :isRemoved")
+                .leftJoinAndMapMany("post.removedCategories", "post.categories", "rc", "rc.isRemoved = :isRemoved")
+                .leftJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .leftJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:subcategoryIds)")
                 .leftJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
                 .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
@@ -745,8 +745,8 @@ describe("query builder > joins", () => {
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndMapMany("post.removedCategories", "post.categories", "removedCategories", "removedCategories.isRemoved = :isRemoved")
-                .leftJoinAndMapMany("removedCategories.removedImages", "removedCategories.images", "removedImages", "removedImages.isRemoved = :isRemoved")
+                .leftJoinAndMapMany("post.removedCategories", "post.categories", "rc", "rc.isRemoved = :isRemoved")
+                .leftJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .leftJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:subcategoryIds)")
                 .leftJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
                 .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })
@@ -775,8 +775,8 @@ describe("query builder > joins", () => {
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .innerJoinAndMapMany("post.removedCategories", "post.categories", "removedCategories", "removedCategories.isRemoved = :isRemoved")
-                .innerJoinAndMapMany("removedCategories.removedImages", "removedCategories.images", "removedImages", "removedImages.isRemoved = :isRemoved")
+                .innerJoinAndMapMany("post.removedCategories", "post.categories", "rc", "rc.isRemoved = :isRemoved")
+                .innerJoinAndMapMany("rc.removedImages", "rc.images", "removedImages", "removedImages.isRemoved = :isRemoved")
                 .innerJoinAndMapMany("post.subcategories", "post.categories", "subcategories", "subcategories.id IN (:subcategoryIds)")
                 .innerJoinAndMapOne("subcategories.titleImage", "subcategories.images", "titleImage", "titleImage.id = :titleImageId")
                 .setParameters({ isRemoved: true, subcategoryIds: [1, 2], titleImageId: 1 })

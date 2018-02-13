@@ -20,7 +20,7 @@ export class Post {
     @RelationCount((post: Post) => post.categories)
     categoryCount: number;
 
-    @RelationCount((post: Post) => post.categories, "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
+    @RelationCount((post: Post) => post.categories, "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
     removedCategoryCount: number;
 
 }

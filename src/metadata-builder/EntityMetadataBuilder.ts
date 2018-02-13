@@ -324,7 +324,7 @@ export class EntityMetadataBuilder {
                     options: /*tree.column || */ {
                         name: "mpath",
                         type: "varchar",
-                        nullable: false,
+                        nullable: true,
                         default: ""
                     }
                 }

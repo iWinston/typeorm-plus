@@ -139,7 +139,7 @@ export class OracleDriver implements Driver {
         migrationTimestamp: "timestamp",
         cacheId: "number",
         cacheIdentifier: "varchar2",
-        cacheTime: "timestamp",
+        cacheTime: "number",
         cacheDuration: "number",
         cacheQuery: "clob",
         cacheResult: "clob",
@@ -337,7 +337,7 @@ export class OracleDriver implements Driver {
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value === 1 ? true : false;
+            value = value === 1 ? true : false;
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);
@@ -345,14 +345,12 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === "datetime") {
-            value = DateUtils.normalizeHydratedDate(value);
-
         } else if (columnMetadata.type === Date
+            || columnMetadata.type === "datetime"
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp with local time zone") {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "json") {
             value = JSON.parse(value);
@@ -408,7 +406,7 @@ export class OracleDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: string): string {
+    normalizeDefault(defaultValue: any): string {
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 

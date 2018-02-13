@@ -1,13 +1,13 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
-import {Index} from "../../../../../../src/decorator/Index";
 import {Post} from "./Post";
 import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
 import {Tag} from "./Tag";
+import {Unique} from "../../../../../../src";
 
 @Entity()
-@Index(["code", "version", "description"], { unique: true })
+@Unique(["code", "version", "description"])
 export class Category {
 
     @PrimaryColumn()
@@ -31,8 +31,8 @@ export class Category {
     @ManyToMany(type => Post, post => post.categoriesWithOptions)
     postsWithOptions: Post[];
 
-    @ManyToMany(type => Post, post => post.categoriesWithNonPrimaryColumns)
-    postsWithNonPrimaryColumns: Post[];
+    @ManyToMany(type => Post, post => post.categoriesWithNonPKColumns)
+    postsWithNonPKColumns: Post[];
 
     @ManyToMany(type => Tag, tag => tag.categories)
     tags: Tag[];
@@ -40,7 +40,7 @@ export class Category {
     @ManyToMany(type => Tag, tag => tag.categoriesWithOptions)
     tagsWithOptions: Tag[];
 
-    @ManyToMany(type => Tag, tag => tag.categoriesWithNonPrimaryColumns)
-    tagsWithNonPrimaryColumns: Tag[];
+    @ManyToMany(type => Tag, tag => tag.categoriesWithNonPKColumns)
+    tagsWithNonPKColumns: Tag[];
 
 }

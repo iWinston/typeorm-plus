@@ -2,11 +2,12 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 
-describe.skip("github issues > #587 Ordering of fields in composite indexes defined using Index decorator", () => {
+describe("github issues > #587 Ordering of fields in composite indexes defined using Index decorator", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

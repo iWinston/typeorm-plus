@@ -368,7 +368,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 // todo: make this and other query builder to work with properly with tables without metadata
                 const columns = metadata.findColumnsWithPropertyPath(propertyPath);
                 columns.forEach(column => {
-                    const paramName = "updated_" + column.databaseName;
+                    const paramName = "upd_" + column.databaseName;
 
                     //
                     let value = column.getEntityValue(valuesSet);
@@ -450,7 +450,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const returningExpression = this.createReturningExpression();
 
         // generate and return sql update query
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver)) {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {

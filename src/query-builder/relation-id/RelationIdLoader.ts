@@ -3,6 +3,7 @@ import {Connection} from "../../connection/Connection";
 import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
+import {abbreviate} from "../../util/StringUtils";
 
 export class RelationIdLoader {
 
@@ -34,11 +35,11 @@ export class RelationIdLoader {
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
                     relationIdAttr.relation.joinColumns.forEach(joinColumn => {
-                        result[joinColumn.databaseName] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.databaseName];
+                        result[joinColumn.databaseName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.databaseName)];
                     });
 
                     relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                        result[primaryColumn.databaseName] = rawEntity[relationIdAttr.parentAlias + "_" + primaryColumn.databaseName];
+                        result[primaryColumn.databaseName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, primaryColumn.databaseName)];
                     });
                     return result;
                 });
@@ -63,7 +64,7 @@ export class RelationIdLoader {
                 const condition = rawEntities.map((rawEntity, index) => {
                     return joinColumns.map(joinColumn => {
                         const parameterName = joinColumn.databaseName + index;
-                        parameters[parameterName] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.referencedColumn!.databaseName];
+                        parameters[parameterName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
                         return tableAlias + "." + joinColumn.propertyPath + " = :" + parameterName;
                     }).join(" AND ");
                 }).map(condition => "(" + condition + ")")
@@ -100,6 +101,7 @@ export class RelationIdLoader {
                 };
 
             } else {
+                // many-to-many
                 // example: Post and Category
                 // owner side: loadRelationIdAndMap("post.categoryIds", "post.categories")
                 // inverse side: loadRelationIdAndMap("category.postIds", "category.posts")
@@ -116,7 +118,7 @@ export class RelationIdLoader {
 
                 const mappedColumns = rawEntities.map(rawEntity => {
                     return joinColumns.reduce((map, joinColumn) => {
-                        map[joinColumn.propertyPath] = rawEntity[relationIdAttr.parentAlias + "_" + joinColumn.referencedColumn!.databaseName];
+                        map[joinColumn.propertyPath] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
                         return map;
                     }, {} as ObjectLiteral);
                 });
@@ -171,6 +173,22 @@ export class RelationIdLoader {
         });
 
         return Promise.all(promises);
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Builds column alias from given alias name and column name,
+     * If alias length is more than 29, abbreviates column name.
+     */
+    protected buildColumnAlias(aliasName: string, columnName: string): string {
+        const columnAliasName = aliasName + "_" + columnName;
+        if (columnAliasName.length > 29)
+            return aliasName  + "_" + abbreviate(columnName, 2);
+
+        return columnAliasName;
     }
 
 }

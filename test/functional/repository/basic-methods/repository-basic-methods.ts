@@ -376,7 +376,9 @@ describe("repository > basic methods", () => {
             }
             await Promise.all(promises);
             // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
-            const result = await repository.query("SELECT MAX(blog.counter) as max from blog blog");
+            const query = `SELECT MAX(${connection.driver.escape("blog")}.${connection.driver.escape("counter")}) as ${connection.driver.escape("max")} ` +
+                ` FROM ${connection.driver.escape("blog")} ${connection.driver.escape("blog")}`;
+            const result = await repository.query(query);
             result[0].should.not.be.empty;
             result[0].max.should.not.be.empty;
         })));

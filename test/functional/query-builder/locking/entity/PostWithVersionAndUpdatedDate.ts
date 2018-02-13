@@ -4,7 +4,7 @@ import {Column} from "../../../../../src/decorator/columns/Column";
 import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn";
 import {UpdateDateColumn} from "../../../../../src/decorator/columns/UpdateDateColumn";
 
-@Entity()
+@Entity("post_with_v_ud")
 export class PostWithVersionAndUpdatedDate {
 
     @PrimaryGeneratedColumn()

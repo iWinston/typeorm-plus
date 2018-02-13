@@ -5,7 +5,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {expect} from "chai";
 import {Connection} from "../../../../../src/connection/Connection";
 
-describe("query builder > relational query builder > add and remove operations > many to many relation", () => {
+describe("query builder > relational with many > add and remove many to many inverse", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

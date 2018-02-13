@@ -28,12 +28,12 @@ export class Tag {
     ])
     categoryWithOptions: Category;
 
-    @OneToOne(type => Category, category => category.tagWithNonPrimaryColumns)
+    @OneToOne(type => Category, category => category.tagWithNonPKColumns)
     @JoinColumn([
         { name: "category_code", referencedColumnName: "code" },
         { name: "category_version", referencedColumnName: "version" },
         { name: "category_description", referencedColumnName: "description" }
     ])
-    categoryWithNonPrimaryColumns: Category;
+    categoryWithNonPKColumns: Category;
 
 }

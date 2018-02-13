@@ -34,6 +34,12 @@ export class ReturningResultsEntityUpdator {
 
             // if database supports returning/output statement then we already should have updating values in the raw data returned by insert query
             if (this.queryRunner.connection.driver.isReturningSqlSupported()) {
+                if (this.queryRunner.connection.driver instanceof OracleDriver && updateResult.raw instanceof Array && this.expressionMap.extraReturningColumns.length > 0) {
+                    updateResult.raw = updateResult.raw.reduce((newRaw, rawItem, rawItemIndex) => {
+                        newRaw[this.expressionMap.extraReturningColumns[rawItemIndex].databaseName] = rawItem[0];
+                        return newRaw;
+                    }, {} as ObjectLiteral);
+                }
                 const result = updateResult.raw instanceof Array ? updateResult.raw[entityIndex] : updateResult.raw;
                 const returningColumns = this.queryRunner.connection.driver.createGeneratedMap(metadata, result);
                 if (returningColumns) {

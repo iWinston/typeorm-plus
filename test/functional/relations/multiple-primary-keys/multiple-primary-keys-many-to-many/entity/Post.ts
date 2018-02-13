@@ -35,7 +35,7 @@ export class Post {
     })
     categoriesWithOptions: Category[];
 
-    @ManyToMany(type => Category, category => category.postsWithNonPrimaryColumns)
+    @ManyToMany(type => Category, category => category.postsWithNonPKColumns)
     @JoinTable({
         name: "post_categories_non_primary",
         joinColumns: [{
@@ -53,6 +53,6 @@ export class Post {
             referencedColumnName: "description"
         }]
     })
-    categoriesWithNonPrimaryColumns: Category[];
+    categoriesWithNonPKColumns: Category[];
 
 }

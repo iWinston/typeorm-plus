@@ -122,7 +122,7 @@ export interface Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: string): string;
+    normalizeDefault(defaultValue: string|Function): string;
 
     /**
      * Normalizes "isUnique" value of the column.

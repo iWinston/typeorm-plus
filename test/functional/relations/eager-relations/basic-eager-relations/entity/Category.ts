@@ -14,8 +14,8 @@ export class Category {
     @Column()
     name: string;
 
-    @ManyToMany(type => Post, post => post.secondaryCategories)
+    @ManyToMany(type => Post, post => post.categories2)
     @JoinTable()
-    secondaryPosts: Post[];
+    posts2: Post[];
 
 }

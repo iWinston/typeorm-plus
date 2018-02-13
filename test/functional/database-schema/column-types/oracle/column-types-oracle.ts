@@ -223,8 +223,7 @@ describe("database schema > column types > oracle", () => {
         table!.findColumnByName("id")!.type.should.be.equal("number");
         table!.findColumnByName("name")!.type.should.be.equal("varchar2");
         table!.findColumnByName("name")!.length!.should.be.equal("255");
-        table!.findColumnByName("boolean")!.type.should.be.equal("char");
-        table!.findColumnByName("boolean")!.length!.should.be.equal("1");
+        table!.findColumnByName("boolean")!.type.should.be.equal("number");
         table!.findColumnByName("blob")!.type.should.be.equal("blob");
         table!.findColumnByName("datetime")!.type.should.be.equal("timestamp");
 

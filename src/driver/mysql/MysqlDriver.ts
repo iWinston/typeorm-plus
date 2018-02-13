@@ -398,7 +398,7 @@ export class MysqlDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: string): string {
+    normalizeDefault(defaultValue: any): string {
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 

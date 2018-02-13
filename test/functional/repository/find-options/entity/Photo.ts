@@ -18,13 +18,13 @@ export class Photo {
     })
     name: string;
 
-    @Column("text")
+    @Column()
     description: string;
 
     @Column()
     filename: string;
 
-    @Column("int")
+    @Column()
     views: number;
 
     @Column()

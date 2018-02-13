@@ -38,7 +38,7 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
         const testDate = new Date(testDateString);
         await postgresConnection.manager.save(new Flight(1, testDate));
 
-        const results = await postgresConnection.query(`SELECT date FROM "flight" WHERE id = 1`);
+        const results = await postgresConnection.query(`SELECT "date" FROM "flight" WHERE id = 1`);
 
         expect(results[0].date.toISOString()).to.equal(testDate.toISOString());
 

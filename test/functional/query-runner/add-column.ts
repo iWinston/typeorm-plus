@@ -28,6 +28,7 @@ describe("query runner > add column", () => {
             name: "secondId",
             type: "int",
             isPrimary: true,
+            isUnique: true,
             isNullable: false
         });
 
@@ -51,6 +52,7 @@ describe("query runner > add column", () => {
         column1 = table!.findColumnByName("secondId")!;
         column1!.should.be.exist;
         column1!.isPrimary.should.be.true;
+        column1!.isUnique.should.be.true;
         column1!.isNullable.should.be.false;
 
         // MySql and Sqlite does not supports autoincrement composite primary keys.

@@ -14,7 +14,7 @@ export class User {
     @PrimaryColumn()
     name: string;
 
-    @ManyToMany(type => Post, post => post.counters.subcounters.watchedUsers)
+    @ManyToMany(type => Post, post => post.counters.subcntrs.watchedUsers)
     posts: Post[];
 
     postIds: number[];

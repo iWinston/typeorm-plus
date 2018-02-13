@@ -45,8 +45,8 @@ describe("relations > eager relations > basic", () => {
 
         const post = new Post();
         post.title = "about eager relations";
-        post.primaryCategories = [primaryCategory1, primaryCategory2];
-        post.secondaryCategories = [secondaryCategory1, secondaryCategory2];
+        post.categories1 = [primaryCategory1, primaryCategory2];
+        post.categories2 = [secondaryCategory1, secondaryCategory2];
         post.author = user;
         await connection.manager.save(post);
 
@@ -63,14 +63,14 @@ describe("relations > eager relations > basic", () => {
         loadedPost!.should.be.eql({
             id: 1,
             title: "about eager relations",
-            primaryCategories: [{
+            categories1: [{
                 id: 1,
                 name: "primary category #1"
             }, {
                 id: 2,
                 name: "primary category #2"
             }],
-            secondaryCategories: [{
+            categories2: [{
                 id: 3,
                 name: "secondary category #1"
             }, {

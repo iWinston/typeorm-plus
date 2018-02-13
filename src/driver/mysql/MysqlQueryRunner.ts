@@ -430,6 +430,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN \`${column.name}\``);
 
+        // create or update primary key constraint
         if (column.isPrimary && skipColumnLevelPrimary) {
             const primaryColumns = clonedTable.primaryColumns;
             if (primaryColumns.length > 0) {
@@ -444,7 +445,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
         }
 
-        if (column.isUnique) {
+        // create column index
+        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        if (columnIndex) {
+            upQueries.push(this.createIndexSql(table, columnIndex));
+            downQueries.push(this.dropIndexSql(table, columnIndex));
+
+        } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
                 name: this.connection.namingStrategy.indexName(table.name, [column.name]),
                 columnNames: [column.name],
@@ -707,6 +714,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
+        // drop primary key constraint
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0 && primaryColumns.find(primaryColumn => primaryColumn.name === column.name)) {
             const columnNames = primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
@@ -722,7 +730,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
         }
 
-        if (column.isUnique) {
+        // drop column index
+        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        if (columnIndex) {
+            upQueries.push(this.dropIndexSql(table, columnIndex));
+            downQueries.push(this.createIndexSql(table, columnIndex));
+
+        } else if (column.isUnique) {
             // we splice constraints both from table uniques and indices.
             const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
             const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);

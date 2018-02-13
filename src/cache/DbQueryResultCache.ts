@@ -6,6 +6,7 @@ import {Connection} from "../connection/Connection";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -109,6 +110,12 @@ export class DbQueryResultCache implements QueryResultCache {
                 .getRawOne();
 
         } else if (options.query) {
+            if (this.connection.driver instanceof OracleDriver) {
+                return qb
+                    .where(`dbms_lob.compare(${qb.escape("cache")}.${qb.escape("query")}, :query) = 0`, { query: options.query })
+                    .getRawOne();
+            }
+
             return qb
                 .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
                 .setParameters({ query: this.connection.driver instanceof SqlServerDriver ? new MssqlParameter(options.query, "nvarchar") : options.query })
@@ -143,25 +150,30 @@ export class DbQueryResultCache implements QueryResultCache {
         }
 
         if (savedCache && savedCache.identifier) { // if exist then update
-
-            await queryRunner.manager
+            const qb = queryRunner.manager
                 .createQueryBuilder()
                 .update("query-result-cache")
-                .set(insertedValues)
-                .where({ identifier: insertedValues.identifier })
-                .execute();
+                .set(insertedValues);
+
+            qb.where(`${qb.escape("identifier")} = :condition`, { condition: insertedValues.identifier });
+            await qb.execute();
 
         } else if (savedCache && savedCache.query) { // if exist then update
-
-            await queryRunner.manager
+            const qb = queryRunner.manager
                 .createQueryBuilder()
                 .update("query-result-cache")
-                .set(insertedValues)
-                .where({ query: insertedValues.query })
-                .execute();
+                .set(insertedValues);
+
+            if (this.connection.driver instanceof OracleDriver) {
+                qb.where(`dbms_lob.compare("query", :condition) = 0`, { condition: insertedValues.query });
+
+            } else {
+                qb.where(`${qb.escape("query")} = :condition`, { condition: insertedValues.query });
+            }
+
+            await qb.execute();
 
         } else { // otherwise insert
-
             await queryRunner.manager
                 .createQueryBuilder()
                 .insert()
@@ -187,7 +199,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 .createQueryBuilder()
                 .delete()
                 .from("query-result-cache")
-                .where(identifier)
+                .where(`"identifier" = :identifier`, { identifier })
                 .execute();
         }));
     }

@@ -210,11 +210,6 @@ export class RawSqlResultsToEntityTransformer {
                     }
                 }
 
-                // const idMapColumns = (relation.isOneToMany || relation.isOneToOneNotOwner) ? columns : columns.map(column => column.referencedColumn!);
-                // const idMap = idMapColumns.reduce((idMap, column) => {
-                //     return OrmUtils.mergeDeep(idMap, column.createValueMap(result[column.databaseName]));
-                // }, {} as ObjectLiteral); // need to create reusable function for this process
-
                 const idMap = columns.reduce((idMap, column) => {
                     if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                         return OrmUtils.mergeDeep(idMap, column.createValueMap(result[column.databaseName]));
@@ -277,7 +272,7 @@ export class RawSqlResultsToEntityTransformer {
                     referenceColumnName = relation.isOwning ? relation.joinColumns[0].referencedColumn!.databaseName : relation.inverseRelation!.joinColumns[0].referencedColumn!.databaseName;
                 }
 
-                const referenceColumnValue = rawSqlResults[0][alias.name + "_" + referenceColumnName]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
+                const referenceColumnValue = rawSqlResults[0][this.buildColumnAlias(alias.name, referenceColumnName)]; // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
                 if (referenceColumnValue !== undefined && referenceColumnValue !== null) {
                     entity[rawRelationCountResult.relationCountAttribute.mapToPropertyPropertyName] = 0;
                     rawRelationCountResult.results

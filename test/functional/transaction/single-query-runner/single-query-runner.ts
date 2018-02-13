@@ -48,7 +48,7 @@ describe("transaction > single query runner", () => {
         await entityManager.queryRunner!.startTransaction();
         const loadedPost4 = await entityManager.findOne(Post, { title: "Hello World" });
         expect(loadedPost4).to.be.eql({ id: 1, title: "Hello World" });
-        await entityManager.query(`DELETE FROM post`);
+        await entityManager.query(`DELETE FROM ${connection.driver.escape("post")}`);
         const loadedPost5 = await entityManager.findOne(Post, { title: "Hello World" });
         expect(loadedPost5).to.be.undefined;
         await entityManager.queryRunner!.rollbackTransaction();

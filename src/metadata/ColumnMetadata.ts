@@ -152,6 +152,12 @@ export class ColumnMetadata {
     propertyPath: string;
 
     /**
+     * Same as property path, but dots are replaced with '_'.
+     * Used in query builder statements.
+     */
+    propertyAliasName: string;
+
+    /**
      * Gets full path to this column database name (including column database name).
      * Full path is relevant when column is used in embeds (one or multiple nested).
      * For example it will return "counters.subcounters.likes".
@@ -561,6 +567,7 @@ export class ColumnMetadata {
 
     build(connection: Connection): this {
         this.propertyPath = this.buildPropertyPath();
+        this.propertyAliasName = this.propertyPath.replace(".", "_");
         this.databaseName = this.buildDatabaseName(connection);
         this.databasePath = this.buildDatabasePath();
         this.databaseNameWithoutPrefixes = connection.namingStrategy.columnName(this.propertyName, this.givenDatabaseName, []);

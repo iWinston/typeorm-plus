@@ -356,8 +356,9 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Prints sql to stdout using console.log.
      */
-    printSql(): this {
-        console.log(this.getSql());
+    printSql(): this { // TODO rename to logSql()
+        const [query, parameters] = this.getQueryAndParameters();
+        this.connection.logger.logQuery(query, parameters);
         return this;
     }
 
@@ -589,7 +590,11 @@ export abstract class QueryBuilder<Entity> {
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
-                const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:discriminatorColumnValues)`;
+                const column = this.expressionMap.aliasNamePrefixingEnabled
+                    ? this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName
+                    : metadata.discriminatorColumn.databaseName;
+
+                const condition = `${this.replacePropertyNames(column)} IN (:discriminatorColumnValues)`;
                 return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
             }
         }
@@ -634,7 +639,7 @@ export abstract class QueryBuilder<Entity> {
                 }
             }).join(", ");
 
-            if (driver instanceof OracleDriver && this.expressionMap.queryType === "insert") {
+            if (driver instanceof OracleDriver) {
                 columnsExpression += " INTO " + columns.map(column => {
                     const parameterName = "output_" + column.databaseName;
                     this.expressionMap.nativeParameters[parameterName] = { type: driver.columnTypeToNativeParameter(column.type), dir: driver.oracle.BIND_OUT };

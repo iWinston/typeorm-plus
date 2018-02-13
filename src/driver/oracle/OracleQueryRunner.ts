@@ -96,6 +96,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     ok();
                 });
+            } else {
+                ok();
             }
         });
     }
@@ -302,9 +304,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (createIndices) {
             table.indices.forEach(index => {
-                const primaryColumnNames = table.primaryColumns.map(column => column.name).sort();
-                const indexColumnNames = [...index.columnNames].sort();
-                if (OrmUtils.isArraysEqual(primaryColumnNames, indexColumnNames))
+                const hasPrimaryAndIndexedColumns = table.primaryColumns.every(column => index.columnNames.indexOf(column.name) !== -1);
+                if (hasPrimaryAndIndexedColumns)
                     return;
 
                 // new index may be passed without name. In this case we generate index name manually.
@@ -446,6 +447,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(`ALTER TABLE "${table.name}" ADD ${this.buildCreateColumnSql(column)}`);
         downQueries.push(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
 
+        // create or update primary key constraint
         if (column.isPrimary) {
             const primaryColumns = clonedTable.primaryColumns;
             // if table already have primary key, me must drop it and recreate again
@@ -463,6 +465,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
         }
 
+        // create column index
+        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        if (columnIndex) {
+            upQueries.push(this.createIndexSql(table, columnIndex));
+            downQueries.push(this.dropIndexSql(columnIndex));
+        }
+
+        // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
                 name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
@@ -715,6 +725,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
+        // drop primary key constraint
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0 && primaryColumns.find(primaryColumn => primaryColumn.name === column.name)) {
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
@@ -732,6 +743,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
         }
 
+        // drop column index
+        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        if (columnIndex) {
+            upQueries.push(this.dropIndexSql(columnIndex));
+            downQueries.push(this.createIndexSql(table, columnIndex));
+        }
+
+        // drop unique constraint
         if (column.isUnique) {
             const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
             const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);

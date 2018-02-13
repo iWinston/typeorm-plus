@@ -8,7 +8,7 @@ import {Specialization} from "./Specialization";
 export class Teacher extends Employee {
 
     @ManyToMany(type => Specialization, specialization => specialization.teachers)
-    @JoinTable()
+    @JoinTable({ name: "person_specs" })
     specializations: Specialization[];
 
 }
