@@ -12,6 +12,7 @@ describe("embedded > embedded-one-to-one", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -165,7 +166,6 @@ describe("embedded > embedded-one-to-one", () => {
     // uncomment this section once inverse side persistment of one-to-one relation will be finished
     describe.skip("inverse side", () => {
 
-
         it("should insert, load, update and remove entities with embeddeds when embedded entity having OneToOne relation", () => Promise.all(connections.map(async connection => {
 
             const post1 = new Post();
@@ -290,7 +290,6 @@ describe("embedded > embedded-one-to-one", () => {
 
             loadedUser!.name = "Anna";
             loadedUser!.likedPost = post3;
-            console.log(loadedUser);
             await connection.getRepository(User).save(loadedUser!);
 
             loadedUser = await connection.manager
@@ -298,6 +297,8 @@ describe("embedded > embedded-one-to-one", () => {
                 .leftJoinAndSelect("user.likedPost", "likedPost")
                 .where("user.id = :id", { id: 1 })
                 .getOne();
+
+            console.log(loadedUser);
 
             expect(loadedUser!.should.be.eql(
                 {

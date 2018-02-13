@@ -13,7 +13,7 @@ export class User {
     @Column()
     name: string;
 
-    @OneToOne(type => Post, post => post.counters.likedUser)
+    @OneToOne(() => Post, post => post.counters.likedUser)
     likedPost: Post;
 
 }

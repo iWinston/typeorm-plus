@@ -15,8 +15,8 @@
     "type": "mariadb",
     "host": "localhost",
     "port": 3307,
-    "username": "test",
-    "password": "test",
+    "username": "root",
+    "password": "admin",
     "database": "test"
   },
   {
@@ -47,8 +47,7 @@
     "host": "localhost",
     "username": "sa",
     "password": "Admin12345",
-    "database": "tempdb",
-    "logging": false
+    "database": "tempdb"
   },
   {
     "skip": true,
@@ -65,9 +64,6 @@
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
-    "database": "test",
-    "logging": {
-      "logQueries": false
-    }
+    "database": "test"
   }
 ]

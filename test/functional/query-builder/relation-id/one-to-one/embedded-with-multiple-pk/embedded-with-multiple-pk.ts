@@ -12,7 +12,7 @@ import {Counters} from "./entity/Counters";
 import {User} from "./entity/User";
 import {Subcounters} from "./entity/Subcounters";
 
-describe.skip("query builder > relation-id > one-to-one > embedded-with-multiple-pk", () => {
+describe("query builder > relation-id > one-to-one > embedded-with-multiple-pk", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

@@ -24,5 +24,4 @@ describe("github issues > #197 Fails to drop indexes when removing fields", () =
         await connection.synchronize(false);
     })));
 
-
 });
