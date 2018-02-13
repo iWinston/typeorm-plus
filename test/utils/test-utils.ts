@@ -70,6 +70,11 @@ export interface TestingOptions {
     dropSchema?: boolean;
 
     /**
+     * Enables or disables logging.
+     */
+    logging?: boolean;
+
+    /**
      * Schema name used for postgres driver.
      */
     schema?: string;
@@ -196,6 +201,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
+                logging: options && options.logging !== undefined ? options.logging : undefined,
             });
             if (options && options.driverSpecific)
                 newOptions = Object.assign({}, options.driverSpecific, newOptions);
