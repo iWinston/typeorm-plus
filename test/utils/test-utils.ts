@@ -201,7 +201,6 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
                 dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
-                logging: options && options.logging !== undefined ? options.logging : undefined,
             });
             if (options && options.driverSpecific)
                 newOptions = Object.assign({}, options.driverSpecific, newOptions);
@@ -209,6 +208,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.synchronize = options.schemaCreate;
             if (options && options.schema)
                 newOptions.schema = options.schema;
+            if (options && options.logging !== undefined)
+                newOptions.logging = options.logging;
             if (options && options.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.namingStrategy)
