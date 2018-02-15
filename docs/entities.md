@@ -92,6 +92,9 @@ const connection: Connection = await createConnection({
 If you want to use an alternative table name for the `User` entity you can specify it in `@Entity`: `@Entity("my_users")`.
 If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
 
+**Note:** When using an entity constructor its arguments **must be optional**. Since ORM creates instances of entity classes when loading
+database, therefore it is not aware of your constructor arguments.
+
 Learn more about parameters @Entity in [Decorators reference](decorator-reference.md).
 
 ## Entity columns
