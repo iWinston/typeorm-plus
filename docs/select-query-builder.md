@@ -936,7 +936,7 @@ export class User {
 }
 ```
 
-Using a standard `find` or query, you will not recieve the `name` property for the model. However, if you do the following:
+Using a standard `find` or query, you will not recieve the `password` property for the model. However, if you do the following:
 
 ```typescript
 const users = await connection.getRepository(User)
