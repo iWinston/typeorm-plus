@@ -424,13 +424,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
-     * Updates table's primary keys.
-     */
-    async updatePrimaryKeys(dbTable: Table): Promise<void> {
-        // await this.recreateTable(dbTable);
-    }
-
-    /**
      * Creates a new primary key.
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {

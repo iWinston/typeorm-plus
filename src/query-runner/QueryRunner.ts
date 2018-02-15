@@ -224,13 +224,6 @@ export interface QueryRunner {
     dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
     /**
-     * Updates primary keys in the table.
-     *
-     * @deprecated todo: remove?
-     */
-    updatePrimaryKeys(table: Table): Promise<void>;
-
-    /**
      * Creates a new primary key.
      */
     createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void>;

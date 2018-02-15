@@ -610,13 +610,6 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Updates table's primary keys.
-     */
-    async updatePrimaryKeys(table: Table): Promise<void> {
-        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
-    }
-
-    /**
      * Creates a new primary key.
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {

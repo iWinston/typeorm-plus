@@ -779,20 +779,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Updates table's primary keys.
-     * TODO: fix or remove
-     */
-    async updatePrimaryKeys(dbTable: Table): Promise<void> {
-        /*if (!dbTable.primaryKey)
-            return Promise.resolve();
-
-        await this.query(`ALTER TABLE "${dbTable.name}" DROP CONSTRAINT "${dbTable.primaryKey.name}"`);
-        const primaryColumnNames = dbTable.primaryKey.columnNames.map(columnName => "\"" + columnName + "\"");
-        if (primaryColumnNames.length > 0)
-            await this.query(`ALTER TABLE "${dbTable.name}" ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`);*/
-    }
-
-    /**
      * Creates a new primary key.
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {

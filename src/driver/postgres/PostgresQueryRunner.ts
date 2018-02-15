@@ -923,30 +923,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
-     * Updates table's primary keys.
-     * TODO: check and fix
-     */
-    async updatePrimaryKeys(table: Table): Promise<void> {
-        /*if (!table.primaryKey)
-            return Promise.resolve();
-        const primaryColumnNames = table.primaryKey.columnNames.map(columnName => `"${columnName}"`);
-
-        const up = `ALTER TABLE ${this.escapeTablePath(table)} DROP CONSTRAINT IF EXISTS "${table.name}_pkey"`;
-        const down = `-- TODO: revert ${up}`;
-        await this.schemaQuery(up, down); // TODO: Add revert logic
-
-        const up2 = `DROP INDEX IF EXISTS "${table.name}_pkey"`;
-        const down2 = `-- TODO: revert ${up2}`;
-        await this.schemaQuery(up2, down2); // TODO: Add revert logic
-
-        if (primaryColumnNames.length > 0) {
-            const up3 = `ALTER TABLE ${this.escapeTablePath(table)} ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`;
-            const down3 = `ALTER TABLE ${this.escapeTablePath(table)} DROP PRIMARY KEY (${primaryColumnNames.join(", ")})`;
-            await this.schemaQuery(up3, down3);
-        }*/
-    }
-
-    /**
      * Creates a new primary key.
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {

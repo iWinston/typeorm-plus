@@ -166,8 +166,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropRemovedColumns();
         await this.addNewColumns();
         await this.updateExistColumns();
-        // await this.updatePrimaryKeys();
-        // await this.createCompositeIndexes();
         // await this.createCompositeUniqueConstraints();
         await this.createCompositeIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
         await this.createForeignKeys();
@@ -220,14 +218,16 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     }
 
                     // In MySql all unique constraints stores as indices.
-                    // So if we doesn't find index constraint, we also looking for unique columns and constraints.
+                    // So if we doesn't find index constraint, we also looking for unique constraints.
                     if (this.connection.driver instanceof MysqlDriver) {
                         if (metadata.uniques.length === 0)
                             return true;
 
-                        return !metadata.uniques.find(unique => {
-                            return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
-                        });
+                        return !metadata.uniques
+                            .filter(unique => unique.columns.length > 1)
+                            .find(unique => {
+                                return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
+                            });
                     }
 
                     return true;
@@ -263,7 +263,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // create a new table and sync it in the database
             const table = Table.create(metadata, this.connection.driver);
-            await this.queryRunner.createTable(table);
+            await this.queryRunner.createTable(table, false, false);
             this.queryRunner.loadedTables.push(table);
         });
     }
@@ -371,53 +371,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             return this.queryRunner.changeColumns(table, newAndOldTableColumns);
         });
-    }
-
-    /**
-     * Creates primary keys which does not exist in the table yet.
-     * TODO: i think this already does not need
-     */
-    protected updatePrimaryKeys() {
-        /*return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName && !table.justCreated);
-            if (!table)
-                return;
-
-            const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary);
-            const addedKeys = metadataPrimaryColumns
-                .filter(primaryKey => {
-                    return !table.primaryKeys.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.databaseName);
-                })
-                .map(primaryKey => new TablePrimaryKey("", primaryKey.databaseName));
-
-            const droppedKeys = table.primaryKeys.filter(primaryKeySchema => {
-                return !metadataPrimaryColumns.find(primaryKeyMetadata => primaryKeyMetadata.databaseName === primaryKeySchema.columnName);
-            });
-            const isPrimaryKeyDropped = !metadataPrimaryColumns.find(metadataPrimaryColumn => {
-                return !!table.primaryKeyWithoutGenerated && !!table.primaryKeyWithoutGenerated.columnNames.find(columnName => columnName === metadataPrimaryColumn.databaseName);
-            });
-            const droppedKey = isPrimaryKeyDropped ? table.primaryKeyWithoutGenerated : undefined;
-            if (droppedKey)
-                table.primaryKey = undefined;
-
-            if (addedPrimaryColumns.length === 0 && !droppedKey)
-                return;
-
-            if (addedPrimaryColumns.length > 0) {
-                // TODO: i think this does not work, because Table does not have new columns
-                const tableColumns = table.columns.filter(column => {
-                   return addedPrimaryColumns.find(addedPrimaryColumn => addedPrimaryColumn.databaseName === column.name);
-                });
-                table.primaryKey = new TablePrimaryKey(<TablePrimaryKeyOptions>{
-                    table: table,
-                    name: "",
-                    columnNames: tableColumns.map(column => column.name)
-                });
-            }
-
-            this.connection.logger.logSchemaBuild(`primary keys of ${table.name} has changed: dropped - ${droppedKey ? droppedKey.columnNames.map(columnName => columnName).join(", ") : "nothing"}; added - ${addedPrimaryColumns.map(column => column.databaseName).join(", ") || "nothing"}`);
-            await this.queryRunner.updatePrimaryKeys(table);
-        });*/
     }
 
     /**

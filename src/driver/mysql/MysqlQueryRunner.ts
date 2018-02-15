@@ -770,24 +770,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Updates table's primary keys.
-     * TODO: maybe deleted
-     */
-    async updatePrimaryKeys(table: Table): Promise<void> {
-        /*if (!table.hasGeneratedColumn)
-            await this.query(`ALTER TABLE \`${this.escapeTableName(table)}\` DROP PRIMARY KEY`);
-
-        const primaryColumnNames = table.columns
-            .filter(column => column.isPrimary && !column.isGenerated)
-            .map(column => "`" + column.name + "`");
-        if (primaryColumnNames.length > 0) {
-            const sql = `ALTER TABLE \`${this.escapeTableName(table)}\` ADD PRIMARY KEY (${primaryColumnNames.join(", ")})`;
-            const revertSql = `ALTER TABLE \`${this.escapeTableName(table)}\` DROP PRIMARY KEY`;
-            return this.executeQueries(sql, revertSql);
-        }*/
-    }
-
-    /**
      * Creates a new primary key.
      */
     async createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void> {
