@@ -4,7 +4,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Item, EmbeddedItem } from "./entity/Item";
 
-describe("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
+describe.only("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
 
     let connections: Connection[] = [];
     before(async () => connections = await createTestingConnections({
