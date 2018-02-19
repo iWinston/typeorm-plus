@@ -98,12 +98,16 @@ export class OneToOneInverseSideSubjectBuilder {
 
         // extract only relation id from the related entities, since we only need it for comparision
         // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
-        const relationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
+        let relationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
 
         // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
         let relatedEntitySubject = this.subjects.find(operateSubject => {
             return !!operateSubject.entity && operateSubject.entity === relatedEntity;
         });
+
+        // if subject with entity was found take subject identifier as relation id map since it may contain extra properties resolved
+        if (relatedEntitySubject)
+            relationIdMap = relatedEntitySubject.identifier;
 
         // if relationIdMap is undefined then it means user binds object which is not saved in the database yet
         // by example: if post contains category which does not have id(s) yet (because its a new category)

@@ -1,17 +1,15 @@
 import "reflect-metadata";
 import { Connection } from "../../../src/connection/Connection";
 import { createTestingConnections, reloadTestingDatabases, closeTestingConnections } from "../../utils/test-utils";
-import { ValidationModel } from "./entity/validation";
-import { MainModel } from "./entity/main";
-import { DataModel } from "./entity/data";
+import { ValidationModel } from "./entity/ValidationModel";
+import { MainModel } from "./entity/MainModel";
+import { DataModel } from "./entity/DataModel";
 
 describe("github issues > #1545 Typeorm runs insert query instead of update query on save of existing entity for ManyToOne relationships", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
         enabledDrivers: ["postgres"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -31,14 +29,14 @@ describe("github issues > #1545 Typeorm runs insert query instead of update quer
         
         const main1 = new MainModel();
         main1.dataModel = [data1_1];
-        
-        const saveMain1 = await connection.manager.save(main1);
 
-        console.dir(saveMain1, {colors: true, depth: null});
+        await connection.manager.save(main1);
+
+        // console.dir(main1, { colors: true, depth: null });
 
         main1.dataModel[0].active = false;
-        const saveMain1again = await connection.manager.save(main1);
-        console.dir(saveMain1again, {colors: true, depth: null});
+        await connection.manager.save(main1);
+        // console.dir(main1, { colors: true, depth: null });
         
         return true;
 

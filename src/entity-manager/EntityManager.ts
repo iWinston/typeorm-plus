@@ -15,7 +15,7 @@ import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
-import {getMetadataArgsStorage} from "../index";
+import {getMetadataArgsStorage, ObjectLiteral} from "../index";
 import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -441,7 +441,10 @@ export class EntityManager {
     async find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
+        if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -467,7 +470,10 @@ export class EntityManager {
     async findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|DeepPartial<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
+        if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -495,7 +501,10 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
+        if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
         return qb.andWhereInIds(ids).getMany();
     }
 
@@ -518,27 +527,36 @@ export class EntityManager {
      * Finds first entity that matches given conditions.
      */
     async findOne<Entity>(entityClass: ObjectType<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+
+        let findOptions: FindOneOptions<any>|undefined = undefined;
+        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
+            findOptions = idOrOptionsOrConditions;
+        } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions)) {
+            findOptions = maybeOptions;
+        }
+
+        let options: ObjectLiteral|undefined = undefined;
+        if (idOrOptionsOrConditions instanceof Object && !FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions))
+            options = idOrOptionsOrConditions as ObjectLiteral;
+
         const metadata = this.connection.getMetadata(entityClass);
         let alias: string = metadata.name;
-        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions) && idOrOptionsOrConditions.join) {
-            alias = idOrOptionsOrConditions.join.alias;
+        if (findOptions && findOptions.join) {
+            alias = findOptions.join.alias;
 
         } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions) && maybeOptions.join) {
             alias = maybeOptions.join.alias;
         }
         const qb = this.createQueryBuilder(entityClass, alias);
 
-        FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+        if (!findOptions || findOptions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
 
-        if (maybeOptions) {
-            FindOptionsUtils.applyOptionsToQueryBuilder(qb, maybeOptions);
-        }
+        if (findOptions)
+            FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
 
-        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
-            FindOptionsUtils.applyOptionsToQueryBuilder(qb, idOrOptionsOrConditions);
-
-        } else if (idOrOptionsOrConditions instanceof Object) {
-            qb.where(idOrOptionsOrConditions as any);
+        if (options) {
+            qb.where(options);
 
         } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date) {
             qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));

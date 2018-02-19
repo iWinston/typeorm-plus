@@ -80,7 +80,7 @@ export class CascadesSubjectBuilder {
             if (subject.entity === entity)
                 return true;
 
-            return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
+            return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entityWithFulfilledIds!, entity);
         });
     }
 
