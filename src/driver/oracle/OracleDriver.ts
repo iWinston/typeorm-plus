@@ -17,7 +17,6 @@ import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsO
 import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -536,6 +535,7 @@ export class OracleDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 // || tableColumn.comment !== columnMetadata.comment || // todo
                 || this.normalizeDefault(columnMetadata.default) !== tableColumn.default
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)

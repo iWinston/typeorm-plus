@@ -530,14 +530,15 @@ export class SqlServerDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== this.normalizeType(columnMetadata) ||
-                // tableColumn.comment !== columnMetadata.comment || // todo
-                (!tableColumn.isGenerated && !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)) || // we included check for generated here, because generated columns already can have default values
-                tableColumn.isNullable !== columnMetadata.isNullable ||
-                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.isGenerated !== columnMetadata.isGenerated ||
-                !this.compareColumnLengths(tableColumn, columnMetadata);
+            return  tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                // || tableColumn.comment !== columnMetadata.comment || // todo
+                || (!tableColumn.isGenerated && !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isGenerated !== columnMetadata.isGenerated
+                || !this.compareColumnLengths(tableColumn, columnMetadata);
         });
     }
 

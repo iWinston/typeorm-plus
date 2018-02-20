@@ -10,7 +10,6 @@ describe("schema builder > change column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql", "mssql"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -38,7 +37,7 @@ describe("schema builder > change column", () => {
         nameColumn.build(connection);
     }));
 
-    it.only("should correctly change column length", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change column length", () => PromiseUtils.runInSequence(connections, async connection => {
         const postMetadata = connection.getMetadata("post");
         const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
         const versionColumn = postMetadata.findColumnWithPropertyName("version")!;

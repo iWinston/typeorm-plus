@@ -470,6 +470,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 //  || tableColumn.comment !== columnMetadata.comment || // todo
                 || this.normalizeDefault(columnMetadata.default) !== tableColumn.default
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)

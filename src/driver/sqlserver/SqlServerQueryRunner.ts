@@ -1372,8 +1372,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         tableColumn.length = "MAX";
 
                     if (tableColumn.type !== "int") {
-                        tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                        tableColumn.scale = dbColumn["NUMERIC_SCALE"];
+                        if (dbColumn["NUMERIC_PRECISION"])
+                            tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
+                        if (dbColumn["NUMERIC_PRECISION"])
+                            tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 
                     tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined
@@ -1391,8 +1393,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     }
 
                     tableColumn.isUnique = isUnique;
-                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                    tableColumn.collation = dbColumn["COLLATION_NAME"];
+                    // todo: unable to get default collation and charset
+                    // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
+                    // tableColumn.collation = dbColumn["COLLATION_NAME"];
 
                     if (tableColumn.type === "datetime2" || tableColumn.type === "time" || tableColumn.type === "datetimeoffset") {
                         tableColumn.precision = dbColumn["DATETIME_PRECISION"];
