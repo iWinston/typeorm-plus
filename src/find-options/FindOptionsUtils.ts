@@ -201,7 +201,7 @@ export class FindOptionsUtils {
 
             // try to find sub-relations
             const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
-            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, relation);
+            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, prefix ? prefix + "." + relation : relation);
         });
     }
 

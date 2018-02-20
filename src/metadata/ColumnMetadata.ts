@@ -444,7 +444,7 @@ export class ColumnMetadata {
                     }
                     return map;
                 }
-                if (entity[this.propertyName] !== undefined && (returnNulls === false || entity[this.propertyName] !== null))
+                if (value[this.propertyName] !== undefined && (returnNulls === false || value[this.propertyName] !== null))
                     map[this.propertyName] = value[this.propertyName];
                 return map;
             };

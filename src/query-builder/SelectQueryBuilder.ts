@@ -1082,6 +1082,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 transactionStartedByUs = true;
             }
 
+            this.expressionMap.queryEntity = false;
             const results = await this.executeCountQuery(queryRunner);
 
             // close transaction if we started it
@@ -1125,7 +1126,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 transactionStartedByUs = true;
             }
 
+            this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
+            this.expressionMap.queryEntity = false;
             const count = await this.executeCountQuery(queryRunner);
             const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 
@@ -1638,7 +1641,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
-        this.expressionMap.queryEntity = false;
 
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;
