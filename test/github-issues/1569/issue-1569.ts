@@ -4,7 +4,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Item, EmbeddedItem } from "./entity/Item";
 
-describe.skip("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
+describe("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
 
     let connections: Connection[] = [];
     before(async () => connections = await createTestingConnections({
@@ -23,14 +23,14 @@ describe.skip("github issue > #1569 updateById generates wrong SQL with arrays i
 
         await connection.getRepository(Item).save(item);
 
-        await connection.getRepository(Item).updateById(item.id, {
+        await connection.getRepository(Item).update(item.id, {
             someText: "some2",
             embedded: {
                 arrayInsideEmbedded: [1, 2],
             },
         });
 
-        const loadedItem = await connection.getRepository(Item).findOneById(item.id);
+        const loadedItem = await connection.getRepository(Item).findOne(item.id);
 
         expect(loadedItem!.embedded.arrayInsideEmbedded).to.eql([1, 2]);
 
