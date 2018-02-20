@@ -1,4 +1,3 @@
-import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {Table} from "./table/Table";
 import {TableColumn} from "./table/TableColumn";
 import {TableForeignKey} from "./table/TableForeignKey";
@@ -162,6 +161,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // await this.dropCompositeUniqueConstraints();
         // await this.dropChangedGeneratedColumns();
         // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
+        await this.renameTables();
+        await this.renameColumns();
         await this.createNewTables();
         await this.dropRemovedColumns();
         await this.addNewColumns();
@@ -192,6 +193,62 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop foreign keys from the database
             await this.queryRunner.dropForeignKeys(table, tableForeignKeysToDrop);
+        });
+    }
+
+    /**
+     * Rename tables
+     */
+    protected async renameTables(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            // const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName);
+
+        });
+    }
+
+    /**
+     * Renames columns.
+     * Works if only one column per table was changed.
+     * Changes only column name. If something besides name was changed, these changes will be ignored.
+     */
+    protected async renameColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tableName);
+            if (!table)
+                return;
+
+            if (metadata.columns.length !== table.columns.length)
+                return;
+
+            const renamedMetadataColumns = metadata.columns.filter(column => {
+                return !table.columns.find(tableColumn => {
+                    return tableColumn.name === column.databaseName
+                        && tableColumn.type === this.connection.driver.normalizeType(column)
+                        && tableColumn.isNullable === column.isNullable
+                        && tableColumn.isUnique === this.connection.driver.normalizeIsUnique(column);
+                });
+            });
+
+            if (renamedMetadataColumns.length === 0 || renamedMetadataColumns.length > 1)
+                return;
+
+            const renamedTableColumns = table.columns.filter(tableColumn => {
+                return !metadata.columns.find(column => {
+                    return column.databaseName === tableColumn.name
+                        && this.connection.driver.normalizeType(column) === tableColumn.type
+                        && column.isNullable === tableColumn.isNullable
+                        && this.connection.driver.normalizeIsUnique(column) === tableColumn.isUnique;
+                });
+            });
+
+            if (renamedTableColumns.length === 0 || renamedTableColumns.length > 1)
+                return;
+
+            const renamedColumn = renamedTableColumns[0].clone();
+            renamedColumn.name = renamedMetadataColumns[0].databaseName;
+
+            this.connection.logger.logSchemaBuild(`renaming column "${renamedTableColumns[0].name}" in to "${renamedColumn.name}"`);
+            await this.queryRunner.renameColumn(table, renamedTableColumns[0], renamedColumn);
         });
     }
 
@@ -327,11 +384,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 return;
 
-            const updatedTableColumns = this.connection.driver.findChangedColumns(table, metadata.columns);
-            if (updatedTableColumns.length === 0)
+            const changedColumns = this.connection.driver.findChangedColumns(table.columns, metadata.columns);
+            if (changedColumns.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`columns changed in ${table.name}. updating: ` + updatedTableColumns.map(column => column.name).join(", "));
+            this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
 
             /*const dropPrimaryKeyConstrains = updatedTableColumns
                 .filter(changedTableColumn => {
@@ -357,14 +414,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await Promise.all(dropRelatedIndicesPromises);*/
 
             // generate a map of new/old columns
-            const newAndOldTableColumns = updatedTableColumns.map(changedTableColumn => {
-                const columnMetadata = metadata.columns.find(column => column.databaseName === changedTableColumn.name);
-                const newTableColumnOptions = TableUtils.createTableColumnOptions(columnMetadata!, this.connection.driver);
+            const newAndOldTableColumns = changedColumns.map(changedColumn => {
+                const oldTableColumn = table.columns.find(column => column.name === changedColumn.databaseName)!;
+                const newTableColumnOptions = TableUtils.createTableColumnOptions(changedColumn, this.connection.driver);
                 const newTableColumn = new TableColumn(newTableColumnOptions);
-                table.replaceColumn(changedTableColumn, newTableColumn);
 
                 return {
-                    oldColumn: changedTableColumn,
+                    oldColumn: oldTableColumn,
                     newColumn: newTableColumn
                 };
             });
@@ -414,47 +470,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")} on table "${table.name}"`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
         });
-    }
-
-    /**
-     * Drops all foreign keys where given column of the given table is being used.
-     */
-    protected async dropColumnReferencedForeignKeys(tableName: string, columnName: string): Promise<void> {
-
-        const allForeignKeyMetadatas = this.connection.entityMetadatas.reduce(
-            (all, metadata) => all.concat(metadata.foreignKeys),
-            [] as ForeignKeyMetadata[]
-        );
-
-        const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
-        if (!table)
-            return;
-
-        // find depend foreign keys to drop them
-        const dependForeignKeys = allForeignKeyMetadatas.filter(foreignKeyMetadata => {
-            if (foreignKeyMetadata.tableName === tableName) {
-                return !!foreignKeyMetadata.columns.find(fkColumn => {
-                    return fkColumn.databaseName === columnName;
-                });
-            } else if (foreignKeyMetadata.referencedTableName === tableName) {
-                return !!foreignKeyMetadata.referencedColumns.find(fkColumn => {
-                    return fkColumn.databaseName === columnName;
-                });
-            }
-            return false;
-        });
-        if (!dependForeignKeys.length)
-            return;
-
-        const dependForeignKeyInTable = dependForeignKeys.filter(fk => {
-            return !!table.foreignKeys.find(dbForeignKey => dbForeignKey.name === fk.name);
-        });
-        if (dependForeignKeyInTable.length === 0)
-            return;
-
-        this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
-        const tableForeignKeys = dependForeignKeyInTable.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata, table));
-        await this.queryRunner.dropForeignKeys(table, tableForeignKeys);
     }
 
     /**

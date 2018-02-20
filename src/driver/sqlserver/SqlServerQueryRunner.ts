@@ -720,7 +720,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
-            throw new Error(`Changing column's "isGenerated" property is not supported in SqlServer driver. Drop column and recreate it with a new "isGenerated" property instead.`);
+            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            await this.dropColumn(table, oldColumn);
+            await this.addColumn(table, newColumn);
 
         } else {
             if (newColumn.name !== oldColumn.name) {
@@ -841,7 +843,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 oldColumn.name = newColumn.name;
             }
 
-            if (this.isColumnChanged(newColumn, oldColumn)) {
+            if (this.isColumnChanged(oldColumn, newColumn)) {
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, newColumn, true, false)}`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN ${this.buildCreateColumnSql(table, oldColumn, true, false)}`);
             }
@@ -910,10 +912,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`);
                 }
             }
-        }
 
-        await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(table, clonedTable);
+            await this.executeQueries(upQueries, downQueries);
+            this.replaceCachedTable(table, clonedTable);
+        }
     }
 
     /**
@@ -1374,7 +1376,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 
-                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined ? dbColumn["COLUMN_DEFAULT"] : undefined;
+                    tableColumn.default = dbColumn["COLUMN_DEFAULT"] !== null && dbColumn["COLUMN_DEFAULT"] !== undefined
+                        ? this.removeParenthesisFromDefault(dbColumn["COLUMN_DEFAULT"])
+                        : undefined;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
                     tableColumn.isGenerated = isGenerated;
@@ -1662,6 +1666,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             joinedFkName = dbName + "." + joinedFkName;
 
         return joinedFkName;
+    }
+
+    /**
+     * Removes parenthesis around default value.
+     * Sql server returns default value with parenthesis around, e.g.
+     *  ('My text') - for string
+     *  ((1)) - for number
+     *  (newsequentialId()) - for function
+     */
+    protected removeParenthesisFromDefault(defaultValue: any): any {
+        if (defaultValue.substr(0, 1) !== "(")
+            return defaultValue;
+        const normalizedDefault = defaultValue.substr(1, defaultValue.lastIndexOf(")") - 1);
+        return this.removeParenthesisFromDefault(normalizedDefault);
     }
 
     /**

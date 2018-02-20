@@ -533,177 +533,180 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
-            throw new Error(`Changing column's "isGenerated" property is not supported in Oracle driver. Drop column and recreate it with a new "isGenerated" property instead.`);
-        }
+            // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            await this.dropColumn(table, oldColumn);
+            await this.addColumn(table, newColumn);
 
-        if (newColumn.name !== oldColumn.name) {
-            // rename column
-            upQueries.push(`ALTER TABLE "${table.name}" RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`);
-            downQueries.push(`ALTER TABLE "${table.name}" RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
+        } else {
+            if (newColumn.name !== oldColumn.name) {
+                // rename column
+                upQueries.push(`ALTER TABLE "${table.name}" RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`);
+                downQueries.push(`ALTER TABLE "${table.name}" RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
 
-            // rename column primary key constraint
-            if (oldColumn.isPrimary === true) {
+                // rename column primary key constraint
+                if (oldColumn.isPrimary === true) {
+                    const primaryColumns = clonedTable.primaryColumns;
+
+                    // build old primary constraint name
+                    const columnNames = primaryColumns.map(column => column.name);
+                    const oldPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+
+                    // replace old column name with new column name
+                    columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
+                    columnNames.push(newColumn.name);
+
+                    // build new primary constraint name
+                    const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
+
+                    upQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
+                    downQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
+                }
+
+                // rename unique constraints
+                clonedTable.findColumnUniques(oldColumn).forEach(unique => {
+                    // build new constraint name
+                    unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
+                    unique.columnNames.push(newColumn.name);
+                    const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
+
+                    // build queries
+                    upQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
+                    downQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
+
+                    // replace constraint name
+                    unique.name = newUniqueName;
+                });
+
+                // rename index constraints
+                clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                    // build new constraint name
+                    index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
+                    index.columnNames.push(newColumn.name);
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+
+                    // build queries
+                    upQueries.push(`ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`);
+                    downQueries.push(`ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`);
+
+                    // replace constraint name
+                    index.name = newIndexName;
+                });
+
+                // rename foreign key constraints
+                clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                    // build new constraint name
+                    foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
+                    foreignKey.columnNames.push(newColumn.name);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+
+                    // build queries
+                    upQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
+                    downQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
+
+                    // replace constraint name
+                    foreignKey.name = newForeignKeyName;
+                });
+
+                // rename old column in the Table object
+                const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
+                clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
+                oldColumn.name = newColumn.name;
+            }
+
+            if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)
+                || newColumn.default !== oldColumn.default
+                || newColumn.isNullable !== oldColumn.isNullable) {
+
+                let defaultUp: string = "";
+                let defaultDown: string = "";
+                let nullableUp:  string = "";
+                let nullableDown:  string = "";
+
+                // changing column default
+                if (newColumn.default !== null && newColumn.default !== undefined) {
+                    defaultUp = `DEFAULT ${newColumn.default}`;
+
+                    if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                        defaultDown = `DEFAULT ${oldColumn.default}`;
+                    } else {
+                        defaultDown = "DEFAULT NULL";
+                    }
+
+                } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
+                    defaultUp = "DEFAULT NULL";
+                    defaultDown = `DEFAULT ${oldColumn.default}`;
+                }
+
+                // changing column isNullable property
+                if (newColumn.isNullable !== oldColumn.isNullable) {
+                    if (newColumn.isNullable === true) {
+                        nullableUp = "NULL";
+                        nullableDown = "NOT NULL";
+                    } else {
+                        nullableUp = "NOT NULL";
+                        nullableDown = "NULL";
+                    }
+                }
+
+                upQueries.push(`ALTER TABLE "${table.name}" MODIFY "${oldColumn.name}" ${this.connection.driver.createFullType(newColumn)} ${defaultUp} ${nullableUp}`);
+                downQueries.push(`ALTER TABLE "${table.name}" MODIFY "${oldColumn.name}" ${this.connection.driver.createFullType(oldColumn)} ${defaultDown} ${nullableDown}`);
+            }
+
+            if (newColumn.isPrimary !== oldColumn.isPrimary) {
                 const primaryColumns = clonedTable.primaryColumns;
 
-                // build old primary constraint name
-                const columnNames = primaryColumns.map(column => column.name);
-                const oldPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
-
-                // replace old column name with new column name
-                columnNames.splice(columnNames.indexOf(oldColumn.name), 1);
-                columnNames.push(newColumn.name);
-
-                // build new primary constraint name
-                const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
-
-                upQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
-                downQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
-            }
-
-            // rename unique constraints
-            clonedTable.findColumnUniques(oldColumn).forEach(unique => {
-                // build new constraint name
-                unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
-                unique.columnNames.push(newColumn.name);
-                const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
-
-                // build queries
-                upQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
-                downQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
-
-                // replace constraint name
-                unique.name = newUniqueName;
-            });
-
-            // rename index constraints
-            clonedTable.findColumnIndices(oldColumn).forEach(index => {
-                // build new constraint name
-                index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
-                index.columnNames.push(newColumn.name);
-                const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
-
-                // build queries
-                upQueries.push(`ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`);
-                downQueries.push(`ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`);
-
-                // replace constraint name
-                index.name = newIndexName;
-            });
-
-            // rename foreign key constraints
-            clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
-                // build new constraint name
-                foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
-                foreignKey.columnNames.push(newColumn.name);
-                const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
-
-                // build queries
-                upQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
-                downQueries.push(`ALTER TABLE "${table.name}" RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
-
-                // replace constraint name
-                foreignKey.name = newForeignKeyName;
-            });
-
-            // rename old column in the Table object
-            const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
-            clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
-            oldColumn.name = newColumn.name;
-        }
-
-        if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)
-            || newColumn.default !== oldColumn.default
-            || newColumn.isNullable !== oldColumn.isNullable) {
-
-            let defaultUp: string = "";
-            let defaultDown: string = "";
-            let nullableUp:  string = "";
-            let nullableDown:  string = "";
-
-            // changing column default
-            if (newColumn.default !== null && newColumn.default !== undefined) {
-                defaultUp = `DEFAULT ${newColumn.default}`;
-
-                if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    defaultDown = `DEFAULT ${oldColumn.default}`;
-                } else {
-                    defaultDown = "DEFAULT NULL";
-                }
-
-            } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                defaultUp = "DEFAULT NULL";
-                defaultDown = `DEFAULT ${oldColumn.default}`;
-            }
-
-            // changing column isNullable property
-            if (newColumn.isNullable !== oldColumn.isNullable) {
-                if (newColumn.isNullable === true) {
-                    nullableUp = "NULL";
-                    nullableDown = "NOT NULL";
-                } else {
-                    nullableUp = "NOT NULL";
-                    nullableDown = "NULL";
-                }
-            }
-
-            upQueries.push(`ALTER TABLE "${table.name}" MODIFY "${oldColumn.name}" ${this.connection.driver.createFullType(newColumn)} ${defaultUp} ${nullableUp}`);
-            downQueries.push(`ALTER TABLE "${table.name}" MODIFY "${oldColumn.name}" ${this.connection.driver.createFullType(oldColumn)} ${defaultDown} ${nullableDown}`);
-        }
-
-        if (newColumn.isPrimary !== oldColumn.isPrimary) {
-            const primaryColumns = clonedTable.primaryColumns;
-
-            // if primary column state changed, we must always drop existed constraint.
-            if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
-                downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-            }
-
-            if (newColumn.isPrimary === true) {
-                primaryColumns.push(newColumn);
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-                downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
-
-            } else {
-                const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
-                primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
-
-                // if we have another primary keys, we must recreate constraint.
+                // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
+                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                    const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
+                    upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
+                    downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+                }
+
+                if (newColumn.isPrimary === true) {
+                    primaryColumns.push(newColumn);
                     const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                     const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                     upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
                     downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
+
+                } else {
+                    const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
+                    primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
+
+                    // if we have another primary keys, we must recreate constraint.
+                    if (primaryColumns.length > 0) {
+                        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                        const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
+                        upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+                        downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${pkName}"`);
+                    }
                 }
             }
-        }
 
-        if (newColumn.isUnique !== oldColumn.isUnique) {
-            if (newColumn.isUnique === true) {
-                const uniqueConstraint = new TableUnique({
-                    name: this.connection.namingStrategy.uniqueConstraintName(table.name, [newColumn.name]),
-                    columnNames: [newColumn.name]
-                });
-                clonedTable.uniques.push(uniqueConstraint);
-                upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`);
-                downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint.name}"`);
+            if (newColumn.isUnique !== oldColumn.isUnique) {
+                if (newColumn.isUnique === true) {
+                    const uniqueConstraint = new TableUnique({
+                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [newColumn.name]),
+                        columnNames: [newColumn.name]
+                    });
+                    clonedTable.uniques.push(uniqueConstraint);
+                    upQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`);
+                    downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint.name}"`);
 
-            } else {
-                const uniqueConstraint = table.uniques.find(unique => {
-                    return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
-                });
-                clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
-                upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint!.name}"`);
-                downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`);
+                } else {
+                    const uniqueConstraint = table.uniques.find(unique => {
+                        return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
+                    });
+                    clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
+                    upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint!.name}"`);
+                    downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`);
+                }
             }
-        }
 
-        await this.executeQueries(upQueries, downQueries);
-        this.replaceCachedTable(table, clonedTable);
+            await this.executeQueries(upQueries, downQueries);
+            this.replaceCachedTable(table, clonedTable);
+        }
     }
 
     /**
@@ -1045,7 +1048,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     tableColumn.default = dbColumn["DATA_DEFAULT"] !== null
                         && dbColumn["DATA_DEFAULT"] !== undefined
-                        && dbColumn["DATA_DEFAULT"].trim() !== "NULL" ? tableColumn.default = dbColumn["DATA_DEFAULT"] : undefined;
+                        && dbColumn["DATA_DEFAULT"].trim() !== "NULL" ? tableColumn.default = dbColumn["DATA_DEFAULT"].trim() : undefined;
 
                     tableColumn.isNullable = dbColumn["NULLABLE"] === "Y";
                     tableColumn.isUnique = isUnique;

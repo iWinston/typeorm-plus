@@ -3,7 +3,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {expect} from "chai";
 
-describe.only("schema builder > drop column", () => {
+describe("schema builder > drop column", () => {
 
     let connections: Connection[];
     before(async () => {

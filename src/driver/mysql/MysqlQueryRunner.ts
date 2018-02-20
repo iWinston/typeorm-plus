@@ -503,17 +503,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Changes a column in the table.
      */
-    async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
+    async changeColumn(tableOrName: Table|string, oldColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        const oldColumn = oldTableColumnOrName instanceof TableColumn
-            ? oldTableColumnOrName
-            : table.columns.find(column => column.name === oldTableColumnOrName);
+        const oldColumn = oldColumnOrName instanceof TableColumn
+            ? oldColumnOrName
+            : table.columns.find(column => column.name === oldColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
         if (newColumn.name !== oldColumn.name) {
             // We don't change any column properties, just rename it.
@@ -621,12 +621,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
                         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
                     }
-
                 }
             }
 
         } else {
-            if (this.isColumnChanged(newColumn, oldColumn)) {
+            if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
             }
@@ -918,7 +917,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.startTransaction();
         try {
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS query FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
+            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
 
             await this.query(disableForeignKeysCheckQuery);
@@ -970,6 +969,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         
         const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE ` + tablesCondition;
 
+        const primaryKeySql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` WHERE \`CONSTRAINT_NAME\` = "PRIMARY" AND (${tablesCondition})`;
+
+        const collationsSql = `SELECT \`SCHEMA_NAME\`, \`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`, \`DEFAULT_COLLATION_NAME\` AS \`COLLATION\` FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\``;
+
         const indicesCondition = tableNames.map(tableName => {
             let [database, name] = tableName.split(".");
             if (!name) {
@@ -995,9 +998,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             `FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\` ` +
             `INNER JOIN \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` \`rc\` ON \`rc\`.\`constraint_name\` = \`kcu\`.\`constraint_name\` ` +
             `WHERE ` + foreignKeysCondition;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbPrimaryKeys, dbCollations, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
+            this.query(primaryKeySql),
+            this.query(collationsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql)
         ]);
@@ -1011,6 +1016,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
+
+            const dbCollation = dbCollations.find(coll => coll["SCHEMA_NAME"] === dbTable["TABLE_SCHEMA"])!;
+            const defaultCollation = dbCollation["COLLATION"];
+            const defaultCharset = dbCollation["CHARSET"];
 
             // We do not need to join database name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
@@ -1052,15 +1061,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.isUnique = true;
 
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    tableColumn.isPrimary = dbColumn["COLUMN_KEY"].indexOf("PRI") !== -1;
+                    tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => dbPrimaryKey["COLUMN_NAME"] === tableColumn.name);
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
                     tableColumn.comment = dbColumn["COLUMN_COMMENT"];
-                    tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                    tableColumn.scale = dbColumn["NUMERIC_SCALE"];
-                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                    tableColumn.collation = dbColumn["COLLATION_NAME"];
+                    if (dbColumn["NUMERIC_PRECISION"])
+                        tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
+                    if (dbColumn["NUMERIC_SCALE"])
+                        tableColumn.scale = dbColumn["NUMERIC_SCALE"];
+                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
+                    tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
 
                     if (tableColumn.type === "int" || tableColumn.type === "tinyint"
                         ||  tableColumn.type === "smallint" || tableColumn.type === "mediumint"

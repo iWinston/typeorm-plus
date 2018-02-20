@@ -19,7 +19,6 @@ import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCreden
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ArrayParameter} from "../../query-builder/ArrayParameter";
-import {Table} from "../../";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -518,10 +517,10 @@ export class SqlServerDriver implements Driver {
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[] {
-        return table.columns.filter(tableColumn => {
-            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
-            if (!columnMetadata)
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
+            if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
             return  tableColumn.name !== columnMetadata.databaseName ||

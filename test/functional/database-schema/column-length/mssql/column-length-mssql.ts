@@ -41,7 +41,7 @@ describe("database schema > column length > mssql", () => {
         metadata.findColumnWithPropertyName("binary")!.length = "100";
         metadata.findColumnWithPropertyName("varbinary")!.length = "100";
 
-        await connection.synchronize(false);        
+        await connection.synchronize();
 
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("post");
@@ -63,7 +63,7 @@ describe("database schema > column length > mssql", () => {
         metadata.findColumnWithPropertyName("nvarchar")!.length = "MAX";
         metadata.findColumnWithPropertyName("varbinary")!.length = "MAX";
 
-        await connection.synchronize(false);        
+        await connection.synchronize();
 
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("post");

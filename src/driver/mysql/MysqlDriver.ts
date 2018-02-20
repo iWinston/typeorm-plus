@@ -18,7 +18,6 @@ import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOpt
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ArrayParameter} from "../../query-builder/ArrayParameter";
-import {Table} from "../../";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -522,24 +521,30 @@ export class MysqlDriver implements Driver {
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    findChangedColumns(table: Table, columnMetadatas: ColumnMetadata[]): TableColumn[] {
-        return table.columns.filter(tableColumn => {
-            const columnMetadata = columnMetadatas.find(columnMetadata => columnMetadata.databaseName === tableColumn.name);
-            if (!columnMetadata)
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
+            if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            // console.log(tableColumn.name, "!==", columnMetadata.databaseName);
-            // console.log(tableColumn.type, "!==", driver.normalizeType(columnMetadata));
-            // console.log(tableColumn.comment, "!==", columnMetadata.comment);
-            // console.log(this.compareDefaultValues(driver.normalizeDefault(columnMetadata.default), tableColumn.default));
-            // console.log(tableColumn.isNullable, "!==", columnMetadata.isNullable);
-            // console.log(tableColumn.isUnique, "!==", columnMetadata.isUnique);
-            // console.log(tableColumn.isGenerated, "!==", columnMetadata.isGenerated);
+            // console.log("table:", columnMetadata.entityMetadata.tableName);
+            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default));
+            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("length changed:", !this.compareColumnLengths(tableColumn, columnMetadata));
+            // console.log("==========================================");
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 // || tableColumn.comment !== columnMetadata.comment || // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)

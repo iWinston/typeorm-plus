@@ -192,6 +192,39 @@ export abstract class BaseQueryRunner {
      * Checks if at least one of column properties was changed.
      */
     protected isColumnChanged(oldColumn: TableColumn, newColumn: TableColumn, checkDefault?: boolean, checkComment?: boolean): boolean {
+        // this logs need to debug issues in column change detection. Do not delete it!
+
+        // console.log("type ---------------");
+        // console.log(oldColumn.type !== newColumn.type);
+        // console.log(oldColumn.type, newColumn.type);
+        // console.log("length ---------------");
+        // console.log(oldColumn.length !== newColumn.length);
+        // console.log(oldColumn.length, newColumn.length);
+        // console.log("charset ---------------");
+        // console.log(oldColumn.charset !== newColumn.charset);
+        // console.log(oldColumn.charset, newColumn.charset);
+        // console.log("collation ---------------");
+        // console.log(oldColumn.collation !== newColumn.collation);
+        // console.log(oldColumn.collation, newColumn.collation);
+        // console.log("precision ---------------");
+        // console.log(oldColumn.precision !== newColumn.precision);
+        // console.log(oldColumn.precision, newColumn.precision);
+        // console.log("scale ---------------");
+        // console.log(oldColumn.scale !== newColumn.scale);
+        // console.log(oldColumn.scale, newColumn.scale);
+        // console.log("default ---------------");
+        // console.log((checkDefault && oldColumn.default !== newColumn.default));
+        // console.log(oldColumn.default, newColumn.default);
+        // console.log("isNullable ---------------");
+        // console.log(oldColumn.isNullable !== newColumn.isNullable);
+        // console.log(oldColumn.isNullable, newColumn.isNullable);
+        // console.log("comment ---------------");
+        // console.log((checkComment && oldColumn.comment !== newColumn.comment));
+        // console.log(oldColumn.comment, newColumn.comment);
+        // console.log("enum ---------------");
+        // console.log(oldColumn.enum !== newColumn.enum);
+        // console.log(oldColumn.enum, newColumn.enum);
+
         return oldColumn.type !== newColumn.type
             || oldColumn.length !== newColumn.length
             || oldColumn.charset !== newColumn.charset
