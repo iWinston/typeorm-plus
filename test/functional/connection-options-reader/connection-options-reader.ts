@@ -2,7 +2,7 @@ import {expect} from "chai";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionOptionsReader} from "../../../src/connection/ConnectionOptionsReader";
 
-describe.only("ConnectionOptionsReader", () => {
+describe("ConnectionOptionsReader", () => {
   it("properly loads config with entities specified", async () => {
     type EntititesList = Function[] | string[];
     const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/class-entities" });
@@ -19,6 +19,5 @@ describe.only("ConnectionOptionsReader", () => {
     const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
     expect(fileOptions.database).to.have.string("/test");
   });
-
 
 });
