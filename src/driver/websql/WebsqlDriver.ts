@@ -6,7 +6,6 @@ import {WebsqlQueryRunner} from "./WebsqlQueryRunner";
 import {Connection} from "../../connection/Connection";
 import {WebSqlConnectionOptions} from "./WebSqlConnectionOptions";
 import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with WebSQL in the browser.
@@ -107,9 +106,15 @@ export class WebsqlDriver extends AbstractSqliteDriver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
+            let value: any;
+            if (key.substr(0, 4) === ":...") {
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
             if (value instanceof Function) {
                 return value();
 
@@ -119,7 +124,6 @@ export class WebsqlDriver extends AbstractSqliteDriver {
                 escapedParameters.push((value ? 1 : 0));
                 return "?";
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return "?";
             }

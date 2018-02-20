@@ -588,7 +588,7 @@ export abstract class QueryBuilder<Entity> {
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
-                const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:discriminatorColumnValues)`;
+                const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:...discriminatorColumnValues)`;
                 return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
             }
         }

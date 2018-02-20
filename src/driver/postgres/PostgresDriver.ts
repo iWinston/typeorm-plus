@@ -18,7 +18,6 @@ import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -367,10 +366,18 @@ export class PostgresDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, builtParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            let value = parameters[key.substr(1)];
-            if (value instanceof Array) {
+            let value: any;
+            let isArray = false;
+            if (key.substr(0, 4) === ":...") {
+                isArray = true;
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
+            if (isArray) {
                 return value.map((v: any) => {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
@@ -380,7 +387,6 @@ export class PostgresDriver implements Driver {
                 return value();
 
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
                 builtParameters.push(value);
                 return "$" + builtParameters.length;
             }

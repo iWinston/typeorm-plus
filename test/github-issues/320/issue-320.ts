@@ -28,7 +28,7 @@ describe("github issues > #320 Bug in getManyAndCount", () => {
                 "FROM tile " +
                 "INNER JOIN tile_activities_activity " +
                 "ON tile.id = tile_activities_activity.tileId " +
-                "WHERE tile.id IN (:tiles) " +
+                "WHERE tile.id IN (:...tiles) " +
                 "GROUP BY activityId)", "b", "b.activityId = activity.id")
             .addSelect("b.matchedTileCount")
             .addSelect("COUNT(activity.id) as tileCount")

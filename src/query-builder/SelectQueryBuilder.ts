@@ -1771,7 +1771,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
                         parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:ids)";
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...ids)";
                     }
                 }
                 rawResults = await this.clone()
