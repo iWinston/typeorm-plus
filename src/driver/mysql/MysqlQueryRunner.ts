@@ -1065,11 +1065,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
+
                     tableColumn.comment = dbColumn["COLUMN_COMMENT"];
-                    if (dbColumn["NUMERIC_PRECISION"])
+
+                    if (dbColumn["NUMERIC_PRECISION"] !== null)
                         tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                    if (dbColumn["NUMERIC_SCALE"])
+                    if (dbColumn["NUMERIC_SCALE"] !== null)
                         tableColumn.scale = dbColumn["NUMERIC_SCALE"];
+
                     tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
 

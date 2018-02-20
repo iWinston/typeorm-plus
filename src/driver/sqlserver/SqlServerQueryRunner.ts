@@ -1298,6 +1298,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 `WHERE COLUMNPROPERTY(object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), "COLUMN_NAME", 'IsIdentity') = 1 AND "TABLE_SCHEMA" IN (${schemaNamesString})`;
         }).join(" UNION ALL ");
 
+        const dbCollationsSql = `SELECT "NAME", "COLLATION_NAME" FROM "SYS"."DATABASES"`;
+
         const indicesSql = dbNames.map(dbName => {
             return `SELECT '${dbName}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
                 `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE" ` +
@@ -1315,6 +1317,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             dbConstraints,
             dbForeignKeys,
             dbIdentityColumns,
+            dbCollations,
             dbIndices
         ]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
@@ -1322,6 +1325,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             this.query(constraintsSql),
             this.query(foreignKeysSql),
             this.query(identityColumnsSql),
+            this.query(dbCollationsSql),
             this.query(indicesSql),
         ]);
 
@@ -1339,6 +1343,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const schema = dbTable["TABLE_SCHEMA"] === currentSchema ? undefined : dbTable["TABLE_SCHEMA"];
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
             const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
+            const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
 
             // create columns from the loaded columns
             table.columns = dbColumns
@@ -1372,9 +1377,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         tableColumn.length = "MAX";
 
                     if (tableColumn.type !== "int") {
-                        if (dbColumn["NUMERIC_PRECISION"])
+                        if (dbColumn["NUMERIC_PRECISION"] !== null)
                             tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                        if (dbColumn["NUMERIC_PRECISION"])
+                        if (dbColumn["NUMERIC_PRECISION"] !== null)
                             tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 
@@ -1393,9 +1398,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     }
 
                     tableColumn.isUnique = isUnique;
-                    // todo: unable to get default collation and charset
+                    // todo: unable to get default charset
                     // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                    // tableColumn.collation = dbColumn["COLLATION_NAME"];
+                    tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation["COLLATION_NAME"] ? undefined : dbColumn["COLLATION_NAME"];
 
                     if (tableColumn.type === "datetime2" || tableColumn.type === "time" || tableColumn.type === "datetimeoffset") {
                         tableColumn.precision = dbColumn["DATETIME_PRECISION"];

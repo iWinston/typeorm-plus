@@ -1037,12 +1037,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         || tableColumn.type === "dec"
                         || tableColumn.type === "decimal"
                         || tableColumn.type === "float") {
-                        tableColumn.precision = dbColumn["DATA_PRECISION"];
-                        tableColumn.scale = dbColumn["DATA_SCALE"];
+                        if (dbColumn["DATA_PRECISION"] !== null)
+                            tableColumn.precision = dbColumn["DATA_PRECISION"];
+                        if (dbColumn["DATA_SCALE"] !== null)
+                            tableColumn.scale = dbColumn["DATA_SCALE"];
 
-                    } else if (tableColumn.type === "timestamp"
+                    } else if ((tableColumn.type === "timestamp"
                         || tableColumn.type === "timestamp with time zone"
-                        || tableColumn.type === "timestamp with local time zone") {
+                        || tableColumn.type === "timestamp with local time zone") && dbColumn["DATA_SCALE"] !== null) {
                         tableColumn.precision = dbColumn["DATA_SCALE"];
                     }
 
