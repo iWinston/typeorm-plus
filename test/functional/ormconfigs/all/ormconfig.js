@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   name: "default",
   host: "localhost",
   username: "root",

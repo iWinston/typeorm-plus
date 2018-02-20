@@ -399,7 +399,8 @@ export class ColumnMetadata {
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
      */
-    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral|undefined {
+    getEntityValueMap(entity: ObjectLiteral, options?: { skipNulls?: boolean }): ObjectLiteral|undefined {
+        const returnNulls = false; // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
@@ -429,7 +430,7 @@ export class ColumnMetadata {
                     }
                     return map;
                 }
-                if (value[this.propertyName] !== undefined)
+                if (value[this.propertyName] !== undefined && (returnNulls === false || value[this.propertyName] !== null))
                     map[this.propertyName] = value[this.propertyName];
                 return map;
             };
@@ -449,7 +450,7 @@ export class ColumnMetadata {
 
                 return undefined;
             } else {
-                if (entity[this.propertyName] !== undefined)
+                if (entity[this.propertyName] !== undefined && (returnNulls === false || entity[this.propertyName] !== null))
                     return { [this.propertyName]: entity[this.propertyName] };
 
                 return undefined;

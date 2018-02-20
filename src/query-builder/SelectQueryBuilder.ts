@@ -1326,7 +1326,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias.name);
                     if (hasMainAlias) {
                         allSelects.push({ selection: this.escape(join.alias.name!) + ".*" });
-                        excludedSelects.push({ selection: this.escape(join.alias.name!) });
+                        const excludedSelect = this.expressionMap.selects.find(select => select.selection === join.alias.name);
+                        excludedSelects.push(excludedSelect!);
                     }
                 }
             });
@@ -1770,7 +1771,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
                         parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:ids)";
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...ids)";
                     }
                 }
                 rawResults = await this.clone()

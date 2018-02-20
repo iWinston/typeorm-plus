@@ -23,7 +23,7 @@ describe("github issues > #211 where in query issue", () => {
 
         const loadedPosts1 = await connection.manager
             .createQueryBuilder(Post, "post")
-            .where("post.id IN (:ids)", { ids: [1, 2, 3] })
+            .where("post.id IN (:...ids)", { ids: [1, 2, 3] })
             .getMany();
 
         loadedPosts1.length.should.be.equal(3);
@@ -31,7 +31,7 @@ describe("github issues > #211 where in query issue", () => {
         const loadedPosts2 = await connection.manager
             .createQueryBuilder(Post, "post")
             .where("post.text = :text", { text: "about post" })
-            .andWhere("post.title IN (:titles)", { titles: ["post #1", "post #2", "post #3"] })
+            .andWhere("post.title IN (:...titles)", { titles: ["post #1", "post #2", "post #3"] })
             .getMany();
 
         loadedPosts2.length.should.be.equal(3);

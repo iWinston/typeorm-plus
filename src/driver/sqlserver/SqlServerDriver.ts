@@ -18,7 +18,6 @@ import {TableColumn} from "../../schema-builder/schema/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -246,19 +245,27 @@ export class SqlServerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
-            if (value instanceof Array) {
+            let value: any;
+            let isArray = false;
+            if (key.substr(0, 4) === ":...") {
+                isArray = true;
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
+            if (isArray) {
                 return value.map((v: any) => {
                     escapedParameters.push(v);
                     return "@" + (escapedParameters.length - 1);
                 }).join(", ");
+
             } else if (value instanceof Function) {
                 return value();
 
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return "@" + (escapedParameters.length - 1);
             }
@@ -303,6 +310,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -312,31 +322,34 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -364,6 +377,9 @@ export class SqlServerDriver implements Driver {
             return "uniqueidentifier";
 
         } else if (column.type === "simple-array") {
+            return "ntext";
+
+        } else if (column.type === "simple-json") {
             return "ntext";
 
         } else if (column.type === "integer") {

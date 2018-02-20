@@ -32,6 +32,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
+import {RelationIdLoader} from "../query-builder/RelationIdLoader";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -104,6 +105,11 @@ export class Connection {
      */
     readonly relationLoader: RelationLoader;
 
+    /**
+     * Used to load relation ids of specific entity relations.
+     */
+    readonly relationIdLoader: RelationIdLoader;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -117,6 +123,7 @@ export class Connection {
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
+        this.relationIdLoader = new RelationIdLoader(this);
     }
 
     // -------------------------------------------------------------------------

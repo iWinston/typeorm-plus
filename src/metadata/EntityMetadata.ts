@@ -534,7 +534,7 @@ export class EntityMetadata {
         if (!entity)
             return undefined;
 
-        return EntityMetadata.getValueMap(entity, this.primaryColumns);
+        return EntityMetadata.getValueMap(entity, this.primaryColumns, { skipNulls: true });
     }
 
     /**
@@ -693,14 +693,16 @@ export class EntityMetadata {
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
      */
-    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
-        const map = columns.reduce((map, column) => {
-            if (column.isObjectId)
-                return Object.assign(map, column.getEntityValueMap(entity));
+    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[], options?: { skipNulls?: boolean }): ObjectLiteral|undefined {
+        return columns.reduce((map, column) => {
+            const value = column.getEntityValueMap(entity, options);
 
-            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
-        }, {} as ObjectLiteral);
-        return Object.keys(map).length > 0 ? map : undefined;
+            // make sure that none of the values of the columns are not missing
+            if (map === undefined || value === null || value === undefined)
+                return undefined;
+
+            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
+        }, {} as ObjectLiteral|undefined);
     }
 
     // ---------------------------------------------------------------------

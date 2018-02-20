@@ -588,7 +588,7 @@ export abstract class QueryBuilder<Entity> {
         if (this.expressionMap.mainAlias!.hasMetadata) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
-                const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:discriminatorColumnValues)`;
+                const condition = `${this.replacePropertyNames(this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName)} IN (:...discriminatorColumnValues)`;
                 return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
             }
         }
@@ -738,8 +738,8 @@ export abstract class QueryBuilder<Entity> {
                                 parameterIndex++;
                                 return `${aliasPath} = ${this.connection.driver.createParameter(parameterName, parameterIndex - 1)}`;
                             }
-                        }).join(" AND ");
-                    }).join(" AND ");
+                        }).filter(expression => !!expression).join(" AND ");
+                    }).filter(expression => !!expression).join(" AND ");
                 });
 
             } else {

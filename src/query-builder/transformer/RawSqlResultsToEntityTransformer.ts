@@ -201,6 +201,7 @@ export class RawSqlResultsToEntityTransformer {
                     columns = relation.joinColumns.map(joinColumn => joinColumn);
                 } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                     columns = relation.inverseEntityMetadata.primaryColumns.map(joinColumn => joinColumn);
+                    // columns = relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn.referencedColumn!); //.inverseEntityMetadata.primaryColumns.map(joinColumn => joinColumn);
                 } else { // ManyToMany
                     if (relation.isOwning) {
                         columns = relation.inverseJoinColumns.map(joinColumn => joinColumn);
@@ -215,10 +216,17 @@ export class RawSqlResultsToEntityTransformer {
                 // }, {} as ObjectLiteral); // need to create reusable function for this process
 
                 const idMap = columns.reduce((idMap, column) => {
+                    let value = result[column.databaseName];
                     if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                        return OrmUtils.mergeDeep(idMap, column.createValueMap(result[column.databaseName]));
+                        if (column.referencedColumn) // if column is a relation
+                            value = column.referencedColumn.createValueMap(value);
+
+                        return OrmUtils.mergeDeep(idMap, column.createValueMap(value));
                     } else {
-                        return OrmUtils.mergeDeep(idMap, column.referencedColumn!.createValueMap(result[column.databaseName]));
+                        if (column.referencedColumn!.referencedColumn) // if column is a relation
+                            value = column.referencedColumn!.referencedColumn!.createValueMap(value);
+
+                        return OrmUtils.mergeDeep(idMap, column.referencedColumn!.createValueMap(value));
                     }
                 }, {} as ObjectLiteral);
 
@@ -231,6 +239,7 @@ export class RawSqlResultsToEntityTransformer {
                 }
                 return idMap;
             }).filter(result => result);
+
 
             const properties = rawRelationIdResult.relationIdAttribute.mapToPropertyPropertyPath.split(".");
             const mapToProperty = (properties: string[], map: ObjectLiteral, value: any): any => {

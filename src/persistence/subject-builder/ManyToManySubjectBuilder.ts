@@ -120,12 +120,16 @@ export class ManyToManySubjectBuilder {
 
             // extract only relation id from the related entities, since we only need it for comparision
             // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
-            const relatedEntityRelationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity);
+            let relatedEntityRelationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity);
 
             // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
             const relatedEntitySubject = this.subjects.find(subject => {
                 return subject.entity === relatedEntity;
             });
+
+            // if subject with entity was found take subject identifier as relation id map since it may contain extra properties resolved
+            if (relatedEntitySubject)
+                relatedEntityRelationIdMap = relatedEntitySubject.identifier;
 
             // if related entity relation id map is empty it means related entity is newly persisted
             if (!relatedEntityRelationIdMap) {
@@ -182,9 +186,23 @@ export class ManyToManySubjectBuilder {
         });
 
         // get all inverse entities relation ids that are "bind" to the currently persisted entity
-        const changedInverseEntityRelationIds = relatedEntities
-            .map(relatedEntity => relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity))
-            .filter(relatedEntityRelationIdMap => relatedEntityRelationIdMap !== undefined && relatedEntityRelationIdMap !== null);
+        const changedInverseEntityRelationIds: ObjectLiteral[] = [];
+        relatedEntities.forEach(relatedEntity => {
+            // relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity)
+            let relatedEntityRelationIdMap = relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity);
+
+            // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
+            const relatedEntitySubject = this.subjects.find(subject => {
+                return subject.entity === relatedEntity;
+            });
+
+            // if subject with entity was found take subject identifier as relation id map since it may contain extra properties resolved
+            if (relatedEntitySubject)
+                relatedEntityRelationIdMap = relatedEntitySubject.identifier;
+
+            if (relatedEntityRelationIdMap !== undefined && relatedEntityRelationIdMap !== null)
+                changedInverseEntityRelationIds.push(relatedEntityRelationIdMap);
+        });
 
         // now from all entities in the persisted entity find only those which aren't found in the db
         const removedJunctionEntityIds = databaseRelatedEntityIds.filter(existRelationId => {

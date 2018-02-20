@@ -40,14 +40,10 @@ export class SubjectDatabaseEntityLoader {
             subjectGroup.subjects.forEach(subject => {
 
                 // we don't load if subject already has a database entity loaded
-                if (subject.databaseEntity)
+                if (subject.databaseEntity || !subject.identifier)
                     return;
 
-                // we only need entity id
-                if (!subject.metadata.hasAllPrimaryKeys(subject.entity!)) // can we use getEntityIdMap instead
-                    return;
-
-                allIds.push(subject.metadata.getEntityIdMap(subject.entity!)!);
+                allIds.push(subject.identifier);
             });
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
@@ -65,13 +61,14 @@ export class SubjectDatabaseEntityLoader {
                 subjectGroup.subjects.forEach(subject => {
 
                     // gets all relation property paths that exist in the persisted entity.
-                    subject.metadata.relations
-                        .filter(relation => relation.getEntityValue(subject.entity!) !== undefined)
-                        .map(relation => relation.propertyPath)
-                        .forEach(propertyPath => {
-                            if (loadRelationPropertyPaths.indexOf(propertyPath) === -1)
-                                loadRelationPropertyPaths.push(propertyPath);
-                        });
+                    subject.metadata.relations.forEach(relation => {
+                        const value = relation.getEntityValue(subject.entityWithFulfilledIds!);
+                        if (value === undefined)
+                            return;
+
+                        if (loadRelationPropertyPaths.indexOf(relation.propertyPath) === -1)
+                            loadRelationPropertyPaths.push(relation.propertyPath);
+                    });
                 });
             } else { // remove
 
@@ -81,6 +78,7 @@ export class SubjectDatabaseEntityLoader {
             }
 
             const findOptions: FindManyOptions<any> = {
+                loadEagerRelations: false,
                 loadRelationIds: {
                     relations: loadRelationPropertyPaths,
                     disableMixedMap: true
@@ -124,7 +122,7 @@ export class SubjectDatabaseEntityLoader {
             if (subject.entity === entity)
                 return true;
 
-            return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entity, entity);
+            return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entityWithFulfilledIds!, entity);
         });
     }
 

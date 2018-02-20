@@ -70,6 +70,11 @@ export interface TestingOptions {
     dropSchema?: boolean;
 
     /**
+     * Enables or disables logging.
+     */
+    logging?: boolean;
+
+    /**
      * Schema name used for postgres driver.
      */
     schema?: string;
@@ -203,6 +208,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.synchronize = options.schemaCreate;
             if (options && options.schema)
                 newOptions.schema = options.schema;
+            if (options && options.logging !== undefined)
+                newOptions.logging = options.logging;
             if (options && options.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.namingStrategy)

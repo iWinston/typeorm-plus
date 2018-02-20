@@ -34,6 +34,11 @@ export class Subject {
     identifier: ObjectLiteral|undefined = undefined;
 
     /**
+     * Copy of entity but with relational ids fulfilled.
+     */
+    entityWithFulfilledIds: ObjectLiteral|undefined = undefined;
+
+    /**
      * If subject was created by cascades this property will contain subject
      * from where this subject was created.
      */
@@ -124,7 +129,15 @@ export class Subject {
             this.changeMaps.push(...options.changeMaps);
 
         if (this.entity) {
-            this.identifier = this.metadata.getEntityIdMap(this.entity);
+            this.entityWithFulfilledIds = Object.assign({}, this.entity);
+            if (this.parentSubject) {
+                this.metadata.primaryColumns.forEach(primaryColumn => {
+                    if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === this.parentSubject!.metadata) {
+                        primaryColumn.setEntityValue(this.entityWithFulfilledIds!, this.parentSubject!.entity);
+                    }
+                });
+            }
+            this.identifier = this.metadata.getEntityIdMap(this.entityWithFulfilledIds);
 
         } else if (this.databaseEntity) {
             this.identifier = this.metadata.getEntityIdMap(this.databaseEntity);
