@@ -17,7 +17,6 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -260,15 +259,20 @@ export class MysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
+            let value: any;
+            if (key.substr(0, 4) === ":...") {
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
             if (value instanceof Function) {
                 return value();
 
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
-                escapedParameters.push(parameters[key.substr(1)]);
+                escapedParameters.push(value);
                 return "?";
             }
         }); // todo: make replace only in value statements, otherwise problems

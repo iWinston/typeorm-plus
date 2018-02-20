@@ -254,24 +254,24 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
+            let value: any;
+            // let isArray = false;
+            if (key.substr(0, 4) === ":...") {
+                // isArray = true;
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
 
-            if (value instanceof Array) {
-                return value.map((v: any, index: number) => {
-                    escapedParameters.push(v);
-                    return key + index;
-                }).join(", ");
-
-            } else if (value instanceof Function) {
+            if (value instanceof Function) {
                 return value();
 
             } else if (typeof value === "boolean") {
                 return value ? 1 : 0;
 
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return key;
             }

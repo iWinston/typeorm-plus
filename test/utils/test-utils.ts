@@ -70,6 +70,11 @@ export interface TestingOptions {
     dropSchema?: boolean;
 
     /**
+     * Enables or disables logging.
+     */
+    logging?: boolean;
+
+    /**
      * Schema name used for postgres driver.
      */
     schema?: string;
@@ -186,27 +191,31 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
             if (connectionOptions.disabledIfNotEnabledImplicitly === true)
                 return false;
 
-        return true;
-    })
-    .map(connectionOptions => {
-        const newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
-            name: options && options.name ? options.name : connectionOptions.name,
-            entities: options && options.entities ? options.entities : [],
-            subscribers: options && options.subscribers ? options.subscribers : [],
-            entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-            dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
-            cache: options ? options.cache : undefined,
+            return true;
+        })
+        .map(connectionOptions => {
+            let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
+                name: options && options.name ? options.name : connectionOptions.name,
+                entities: options && options.entities ? options.entities : [],
+                subscribers: options && options.subscribers ? options.subscribers : [],
+                entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
+                dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
+                cache: options ? options.cache : undefined,
+            });
+            if (options && options.driverSpecific)
+                newOptions = Object.assign({}, options.driverSpecific, newOptions);
+            if (options && options.schemaCreate)
+                newOptions.synchronize = options.schemaCreate;
+            if (options && options.schema)
+                newOptions.schema = options.schema;
+            if (options && options.logging !== undefined)
+                newOptions.logging = options.logging;
+            if (options && options.__dirname)
+                newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
+            if (options && options.namingStrategy)
+                newOptions.namingStrategy = options.namingStrategy;
+            return newOptions;
         });
-        if (options && options.schemaCreate)
-            newOptions.synchronize = options.schemaCreate;
-        if (options && options.schema)
-            newOptions.schema = options.schema;
-        if (options && options.__dirname)
-            newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
-        if (options && options.namingStrategy)
-            newOptions.namingStrategy = options.namingStrategy;
-        return newOptions;
-    });
 }
 
 /**

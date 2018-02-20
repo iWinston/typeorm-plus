@@ -594,7 +594,7 @@ export abstract class QueryBuilder<Entity> {
                     ? this.expressionMap.mainAlias!.name + "." + metadata.discriminatorColumn.databaseName
                     : metadata.discriminatorColumn.databaseName;
 
-                const condition = `${this.replacePropertyNames(column)} IN (:discriminatorColumnValues)`;
+                const condition = `${this.replacePropertyNames(column)} IN (:...discriminatorColumnValues)`;
                 return ` WHERE ${ conditions.length ? "(" + conditions + ") AND" : "" } ${condition}`;
             }
         }

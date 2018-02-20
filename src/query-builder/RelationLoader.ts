@@ -60,7 +60,7 @@ export class RelationLoader {
             .innerJoin(relation.entityMetadata.target as Function, joinAliasName, conditions);
 
         if (columns.length === 1) {
-            qb.where(`${joinAliasName}.${columns[0].propertyPath} IN (:${joinAliasName + "_" + columns[0].propertyName})`);
+            qb.where(`${joinAliasName}.${columns[0].propertyPath} IN (:...${joinAliasName + "_" + columns[0].propertyName})`);
             qb.setParameter(joinAliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].getEntityValue(entity)));
 
         } else {
@@ -95,7 +95,7 @@ export class RelationLoader {
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
 
         if (columns.length === 1) {
-            qb.where(`${aliasName}.${columns[0].propertyPath} IN (:${aliasName + "_" + columns[0].propertyName})`);
+            qb.where(`${aliasName}.${columns[0].propertyPath} IN (:...${aliasName + "_" + columns[0].propertyName})`);
             qb.setParameter(aliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity)));
 
         } else {
@@ -126,7 +126,7 @@ export class RelationLoader {
         const mainAlias = relation.propertyName;
         const joinAlias = relation.junctionEntityMetadata!.tableName;
         const joinColumnConditions = relation.joinColumns.map(joinColumn => {
-            return `${joinAlias}.${joinColumn.propertyName} IN (:${joinColumn.propertyName})`;
+            return `${joinAlias}.${joinColumn.propertyName} IN (:...${joinColumn.propertyName})`;
         });
         const inverseJoinColumnConditions = relation.inverseJoinColumns.map(inverseJoinColumn => {
             return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn!.propertyName}`;
@@ -162,7 +162,7 @@ export class RelationLoader {
             return `${joinAlias}.${joinColumn.propertyName} = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`;
         });
         const inverseJoinColumnConditions = relation.inverseRelation!.inverseJoinColumns.map(inverseJoinColumn => {
-            return `${joinAlias}.${inverseJoinColumn.propertyName} IN (:${inverseJoinColumn.propertyName})`;
+            return `${joinAlias}.${inverseJoinColumn.propertyName} IN (:...${inverseJoinColumn.propertyName})`;
         });
         const parameters = relation.inverseRelation!.inverseJoinColumns.reduce((parameters, joinColumn) => {
             parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity));

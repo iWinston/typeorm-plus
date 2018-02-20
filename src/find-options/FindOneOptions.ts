@@ -42,4 +42,10 @@ export interface FindOneOptions<Entity> {
      */
     loadRelationIds?: boolean|{ relations?: string[], disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
 
+    /**
+     * Indicates if eager relations should be loaded or not.
+     * By default they are loaded when find methods are used.
+     */
+    loadEagerRelations?: boolean;
+
 }

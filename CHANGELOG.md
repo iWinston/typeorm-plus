@@ -54,6 +54,8 @@ By default its true.
 * now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
 * `@ClosureEntity` decorator has been removed. Instead `@Entity` + `@Tree("closure-table")` must be used
 * added support for nested set and materialized path tree hierarchy patterns
+* breaking change on how array parameters work in queries - now instead of (:param) new syntax must be used (:...param).
+This fixed various issues on how real arrays must work
 * added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
 

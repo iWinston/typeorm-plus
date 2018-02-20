@@ -202,7 +202,7 @@ export class RelationIdLoader {
         let condition1 = "";
         if (columns.length === 1) {
             qb.setParameter("values1", entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity)));
-            condition1 = mainAlias + "." + columns[0].propertyPath + " IN (:values1)"; // todo: use ANY for postgres
+            condition1 = mainAlias + "." + columns[0].propertyPath + " IN (:...values1)"; // todo: use ANY for postgres
 
         } else {
             condition1 = "(" + entities.map((entity, entityIndex) => {
@@ -219,7 +219,7 @@ export class RelationIdLoader {
         if (relatedEntities) {
             if (inverseColumns.length === 1) {
                 qb.setParameter("values2", relatedEntities.map(entity => inverseColumns[0].referencedColumn!.getEntityValue(entity)));
-                condition2 = mainAlias + "." + inverseColumns[0].propertyPath + " IN (:values2)"; // todo: use ANY for postgres
+                condition2 = mainAlias + "." + inverseColumns[0].propertyPath + " IN (:...values2)"; // todo: use ANY for postgres
 
             } else {
                 condition2 = "(" + relatedEntities.map((entity, entityIndex) => {
@@ -260,7 +260,7 @@ export class RelationIdLoader {
         let condition: string = "";
         if (relation.entityMetadata.primaryColumns.length === 1) {
             qb.setParameter("values", entities.map(entity => relation.entityMetadata.primaryColumns[0].getEntityValue(entity)));
-            condition = mainAlias + "." + relation.entityMetadata.primaryColumns[0].propertyPath + " IN (:values)";
+            condition = mainAlias + "." + relation.entityMetadata.primaryColumns[0].propertyPath + " IN (:...values)";
 
         } else {
             condition = entities.map((entity, entityIndex) => {
@@ -300,7 +300,7 @@ export class RelationIdLoader {
         let condition: string = "";
         if (relation.joinColumns.length === 1) {
             qb.setParameter("values", entities.map(entity => relation.joinColumns[0].referencedColumn!.getEntityValue(entity)));
-            condition = mainAlias + "." + relation.joinColumns[0].propertyPath + " IN (:values)";
+            condition = mainAlias + "." + relation.joinColumns[0].propertyPath + " IN (:...values)";
 
         } else {
             condition = entities.map((entity, entityIndex) => {
