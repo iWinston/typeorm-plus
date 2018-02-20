@@ -58,8 +58,10 @@ By default its true.
 This fixed various issues on how real arrays must work
 
 ## 0.1.13
+
 * added simple-json column type ([#1448](https://github.com/typeorm/typeorm/pull/1488))
 * fixed transform behaviour for timestamp columns ([#1140](https://github.com/typeorm/typeorm/issues/1140))
+* fixed issue with multi-level relations loading ([#1504](https://github.com/typeorm/typeorm/issues/1504))
 
 ## 0.1.12
 
