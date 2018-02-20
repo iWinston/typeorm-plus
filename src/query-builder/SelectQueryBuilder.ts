@@ -1319,8 +1319,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             excludedSelects.push(...this.findEntityColumnSelects(this.expressionMap.mainAlias.name, metadata));
         }
 
-        console.log(allSelects);
-
         // add selects from joins
         this.expressionMap.joinAttributes
             .forEach(join => {
