@@ -320,6 +320,32 @@ describe("repository > basic methods", () => {
 
     });
 
+    describe("save", function () {
+        it("should update existing entity using transformers", () => Promise.all(connections.map(async connection => {
+            const post = new Post();
+            post.dateAdded = new Date();
+            post.title = "Post title";
+            post.id = "123";
+
+            const postRepository = connection.getRepository(Post);
+
+            await postRepository.save(post);
+
+            const dbPost = await postRepository.findOne(post.id) as Post;
+            dbPost.should.be.instanceOf(Post);
+            dbPost.dateAdded.should.be.instanceOf(Date);
+
+            dbPost.title = "New title";
+            const saved = await postRepository.save(dbPost);
+
+            saved.should.be.instanceOf(Post);
+            
+            saved.id!.should.be.equal("123");
+            saved.title.should.be.equal("New title");
+            saved.dateAdded.should.be.instanceof(Date);
+        })));
+    });
+
     describe("preload also should also implement merge functionality", function() {
 
         it("if we preload entity from the plain object and merge preloaded object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {

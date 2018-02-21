@@ -14,13 +14,4 @@ export class Photo {
 
     @Column(type => Counters)
     counters: Counters;
-
-    @Column({
-        type: "date",
-        transformer: {
-            from: (value: any) => new Date(value),
-            to: (value: Date) => value.toISOString(),
-        }
-    })
-    dateAdded: Date;
 }
