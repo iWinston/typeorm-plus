@@ -144,16 +144,16 @@ export class MetadataArgsStorage {
         return this.filterByTarget(this.namingStrategies, target);
     }
 
-    filterTransactionEntityManagers(target: Function|string): TransactionEntityMetadataArgs[];
-    filterTransactionEntityManagers(target: (Function|string)[]): TransactionEntityMetadataArgs[];
-    filterTransactionEntityManagers(target: (Function|string)|(Function|string)[]): TransactionEntityMetadataArgs[] {
-        return this.filterByTarget(this.transactionEntityManagers, target);
+    filterTransactionEntityManagers(target: Function|string, propertyName: string): TransactionEntityMetadataArgs[] {
+        return this.transactionEntityManagers.filter(transactionEm => {
+            return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
+        });
     }
     
-    filterTransactionRepository(target: Function|string): TransactionRepositoryMetadataArgs[];
-    filterTransactionRepository(target: (Function|string)[]): TransactionRepositoryMetadataArgs[];
-    filterTransactionRepository(target: (Function|string)|(Function|string)[]): TransactionRepositoryMetadataArgs[] {
-        return this.filterByTarget(this.transactionRepositories, target);
+    filterTransactionRepository(target: Function|string, propertyName: string): TransactionRepositoryMetadataArgs[] {
+        return this.transactionRepositories.filter(transactionEm => {
+            return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
+        });
     }
 
     filterSingleTableChildren(target: Function|string): TableMetadataArgs[] {

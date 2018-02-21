@@ -8,6 +8,7 @@ export class RepositoryNotTreeError extends Error {
         super();
         const targetName = typeof entityClass === "function" && (<any> entityClass).name ? (<any> entityClass).name : entityClass;
         this.message = `Repository of the "${targetName}" class is not a TreeRepository. Try to apply @Tree decorator on your entity.`;
+        Object.setPrototypeOf(this, RepositoryNotTreeError.prototype);
         this.stack = new Error().stack;
     }
 

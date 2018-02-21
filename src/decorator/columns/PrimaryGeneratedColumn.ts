@@ -1,7 +1,5 @@
-import {getMetadataArgsStorage} from "../../index";
-import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
+import {ColumnOptions, getMetadataArgsStorage} from "../../";
 import {PrimaryGeneratedColumnNumericOptions} from "../options/PrimaryGeneratedColumnNumericOptions";
-import {ColumnOptions} from "../options/ColumnOptions";
 import {PrimaryGeneratedColumnUUIDOptions} from "../options/PrimaryGeneratedColumnUUIDOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
 
@@ -32,9 +30,10 @@ export function PrimaryGeneratedColumn(strategy: "uuid", options?: PrimaryGenera
  */
 export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions,
                                        maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions): Function {
+
+    // normalize parameters
     const options: ColumnOptions = {};
     let strategy: "increment"|"uuid";
-
     if (strategyOrOptions) {
         if (typeof strategyOrOptions === "string")
             strategy = strategyOrOptions as "increment"|"uuid";
@@ -46,39 +45,31 @@ export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|Pr
     } else {
         strategy = "increment";
     }
-
     if (maybeOptions instanceof Object)
         Object.assign(options, maybeOptions);
 
     return function (object: Object, propertyName: string) {
 
-        // check if there is no type in column options then set the int type - by default for auto generated column
-        if (!options.type) {
-            if (strategy === "increment") {
-                Object.assign(options, { type: Number } as ColumnOptions);
-            } else {
-                Object.assign(options, { type: "uuid" } as ColumnOptions);
-            }
-        }
+        // if column type is not explicitly set then determine it based on generation strategy
+        if (!options.type)
+            options.type = strategy === "increment" ? Number : "uuid";
 
-        // implicitly set a primary and generated to column options
-        Object.assign(options, { primary: true } as ColumnOptions);
+        // explicitly set a primary and generated to column options
+        options.primary = true;
 
-        // create and register a new column metadata
-        const columnArgs: ColumnMetadataArgs = {
+        // register column metadata args
+        getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
             mode: "regular",
             options: options
-        };
-        getMetadataArgsStorage().columns.push(columnArgs);
+        });
 
-        const generationArgs: GeneratedMetadataArgs = {
+        // register generated metadata args
+        getMetadataArgsStorage().generations.push({
             target: object.constructor,
             propertyName: propertyName,
             strategy: strategy
-        };
-        getMetadataArgsStorage().generations.push(generationArgs);
+        } as GeneratedMetadataArgs);
     };
 }
-

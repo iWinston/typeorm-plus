@@ -13,6 +13,8 @@ export class EntityNotFoundError extends Error {
         const className = (typeof entityClass === "string") ? entityClass : entityClass.constructor.name;
         const criteriaString = this.stringifyCriteria(criteria);
         this.message = `Could not find any entity of type "${className}" matching: ${criteriaString}`;
+        Object.setPrototypeOf(this, EntityNotFoundError.prototype);
+        this.stack = new Error().stack;
     }
 
     private stringifyCriteria(criteria: any): string {

@@ -7,6 +7,8 @@ export class LimitOnUpdateNotSupportedError extends Error {
         super(`Your database does not support LIMIT on UPDATE statements.`);
         Object.setPrototypeOf(this, LimitOnUpdateNotSupportedError.prototype);
         this.name = "LimitOnUpdateNotSupportedError";
+        Object.setPrototypeOf(this, LimitOnUpdateNotSupportedError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

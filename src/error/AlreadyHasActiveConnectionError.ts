@@ -8,6 +8,7 @@ export class AlreadyHasActiveConnectionError extends Error {
         super();
         this.message = `Cannot create a new connection named "${connectionName}", because connection with such name ` +
             `already exist and it now has an active connection session.`;
+        Object.setPrototypeOf(this, AlreadyHasActiveConnectionError.prototype);
         this.stack = new Error().stack;
     }
 

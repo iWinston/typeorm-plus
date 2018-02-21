@@ -16,6 +16,8 @@ export class MissingJoinColumnError extends Error {
             this.message = `JoinColumn is missing on ${entityMetadata.name}#${relation.propertyName} one-to-one relationship. ` +
                 `You need to put JoinColumn decorator on it.`;
         }
+        Object.setPrototypeOf(this, MissingJoinColumnError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

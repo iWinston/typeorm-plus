@@ -7,6 +7,8 @@ export class EntityMetadataNotFound extends Error {
         super();
         const targetName = typeof target === "function" && (<any> target).name ? (<any> target).name : target;
         this.message = `No metadata for "${targetName}" was found.`;
+        Object.setPrototypeOf(this, EntityMetadataNotFound.prototype);
+        this.stack = new Error().stack;
     }
 
 }

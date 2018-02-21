@@ -1,5 +1,4 @@
-import {ColumnOptions} from "../options/ColumnOptions";
-import {getMetadataArgsStorage} from "../../index";
+import {ColumnOptions, getMetadataArgsStorage} from "../../";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
 /**
@@ -11,18 +10,15 @@ export function ObjectIdColumn(options?: ColumnOptions): Function {
 
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
-        options = Object.assign(options, {
-            primary: true,
-            name: options.name ? options.name : "_id"
-        });
+        options.primary = true;
+        if (!options.name) options.name =  "_id";
 
         // create and register a new column metadata
-        const args: ColumnMetadataArgs = {
+        getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
             mode: "objectId",
             options: options
-        };
-        getMetadataArgsStorage().columns.push(args);
+        } as ColumnMetadataArgs);
     };
 }

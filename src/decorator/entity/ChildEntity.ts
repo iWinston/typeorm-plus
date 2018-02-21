@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 import {DiscriminatorValueMetadataArgs} from "../../metadata-args/DiscriminatorValueMetadataArgs";
 
@@ -8,21 +8,18 @@ import {DiscriminatorValueMetadataArgs} from "../../metadata-args/DiscriminatorV
 export function ChildEntity(discriminatorValue?: any) {
     return function (target: Function) {
 
-        const tableMetadataArgs: TableMetadataArgs = {
+        // register a table metadata
+        getMetadataArgsStorage().tables.push({
             target: target,
-            name: undefined,
             type: "entity-child",
-            orderBy: undefined
-        };
-        getMetadataArgsStorage().tables.push(tableMetadataArgs);
+        } as TableMetadataArgs);
 
+        // register discriminator value if it was provided
         if (discriminatorValue) {
-            const discriminatorValueMetadataArgs: DiscriminatorValueMetadataArgs = {
+            getMetadataArgsStorage().discriminatorValues.push({
                 target: target,
                 value: discriminatorValue
-            };
-            getMetadataArgsStorage().discriminatorValues.push(discriminatorValueMetadataArgs);
+            } as DiscriminatorValueMetadataArgs);
         }
-
     };
 }

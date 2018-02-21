@@ -8,6 +8,8 @@ export class CustomRepositoryReusedError extends Error {
         super(`Custom entity repository ${repository instanceof Function ? repository.name : repository.constructor.name} ` +
             `was already used in the different connection. You can't share entity repositories between different connections ` +
             `when useContainer is set to true for the entity repository.`);
+        Object.setPrototypeOf(this, CustomRepositoryReusedError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

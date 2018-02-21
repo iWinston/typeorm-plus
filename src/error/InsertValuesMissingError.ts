@@ -7,6 +7,8 @@ export class InsertValuesMissingError extends Error {
     constructor() {
         super();
         this.message = `Cannot perform insert query because values are not defined. Call "qb.values(...)" method to specify inserted values.`;
+        Object.setPrototypeOf(this, InsertValuesMissingError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

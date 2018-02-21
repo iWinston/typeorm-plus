@@ -1,7 +1,5 @@
-import {ColumnOptions} from "../options/ColumnOptions";
-import {ColumnType} from "../../driver/types/ColumnTypes";
+import {ColumnOptions, ColumnType, getMetadataArgsStorage} from "../../";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
-import {getMetadataArgsStorage} from "../../index";
 import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 
@@ -25,29 +23,25 @@ export function PrimaryColumn(type?: ColumnType, options?: ColumnOptions): Funct
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
 export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
-    let type: ColumnType|undefined;
-    if (typeof typeOrOptions === "string") {
-        type = <ColumnType> typeOrOptions;
-    } else {
-        options = <ColumnOptions> typeOrOptions;
-    }
     return function (object: Object, propertyName: string) {
 
-        // const reflectedType = ColumnTypes.typeToString((Reflect as any).getMetadata("design:type", object, propertyName));
-
-        // if type is not given implicitly then try to guess it
-        if (!type) {
-            const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-            if (reflectMetadataType)
-                type = reflectMetadataType;
+        // normalize parameters
+        let type: ColumnType|undefined;
+        if (typeof typeOrOptions === "string") {
+            type = <ColumnType> typeOrOptions;
+        } else {
+            options = <ColumnOptions> typeOrOptions;
         }
-
-        // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions;
+
+        // if type is not given explicitly then try to guess it
+        const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
+        if (!type && reflectMetadataType)
+            type = reflectMetadataType;
 
         // check if there is no type in column options then set type from first function argument, or guessed one
         if (!options.type && type)
-            options = Object.assign({ type: type } as ColumnOptions, options);
+            options.type = type;
 
         // if we still don't have a type then we need to give error to user that type is required
         if (!options.type)
@@ -57,18 +51,16 @@ export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?
         if (options.nullable)
             throw new PrimaryColumnCannotBeNullableError(object, propertyName);
 
-        // implicitly set a primary to column options
-        options = Object.assign({ primary: true } as ColumnOptions, options);
+        // explicitly set a primary to column options
+        options.primary = true;
 
         // create and register a new column metadata
-        const args: ColumnMetadataArgs = {
+        getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
-            // propertyType: reflectedType,
             mode: "regular",
             options: options
-        };
-        getMetadataArgsStorage().columns.push(args);
+        } as ColumnMetadataArgs);
     };
 }
 

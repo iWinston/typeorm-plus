@@ -10,6 +10,8 @@ export class UsingJoinColumnIsNotAllowedError extends Error {
         super();
         this.message = `Using JoinColumn on ${entityMetadata.name}#${relation.propertyName} is wrong. ` +
             `You can use JoinColumn only on one-to-one and many-to-one relations.`;
+        Object.setPrototypeOf(this, UsingJoinColumnIsNotAllowedError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

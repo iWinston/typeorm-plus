@@ -6,8 +6,9 @@ export class PessimisticLockTransactionRequiredError extends Error {
 
     constructor() {
         super();
-        Object.setPrototypeOf(this, PessimisticLockTransactionRequiredError.prototype);
         this.message = `An open transaction is required for pessimistic lock.`;
+        Object.setPrototypeOf(this, PessimisticLockTransactionRequiredError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

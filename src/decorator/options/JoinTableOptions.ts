@@ -1,7 +1,7 @@
 import {JoinColumnOptions} from "./JoinColumnOptions";
 
 /**
- * Describes all relation's options.
+ * Describes join table options.
  */
 export interface JoinTableOptions {
 

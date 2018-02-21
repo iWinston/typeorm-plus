@@ -15,6 +15,7 @@ export class CannotCreateEntityIdMapError extends Error {
             return object;
         }, {} as ObjectLiteral);
         this.message = `Cannot use given entity id "${id}" because "${metadata.targetName}" contains multiple primary columns, you must provide object in following form: ${JSON.stringify(objectExample)} as an id.`;
+        Object.setPrototypeOf(this, CannotCreateEntityIdMapError.prototype);
         this.stack = new Error().stack;
     }
 

@@ -6,8 +6,9 @@ export class NoVersionOrUpdateDateColumnError extends Error {
 
     constructor(entity: string) {
         super();
-        Object.setPrototypeOf(this, NoVersionOrUpdateDateColumnError.prototype);
         this.message = `Entity ${entity} does not have version or update date columns.`;
+        Object.setPrototypeOf(this, NoVersionOrUpdateDateColumnError.prototype);
+        this.stack = new Error().stack;
     }
 
 }
