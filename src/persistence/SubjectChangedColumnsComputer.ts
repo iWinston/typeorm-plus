@@ -46,7 +46,7 @@ export class SubjectChangedColumnsComputer {
                 return;
 
             // get user provided value - column value from the user provided persisted entity
-            let entityValue = column.getEntityValue(subject.entity!);
+            const entityValue = column.getEntityValue(subject.entity!);
 
             // we don't perform operation over undefined properties (but we DO need null properties!)
             if (entityValue === undefined)
@@ -64,39 +64,33 @@ export class SubjectChangedColumnsComputer {
                     if (value !== null && value !== undefined)
                         return;
                 }
-
+                let normalizedValue = entityValue;
                 // normalize special values to make proper comparision
                 if (entityValue !== null && entityValue !== undefined) {
                     if (column.type === "date") {
-                        entityValue = DateUtils.mixedDateToDateString(entityValue);
+                        normalizedValue = DateUtils.mixedDateToDateString(entityValue);
 
                     } else if (column.type === "time") {
-                        entityValue = DateUtils.mixedDateToTimeString(entityValue);
+                        normalizedValue = DateUtils.mixedDateToTimeString(entityValue);
 
                     } else if (column.type === "datetime" || column.type === Date) {
-                        entityValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
+                        normalizedValue = DateUtils.mixedDateToUtcDatetimeString(entityValue);
                         databaseValue = DateUtils.mixedDateToUtcDatetimeString(databaseValue);
 
                     } else if (column.type === "json" || column.type === "jsonb") {
-                        entityValue = JSON.stringify(entityValue);
+                        normalizedValue = JSON.stringify(entityValue);
                         if (databaseValue !== null && databaseValue !== undefined)
                             databaseValue = JSON.stringify(databaseValue);
 
                     } else if (column.type === "sample-array") {
-                        entityValue = DateUtils.simpleArrayToString(entityValue);
+                        normalizedValue = DateUtils.simpleArrayToString(entityValue);
                         databaseValue = DateUtils.simpleArrayToString(databaseValue);
                     }
                 }
 
                 // if value is not changed - then do nothing
-                if (entityValue === databaseValue)
+                if (normalizedValue === databaseValue)
                     return;
-
-                // revert entity value back to its original value, because we need to save original value, not a string
-                // we used string only for comparision
-                if (column.type === "json" || column.type === "jsonb") {
-                    entityValue = column.getEntityValue(subject.entity!);
-                }
             }
 
             // find if there is already a column to be changed
