@@ -161,16 +161,16 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
             loadedPersons[1].id.should.equal(2);
             loadedPersons[1].name.should.equal("Mr. Garrison");
             (loadedPersons[1] as Teacher).specializations.length.should.equal(2);
-            (loadedPersons[0] as Teacher)!.specializations.map(f => f.name).should.contain("Geography");
-            (loadedPersons[0] as Teacher)!.specializations.map(f => f.name).should.contain("Economist");
+            (loadedPersons[1] as Teacher)!.specializations.map(f => f.name).should.contain("Geography");
+            (loadedPersons[1] as Teacher)!.specializations.map(f => f.name).should.contain("Economist");
             (loadedPersons[1] as Teacher).salary.should.equal(2000);
             loadedPersons[2].should.have.all.keys("id", "name", "salary", "departments");
             loadedPersons[2].should.be.instanceof(Accountant);
             loadedPersons[2].id.should.equal(3);
             loadedPersons[2].name.should.equal("Mr. Burns");
             (loadedPersons[2] as Accountant).departments.length.should.equal(2);
-            (loadedPersons[1] as Accountant)!.departments.map(f => f.name).should.contain("Bookkeeping");
-            (loadedPersons[1] as Accountant)!.departments.map(f => f.name).should.contain("HR");
+            (loadedPersons[2] as Accountant)!.departments.map(f => f.name).should.contain("Bookkeeping");
+            (loadedPersons[2] as Accountant)!.departments.map(f => f.name).should.contain("HR");
             (loadedPersons[2] as Accountant).salary.should.equal(3000);
 
         })));
