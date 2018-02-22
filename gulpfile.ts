@@ -344,7 +344,7 @@ export class Gulpfile {
             .pipe(mocha({
                 bail: true,
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
-                timeout: 30000
+                timeout: 15000
             }));
     }
 
