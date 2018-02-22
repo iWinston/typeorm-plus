@@ -243,8 +243,7 @@ export class PostgresDriver implements Driver {
         const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "hstore").length > 0;
         });
-
-        if (hasUuidColumns || hasCitextColumns) {
+        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
