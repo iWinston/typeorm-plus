@@ -538,7 +538,7 @@ export class OracleDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
+                || (columnMetadata.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
                 || !this.compareColumnLengths(tableColumn, columnMetadata);
         });
     }

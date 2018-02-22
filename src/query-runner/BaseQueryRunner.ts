@@ -184,8 +184,16 @@ export abstract class BaseQueryRunner {
      */
     protected replaceCachedTable(table: Table, changedTable: Table): void {
         const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
-        if (foundTable)
-            this.loadedTables[this.loadedTables.indexOf(foundTable)] = changedTable;
+        if (foundTable) {
+            foundTable.name = changedTable.name;
+            foundTable.columns = changedTable.columns;
+            foundTable.indices = changedTable.indices;
+            foundTable.foreignKeys = changedTable.foreignKeys;
+            foundTable.uniques = changedTable.uniques;
+            foundTable.checks = changedTable.checks;
+            foundTable.justCreated = changedTable.justCreated;
+            foundTable.engine = changedTable.engine;
+        }
     }
 
     /**

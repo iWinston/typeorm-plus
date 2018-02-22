@@ -15,6 +15,7 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import {PromiseUtils} from "../../index";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -520,7 +521,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
 
-
             // rename index constraints
             clonedTable.findColumnIndices(oldColumn).forEach(index => {
                 // build new constraint name
@@ -578,7 +578,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // If column is non-primary, we can not make it generated.
         // If column marked as generated and column also changed to primary, we must first create primary key, and then make column generated.
         // If column marked as non-generated and isPrimary also changed to false, we must first make column non-generated and then drop primary key.
-        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
+        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
             if (newColumn.isGenerated === true) {
                 if (newColumn.isPrimary === false)
                     throw new Error(`Can not specify AUTO_INCREMENT on to non-primary column.`);
@@ -624,6 +624,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 }
             }
 
+            // change old column in table
+            const oldColumnIndex = clonedTable.columns.findIndex(column => column.name === oldColumn.name);
+            clonedTable.columns[oldColumnIndex].isGenerated = newColumn.isGenerated;
+            clonedTable.columns[oldColumnIndex].generationStrategy = newColumn.generationStrategy;
+
         } else {
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
@@ -631,6 +636,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
+                // if table have auto increment column, we must drop AUTO_INCREMENT before changing primary constraints.
+                const autoIncrementColumn = clonedTable.columns.find(column => column.generationStrategy === "increment");
+                if (autoIncrementColumn) {
+                    const columnWithoutAutoIncrement = autoIncrementColumn.clone();
+                    columnWithoutAutoIncrement.isGenerated = false;
+                    columnWithoutAutoIncrement.generationStrategy = undefined;
+
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${autoIncrementColumn.name}\` ${this.buildCreateColumnSql(columnWithoutAutoIncrement, true)}`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${columnWithoutAutoIncrement.name}\` ${this.buildCreateColumnSql(autoIncrementColumn, true)}`);
+                }
+
                 const primaryColumns = clonedTable.primaryColumns;
 
                 // if primary column state changed, we must always drop existed constraint.
@@ -656,6 +672,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
                         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
                     }
+                }
+
+                // if table have auto increment column, and we dropped AUTO_INCREMENT property before, we must revert it back
+                if (autoIncrementColumn) {
+                    const columnWithoutAutoIncrement = autoIncrementColumn.clone();
+                    columnWithoutAutoIncrement.isGenerated = false;
+                    columnWithoutAutoIncrement.generationStrategy = undefined;
+
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${columnWithoutAutoIncrement.name}\` ${this.buildCreateColumnSql(autoIncrementColumn, true)}`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${autoIncrementColumn.name}\` ${this.buildCreateColumnSql(columnWithoutAutoIncrement, true)}`);
                 }
             }
         }
@@ -697,11 +723,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        const updatePromises = changedColumns.map(async changedColumn => {
+        await PromiseUtils.runInSequence(changedColumns, changedColumn => {
             return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
-
-        await Promise.all(updatePromises);
     }
 
     /**

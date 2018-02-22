@@ -546,12 +546,12 @@ export class MysqlDriver implements Driver {
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                // || tableColumn.comment !== columnMetadata.comment || // todo
+                // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (tableColumn.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
+                || (columnMetadata.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
                 || !this.compareColumnLengths(tableColumn, columnMetadata);
         });
     }

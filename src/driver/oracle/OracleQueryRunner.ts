@@ -15,6 +15,7 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
+import {PromiseUtils} from "../../index";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -534,8 +535,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            await this.dropColumn(table, oldColumn);
-            await this.addColumn(table, newColumn);
+            await this.dropColumn(clonedTable, oldColumn);
+            await this.addColumn(clonedTable, newColumn);
 
         } else {
             if (newColumn.name !== oldColumn.name) {
@@ -713,10 +714,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        const updatePromises = changedColumns.map(async changedColumn => {
+        await PromiseUtils.runInSequence(changedColumns, changedColumn => {
             return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
-        await Promise.all(updatePromises);
     }
 
     /**

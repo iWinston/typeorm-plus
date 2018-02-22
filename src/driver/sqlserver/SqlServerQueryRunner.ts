@@ -17,6 +17,7 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import {PromiseUtils} from "../../index";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -721,8 +722,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            await this.dropColumn(table, oldColumn);
-            await this.addColumn(table, newColumn);
+            await this.dropColumn(clonedTable, oldColumn);
+            await this.addColumn(clonedTable, newColumn);
 
         } else {
             if (newColumn.name !== oldColumn.name) {
@@ -922,11 +923,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        const updatePromises = changedColumns.map(async changedColumn => {
+        await PromiseUtils.runInSequence(changedColumns, changedColumn => {
             return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
-
-        await Promise.all(updatePromises);
     }
 
     /**
@@ -1666,7 +1665,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Concat database name and schema name to the foreign key name.
      * Needs because FK name is relevant to the schema and database.
      */
-    private buildForeignKeyName(fkName: string, schemaName: string|undefined, dbName: string|undefined): string {
+    protected buildForeignKeyName(fkName: string, schemaName: string|undefined, dbName: string|undefined): string {
         let joinedFkName = fkName;
         if (schemaName)
             joinedFkName = schemaName + "." + joinedFkName;

@@ -390,13 +390,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
 
-            /*const dropPrimaryKeyConstrains = updatedTableColumns
-                .filter(changedTableColumn => {
-                    const isColumnExistInMetadata = !!metadata.columns.find(columnMetadata => columnMetadata.databaseName === changedTableColumn.name);
-                    return isColumnExistInMetadata && changedTableColumn.isPrimary;
-                })
-                .map(changedTableColumn => this.dropPrimaryKeyConstraints(metadata.tableName, changedTableColumn.name));*/
-
             // drop all foreign keys that point to this column
             /*const dropRelatedForeignKeysPromises = updatedTableColumns
                 .filter(changedTableColumn => !!metadata.columns.find(columnMetadata => columnMetadata.databaseName === changedTableColumn.name))

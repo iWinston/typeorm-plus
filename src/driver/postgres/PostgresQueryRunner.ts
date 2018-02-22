@@ -15,6 +15,7 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
+import {PromiseUtils} from "../../";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -844,11 +845,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        const updatePromises = changedColumns.map(async changedColumn => {
+        await PromiseUtils.runInSequence(changedColumns, changedColumn => {
             return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
         });
-
-        await Promise.all(updatePromises);
     }
 
     /**
