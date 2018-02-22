@@ -3,8 +3,6 @@ import {expect} from "chai";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
 describe("query runner > add column", () => {
@@ -32,8 +30,8 @@ describe("query runner > add column", () => {
             isNullable: false
         });
 
-        // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
+        // Sqlite does not supports autoincrement composite primary keys.
+        if (!(connection.driver instanceof AbstractSqliteDriver)) {
             column1.isGenerated = true;
             column1.generationStrategy = "increment";
         }
@@ -55,8 +53,8 @@ describe("query runner > add column", () => {
         column1!.isUnique.should.be.true;
         column1!.isNullable.should.be.false;
 
-        // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
+        // Sqlite does not supports autoincrement composite primary keys.
+        if (!(connection.driver instanceof AbstractSqliteDriver)) {
             column1!.isGenerated.should.be.true;
             column1!.generationStrategy!.should.be.equal("increment");
         }
@@ -64,13 +62,7 @@ describe("query runner > add column", () => {
         column2 = table!.findColumnByName("description")!;
         column2.should.be.exist;
         column2.length.should.be.equal("100");
-
-        if (connection.driver instanceof MysqlDriver) {
-            column2!.default!.should.be.equal("'this is description'");
-
-        } else if (connection.driver instanceof SqlServerDriver) {
-            column2!.default!.should.be.equal("('this is description')");
-        }
+        column2!.default!.should.be.equal("'this is description'");
 
         await queryRunner.executeMemoryDownSql();
 

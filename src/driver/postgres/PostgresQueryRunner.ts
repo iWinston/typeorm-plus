@@ -880,6 +880,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // drop column index
         const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
+            clonedTable.indices.splice(clonedTable.indices.indexOf(columnIndex), 1);
             upQueries.push(this.dropIndexSql(table, columnIndex));
             downQueries.push(this.createIndexSql(table, columnIndex));
         }
@@ -908,7 +909,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.executeQueries(upQueries, downQueries);
 
-        table.removeColumn(column);
+        clonedTable.removeColumn(column);
         this.replaceCachedTable(table, clonedTable);
     }
 

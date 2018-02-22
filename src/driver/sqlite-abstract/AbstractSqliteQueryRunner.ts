@@ -306,7 +306,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const changedTable = table.clone();
         columns.forEach(column => changedTable.addColumn(column));
         await this.recreateTable(changedTable, table);
-        columns.forEach(column => table.addColumn(column));
     }
 
     /**

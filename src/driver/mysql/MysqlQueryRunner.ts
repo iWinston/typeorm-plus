@@ -428,7 +428,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: string[] = [];
         const skipColumnLevelPrimary = table.primaryColumns.length > 0;
 
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary)}`);
+        // if column is primary and AUTO_INCREMENT, we must create column without AUTO_INCREMENT option, then make it primary and then change column to AUTO_INCREMENT.
+        const skipAutoIncrement = column.isPrimary && column.isGenerated && column.generationStrategy === "increment";
+
+        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false, skipAutoIncrement)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN \`${column.name}\``);
 
         // create or update primary key constraint
@@ -465,6 +468,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }));
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${column.name}\`)`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``);
+        }
+
+        if (skipAutoIncrement) {
+            const nonGeneratedColumn = column.clone();
+            nonGeneratedColumn.isGenerated = false;
+            nonGeneratedColumn.generationStrategy = undefined;
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -756,6 +767,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // drop column index
         const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
+            clonedTable.indices.splice(clonedTable.indices.indexOf(columnIndex), 1);
             upQueries.push(this.dropIndexSql(table, columnIndex));
             downQueries.push(this.createIndexSql(table, columnIndex));
 
@@ -780,7 +792,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.executeQueries(upQueries, downQueries);
 
-        table.removeColumn(column);
+        clonedTable.removeColumn(column);
         this.replaceCachedTable(table, clonedTable);
     }
 
@@ -1328,7 +1340,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds a part of query to create/change a column.
      */
-    protected buildCreateColumnSql(column: TableColumn, skipPrimary: boolean, skipName: boolean = false) {
+    protected buildCreateColumnSql(column: TableColumn, skipPrimary: boolean, skipName: boolean = false, skipAutoIncrement: boolean = false) {
         let c = "";
         if (skipName) {
             c = this.connection.driver.createFullType(column);
@@ -1345,7 +1357,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " NOT NULL";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
-        if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated && column.generationStrategy === "increment" && !skipAutoIncrement) // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";

@@ -256,15 +256,21 @@ export class OracleDriver implements Driver {
         const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
             let value: any;
-            // let isArray = false;
+            let isArray = false;
             if (key.substr(0, 4) === ":...") {
-                // isArray = true;
+                isArray = true;
                 value = parameters[key.substr(4)];
             } else {
                 value = parameters[key.substr(1)];
             }
 
-            if (value instanceof Function) {
+            if (isArray) {
+                return value.map((v: any, index: number) => {
+                    escapedParameters.push(v);
+                    return `:${key.substr(4)}${index}`;
+                }).join(", ");
+
+            } else if (value instanceof Function) {
                 return value();
 
             } else if (typeof value === "boolean") {

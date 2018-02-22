@@ -469,6 +469,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create column index
         const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
+            clonedTable.indices.splice(clonedTable.indices.indexOf(columnIndex), 1);
             upQueries.push(this.createIndexSql(table, columnIndex));
             downQueries.push(this.dropIndexSql(columnIndex));
         }
@@ -535,8 +536,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            await this.dropColumn(clonedTable, oldColumn);
-            await this.addColumn(clonedTable, newColumn);
+            await this.dropColumn(table, oldColumn);
+            await this.addColumn(table, newColumn);
 
         } else {
             if (newColumn.name !== oldColumn.name) {
@@ -768,7 +769,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.executeQueries(upQueries, downQueries);
 
-        table.removeColumn(column);
+        clonedTable.removeColumn(column);
         this.replaceCachedTable(table, clonedTable);
     }
 
