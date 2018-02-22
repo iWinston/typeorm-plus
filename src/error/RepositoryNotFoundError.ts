@@ -9,6 +9,7 @@ export class RepositoryNotFoundError extends Error {
         const targetName = typeof entityClass === "function" && (<any> entityClass).name ? (<any> entityClass).name : entityClass;
         this.message = `No repository for "${targetName}" was found. Looks like this entity is not registered in ` +
             `current "${connectionName}" connection?`;
+        Object.setPrototypeOf(this, RepositoryNotFoundError.prototype);
         this.stack = new Error().stack;
     }
 

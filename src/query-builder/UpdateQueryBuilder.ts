@@ -352,7 +352,6 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected createUpdateExpression() {
         const valuesSet = this.getValueSet();
-        // console.log("valuesSet", valuesSet);
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
 
         // prepare columns and values to be updated

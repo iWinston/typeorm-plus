@@ -6,6 +6,8 @@ export class CircularRelationsError extends Error {
 
     constructor(path: string) {
         super(`Circular relations detected: ${path}. To resolve this issue you need to set nullable: false somewhere in this dependency structure.`);
+        Object.setPrototypeOf(this, CircularRelationsError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

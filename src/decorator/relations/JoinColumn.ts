@@ -1,5 +1,4 @@
-import {getMetadataArgsStorage} from "../../index";
-import {JoinColumnOptions} from "../options/JoinColumnOptions";
+import {getMetadataArgsStorage, JoinColumnOptions} from "../../";
 import {JoinColumnMetadataArgs} from "../../metadata-args/JoinColumnMetadataArgs";
 
 /**
@@ -32,14 +31,12 @@ export function JoinColumn(optionsOrOptionsArray?: JoinColumnOptions|JoinColumnO
     return function (object: Object, propertyName: string) {
         const options = optionsOrOptionsArray instanceof Array ? optionsOrOptionsArray : [optionsOrOptionsArray || {}];
         options.forEach(options => {
-            const args: JoinColumnMetadataArgs = {
+            getMetadataArgsStorage().joinColumns.push({
                 target: object.constructor,
                 propertyName: propertyName,
                 name: options.name,
                 referencedColumnName: options.referencedColumnName
-            };
-            getMetadataArgsStorage().joinColumns.push(args);
+            } as JoinColumnMetadataArgs);
         });
     };
 }
-

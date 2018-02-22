@@ -75,19 +75,20 @@ export class RelationIdLoader {
 
         // console.log("relation:", relation.propertyName);
         // console.log("entitiesOrEntities", entitiesOrEntities);
+        const isMany = relation.isManyToMany || relation.isOneToMany;
+        const entities: E1[] = entitiesOrEntities instanceof Array ? entitiesOrEntities : [entitiesOrEntities];
 
         if (!relatedEntityOrEntities) {
             relatedEntityOrEntities = await this.connection.relationLoader.load(relation, entitiesOrEntities);
-            // console.log("relatedEntityOrEntities", relatedEntityOrEntities);
+            if (!relatedEntityOrEntities.length)
+                return entities.map(entity => ({ entity: entity, related: isMany ? [] : undefined }));
         }
         // const relationIds = await this.load(relation, relatedEntityOrEntities!, entitiesOrEntities);
         const relationIds = await this.load(relation, entitiesOrEntities, relatedEntityOrEntities);
         // console.log("relationIds", relationIds);
 
-        const entities: E1[] = entitiesOrEntities instanceof Array ? entitiesOrEntities : [entitiesOrEntities];
         const relatedEntities: E2[] = relatedEntityOrEntities instanceof Array ? relatedEntityOrEntities : [relatedEntityOrEntities!];
 
-        const isMany = relation.isManyToMany || relation.isOneToMany;
         let columns: ColumnMetadata[], inverseColumns: ColumnMetadata[];
         if (relation.isManyToManyOwner) {
             columns = relation.junctionEntityMetadata!.inverseColumns.map(column => column.referencedColumn!);

@@ -6,6 +6,7 @@ export class CannotAttachTreeChildrenEntityError extends Error {
     constructor(entityName: string) {
         super(`Cannot attach entity "${entityName}" to its parent. Please make sure parent is saved in the database before saving children nodes.`);
         Object.setPrototypeOf(this, CannotAttachTreeChildrenEntityError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

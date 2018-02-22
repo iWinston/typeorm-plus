@@ -7,6 +7,8 @@ export class TransactionNotStartedError extends Error {
     constructor() {
         super();
         this.message = `Transaction is not started yet, start transaction before committing or rolling it back.`;
+        Object.setPrototypeOf(this, TransactionNotStartedError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

@@ -1,5 +1,4 @@
-import {ColumnOptions} from "../options/ColumnOptions";
-import {getMetadataArgsStorage} from "../../index";
+import {ColumnOptions, getMetadataArgsStorage} from "../../";
 import {
     ColumnType, SimpleColumnType, WithLengthColumnType,
     WithPrecisionColumnType
@@ -11,6 +10,7 @@ import {ColumnNumericOptions} from "../options/ColumnNumericOptions";
 import {ColumnEnumOptions} from "../options/ColumnEnumOptions";
 import {ColumnEmbeddedOptions} from "../options/ColumnEmbeddedOptions";
 import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
+import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 
 /**
@@ -70,61 +70,53 @@ export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedO
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): Function {
-    let type: ColumnType|undefined;
-    if (typeof typeOrOptions === "string" || typeOrOptions instanceof Function) {
-        type = <ColumnType> typeOrOptions;
-
-    } else if (typeOrOptions) {
-        options = <ColumnOptions> typeOrOptions;
-        type = typeOrOptions.type;
-    }
     return function (object: Object, propertyName: string) {
 
-        if (typeOrOptions instanceof Function) {
+        // normalize parameters
+        let type: ColumnType|undefined;
+        if (typeof typeOrOptions === "string" || typeOrOptions instanceof Function) {
+            type = <ColumnType> typeOrOptions;
 
-            const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-            const isArray = reflectMetadataType === Array || (options && (options.array === true)) ? true : false;
+        } else if (typeOrOptions) {
+            options = <ColumnOptions> typeOrOptions;
+            type = typeOrOptions.type;
+        }
+        if (!options) options = {} as ColumnOptions;
 
-            const args: EmbeddedMetadataArgs = {
+        // if type is not given explicitly then try to guess it
+        const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
+        if (!type && reflectMetadataType) // if type is not given explicitly then try to guess it
+            type = reflectMetadataType;
+
+        // check if there is no type in column options then set type from first function argument, or guessed one
+        if (!options.type && type)
+            options.type = type;
+
+        // specify HSTORE type if column is HSTORE
+        if (options.type === "hstore" && !options.hstoreType)
+            options.hstoreType = reflectMetadataType === Object ? "object" : "string";
+
+        if (typeOrOptions instanceof Function) { // register an embedded
+            getMetadataArgsStorage().embeddeds.push({
                 target: object.constructor,
                 propertyName: propertyName,
-                isArray: isArray,
-                prefix: options && options.prefix !== undefined ? options.prefix : undefined,
+                isArray: reflectMetadataType === Array || options.array === true,
+                prefix: options.prefix !== undefined ? options.prefix : undefined,
                 type: typeOrOptions as (type?: any) => Function
-            };
-            getMetadataArgsStorage().embeddeds.push(args);
+            } as EmbeddedMetadataArgs);
 
-        } else {
-            const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
-            // if type is not given implicitly then try to guess it
-            if (!type && reflectMetadataType) {
-                type = reflectMetadataType; // todo: need to determine later on driver level
-            }
+        } else { // register a regular column
 
-            // if column options are not given then create a new empty options
-            if (!options) options = {} as ColumnOptions;
+            // if we still don't have a type then we need to give error to user that type is required
+            if (!options.type)
+                throw new ColumnTypeUndefinedError(object, propertyName);
 
-            // check if there is no type in column options then set type from first function argument, or guessed one
-            if (!options.type && type)
-                options = Object.assign({ type: type } as ColumnOptions, options);
-
-            if (options.type === "hstore" && !options.hstoreType) {
-                if (reflectMetadataType) {
-                    options = Object.assign({ hstoreType: reflectMetadataType === Object ? "object" : "string" } as ColumnOptions, options);
-                } else if (reflectMetadataType) {
-                    options = Object.assign({ hstoreType: "string" } as ColumnOptions, options);
-                }
-            }
-
-            // create and register a new column metadata
-            const args: ColumnMetadataArgs = {
+            getMetadataArgsStorage().columns.push({
                 target: object.constructor,
                 propertyName: propertyName,
                 mode: "regular",
                 options: options
-            };
-            getMetadataArgsStorage().columns.push(args);
+            } as ColumnMetadataArgs);
         }
-
     };
 }

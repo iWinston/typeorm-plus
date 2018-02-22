@@ -1,6 +1,4 @@
-import {RelationOptions} from "../options/RelationOptions";
-import {getMetadataArgsStorage} from "../../index";
-import {ObjectType} from "../../common/ObjectType";
+import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 
 /**
@@ -24,6 +22,8 @@ export function OneToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
 export function OneToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
                             inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
                             options?: RelationOptions): Function {
+
+    // normalize parameters
     let inverseSideProperty: string|((object: T) => any);
     if (typeof inverseSideOrOptions === "object") {
         options = <RelationOptions> inverseSideOrOptions;
@@ -42,7 +42,7 @@ export function OneToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
                 isLazy = true;
         }
 
-        const args: RelationMetadataArgs = {
+        getMetadataArgsStorage().relations.push({
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,
@@ -51,7 +51,6 @@ export function OneToOne<T>(typeFunction: (type?: any) => ObjectType<T>,
             type: typeFunction,
             inverseSideProperty: inverseSideProperty,
             options: options
-        };
-        getMetadataArgsStorage().relations.push(args);
+        } as RelationMetadataArgs);
     };
 }

@@ -6,6 +6,12 @@ import {OrderByCondition} from "../../find-options/OrderByCondition";
 export interface EntityOptions {
 
     /**
+     * Table name.
+     * If not specified then naming strategy will generate table name from entity name.
+     */
+    name?: string;
+
+    /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
     orderBy?: OrderByCondition|((object: any) => OrderByCondition|any);
@@ -34,9 +40,4 @@ export interface EntityOptions {
      * By default schema synchronization is enabled for all entities.
      */
     synchronize?: boolean;
-
-    /**
-     * Table name
-     */
-    name ?: string;
 }

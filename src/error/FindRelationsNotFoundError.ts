@@ -11,6 +11,7 @@ export class FindRelationsNotFoundError extends Error {
             this.message = `Relations ${notFoundRelations.map(relation => `"${relation}"`).join(", ")} were not found, please check if relations are correct and they exist in your entities.`;
         }
         Object.setPrototypeOf(this, FindRelationsNotFoundError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

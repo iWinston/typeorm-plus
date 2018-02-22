@@ -8,6 +8,8 @@ export class CustomRepositoryNotFoundError extends Error {
         super();
         this.message = `Custom repository ${repository instanceof Function ? repository.name : repository.constructor.name } was not found. ` +
             `Did you forgot to put @EntityRepository decorator on it?`;
+        Object.setPrototypeOf(this, CustomRepositoryNotFoundError.prototype);
+        this.stack = new Error().stack;
     }
 
 }

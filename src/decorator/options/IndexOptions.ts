@@ -1,5 +1,5 @@
 /**
- * Describes all composite index's options.
+ * Describes all index options.
  */
 export interface IndexOptions {
 

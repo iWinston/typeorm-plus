@@ -17,6 +17,8 @@ export class MissingJoinTableError extends Error {
             this.message = `JoinTable is missing on ${entityMetadata.name}#${relation.propertyName} many-to-many relationship. ` +
                 `You need to put JoinTable decorator on it.`;
         }
+        Object.setPrototypeOf(this, MissingJoinTableError.prototype);
+        this.stack = new Error().stack;
     }
 
 }
