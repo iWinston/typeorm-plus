@@ -135,13 +135,6 @@ export class Table {
     }
 
     /**
-     * Replaces given column.
-     */
-    replaceColumn(oldColumn: TableColumn, newColumn: TableColumn): void {
-        this.columns[this.columns.indexOf(oldColumn)] = newColumn;
-    }
-
-    /**
      * Adds unique constraint.
      */
     addUniqueConstraint(uniqueConstraint: TableUnique): void {
