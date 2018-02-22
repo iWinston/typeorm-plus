@@ -14,5 +14,4 @@ export class Photo {
 
     @Column(type => Counters)
     counters: Counters;
-
 }
