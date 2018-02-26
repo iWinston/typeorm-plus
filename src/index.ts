@@ -15,7 +15,6 @@ import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
-import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
