@@ -890,7 +890,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * then use instead take method instead.
      */
     limit(limit?: number): this {
-        this.expressionMap.limit = limit;
+        this.expressionMap.limit = this.normalizeNumber(limit);
         return this;
     }
 
@@ -901,7 +901,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * then use instead skip method instead.
      */
     offset(offset?: number): this {
-        this.expressionMap.offset = offset;
+        this.expressionMap.offset = this.normalizeNumber(offset);
         return this;
     }
 
@@ -909,7 +909,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets maximal number of entities to take.
      */
     take(take?: number): this {
-        this.expressionMap.take = take;
+        this.expressionMap.take = this.normalizeNumber(take);
         return this;
     }
 
@@ -917,7 +917,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets number of entities to skip.
      */
     skip(skip?: number): this {
-        this.expressionMap.skip = skip;
+        this.expressionMap.skip = this.normalizeNumber(skip);
         return this;
     }
 
@@ -1807,6 +1807,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     protected mergeExpressionMap(expressionMap: Partial<QueryExpressionMap>): this {
         Object.assign(this.expressionMap, expressionMap);
         return this;
+    }
+
+    /**
+     * Normalizes a give number - converts to int if possible.
+     */
+    protected normalizeNumber(num: any) {
+        if (typeof num === "number" || num === undefined || num === null)
+            return num;
+
+        return parseInt(num);
     }
 
     /**
