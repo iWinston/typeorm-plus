@@ -266,7 +266,7 @@ If you want to explicitly use master in SELECT created by query builder, you can
 
 ```typescript
 const postsFromMaster = await connection.createQueryBuilder(Post, "post")
-    .setQueryRunner(connection.createQueryRunner("master"));
+    .setQueryRunner(connection.createQueryRunner("master"))
     .getMany();
 ```
 
