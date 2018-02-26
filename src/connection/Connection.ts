@@ -250,7 +250,7 @@ export class Connection {
      * Can be used only after connection to the database is established.
      */
     async dropDatabase(): Promise<void> {
-        const queryRunner = await this.createQueryRunner("master");
+        const queryRunner = this.createQueryRunner("master");
         const schemas = this.entityMetadatas
             .filter(metadata => metadata.schema)
             .map(metadata => metadata.schema!);
