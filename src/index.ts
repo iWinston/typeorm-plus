@@ -15,6 +15,7 @@ import {ConnectionOptionsReader} from "./connection/ConnectionOptionsReader";
 import {PromiseUtils} from "./util/PromiseUtils";
 import {MongoEntityManager} from "./entity-manager/MongoEntityManager";
 import {SqljsEntityManager} from "./entity-manager/SqljsEntityManager";
+import {ConnectionNotFoundError} from "./error/ConnectionNotFoundError";
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -180,11 +181,21 @@ export function getConnectionManager(): ConnectionManager {
  * based on content of ormconfig (json/js/yml/xml/env) file or environment variables.
  * Only one connection from ormconfig will be created (name "default" or connection without name).
  */
-export async function createConnection(options?: ConnectionOptions): Promise<Connection> {
-    if (!options)
-        options = await getConnectionOptions();
+export async function createConnection(): Promise<Connection>;
+export async function createConnection(name: string): Promise<Connection>;
+export async function createConnection(options: ConnectionOptions): Promise<Connection>;
+export async function createConnection(optionsOrName?: any): Promise<Connection> {
+    if (!optionsOrName)
+        optionsOrName = await getConnectionOptions();
 
-    return getConnectionManager().create(options).connect();
+    if (typeof optionsOrName === "string") {
+        const opt = (await new ConnectionOptionsReader().all()).find((options: ConnectionOptions) => options.name === optionsOrName);
+        if (!opt)
+            throw new ConnectionNotFoundError(optionsOrName);
+        optionsOrName = opt;
+    }
+
+    return getConnectionManager().create(optionsOrName).connect();
 }
 
 /**
