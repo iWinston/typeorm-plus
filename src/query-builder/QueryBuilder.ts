@@ -410,8 +410,9 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets or overrides query builder's QueryRunner.
      */
-    setQueryRunner(queryRunner: QueryRunner) {
+    setQueryRunner(queryRunner: QueryRunner): this {
         this.queryRunner = queryRunner;
+        return this;
     }
 
     // -------------------------------------------------------------------------

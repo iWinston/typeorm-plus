@@ -265,9 +265,9 @@ All simple queries performed by find methods or select query builder are using a
 If you want to explicitly use master in SELECT created by query builder, you can use following code:
 
 ```typescript
-const postsQueryBuilder = connection.createQueryBuilder(Post, "post")
+const postsFromMaster = await connection.createQueryBuilder(Post, "post")
     .setQueryRunner(connection.createQueryRunner("master"));
-const postsFromMaster = await postsQueryBuilder.getMany();
+    .getMany();
 ```
 
 Replication is supported by mysql, postgres and sql server databases.
