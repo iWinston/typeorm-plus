@@ -15,6 +15,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {EntitySchema} from "../";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -186,7 +187,12 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update(entity: Function|string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update<T>(entity: EntitySchema<T>, updateSet?: QueryPartialEntity<T>): UpdateQueryBuilder<T>;
+
+    /**
+     * Creates UPDATE query for the given entity and applies given update values.
+     */
+    update(entity: Function|EntitySchema<Entity>|string, updateSet?: QueryPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
@@ -196,8 +202,9 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query and applies given update values.
      */
-    update(entityOrTableNameUpdateSet?: string|Function|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<any> {
+    update(entityOrTableNameUpdateSet?: string|Function|EntitySchema<any>|ObjectLiteral, maybeUpdateSet?: ObjectLiteral): UpdateQueryBuilder<any> {
         const updateSet = maybeUpdateSet ? maybeUpdateSet : entityOrTableNameUpdateSet as ObjectLiteral|undefined;
+        entityOrTableNameUpdateSet = entityOrTableNameUpdateSet instanceof EntitySchema ? entityOrTableNameUpdateSet.options.name : entityOrTableNameUpdateSet;
 
         if (entityOrTableNameUpdateSet instanceof Function || typeof entityOrTableNameUpdateSet === "string") {
             const mainAlias = this.createFromAlias(entityOrTableNameUpdateSet);

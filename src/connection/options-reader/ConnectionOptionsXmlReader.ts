@@ -30,7 +30,6 @@ export class ConnectionOptionsXmlReader {
                 synchronize: connection.synchronize ? connection.synchronize[0] : undefined,
                 entities: connection.entities ? connection.entities[0].entity : [],
                 subscribers: connection.subscribers ? connection.subscribers[0].entity : [],
-                entitySchemas: connection.entitySchemas ? connection.entitySchemas[0].entity : [],
                 logging: connection.logging[0] ? connection.logging[0].split(",") : undefined,
             };
         });

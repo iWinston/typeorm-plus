@@ -7,6 +7,7 @@ import {
 import {
     Category,
 } from "./entity/Category";
+import {EntitySchema} from "../../../../../src";
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -14,19 +15,20 @@ import {
  */
 describe("basic-lazy-relations", () => {
 
-    let userSchema: any, profileSchema: any;
+    let UserSchema: any, ProfileSchema: any;
     const appRoot = require("app-root-path");
     const resourceDir = appRoot + "/test/functional/relations/lazy-relations/basic-lazy-relation/";
-    userSchema = require(resourceDir + "schema/user.json");
-    profileSchema = require(resourceDir + "schema/profile.json");
+    UserSchema = new EntitySchema<any>(require(resourceDir + "schema/user.json"));
+    ProfileSchema = new EntitySchema<any>(require(resourceDir + "schema/profile.json"));
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [
             Post,
             Category,
+            UserSchema,
+            ProfileSchema
         ],
-        entitySchemas: [ userSchema, profileSchema ],
         enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));

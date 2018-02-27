@@ -1,4 +1,4 @@
-export interface EntitySchemaIndex {
+export interface EntitySchemaIndexOptions {
 
     /**
      * Index column names.

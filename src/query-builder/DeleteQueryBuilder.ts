@@ -11,6 +11,7 @@ import {DeleteResult} from "./result/DeleteResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
+import {EntitySchema} from "../index";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -106,7 +107,8 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: ObjectType<T>|string, aliasName?: string): DeleteQueryBuilder<T> {
+    from<T>(entityTarget: ObjectType<T>|EntitySchema<T>|string, aliasName?: string): DeleteQueryBuilder<T> {
+        entityTarget = entityTarget instanceof EntitySchema ? entityTarget.options.name : entityTarget;
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);
         return (this as any) as DeleteQueryBuilder<T>;

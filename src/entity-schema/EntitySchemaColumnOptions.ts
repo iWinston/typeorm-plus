@@ -1,6 +1,6 @@
 import {ColumnType} from "../driver/types/ColumnTypes";
 
-export interface EntitySchemaColumn {
+export interface EntitySchemaColumnOptions {
 
     /**
      * Indicates if this column is a primary column.

@@ -125,10 +125,10 @@ export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
 export {BaseEntity} from "./repository/BaseEntity";
 export {EntitySchema} from "./entity-schema/EntitySchema";
-export {EntitySchemaTable} from "./entity-schema/EntitySchemaTable";
-export {EntitySchemaColumn} from "./entity-schema/EntitySchemaColumn";
-export {EntitySchemaIndex} from "./entity-schema/EntitySchemaIndex";
-export {EntitySchemaRelation} from "./entity-schema/EntitySchemaRelation";
+export {EntitySchemaTableOptions} from "./entity-schema/EntitySchemaTableOptions";
+export {EntitySchemaColumnOptions} from "./entity-schema/EntitySchemaColumnOptions";
+export {EntitySchemaIndexOptions} from "./entity-schema/EntitySchemaIndexOptions";
+export {EntitySchemaRelationOptions} from "./entity-schema/EntitySchemaRelationOptions";
 export {ColumnType} from "./driver/types/ColumnTypes";
 export {PromiseUtils} from "./util/PromiseUtils";
 
