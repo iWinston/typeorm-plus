@@ -9,6 +9,7 @@ import {Question} from "./model/Question";
 import {Blog} from "./entity/Blog";
 import {Category} from "./entity/Category";
 import {DeepPartial} from "../../../../src/common/DeepPartial";
+import {EntitySchema} from "../../../../src";
 
 describe("repository > basic methods", () => {
 
@@ -20,11 +21,12 @@ describe("repository > basic methods", () => {
         const resourceDir = __dirname + "/";
         userSchema = require(resourceDir + "schema/user.json");
     }
+    const UserEntity = new EntitySchema<any>(userSchema);
+    const QuestionEntity = new EntitySchema<any>(questionSchema as any);
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post, Blog, Category],
-        entitySchemas: [userSchema, questionSchema],
+        entities: [Post, Blog, Category, UserEntity, QuestionEntity],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

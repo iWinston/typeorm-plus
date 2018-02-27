@@ -1,4 +1,6 @@
-export const PersonSchema = {
+import {EntitySchema} from "../../../../../src";
+
+export const PersonSchema = new EntitySchema<any>({
     name: "Person",
     columns: {
         Id: {
@@ -26,4 +28,4 @@ export const PersonSchema = {
             ]
         }
     }
-};
+});

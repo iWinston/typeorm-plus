@@ -14,6 +14,7 @@ import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
+import {EntitySchema} from "../";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
@@ -137,7 +138,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Specifies INTO which entity's table insertion will be executed.
      */
-    into<T>(entityTarget: ObjectType<T>|string, columns?: string[]): InsertQueryBuilder<T> {
+    into<T>(entityTarget: ObjectType<T>|EntitySchema<T>|string, columns?: string[]): InsertQueryBuilder<T> {
+        entityTarget = entityTarget instanceof EntitySchema ? entityTarget.options.name : entityTarget;
         const mainAlias = this.createFromAlias(entityTarget);
         this.expressionMap.setMainAlias(mainAlias);
         this.expressionMap.insertColumns = columns || [];

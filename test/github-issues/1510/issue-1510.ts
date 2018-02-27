@@ -2,50 +2,50 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {expect} from "chai";
-import {InsertResult} from "../../../src";
+import {EntitySchema, InsertResult} from "../../../src";
 
 describe("github issues > #1510 entity schema does not support mode=objectId", () => {
+
+    const UserEntity = new EntitySchema<any>({
+        name: "User",
+        table: {
+            name: "test_1510_users",
+        },
+        columns: {
+            _id: {
+                type: "int",
+                objectId: true,
+                primary: true,
+                generated: true,
+            },
+            name: {
+                type: String,
+            }
+        }
+    });
+
+    const UserWithoutObjectIDEntity = new EntitySchema<any>({
+        name: "UserWithoutObjectID",
+        table: {
+            name: "test_1510_users2",
+        },
+        columns: {
+            _id: {
+                type: "int",
+                primary: true,
+                generated: true,
+            },
+            name: {
+                type: String,
+            }
+        }
+    });
 
     let connections: Connection[];
     before(async () => {
         return connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mongodb"],
-            entitySchemas: [
-                {
-                    name: "User",
-                    table: {
-                        name: "test_1510_users",
-                    },
-                    columns: {
-                        _id: {
-                            type: "int",
-                            objectId: true,
-                            primary: true,
-                            generated: true,
-                        },
-                        name: {
-                            type: String,
-                        }
-                    }
-                },
-                {
-                    name: "UserWithoutObjectID",
-                    table: {
-                        name: "test_1510_users2",
-                    },
-                    columns: {
-                        _id: {
-                            type: "int",
-                            primary: true,
-                            generated: true,
-                        },
-                        name: {
-                            type: String,
-                        }
-                    }
-                }
-            ]
+            entities: [__dirname + "/entity/*{.js,.ts}", UserEntity, UserWithoutObjectIDEntity],
+            enabledDrivers: ["mongodb"]
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

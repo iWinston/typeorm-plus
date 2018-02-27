@@ -47,17 +47,12 @@ export interface TestingOptions {
     /**
      * Entities needs to be included in the connection for the given test suite.
      */
-    entities?: string[]|Function[];
+    entities?: (string|Function|EntitySchema<any>)[];
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
     subscribers?: string[]|Function[];
-
-    /**
-     * Entity schemas needs to be included in the connection for the given test suite.
-     */
-    entitySchemas?: string[]|EntitySchema[];
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -135,7 +130,6 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
-        entitySchemas: options.entitySchemas ? options.entitySchemas : [],
         dropSchema: options.dropSchema ? options.dropSchema : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
         enabledDrivers: [driverType],
@@ -198,8 +192,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
-                entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-                dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
+                dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
             });
             if (options && options.driverSpecific)

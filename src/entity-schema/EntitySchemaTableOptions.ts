@@ -1,7 +1,7 @@
 import {TableType} from "../metadata/types/TableTypes";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 
-export interface EntitySchemaTable {
+export interface EntitySchemaTableOptions {
     
     /**
      * Table name.

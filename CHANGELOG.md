@@ -29,7 +29,7 @@ If you want to disable this behavior use `queryBuilder.updateEntity(false)` meth
 This feature is convenient for users who have uuid, create/update date, version columns or columns with DEFAULT value set.
 * now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners.
 You can disable this behavior by setting `queryBuilder.callListeners(false)` method.
-* `Repository` and `EntityManager` method `.findOne` is deprecated and will be removed in next 0.3.0 version.
+* `Repository` and `EntityManager` method `.findOneById` is deprecated and will be removed in next 0.3.0 version.
 Use `findOne(id)` method instead now.
 * `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
 * `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
@@ -56,6 +56,7 @@ By default its true.
 * added support for nested set and materialized path tree hierarchy patterns
 * breaking change on how array parameters work in queries - now instead of (:param) new syntax must be used (:...param).
 This fixed various issues on how real arrays must work
+* changed the way how entity schemas are created (now more type-safe), now interface EntitySchema is a class
 * added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
 

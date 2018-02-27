@@ -22,7 +22,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             entities: [Post, Category]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Post, Category], []);
+        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Post, Category]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(InitializedRelationError);
     });
@@ -37,7 +37,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             entities: [Image, ImageInfo]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Image, ImageInfo], []);
+        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Image, ImageInfo]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(InitializedRelationError);
     });
@@ -52,7 +52,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             entities: [Category]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Category], []);
+        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Category]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).not.to.throw(InitializedRelationError);
     });
@@ -67,7 +67,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             entities: [Question, Category]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Question, Category], []);
+        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([Question, Category]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).not.to.throw(InitializedRelationError);
     });

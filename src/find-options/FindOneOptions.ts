@@ -4,7 +4,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 /**
  * Defines a special criteria to find specific entity.
  */
-export interface FindOneOptions<Entity> {
+export interface FindOneOptions<Entity = any> {
 
     /**
      * Specifies what columns should be retrieved.

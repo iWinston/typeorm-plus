@@ -16,7 +16,7 @@ describe("relations > eager relations > circular eager relations", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"], []);
+        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
     });
