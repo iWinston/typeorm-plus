@@ -1,5 +1,5 @@
 /**
- * Column types where precision and scale properties are used.
+ * Column types used for @PrimaryGeneratedColumn() decorator.
  */
 export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
     |"int2" // postgres, sqlite

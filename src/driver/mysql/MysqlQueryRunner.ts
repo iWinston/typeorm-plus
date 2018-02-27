@@ -428,25 +428,39 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: string[] = [];
         const skipColumnLevelPrimary = table.primaryColumns.length > 0;
 
-        // if column is primary and AUTO_INCREMENT, we must create column without AUTO_INCREMENT option, then make it primary and then change column to AUTO_INCREMENT.
-        const skipAutoIncrement = column.isPrimary && column.isGenerated && column.generationStrategy === "increment";
-
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false, skipAutoIncrement)}`);
+        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN \`${column.name}\``);
 
         // create or update primary key constraint
         if (column.isPrimary && skipColumnLevelPrimary) {
-            const primaryColumns = clonedTable.primaryColumns;
-            if (primaryColumns.length > 0) {
-                const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
+            // if we already have generated column, we must temporary drop AUTO_INCREMENT property.
+            const generatedColumn = table.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
+            if (generatedColumn) {
+                const nonGeneratedColumn = generatedColumn.clone();
+                nonGeneratedColumn.isGenerated = false;
+                nonGeneratedColumn.generationStrategy = undefined;
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`);
             }
 
+            const primaryColumns = clonedTable.primaryColumns;
+            let columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
+
             primaryColumns.push(column);
-            const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
+
+            // if we previously dropped AUTO_INCREMENT property, we must bring it back
+            if (generatedColumn) {
+                const nonGeneratedColumn = generatedColumn.clone();
+                nonGeneratedColumn.isGenerated = false;
+                nonGeneratedColumn.generationStrategy = undefined;
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+            }
         }
 
         // create column index
@@ -468,14 +482,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }));
             upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${column.name}\`)`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``);
-        }
-
-        if (skipAutoIncrement) {
-            const nonGeneratedColumn = column.clone();
-            nonGeneratedColumn.isGenerated = false;
-            nonGeneratedColumn.generationStrategy = undefined;
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -517,7 +523,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async changeColumn(tableOrName: Table|string, oldColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const clonedTable = table.clone();
+        let clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
@@ -527,135 +533,88 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (newColumn.name !== oldColumn.name) {
-            // We don't change any column properties, just rename it.
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
+            || this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
+            await this.dropColumn(table, oldColumn);
+            await this.addColumn(table, newColumn);
 
-            // rename index constraints
-            clonedTable.findColumnIndices(oldColumn).forEach(index => {
-                // build new constraint name
-                index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
-                index.columnNames.push(newColumn.name);
-                const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
-                const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
-
-                // build queries
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
-
-                // replace constraint name
-                index.name = newIndexName;
-            });
-
-            // rename foreign key constraints
-            clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
-                // build new constraint name
-                foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
-                foreignKey.columnNames.push(newColumn.name);
-                const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
-                const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
-                const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
-
-                // build queries
-                let up = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
-                    `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
-                if (foreignKey.onDelete)
-                    up += ` ON DELETE ${foreignKey.onDelete}`;
-                if (foreignKey.onUpdate)
-                    up += ` ON UPDATE ${foreignKey.onUpdate}`;
-
-                let down = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
-                    `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
-                if (foreignKey.onDelete)
-                    down += ` ON DELETE ${foreignKey.onDelete}`;
-                if (foreignKey.onUpdate)
-                    down += ` ON UPDATE ${foreignKey.onUpdate}`;
-
-                upQueries.push(up);
-                downQueries.push(down);
-
-                // replace constraint name
-                foreignKey.name = newForeignKeyName;
-            });
-
-            // rename old column in the Table object
-            const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
-            clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
-            oldColumn.name = newColumn.name;
-        }
-
-        // When we change isGenerated property, we must also check isPrimary property.
-        // If column is non-primary, we can not make it generated.
-        // If column marked as generated and column also changed to primary, we must first create primary key, and then make column generated.
-        // If column marked as non-generated and isPrimary also changed to false, we must first make column non-generated and then drop primary key.
-        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
-            if (newColumn.isGenerated === true) {
-                if (newColumn.isPrimary === false)
-                    throw new Error(`Can not specify AUTO_INCREMENT on to non-primary column.`);
-
-                if (newColumn.isPrimary !== oldColumn.isPrimary && newColumn.isPrimary === true) {
-                    const primaryColumns = clonedTable.primaryColumns;
-
-                    if (primaryColumns.length > 0) {
-                        const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
-                        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
-                    }
-
-                    primaryColumns.push(newColumn);
-                    const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
-                }
-
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
-
-            } else {
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
-
-                if (newColumn.isPrimary !== oldColumn.isPrimary && newColumn.isPrimary === false) {
-                    const primaryColumns = clonedTable.primaryColumns;
-
-                    const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
-
-                    const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
-                    primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
-
-                    // if we have another primary keys, we must recreate constraint.
-                    if (primaryColumns.length > 0) {
-                        const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
-                        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
-                    }
-                }
-            }
-
-            // change old column in table
-            const oldColumnIndex = clonedTable.columns.findIndex(column => column.name === oldColumn.name);
-            clonedTable.columns[oldColumnIndex].isGenerated = newColumn.isGenerated;
-            clonedTable.columns[oldColumnIndex].generationStrategy = newColumn.generationStrategy;
+            // update cloned table
+            clonedTable = table.clone();
 
         } else {
+            if (newColumn.name !== oldColumn.name) {
+                // We don't change any column properties, just rename it.
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`);
+
+                // rename index constraints
+                clonedTable.findColumnIndices(oldColumn).forEach(index => {
+                    // build new constraint name
+                    index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
+                    index.columnNames.push(newColumn.name);
+                    const columnNames = index.columnNames.map(column => `\`${column}\``).join(", ");
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+
+                    // build queries
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+
+                    // replace constraint name
+                    index.name = newIndexName;
+                });
+
+                // rename foreign key constraints
+                clonedTable.findColumnForeignKeys(oldColumn).forEach(foreignKey => {
+                    // build new constraint name
+                    foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
+                    foreignKey.columnNames.push(newColumn.name);
+                    const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
+                    const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
+
+                    // build queries
+                    let up = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                        `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+                    if (foreignKey.onDelete)
+                        up += ` ON DELETE ${foreignKey.onDelete}`;
+                    if (foreignKey.onUpdate)
+                        up += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+                    let down = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+                        `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+                    if (foreignKey.onDelete)
+                        down += ` ON DELETE ${foreignKey.onDelete}`;
+                    if (foreignKey.onUpdate)
+                        down += ` ON UPDATE ${foreignKey.onUpdate}`;
+
+                    upQueries.push(up);
+                    downQueries.push(down);
+
+                    // replace constraint name
+                    foreignKey.name = newForeignKeyName;
+                });
+
+                // rename old column in the Table object
+                const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
+                clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
+                oldColumn.name = newColumn.name;
+            }
+
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`);
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
-                // if table have auto increment column, we must drop AUTO_INCREMENT before changing primary constraints.
-                const autoIncrementColumn = clonedTable.columns.find(column => column.generationStrategy === "increment");
-                if (autoIncrementColumn) {
-                    const columnWithoutAutoIncrement = autoIncrementColumn.clone();
-                    columnWithoutAutoIncrement.isGenerated = false;
-                    columnWithoutAutoIncrement.generationStrategy = undefined;
+                // if table have generated column, we must drop AUTO_INCREMENT before changing primary constraints.
+                const generatedColumn = clonedTable.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
+                if (generatedColumn) {
+                    const nonGeneratedColumn = generatedColumn.clone();
+                    nonGeneratedColumn.isGenerated = false;
+                    nonGeneratedColumn.generationStrategy = undefined;
 
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${autoIncrementColumn.name}\` ${this.buildCreateColumnSql(columnWithoutAutoIncrement, true)}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${columnWithoutAutoIncrement.name}\` ${this.buildCreateColumnSql(autoIncrementColumn, true)}`);
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
                 }
 
                 const primaryColumns = clonedTable.primaryColumns;
@@ -685,44 +644,44 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }
                 }
 
-                // if table have auto increment column, and we dropped AUTO_INCREMENT property before, we must revert it back
-                if (autoIncrementColumn) {
-                    const columnWithoutAutoIncrement = autoIncrementColumn.clone();
-                    columnWithoutAutoIncrement.isGenerated = false;
-                    columnWithoutAutoIncrement.generationStrategy = undefined;
+                // if we have generated column, and we dropped AUTO_INCREMENT property before, we must bring it back
+                if (generatedColumn) {
+                    const nonGeneratedColumn = generatedColumn.clone();
+                    nonGeneratedColumn.isGenerated = false;
+                    nonGeneratedColumn.generationStrategy = undefined;
 
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${columnWithoutAutoIncrement.name}\` ${this.buildCreateColumnSql(autoIncrementColumn, true)}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${autoIncrementColumn.name}\` ${this.buildCreateColumnSql(columnWithoutAutoIncrement, true)}`);
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
                 }
             }
-        }
 
-        if (newColumn.isUnique !== oldColumn.isUnique) {
-            if (newColumn.isUnique === true) {
-                const uniqueIndex = new TableIndex({
-                    name: this.connection.namingStrategy.indexName(table.name, [newColumn.name]),
-                    columnNames: [newColumn.name],
-                    isUnique: true
-                });
-                clonedTable.indices.push(uniqueIndex);
-                clonedTable.uniques.push(new TableUnique({
-                    name: uniqueIndex.name,
-                    columnNames: uniqueIndex.columnNames
-                }));
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``);
+            if (newColumn.isUnique !== oldColumn.isUnique) {
+                if (newColumn.isUnique === true) {
+                    const uniqueIndex = new TableIndex({
+                        name: this.connection.namingStrategy.indexName(table.name, [newColumn.name]),
+                        columnNames: [newColumn.name],
+                        isUnique: true
+                    });
+                    clonedTable.indices.push(uniqueIndex);
+                    clonedTable.uniques.push(new TableUnique({
+                        name: uniqueIndex.name,
+                        columnNames: uniqueIndex.columnNames
+                    }));
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``);
 
-            } else {
-                const uniqueIndex = table.indices.find(index => {
-                    return index.columnNames.length === 1 && index.isUnique === true && !!index.columnNames.find(columnName => columnName === newColumn.name);
-                });
-                clonedTable.indices.splice(clonedTable.indices.indexOf(uniqueIndex!), 1);
+                } else {
+                    const uniqueIndex = table.indices.find(index => {
+                        return index.columnNames.length === 1 && index.isUnique === true && !!index.columnNames.find(columnName => columnName === newColumn.name);
+                    });
+                    clonedTable.indices.splice(clonedTable.indices.indexOf(uniqueIndex!), 1);
 
-                const tableUnique = clonedTable.uniques.find(unique => unique.name === uniqueIndex!.name);
-                clonedTable.uniques.splice(clonedTable.uniques.indexOf(tableUnique!), 1);
+                    const tableUnique = clonedTable.uniques.find(unique => unique.name === uniqueIndex!.name);
+                    clonedTable.uniques.splice(clonedTable.uniques.indexOf(tableUnique!), 1);
 
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex!.name}\``);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`);
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex!.name}\``);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`);
+                }
             }
         }
 
@@ -750,7 +709,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // drop primary key constraint
         const primaryColumns = clonedTable.primaryColumns;
-        if (primaryColumns.length > 0 && primaryColumns.find(primaryColumn => primaryColumn.name === column.name)) {
+        if (column.isPrimary) {
+            // if table have generated column, we must drop AUTO_INCREMENT before changing primary constraints.
+            const generatedColumn = clonedTable.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
+            if (generatedColumn) {
+                const nonGeneratedColumn = generatedColumn.clone();
+                nonGeneratedColumn.isGenerated = false;
+                nonGeneratedColumn.generationStrategy = undefined;
+
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
+            }
+
+            // dropping primary key constraint
             const columnNames = primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
             upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`);
@@ -761,6 +732,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const columnNames = primaryColumns.map(primaryColumn => `\'${primaryColumn.name}\'`).join(", ");
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`);
+            }
+
+            // if we have generated column, and we dropped AUTO_INCREMENT property before, and this column is not current dropping column, we must bring it back
+            if (generatedColumn && generatedColumn.name !== column.name) {
+                const nonGeneratedColumn = generatedColumn.clone();
+                nonGeneratedColumn.isGenerated = false;
+                nonGeneratedColumn.generationStrategy = undefined;
+
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
             }
         }
 
@@ -1067,6 +1048,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.columns = dbColumns
                 .filter(dbColumn => this.driver.buildTableName(dbColumn["TABLE_NAME"], undefined, dbColumn["TABLE_SCHEMA"]) === tableFullName)
                 .map(dbColumn => {
+
+                    const columnIndex = dbIndices.find(dbIndex => {
+                        return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === 0;
+                    });
+
+                    const isConstraintComposite = columnIndex
+                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                        : false;
+
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
 
@@ -1083,19 +1074,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
-                    const columnIndex = dbIndices.find(dbIndex => {
-                        return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
-                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === 0;
-                    });
-                    const isIndexComposite = columnIndex
-                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnIndex["INDEX_NAME"]
-                            && dbIndex["NON_UNIQUE"] === 0
-                            && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
-
-                    if (dbColumn["COLUMN_KEY"].indexOf("UNI") !== -1 || (!!columnIndex && !isIndexComposite))
-                        tableColumn.isUnique = true;
-
+                    tableColumn.isUnique = !!columnIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => dbPrimaryKey["COLUMN_NAME"] === tableColumn.name);
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
@@ -1146,7 +1125,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
 
-                // if referenced table located in currently used db, we dont need to concat db name to table name.
+                // if referenced table located in currently used db, we don't need to concat db name to table name.
                 const database = dbForeignKey["REFERENCED_TABLE_SCHEMA"] === currentDatabase ? undefined : dbForeignKey["REFERENCED_TABLE_SCHEMA"];
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REFERENCED_TABLE_NAME"], undefined, database);
 
@@ -1191,10 +1170,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = table.indices.some(index => {
+                const isUniqueIndexExist = table.indices.some(index => {
                     return index.columnNames.length === 1 && !!index.isUnique && index.columnNames.indexOf(column.name) !== -1;
                 });
-                if (!isUniqueExist)
+                const isUniqueConstraintExist = table.uniques.some(unique => {
+                    return unique.columnNames.length === 1 && unique.columnNames.indexOf(column.name) !== -1;
+                });
+                if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(new TableIndex({
                         name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
                         columnNames: [column.name],
@@ -1340,7 +1322,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds a part of query to create/change a column.
      */
-    protected buildCreateColumnSql(column: TableColumn, skipPrimary: boolean, skipName: boolean = false, skipAutoIncrement: boolean = false) {
+    protected buildCreateColumnSql(column: TableColumn, skipPrimary: boolean, skipName: boolean = false) {
         let c = "";
         if (skipName) {
             c = this.connection.driver.createFullType(column);
@@ -1357,7 +1339,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " NOT NULL";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
-        if (column.isGenerated && column.generationStrategy === "increment" && !skipAutoIncrement) // don't use skipPrimary here since updates can update already exist primary without auto inc.
+        if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
             c += " COMMENT '" + column.comment + "'";

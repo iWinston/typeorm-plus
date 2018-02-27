@@ -19,7 +19,7 @@ export class TableUtils {
             isNullable: columnMetadata.isNullable,
             type: driver.normalizeType(columnMetadata),
             isPrimary: columnMetadata.isPrimary,
-            isUnique: columnMetadata.isUnique,
+            isUnique: driver.normalizeIsUnique(columnMetadata),
             isArray: columnMetadata.isArray || false,
             enum: columnMetadata.enum
         };

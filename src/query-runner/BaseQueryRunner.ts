@@ -198,16 +198,11 @@ export abstract class BaseQueryRunner {
 
     /**
      * Checks if at least one of column properties was changed.
+     * Does not checks column type, length and autoincrement, because these properties changes separately.
      */
     protected isColumnChanged(oldColumn: TableColumn, newColumn: TableColumn, checkDefault?: boolean, checkComment?: boolean): boolean {
         // this logs need to debug issues in column change detection. Do not delete it!
 
-        // console.log("type ---------------");
-        // console.log(oldColumn.type !== newColumn.type);
-        // console.log(oldColumn.type, newColumn.type);
-        // console.log("length ---------------");
-        // console.log(oldColumn.length !== newColumn.length);
-        // console.log(oldColumn.length, newColumn.length);
         // console.log("charset ---------------");
         // console.log(oldColumn.charset !== newColumn.charset);
         // console.log(oldColumn.charset, newColumn.charset);
@@ -233,9 +228,7 @@ export abstract class BaseQueryRunner {
         // console.log(oldColumn.enum !== newColumn.enum);
         // console.log(oldColumn.enum, newColumn.enum);
 
-        return oldColumn.type !== newColumn.type
-            || oldColumn.length !== newColumn.length
-            || oldColumn.charset !== newColumn.charset
+        return oldColumn.charset !== newColumn.charset
             || oldColumn.collation !== newColumn.collation
             || oldColumn.precision !== newColumn.precision
             || oldColumn.scale !== newColumn.scale

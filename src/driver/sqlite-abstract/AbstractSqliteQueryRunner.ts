@@ -771,9 +771,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = !!table.uniques.find(unique => {
-                    return !!(unique.columnNames.length === 1 && unique.columnNames.find(columnName => columnName === column.name));
-                });
+                const isUniqueExist = table.uniques.some(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
                 if (!isUniqueExist)
                     table.uniques.push(new TableUnique({
                         name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),

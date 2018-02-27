@@ -432,7 +432,7 @@ export class OracleDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique;
+        return column.isUnique || column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
     }
 
     /**
@@ -544,7 +544,7 @@ export class OracleDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated)
                 || !this.compareColumnLengths(tableColumn, columnMetadata);
         });
     }

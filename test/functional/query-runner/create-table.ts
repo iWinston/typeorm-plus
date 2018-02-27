@@ -8,6 +8,7 @@ import {Post} from "./entity/Post";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
+import {Category} from "./entity/Category";
 
 describe("query runner > create table", () => {
 
@@ -251,6 +252,44 @@ describe("query runner > create table", () => {
         expect(questionTable).to.be.undefined;
         expect(categoryTable).to.be.undefined;
         expect(personTable).to.be.undefined;
+
+        await queryRunner.release();
+    })));
+
+    it("should correctly create table with different `Unique` definitions", () => Promise.all(connections.map(async connection => {
+
+        const queryRunner = connection.createQueryRunner();
+        const metadata = connection.getMetadata(Category);
+        const newTable = Table.create(metadata, connection.driver);
+        await queryRunner.createTable(newTable);
+
+        let table = await queryRunner.getTable("category");
+        const nameColumn = table!.findColumnByName("name");
+        const tagColumn = table!.findColumnByName("tag");
+        const descriptionColumn = table!.findColumnByName("description");
+        const textColumn = table!.findColumnByName("text");
+
+        table!.should.exist;
+        nameColumn!.isUnique.should.be.true;
+        descriptionColumn!.isUnique.should.be.true;
+
+        if (connection.driver instanceof MysqlDriver) {
+            table!.uniques.length.should.be.equal(0);
+            table!.indices.length.should.be.equal(4);
+            tagColumn!.isUnique.should.be.true;
+            textColumn!.isUnique.should.be.true;
+
+        } else {
+            table!.uniques.length.should.be.equal(2);
+            table!.indices.length.should.be.equal(2);
+            tagColumn!.isUnique.should.be.false;
+            textColumn!.isUnique.should.be.false;
+        }
+
+        await queryRunner.executeMemoryDownSql();
+
+        table = await queryRunner.getTable("category");
+        expect(table).to.be.undefined;
 
         await queryRunner.release();
     })));

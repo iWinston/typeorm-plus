@@ -16,7 +16,7 @@ describe("schema builder > create foreign key", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly create foreign key and revert creation", () => Promise.all(connections.map(async connection => {
+    it("should correctly create foreign key", () => Promise.all(connections.map(async connection => {
         const categoryMetadata = connection.getMetadata("category");
         const postMetadata = connection.getMetadata("post");
         const columns = categoryMetadata.columns.filter(column => ["postText", "postTag"].indexOf(column.propertyName) !== -1);
@@ -37,6 +37,7 @@ describe("schema builder > create foreign key", () => {
         await queryRunner.release();
 
         table!.foreignKeys.length.should.be.equal(1);
+        table!.indices.length.should.be.equal(0);
 
     })));
 

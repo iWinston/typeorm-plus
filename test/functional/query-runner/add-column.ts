@@ -4,6 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
 describe("query runner > add column", () => {
 
@@ -30,8 +31,8 @@ describe("query runner > add column", () => {
             isNullable: false
         });
 
-        // Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof AbstractSqliteDriver)) {
+        // MySql and Sqlite does not supports autoincrement composite primary keys.
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
             column1.isGenerated = true;
             column1.generationStrategy = "increment";
         }
@@ -53,8 +54,8 @@ describe("query runner > add column", () => {
         column1!.isUnique.should.be.true;
         column1!.isNullable.should.be.false;
 
-        // Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof AbstractSqliteDriver)) {
+        // MySql and Sqlite does not supports autoincrement composite primary keys.
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
             column1!.isGenerated.should.be.true;
             column1!.generationStrategy!.should.be.equal("increment");
         }

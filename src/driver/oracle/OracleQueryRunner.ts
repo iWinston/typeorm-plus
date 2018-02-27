@@ -524,7 +524,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const clonedTable = table.clone();
+        let clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
@@ -534,10 +534,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
+            || this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
+
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
+
+            // update cloned table
+            clonedTable = table.clone();
 
         } else {
             if (newColumn.name !== oldColumn.name) {
@@ -615,9 +621,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name;
             }
 
-            if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)
-                || newColumn.default !== oldColumn.default
-                || newColumn.isNullable !== oldColumn.isNullable) {
+            if (newColumn.default !== oldColumn.default || newColumn.isNullable !== oldColumn.isNullable) {
 
                 let defaultUp: string = "";
                 let defaultDown: string = "";
@@ -1132,9 +1136,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = !!table.uniques.find(unique => {
-                    return !!(unique.columnNames.length === 1 && unique.columnNames.find(columnName => columnName === column.name));
-                });
+                const isUniqueExist = table.uniques.some(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
                 if (!isUniqueExist)
                     table.uniques.push(new TableUnique({
                         name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),

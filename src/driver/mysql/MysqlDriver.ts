@@ -423,8 +423,9 @@ export class MysqlDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique || 
-            !!column.entityMetadata.indices.find(index => index.isUnique && index.columns.length === 1 && index.columns[0] === column);
+        return column.isUnique
+            || column.entityMetadata.indices.some(idx => idx.isUnique && idx.columns.length === 1 && idx.columns[0] === column)
+            || column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
     }
 
     /**
@@ -551,7 +552,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy === "increment" && tableColumn.isGenerated !== columnMetadata.isGenerated)
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated)
                 || !this.compareColumnLengths(tableColumn, columnMetadata);
         });
     }

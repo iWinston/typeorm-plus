@@ -710,7 +710,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const clonedTable = table.clone();
+        let clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
@@ -720,10 +720,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy === "increment") {
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
+            || this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
+
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
+
+            // update cloned table
+            clonedTable = table.clone();
 
         } else {
             if (newColumn.name !== oldColumn.name) {
@@ -1360,7 +1366,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                             && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
                             && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
                         : false;
-                    const isUnique = !!uniqueConstraint && !isConstraintComposite;
 
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY");
                     const isGenerated = !!dbIdentityColumns.find(column => {
@@ -1388,16 +1393,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         : undefined;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
+                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
                     tableColumn.isGenerated = isGenerated;
                     if (isGenerated)
                         tableColumn.generationStrategy = "increment";
-                    if (tableColumn.default === "(newsequentialid())") {
+                    if (tableColumn.default === "newsequentialid()") {
                         tableColumn.isGenerated = true;
                         tableColumn.generationStrategy = "uuid";
                         tableColumn.default = undefined;
                     }
 
-                    tableColumn.isUnique = isUnique;
                     // todo: unable to get default charset
                     // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation["COLLATION_NAME"] ? undefined : dbColumn["COLLATION_NAME"];
@@ -1444,10 +1449,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["FK_NAME"] === dbForeignKey["FK_NAME"]);
+
+                // if referenced table located in currently used db and schema, we don't need to concat db and schema names to table name.
+                const db = dbForeignKey["TABLE_CATALOG"] === currentDatabase ? undefined : dbForeignKey["TABLE_CATALOG"];
+                const schema = dbForeignKey["REF_SCHEMA"] === currentSchema ? undefined : dbForeignKey["REF_SCHEMA"];
+                const referencedTableName = this.driver.buildTableName(dbForeignKey["REF_TABLE"], schema, db);
+
                 return new TableForeignKey({
                     name: dbForeignKey["FK_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
-                    referencedTableName: this.driver.buildTableName(dbForeignKey["REF_TABLE"], dbForeignKey["REF_SCHEMA"], dbForeignKey["TABLE_CATALOG"]),
+                    referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REF_COLUMN"]),
                     onDelete: dbForeignKey["ON_DELETE"].replace("_", " "), // SqlServer returns NO_ACTION, instead of NO ACTION
                     onUpdate: dbForeignKey["ON_UPDATE"].replace("_", " ") // SqlServer returns NO_ACTION, instead of NO ACTION
@@ -1483,9 +1494,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = !!table.uniques.find(unique => {
-                    return !!(unique.columnNames.length === 1 && unique.columnNames.find(columnName => columnName === column.name));
-                });
+                const isUniqueExist = table.uniques.some(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
                 if (!isUniqueExist)
                     table.uniques.push(new TableUnique({
                         name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),

@@ -1,5 +1,4 @@
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
-import {Table} from "./Table";
 import {TableForeignKeyOptions} from "../options/TableForeignKeyOptions";
 
 /**
@@ -81,7 +80,7 @@ export class TableForeignKey {
     /**
      * Creates a new table foreign key from the given foreign key metadata.
      */
-    static create(metadata: ForeignKeyMetadata, table: Table): TableForeignKey {
+    static create(metadata: ForeignKeyMetadata): TableForeignKey {
         return new TableForeignKey(<TableForeignKeyOptions>{
             name: metadata.name,
             columnNames: metadata.columnNames,
