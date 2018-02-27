@@ -2,7 +2,7 @@ import {Entity} from "../../../../src/decorator/entity/Entity";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {Unique} from "../../../../src/decorator/Unique";
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Index} from "../../../../src/decorator";
+import {Index} from "../../../../src/decorator/Index";
 
 @Entity()
 @Unique(["name"])
