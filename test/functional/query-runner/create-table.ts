@@ -8,7 +8,7 @@ import {Post} from "./entity/Post";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
-import {Category} from "./entity/Category";
+import {Photo} from "./entity/Photo";
 
 describe("query runner > create table", () => {
 
@@ -259,11 +259,11 @@ describe("query runner > create table", () => {
     it("should correctly create table with different `Unique` definitions", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
-        const metadata = connection.getMetadata(Category);
+        const metadata = connection.getMetadata(Photo);
         const newTable = Table.create(metadata, connection.driver);
         await queryRunner.createTable(newTable);
 
-        let table = await queryRunner.getTable("category");
+        let table = await queryRunner.getTable("photo");
         const nameColumn = table!.findColumnByName("name");
         const tagColumn = table!.findColumnByName("tag");
         const descriptionColumn = table!.findColumnByName("description");
@@ -288,7 +288,7 @@ describe("query runner > create table", () => {
 
         await queryRunner.executeMemoryDownSql();
 
-        table = await queryRunner.getTable("category");
+        table = await queryRunner.getTable("photo");
         expect(table).to.be.undefined;
 
         await queryRunner.release();

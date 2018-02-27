@@ -7,7 +7,7 @@ import {Index} from "../../../../src/decorator";
 @Entity()
 @Unique(["name"])
 @Index(["text"], { unique: true })
-export class Category {
+export class Photo {
 
     @PrimaryColumn()
     id: number;
