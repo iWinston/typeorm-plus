@@ -467,7 +467,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // create column index
-        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        const columnIndex = clonedTable.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
             clonedTable.indices.splice(clonedTable.indices.indexOf(columnIndex), 1);
             upQueries.push(this.createIndexSql(table, columnIndex));
@@ -752,7 +752,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // drop column index
-        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        const columnIndex = clonedTable.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
             upQueries.push(this.dropIndexSql(columnIndex));
             downQueries.push(this.createIndexSql(table, columnIndex));
@@ -781,8 +781,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
-        const dropPromises = columns.map(column => this.dropColumn(table!, column));
+        const dropPromises = columns.map(column => this.dropColumn(tableOrName, column));
         await Promise.all(dropPromises);
     }
 
@@ -836,6 +835,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a new unique constraints.
+     */
+    async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        const promises = uniqueConstraints.map(uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
+        await Promise.all(promises);
+    }
+
+    /**
      * Drops an unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
@@ -848,6 +855,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const down = this.createUniqueConstraintSql(table, uniqueConstraint);
         await this.executeQueries(up, down);
         table.removeUniqueConstraint(uniqueConstraint);
+    }
+
+    /**
+     * Creates an unique constraints.
+     */
+    async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        const promises = uniqueConstraints.map(uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+        await Promise.all(promises);
     }
 
     /**
@@ -914,6 +929,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a new indices
+     */
+    async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        const promises = indices.map(index => this.createIndex(tableOrName, index));
+        await Promise.all(promises);
+    }
+
+    /**
      * Drops an index from the table.
      */
     async dropIndex(tableOrName: Table|string, indexOrName: TableIndex|string): Promise<void> {
@@ -926,6 +949,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const down = this.createIndexSql(table, index);
         await this.executeQueries(up, down);
         table.removeIndex(index);
+    }
+
+    /**
+     * Drops an indices from the table.
+     */
+    async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        const promises = indices.map(index => this.dropIndex(tableOrName, index));
+        await Promise.all(promises);
     }
 
     /**

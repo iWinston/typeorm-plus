@@ -8,6 +8,7 @@ import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {Post} from "./entity/Post";
 import {PostVersion} from "./entity/PostVersion";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
 describe("schema builder > change column", () => {
 
@@ -15,7 +16,6 @@ describe("schema builder > change column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            // enabledDrivers: ["mssql"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -43,12 +43,12 @@ describe("schema builder > change column", () => {
         nameColumn.build(connection);
     }));
 
-    it.only("should correctly change column length", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change column length", () => PromiseUtils.runInSequence(connections, async connection => {
         const postMetadata = connection.getMetadata(Post);
         const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
         const textColumn = postMetadata.findColumnWithPropertyName("text")!;
         nameColumn.length = "500";
-        textColumn.length = "1000";
+        textColumn.length = "300";
 
         await connection.synchronize();
 
@@ -57,7 +57,13 @@ describe("schema builder > change column", () => {
         await queryRunner.release();
 
         postTable!.findColumnByName("name")!.length.should.be.equal("500");
-        postTable!.findColumnByName("text")!.length.should.be.equal("1000");
+        postTable!.findColumnByName("text")!.length.should.be.equal("300");
+
+        if (connection.driver instanceof MysqlDriver) {
+            postTable!.indices.length.should.be.equal(2);
+        } else {
+            postTable!.uniques.length.should.be.equal(2);
+        }
 
         // revert changes
         nameColumn.length = "255";

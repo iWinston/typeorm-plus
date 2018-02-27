@@ -631,9 +631,23 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a new unique constraints.
+     */
+    async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Drops an unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops an unique constraints.
+     */
+    async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
@@ -673,9 +687,23 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates a new indices
+     */
+    async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Drops an index from the table.
      */
     async dropIndex(collectionName: string, indexName: string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops an indices from the table.
+     */
+    async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

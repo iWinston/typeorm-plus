@@ -239,9 +239,19 @@ export interface QueryRunner {
     createUniqueConstraint(tableName: Table|string, uniqueConstraint: TableUnique): Promise<void>;
 
     /**
+     * Creates a new unique constraint.
+     */
+    createUniqueConstraints(tableName: Table|string, uniqueConstraint: TableUnique[]): Promise<void>;
+
+    /**
      * Drops an unique constraint.
      */
     dropUniqueConstraint(tableName: Table|string, uniqueOrName: TableUnique|string): Promise<void>;
+
+    /**
+     * Drops an unique constraints.
+     */
+    dropUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
 
     /**
      * Creates a new foreign key.
@@ -269,9 +279,19 @@ export interface QueryRunner {
     createIndex(table: Table|string, index: TableIndex): Promise<void>;
 
     /**
+     * Creates a new indices.
+     */
+    createIndices(tableName: Table|string, indices: TableIndex[]): Promise<void>;
+
+    /**
      * Drops an index.
      */
     dropIndex(table: Table|string, index: TableIndex|string): Promise<void>;
+
+    /**
+     * Drops an indices.
+     */
+    dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>;
 
     /**
      * Clears all table contents.

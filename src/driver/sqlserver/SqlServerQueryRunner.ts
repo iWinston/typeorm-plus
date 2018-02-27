@@ -647,7 +647,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         // create column index
-        const columnIndex = table.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
+        const columnIndex = clonedTable.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
             upQueries.push(this.createIndexSql(table, columnIndex));
             downQueries.push(this.dropIndexSql(table, columnIndex));
@@ -681,8 +681,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const queries = columns.map(column => this.addColumn(tableOrName, column));
-        await Promise.all(queries);
+        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
     }
 
     /**
@@ -929,9 +928,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => {
-            return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
-        });
+        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
     }
 
     /**
@@ -999,8 +996,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const dropPromises = columns.map(column => this.dropColumn(tableOrName, column));
-        await Promise.all(dropPromises);
+        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
     }
 
     /**
@@ -1049,6 +1045,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         table.addUniqueConstraint(uniqueConstraint);
     }
 
+    /**
+     * Creates a new unique constraints.
+     */
+    async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        const promises = uniqueConstraints.map(uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
+        await Promise.all(promises);
+    }
+
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
@@ -1059,6 +1063,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const down = this.createUniqueConstraintSql(table, uniqueConstraint);
         await this.executeQueries(up, down);
         table.removeUniqueConstraint(uniqueConstraint);
+    }
+
+    /**
+     * Creates an unique constraints.
+     */
+    async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        const promises = uniqueConstraints.map(uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+        await Promise.all(promises);
     }
 
     /**
@@ -1125,6 +1137,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
+     * Creates a new indices
+     */
+    async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        const promises = indices.map(index => this.createIndex(tableOrName, index));
+        await Promise.all(promises);
+    }
+
+    /**
      * Drops an index.
      */
     async dropIndex(tableOrName: Table|string, indexOrName: TableIndex|string): Promise<void> {
@@ -1137,6 +1157,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const down = this.createIndexSql(table, index);
         await this.executeQueries(up, down);
         table.removeIndex(index);
+    }
+
+    /**
+     * Drops an indices from the table.
+     */
+    async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        const promises = indices.map(index => this.dropIndex(tableOrName, index));
+        await Promise.all(promises);
     }
 
     /**

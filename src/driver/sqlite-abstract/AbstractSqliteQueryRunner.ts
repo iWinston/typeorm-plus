@@ -372,28 +372,14 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 changedTable.columns[changedTable.columns.indexOf(originalColumn)] = changedColumnSet.newColumn;
         });
 
-        // recreate table and replace columns in original table
         await this.recreateTable(changedTable, table);
-        changedColumns.forEach(changedColumnSet => {
-            const originalColumn = table.columns.find(column => column.name === changedColumnSet.oldColumn.name);
-            if (originalColumn)
-                table.columns[table.columns.indexOf(originalColumn)] = changedColumnSet.newColumn;
-        });
-        // replace table in loadedTables
-        this.replaceCachedTable(table, changedTable);
-
-        // replace changed constraints in original table
-        table.uniques = changedTable.uniques;
-        table.foreignKeys = changedTable.foreignKeys;
-        table.indices = changedTable.indices;
     }
 
     /**
      * Drops column in the table.
      */
     async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getTable(tableOrName);
-        return this.dropColumns(table!, [column]);
+        await this.dropColumns(tableOrName, [column]);
     }
 
     /**
@@ -464,14 +450,21 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Creates a new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
+        await this.createUniqueConstraints(tableOrName, [uniqueConstraint]);
+    }
+
+    /**
+     * Creates a new unique constraints.
+     */
+    async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        // clone original table and add unique constraint in to cloned table
+
+        // clone original table and add unique constraints in to cloned table
         const changedTable = table.clone();
-        changedTable.addUniqueConstraint(uniqueConstraint);
+        uniqueConstraints.forEach(uniqueConstraint => changedTable.addUniqueConstraint(uniqueConstraint));
 
         await this.recreateTable(changedTable, table);
-        // add unique constraint in to original table.
-        table.addUniqueConstraint(uniqueConstraint);
+        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -482,12 +475,22 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
             throw new Error(`Supplied unique constraint does not found in table ${table.name}`);
-        // clone original table and remove foreign keys from cloned table
+
+        await this.dropUniqueConstraints(table, [uniqueConstraint]);
+    }
+
+    /**
+     * Creates an unique constraints.
+     */
+    async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // clone original table and remove unique constraints from cloned table
         const changedTable = table.clone();
-        changedTable.removeUniqueConstraint(uniqueConstraint);
+        uniqueConstraints.forEach(uniqueConstraint => changedTable.removeUniqueConstraint(uniqueConstraint));
+
         await this.recreateTable(changedTable, table);
-        // remove foreign keys from original table.
-        table.removeUniqueConstraint(uniqueConstraint);
+        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -507,8 +510,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         foreignKeys.forEach(foreignKey => changedTable.addForeignKey(foreignKey));
 
         await this.recreateTable(changedTable, table);
-        // add foreign keys in to original table.
-        foreignKeys.forEach(foreignKey => table.addForeignKey(foreignKey));
+        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -528,12 +530,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     async dropForeignKeys(tableOrName: Table|string, foreignKeys: TableForeignKey[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
         // clone original table and remove foreign keys from cloned table
         const changedTable = table.clone();
         foreignKeys.forEach(foreignKey => changedTable.removeForeignKey(foreignKey));
+
         await this.recreateTable(changedTable, table);
-        // remove foreign keys from original table.
-        foreignKeys.forEach(foreignKey => table.removeForeignKey(foreignKey));
+        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -553,6 +556,14 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Creates a new indices
+     */
+    async createIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        const promises = indices.map(index => this.createIndex(tableOrName, index));
+        await Promise.all(promises);
+    }
+
+    /**
      * Drops an index from the table.
      */
     async dropIndex(tableOrName: Table|string, indexOrName: TableIndex|string): Promise<void> {
@@ -565,6 +576,14 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const down = this.createIndexSql(table, index);
         await this.executeQueries(up, down);
         table.removeIndex(index);
+    }
+
+    /**
+     * Drops an indices from the table.
+     */
+    async dropIndices(tableOrName: Table|string, indices: TableIndex[]): Promise<void> {
+        const promises = indices.map(index => this.dropIndex(tableOrName, index));
+        await Promise.all(promises);
     }
 
     /**
