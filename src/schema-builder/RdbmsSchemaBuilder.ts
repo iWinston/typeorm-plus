@@ -314,7 +314,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 })
                 .map(async tableUnique => {
                     this.connection.logger.logSchemaBuild(`dropping an unique constraint: ${tableUnique.name}`);
-                    await this.queryRunner.dropIndex(metadata.tablePath, tableUnique);
+                    await this.queryRunner.dropUniqueConstraint(metadata.tablePath, tableUnique);
                 });
 
             await Promise.all(dropQueries);

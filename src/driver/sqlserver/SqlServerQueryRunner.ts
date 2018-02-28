@@ -1058,7 +1058,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint does not found in table ${table.name}`);
+            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
         const down = this.createUniqueConstraintSql(table, uniqueConstraint);
@@ -1105,7 +1105,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key does not found in table ${table.name}`);
+            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
@@ -1152,7 +1152,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index does not found in table ${table.name}`);
+            throw new Error(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);

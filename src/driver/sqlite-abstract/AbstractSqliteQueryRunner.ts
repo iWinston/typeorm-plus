@@ -479,7 +479,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint does not found in table ${table.name}`);
+            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
 
         await this.dropUniqueConstraints(table, [uniqueConstraint]);
     }
@@ -525,7 +525,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key does not found in table ${table.name}`);
+            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
 
         await this.dropForeignKeys(tableOrName, [foreignKey]);
     }
@@ -575,7 +575,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index does not found in table ${table.name}`);
+            throw new Error(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(index);
         const down = this.createIndexSql(table, index);
