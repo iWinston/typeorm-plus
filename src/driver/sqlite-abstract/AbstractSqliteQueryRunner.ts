@@ -233,6 +233,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Drops the table.
      */
     async dropTable(tableOrName: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+        if (ifExist) {
+            const isTableExist = await this.hasTable(tableOrName);
+            if (!isTableExist) return Promise.resolve();
+        }
+
         // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);

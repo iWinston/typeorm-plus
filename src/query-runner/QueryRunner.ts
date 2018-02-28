@@ -159,7 +159,7 @@ export interface QueryRunner {
     /**
      * Drops database.
      */
-    dropDatabase(database: string, ifNotExist?: boolean): Promise<void>;
+    dropDatabase(database: string, ifExist?: boolean): Promise<void>;
 
     /**
      * Creates a new table schema.

@@ -258,7 +258,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM information_schema.tables WHERE table_schema = ${parsedTableName.schema} AND table_name = ${parsedTableName.tableName}`;
+        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = ${parsedTableName.schema} AND "table_name" = ${parsedTableName.tableName}`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -268,7 +268,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM information_schema.columns WHERE table_schema = ${parsedTableName.schema} AND table_name = ${parsedTableName.tableName} AND column_name = '${columnName}'`;
+        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = ${parsedTableName.schema} AND "table_name" = ${parsedTableName.tableName} AND "column_name" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -356,7 +356,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Drops the table.
      */
-    async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+    async dropTable(target: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {// It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
+        // to perform drop queries for foreign keys and indices.
+        if (ifExist) {
+            const isTableExist = await this.hasTable(target);
+            if (!isTableExist) return Promise.resolve();
+        }
+
         // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
         const tableName = target instanceof Table ? target.name : target;
@@ -364,12 +370,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
-        // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
-            const isTableExist = await this.hasTable(table);
-            if (!isTableExist) return Promise.resolve();
-        }
 
         if (dropIndices) {
             table.indices.forEach(index => {

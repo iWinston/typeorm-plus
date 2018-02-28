@@ -482,6 +482,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Drops the table.
      */
     async dropTable(tableOrName: Table|string, ifExist?: boolean, dropForeignKeys: boolean = true, dropIndices: boolean = true): Promise<void> {
+        if (ifExist) {
+            const isTableExist = await this.hasTable(tableOrName);
+            if (!isTableExist) return Promise.resolve();
+        }
+
         // if dropTable called with dropForeignKeys = true, we must create foreign keys in down query.
         const createForeignKeys: boolean = dropForeignKeys;
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
@@ -490,10 +495,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // It needs because if table does not exist and dropForeignKeys or dropIndices is true, we don't need
         // to perform drop queries for foreign keys and indices.
-        if (ifExist) {
-            const isTableExist = await this.hasTable(table);
-            if (!isTableExist) return Promise.resolve();
-        }
 
         if (dropIndices) {
             table.indices.forEach(index => {

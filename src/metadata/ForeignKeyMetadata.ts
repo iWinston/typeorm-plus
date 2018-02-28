@@ -43,14 +43,9 @@ export class ForeignKeyMetadata {
     onUpdate?: string; // TODO think about string literal type
 
     /**
-     * Gets the table name to which this foreign key is applied.
-     */
-    tableName: string;
-
-    /**
      * Gets the table name to which this foreign key is referenced.
      */
-    referencedTableName: string;
+    referencedTablePath: string;
 
     /**
      * Gets foreign key name.
@@ -101,9 +96,8 @@ export class ForeignKeyMetadata {
     build(namingStrategy: NamingStrategyInterface) {
         this.columnNames = this.columns.map(column => column.databaseName);
         this.referencedColumnNames = this.referencedColumns.map(column => column.databaseName);
-        this.tableName = this.entityMetadata.tableName;
-        this.referencedTableName = this.referencedEntityMetadata.tableName;
-        this.name = namingStrategy.foreignKeyName(this.tableName, this.columnNames);
+        this.referencedTablePath = this.referencedEntityMetadata.tablePath;
+        this.name = namingStrategy.foreignKeyName(this.entityMetadata.tablePath, this.columnNames);
     }
 
 }

@@ -63,11 +63,6 @@ export class IndexMetadata {
     name: string;
 
     /**
-     * Gets the table name on which index is applied.
-     */
-    tableName: string;
-
-    /**
      * Map of column names with order set.
      * Used only by MongoDB driver.
      */
@@ -108,7 +103,6 @@ export class IndexMetadata {
     build(namingStrategy: NamingStrategyInterface): this {
 
         const map: { [key: string]: number } = {};
-        this.tableName = this.entityMetadata.tableName;
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {

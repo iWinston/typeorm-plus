@@ -44,11 +44,6 @@ export class UniqueMetadata {
      */
     name: string;
 
-    /**
-     * Gets the table name on which unique constraint is applied.
-     */
-    tableName: string;
-
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -80,7 +75,6 @@ export class UniqueMetadata {
     build(namingStrategy: NamingStrategyInterface): this {
 
         const map: { [key: string]: number } = {};
-        this.tableName = this.entityMetadata.tableName;
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {

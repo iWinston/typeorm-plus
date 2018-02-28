@@ -85,7 +85,7 @@ export class TableForeignKey {
             name: metadata.name,
             columnNames: metadata.columnNames,
             referencedColumnNames: metadata.referencedColumnNames,
-            referencedTableName: metadata.referencedTableName,
+            referencedTableName: metadata.referencedTablePath,
             onDelete: metadata.onDelete,
             onUpdate: metadata.onUpdate
         });
