@@ -235,6 +235,7 @@ export class PostgresDriver implements Driver {
      */
     async afterConnect(): Promise<void> {
         const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
+            console.log(metadata.generatedColumns);
             return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
         });
         const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
@@ -243,7 +244,7 @@ export class PostgresDriver implements Driver {
         const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "hstore").length > 0;
         });
-        console.log(hasUuidColumns);
+        console.log("hasUuidColumns", hasUuidColumns);
         if (hasUuidColumns || hasCitextColumns || hasHstoreColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {

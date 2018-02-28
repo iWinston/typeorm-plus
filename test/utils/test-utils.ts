@@ -216,7 +216,19 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
  * and given options that can override some of its configuration for the test-specific use case.
  */
 export async function createTestingConnections(options?: TestingOptions): Promise<Connection[]> {
-    return createConnections(setupTestingConnections(options));
+    const connections = await createConnections(setupTestingConnections(options));
+    await Promise.all(connections.map(async connection => {
+        const databases: string[] = [];
+        connection.entityMetadatas.forEach(metadata => {
+            if (metadata.database && databases.indexOf(metadata.database) === -1)
+                databases.push(metadata.database);
+        });
+
+        const queryRunner = connection.createQueryRunner();
+        await Promise.all(databases.map(database => queryRunner.createDatabase(database!, true)));
+        await queryRunner.release();
+    }));
+    return connections;
 }
 
 /**

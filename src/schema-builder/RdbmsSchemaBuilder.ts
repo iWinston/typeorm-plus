@@ -57,7 +57,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         this.queryRunner = this.connection.createQueryRunner("master");
-        await this.createNewDatabases();
         await this.queryRunner.startTransaction();
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
@@ -88,7 +87,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner("master");
         try {
-            await this.createNewDatabases();
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
             await this.queryRunner.getTables(tablePaths);
             this.queryRunner.enableSqlMemory();
@@ -118,19 +116,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected get entityToSyncMetadatas(): EntityMetadata[] {
         return this.connection.entityMetadatas.filter(metadata => metadata.synchronize && metadata.tableType !== "entity-child");
-    }
-
-    /**
-     * Creates new databases if they are not exists.
-     */
-    protected async createNewDatabases(): Promise<void> {
-        const databases: string[] = [];
-        this.connection.entityMetadatas.forEach(metadata => {
-            if (metadata.database && databases.indexOf(metadata.database) === -1)
-                databases.push(metadata.database);
-        });
-
-        await Promise.all(databases.map(database => this.queryRunner.createDatabase(database!, true)));
     }
 
     /**
