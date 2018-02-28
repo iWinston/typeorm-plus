@@ -6,7 +6,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {Question} from "./entity/Question";
 
-describe("uuid-postgres", () => {
+describe.only("uuid-postgres", () => {
 
     let connections: Connection[];
     before(async () => {
