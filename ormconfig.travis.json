@@ -1,6 +1,6 @@
 [
   {
-    "skip": false,
+    "skip": true,
     "name": "mysql",
     "type": "mysql",
     "host": "localhost",
@@ -10,7 +10,7 @@
     "database": "test"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -20,7 +20,7 @@
     "database": "test"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite",
     "type": "sqlite",
     "database": "temp/sqlitedb.db"
@@ -33,10 +33,11 @@
     "port": 5432,
     "username": "test",
     "password": "test",
-    "database": "test"
+    "database": "test",
+    "logging": true
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqljs",
     "type": "sqljs"
   },
@@ -60,7 +61,7 @@
     "sid": "xe.oracle.docker"
   },
   {
-    "skip": false,
+    "skip": true,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",

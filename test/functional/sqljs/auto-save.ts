@@ -4,7 +4,7 @@ import {Post} from "./entity/Post";
 import {Connection} from "../../../src/connection/Connection";
 import {createTestingConnections} from "../../utils/test-utils";
 
-describe.skip("sqljs driver > autosave", () => {
+describe("sqljs driver > autosave", () => {
     let connections: Connection[];
     let saves = 0;
     const callback = (database: Uint8Array) => {

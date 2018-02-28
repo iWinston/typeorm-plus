@@ -10,7 +10,7 @@ import {Post} from "./entity/Post";
 import {PostVersion} from "./entity/PostVersion";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
-describe("schema builder > change column", () => {
+describe.only("schema builder > change column", () => {
 
     let connections: Connection[];
     before(async () => {
