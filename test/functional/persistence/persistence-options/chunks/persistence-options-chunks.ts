@@ -4,7 +4,7 @@ import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
 // import {expect} from "chai";
 
-describe.only("persistence > persistence options > chunks", () => {
+describe("persistence > persistence options > chunks", () => {
 
     // -------------------------------------------------------------------------
     // Configuration

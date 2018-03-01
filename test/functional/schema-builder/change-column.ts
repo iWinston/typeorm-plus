@@ -10,7 +10,7 @@ import {Post} from "./entity/Post";
 import {PostVersion} from "./entity/PostVersion";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
-describe.only("schema builder > change column", () => {
+describe("schema builder > change column", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -145,6 +145,11 @@ describe.only("schema builder > change column", () => {
     }));
 
     it("should correctly change non-generated column on to uuid-generated column", () => PromiseUtils.runInSequence(connections, async connection => {
+        const queryRunner = connection.createQueryRunner();
+
+        if (connection.driver instanceof PostgresDriver)
+            await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+
         const postMetadata = connection.getMetadata(Post);
         const idColumn = postMetadata.findColumnWithPropertyName("id")!;
         idColumn.isGenerated = true;
@@ -161,7 +166,6 @@ describe.only("schema builder > change column", () => {
 
         await connection.synchronize();
 
-        const queryRunner = connection.createQueryRunner();
         const postTable = await queryRunner.getTable("post");
         await queryRunner.release();
 
@@ -179,6 +183,8 @@ describe.only("schema builder > change column", () => {
         idColumn.isGenerated = false;
         idColumn.generationStrategy = undefined;
         idColumn.type = "int";
+        postMetadata.generatedColumns.splice(postMetadata.generatedColumns.indexOf(idColumn), 1);
+        postMetadata.hasUUIDGeneratedColumns = false;
 
     }));
 

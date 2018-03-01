@@ -235,7 +235,6 @@ export class PostgresDriver implements Driver {
      */
     async afterConnect(): Promise<void> {
         const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
-            console.log(metadata.generatedColumns);
             return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
         });
         const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
@@ -244,20 +243,16 @@ export class PostgresDriver implements Driver {
         const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "hstore").length > 0;
         });
-        console.log("hasUuidColumns", hasUuidColumns);
         if (hasUuidColumns || hasCitextColumns || hasHstoreColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
                         const { logger } = this.connection;
                         if (err) return fail(err);
-                        console.log("before create");
                         if (hasUuidColumns)
                             try {
-                                console.log("creating");
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
                             } catch (_) {
-                                console.log("error", _);
                                 logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasCitextColumns)
@@ -774,7 +769,6 @@ export class PostgresDriver implements Driver {
         return new Promise((ok, fail) => {
             connection.query(query, (err: any, result: any) => {
                 if (err) return fail(err);
-                console.log(1111111111111111);
                 ok(result);
             });
         });
