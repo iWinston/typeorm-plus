@@ -1252,13 +1252,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             sql += `, ${foreignKeysSql}`;
         }
 
-        const primaryColumns = table.columns.filter(column => column.isPrimary);
-        if (primaryColumns.length > 0) {
-            const hasAutoIncrement = primaryColumns.find(column => column.isGenerated && column.generationStrategy === "increment");
-            if (primaryColumns.length > 1 && hasAutoIncrement)
-                throw new Error(`MySql does not support AUTO_INCREMENT on composite primary key`);
-
-            const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+        if (table.primaryColumns.length > 0) {
+            const columnNames = table.primaryColumns.map(column => `\`${column.name}\``).join(", ");
             sql += `, PRIMARY KEY (${columnNames})`;
         }
 
