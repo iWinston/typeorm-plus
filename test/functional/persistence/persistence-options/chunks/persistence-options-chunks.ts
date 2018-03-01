@@ -27,7 +27,7 @@ describe.only("persistence > persistence options > chunks", () => {
             post.description = "Hello" + i;
             posts.push(post);
         }
-        await connection.manager.save(posts, { chunk: 10000 });
+        await connection.manager.save(posts, { chunk: 5000 });
     })));
 
 });
