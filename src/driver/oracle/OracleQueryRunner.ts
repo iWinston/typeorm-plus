@@ -1065,8 +1065,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.type = tableColumn.type.replace(/\([0-9]*\)/, "");
 
                     tableColumn.length = dbColumn["CHAR_COL_DECL_LENGTH"] ? dbColumn["CHAR_COL_DECL_LENGTH"].toString() : "";
-                    if (tableColumn.type === "raw")
+                    if (tableColumn.type === "raw") {
                         tableColumn.length = dbColumn["DATA_LENGTH"].toString();
+                    } else if (tableColumn.type === "clob" || tableColumn.type === "nclob") {
+                        tableColumn.length = "";
+                    }
 
                     if (tableColumn.type === "number"
                         || tableColumn.type === "numeric"
