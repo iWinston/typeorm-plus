@@ -6,9 +6,8 @@ export class CannotConnectAlreadyConnectedError extends Error {
 
     constructor(connectionName: string) {
         super();
-        this.message = `Cannot create a "${connectionName}" connection because connection to the database already established.`;
         Object.setPrototypeOf(this, CannotConnectAlreadyConnectedError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Cannot create a "${connectionName}" connection because connection to the database already established.`;
     }
 
 }

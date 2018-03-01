@@ -6,9 +6,8 @@ export class TransactionAlreadyStartedError extends Error {
 
     constructor() {
         super();
-        this.message = `Transaction already started for the given connection, commit current transaction before starting a new one.`;
         Object.setPrototypeOf(this, TransactionAlreadyStartedError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Transaction already started for the given connection, commit current transaction before starting a new one.`;
     }
 
 }

@@ -2,11 +2,12 @@ import {EntitySchema} from "../index";
 
 /**
  */
-export class EntityMetadataNotFound extends Error {
+export class EntityMetadataNotFoundError extends Error {
     name = "EntityMetadataNotFound";
 
     constructor(target: Function|EntitySchema<any>|string) {
         super();
+        Object.setPrototypeOf(this, EntityMetadataNotFoundError.prototype);
         let targetName: string;
         if (target instanceof EntitySchema) {
             targetName = target.options.name;
@@ -16,8 +17,6 @@ export class EntityMetadataNotFound extends Error {
             targetName = target;
         }
         this.message = `No metadata for "${targetName}" was found.`;
-        Object.setPrototypeOf(this, EntityMetadataNotFound.prototype);
-        this.stack = new Error().stack;
     }
 
 }

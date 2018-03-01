@@ -5,9 +5,8 @@ export class TreeRepositoryNotSupportedError extends Error {
 
     constructor(driver: Driver) {
         super();
-        this.message = `Tree repositories are not supported in ${driver.options.type} driver.`;
         Object.setPrototypeOf(this, TreeRepositoryNotSupportedError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Tree repositories are not supported in ${driver.options.type} driver.`;
     }
 
 }

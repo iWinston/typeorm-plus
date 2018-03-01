@@ -6,9 +6,8 @@ export class CannotDetermineEntityError extends Error {
 
     constructor(operation: string) {
         super();
-        this.message = `Cannot ${operation}, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`;
         Object.setPrototypeOf(this, CannotDetermineEntityError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Cannot ${operation}, given value must be instance of entity class, instead object literal is given. Or you must specify an entity target to method call.`;
     }
 
 }

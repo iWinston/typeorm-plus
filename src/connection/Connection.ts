@@ -10,7 +10,7 @@ import {TreeRepository} from "../repository/TreeRepository";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {Logger} from "../logger/Logger";
-import {EntityMetadataNotFound} from "../error/EntityMetadataNotFound";
+import {EntityMetadataNotFoundError} from "../error/EntityMetadataNotFoundError";
 import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
 import {MongoRepository} from "../repository/MongoRepository";
@@ -304,7 +304,7 @@ export class Connection {
     getMetadata(target: Function|EntitySchema<any>|string): EntityMetadata {
         const metadata = this.findMetadata(target);
         if (!metadata)
-            throw new EntityMetadataNotFound(target);
+            throw new EntityMetadataNotFoundError(target);
 
         return metadata;
     }

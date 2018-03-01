@@ -20,7 +20,6 @@ export class EntityNotFoundError extends Error {
         }
         const criteriaString = this.stringifyCriteria(criteria);
         this.message = `Could not find any entity of type "${targetName}" matching: ${criteriaString}`;
-        this.stack = new Error().stack;
     }
 
     private stringifyCriteria(criteria: any): string {

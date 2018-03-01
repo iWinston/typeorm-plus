@@ -8,8 +8,6 @@ export class LockNotSupportedOnGivenDriverError extends Error {
         super();
         Object.setPrototypeOf(this, LockNotSupportedOnGivenDriverError.prototype);
         this.message = `Locking not supported on given driver.`;
-        Object.setPrototypeOf(this, LockNotSupportedOnGivenDriverError.prototype);
-        this.stack = new Error().stack;
     }
 
 }

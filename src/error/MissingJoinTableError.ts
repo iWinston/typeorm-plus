@@ -8,6 +8,7 @@ export class MissingJoinTableError extends Error {
 
     constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
         super();
+        Object.setPrototypeOf(this, MissingJoinTableError.prototype);
 
         if (relation.inverseRelation) {
             this.message = `JoinTable is missing on both sides of ${entityMetadata.name}#${relation.propertyName} and ` +
@@ -17,8 +18,6 @@ export class MissingJoinTableError extends Error {
             this.message = `JoinTable is missing on ${entityMetadata.name}#${relation.propertyName} many-to-many relationship. ` +
                 `You need to put JoinTable decorator on it.`;
         }
-        Object.setPrototypeOf(this, MissingJoinTableError.prototype);
-        this.stack = new Error().stack;
     }
 
 }

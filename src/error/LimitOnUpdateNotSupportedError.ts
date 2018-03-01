@@ -2,13 +2,12 @@
  * Thrown when user tries to build an UPDATE query with LIMIT but the database does not support it.
 */
 export class LimitOnUpdateNotSupportedError extends Error {
+    name = "LimitOnUpdateNotSupportedError";
 
     constructor() {
-        super(`Your database does not support LIMIT on UPDATE statements.`);
+        super();
         Object.setPrototypeOf(this, LimitOnUpdateNotSupportedError.prototype);
-        this.name = "LimitOnUpdateNotSupportedError";
-        Object.setPrototypeOf(this, LimitOnUpdateNotSupportedError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Your database does not support LIMIT on UPDATE statements.`;
     }
 
 }

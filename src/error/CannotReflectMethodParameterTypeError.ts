@@ -7,11 +7,10 @@ export class CannotReflectMethodParameterTypeError extends Error {
 
     constructor(target: Function, methodName: string) {
         super();
+        Object.setPrototypeOf(this, CannotReflectMethodParameterTypeError.prototype);
         this.message = `Cannot get reflected type for a "${methodName}" method's parameter of "${target.name}" class. ` +
             `Make sure you have turned on an "emitDecoratorMetadata": true option in tsconfig.json. ` +
             `Also make sure you have imported "reflect-metadata" on top of the main entry file in your application.`;
-        Object.setPrototypeOf(this, CannotReflectMethodParameterTypeError.prototype);
-        this.stack = new Error().stack;
     }
 
 }

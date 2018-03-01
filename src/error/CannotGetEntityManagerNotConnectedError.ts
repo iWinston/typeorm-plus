@@ -6,9 +6,8 @@ export class CannotGetEntityManagerNotConnectedError extends Error {
 
     constructor(connectionName: string) {
         super();
-        this.message = `Cannot get entity manager for "${connectionName}" connection because connection is not yet established.`;
         Object.setPrototypeOf(this, CannotGetEntityManagerNotConnectedError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Cannot get entity manager for "${connectionName}" connection because connection is not yet established.`;
     }
 
 }

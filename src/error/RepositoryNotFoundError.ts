@@ -8,6 +8,7 @@ export class RepositoryNotFoundError extends Error {
 
     constructor(connectionName: string, entityClass: Function|EntitySchema<any>|string) {
         super();
+        Object.setPrototypeOf(this, RepositoryNotFoundError.prototype);
         let targetName: string;
         if (entityClass instanceof EntitySchema) {
             targetName = entityClass.options.name;
@@ -18,8 +19,6 @@ export class RepositoryNotFoundError extends Error {
         }
         this.message = `No repository for "${targetName}" was found. Looks like this entity is not registered in ` +
             `current "${connectionName}" connection?`;
-        Object.setPrototypeOf(this, RepositoryNotFoundError.prototype);
-        this.stack = new Error().stack;
     }
 
 }

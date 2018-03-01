@@ -6,11 +6,10 @@ export class NamingStrategyNotFoundError extends Error {
 
     constructor(strategyName: string|Function, connectionName: string) {
         super();
+        Object.setPrototypeOf(this, NamingStrategyNotFoundError.prototype);
         const name = strategyName instanceof Function ? (strategyName as any).name : strategyName;
         this.message = `Naming strategy "${name}" was not found. Looks like this naming strategy does not ` +
             `exist or it was not registered in current "${connectionName}" connection?`;
-        Object.setPrototypeOf(this, NamingStrategyNotFoundError.prototype);
-        this.stack = new Error().stack;
     }
 
 }

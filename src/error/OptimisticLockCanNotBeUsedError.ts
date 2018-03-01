@@ -6,9 +6,8 @@ export class OptimisticLockCanNotBeUsedError extends Error {
 
     constructor() {
         super();
-        this.message = `The optimistic lock can be used only with getOne() method.`;
         Object.setPrototypeOf(this, OptimisticLockCanNotBeUsedError.prototype);
-        this.stack = new Error().stack;
+        this.message = `The optimistic lock can be used only with getOne() method.`;
     }
 
 }

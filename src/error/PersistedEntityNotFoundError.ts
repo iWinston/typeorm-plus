@@ -6,9 +6,8 @@ export class PersistedEntityNotFoundError extends Error {
 
     constructor() {
         super();
-        this.message = `Internal error. Persisted entity was not found in the list of prepared operated entities.`;
         Object.setPrototypeOf(this, PersistedEntityNotFoundError.prototype);
-        this.stack = new Error().stack;
+        this.message = `Internal error. Persisted entity was not found in the list of prepared operated entities.`;
     }
 
 }

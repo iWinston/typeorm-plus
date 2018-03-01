@@ -6,9 +6,8 @@ export class OptimisticLockVersionMismatchError extends Error {
 
     constructor(entity: string, expectedVersion: number|Date, actualVersion: number|Date) {
         super();
-        this.message = `The optimistic lock on entity ${entity} failed, version ${expectedVersion} was expected, but is actually ${actualVersion}.`;
         Object.setPrototypeOf(this, OptimisticLockVersionMismatchError.prototype);
-        this.stack = new Error().stack;
+        this.message = `The optimistic lock on entity ${entity} failed, version ${expectedVersion} was expected, but is actually ${actualVersion}.`;
     }
 
 }
