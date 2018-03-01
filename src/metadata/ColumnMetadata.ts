@@ -330,14 +330,16 @@ export class ColumnMetadata {
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {
-            this.type = options.connection.driver.mappedDataTypes.createDate;
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
             if (!this.precision && options.connection.driver.mappedDataTypes.createDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
-            this.type = options.connection.driver.mappedDataTypes.updateDate;
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
             if (!this.precision && options.connection.driver.mappedDataTypes.updateDatePrecision)
