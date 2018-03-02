@@ -32,9 +32,8 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
         // Execute potentially problematic deletes
         for (const criteria of problematicCriterias) {
             let error: any = null;
-            try {
-                await connection.manager.delete(User, criteria);
-            } catch (err) { error = err; }
+
+            await connection.manager.delete(User, criteria).catch(err => error = err);
 
             expect(error).to.be.instanceof(Error);
         }
@@ -42,11 +41,10 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
         // Execute potentially problematic updates
         for (const criteria of problematicCriterias) {
             let error: any = null;
-            try {
-                await connection.manager.update(User, criteria, {
-                    name: "Override Name"
-                });
-            } catch (err) { error = err; }
+
+            await connection.manager.update(User, criteria, {
+                name: "Override Name"
+            }).catch(err => error = err);
 
             expect(error).to.be.instanceof(Error);
         }
@@ -54,13 +52,16 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
         // Ensure normal deleting works
         await connection.manager.delete(User, 3);
         
+        // Ensure normal updating works
+        await connection.manager.update(User, 2, { name: "User B Updated" } );
+        
         // All users should still exist except for User C
         await connection.manager.find(User).should.eventually.eql([{
             id: 1,
             name: "User A"
         }, {
             id: 2,
-            name: "User B"
+            name: "User B Updated"
         }]);
 
     })));

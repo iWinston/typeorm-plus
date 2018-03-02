@@ -366,8 +366,12 @@ export class EntityManager {
     update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
         
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (!criteria || (criteria instanceof Array && criteria.length === 0)) {
-            throw new Error(`Empty criteria(s) are not allowed for the update method.`);
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (criteria instanceof Array && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the update method.`));
         }
         
         if (typeof criteria === "string" ||
@@ -391,7 +395,7 @@ export class EntityManager {
     }
 
     /**
-     * Deletes entities by a given condition(s)
+     * Deletes entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
@@ -400,8 +404,12 @@ export class EntityManager {
     delete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
         
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (!criteria || (criteria instanceof Array && criteria.length === 0)) {
-            throw new Error(`Empty criteria(s) are not allowed for the delete method.`);
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (criteria instanceof Array && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
         }
         
         if (typeof criteria === "string" ||
