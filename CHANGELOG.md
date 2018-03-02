@@ -61,6 +61,7 @@ This fixed various issues on how real arrays must work
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
 * fixed `Oracle` issues, now it will be maintained as other drivers 
 * implemented migrations functionality in all drivers
+* CLI commands changed from `migrations:create`, `migrations:generate` and `migrations:revert` to `migration:create`, `migration:generate` and `migration:revert`
 
 ## 0.1.13
 

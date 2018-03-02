@@ -181,10 +181,10 @@ Learn more about [Migrations](./migrations.md).
 
 ## Revert migrations
 
-To revert the last executed migration use the following command:
+To revert the most recently executed migration use the following command:
 
 ```
-typeorm migrations:revert
+typeorm migration:revert
 ```
 
 This command will undo only the last executed migration.

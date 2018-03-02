@@ -8,7 +8,7 @@ const chalk = require("chalk");
  */
 export class MigrationRevertCommand {
 
-    command = "migrations:revert";
+    command = "migration:revert";
     describe = "Reverts last executed migration.";
 
     builder(yargs: any) {
