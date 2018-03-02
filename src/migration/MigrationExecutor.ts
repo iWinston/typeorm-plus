@@ -13,12 +13,16 @@ import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
  */
 export class MigrationExecutor {
 
+    private migrationTable: string = "migrations";
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
                 protected queryRunner?: QueryRunner) {
+        if (connection.options.migrationTable) {
+            this.migrationTable = connection.options.migrationTable;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -192,9 +196,9 @@ export class MigrationExecutor {
      * Creates table "migrations" that will store information about executed migrations.
      */
     protected async createMigrationsTableIfNotExist(queryRunner: QueryRunner): Promise<void> {
-        const tableExist = await queryRunner.hasTable("migrations"); // todo: table name should be configurable
+        const tableExist = await queryRunner.hasTable(this.migrationTable);
         if (!tableExist) {
-            await queryRunner.createTable(new Table("migrations", [
+            await queryRunner.createTable(new Table(this.migrationTable, [
                 new TableColumn({
                     name: "timestamp",
                     type: this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }),
@@ -217,7 +221,7 @@ export class MigrationExecutor {
         const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
-            .from("migrations", "migrations")
+            .from(this.migrationTable, "migrations")
             .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
@@ -255,13 +259,13 @@ export class MigrationExecutor {
      */
     protected async insertExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
         if (this.connection.driver instanceof SqlServerDriver) {
-            await queryRunner.insert("migrations", {
+            await queryRunner.insert(this.migrationTable, {
                 timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
                 name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
             });
 
         } else {
-            await queryRunner.insert("migrations", {
+            await queryRunner.insert(this.migrationTable, {
                 timestamp: migration.timestamp,
                 name: migration.name,
             });
@@ -273,13 +277,13 @@ export class MigrationExecutor {
      */
     protected async deleteExecutedMigration(queryRunner: QueryRunner, migration: Migration): Promise<void> {
         if (this.connection.driver instanceof SqlServerDriver) {
-            await queryRunner.delete("migrations", {
+            await queryRunner.delete(this.migrationTable, {
                 timestamp: new MssqlParameter(migration.timestamp, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationTimestamp }) as any),
                 name: new MssqlParameter(migration.name, this.connection.driver.normalizeType({ type: this.connection.driver.mappedDataTypes.migrationName }) as any),
             });
 
         } else {
-            await queryRunner.delete("migrations", {
+            await queryRunner.delete(this.migrationTable, {
                 timestamp: migration.timestamp,
                 name: migration.name,
             });
