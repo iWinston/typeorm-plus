@@ -357,12 +357,19 @@ export class EntityManager {
     }
 
     /**
-     * Updates entity partially. Entity can be found by a given conditions.
+     * Updates entity partially. Entity can be found by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
      */
     update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+        
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (!criteria || (criteria instanceof Array && criteria.length === 0)) {
+            throw new Error(`Empty criteria(s) are not allowed for the update method.`);
+        }
+        
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
@@ -384,12 +391,19 @@ export class EntityManager {
     }
 
     /**
-     * Deletes entities by a given conditions.
+     * Deletes entities by a given condition(s)
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
      */
     delete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+        
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (!criteria || (criteria instanceof Array && criteria.length === 0)) {
+            throw new Error(`Empty criteria(s) are not allowed for the delete method.`);
+        }
+        
         if (typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
