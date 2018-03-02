@@ -403,11 +403,11 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         if (column.length) {
             type += "(" + column.length + ")";
-        } else if (column.precision && column.scale) {
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
-        } else if (column.precision) {
+        } else if (column.precision !== null && column.precision !== undefined) {
             type +=  "(" + column.precision + ")";
-        } else if (column.scale) {
+        } else if (column.scale !== null && column.scale !== undefined) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
             type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
