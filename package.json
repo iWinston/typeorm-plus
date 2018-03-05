@@ -59,11 +59,14 @@
     "gulp-typescript": "^3.2.2",
     "gulp-uglify": "^3.0.0",
     "gulpclass": "^0.1.2",
+    "husky": "^0.14.3",
+    "lint-staged": "^7.0.0",
     "mocha": "^5.0.1",
     "mongodb": "^2.2.33",
     "mssql": "^4.0.4",
     "mysql": "^2.15.0",
     "mysql2": "^1.4.1",
+    "oracledb": "^2.0.15",
     "pg": "^7.4.0",
     "redis": "^2.8.0",
     "remap-istanbul": "^0.9.5",
@@ -73,11 +76,10 @@
     "source-map-support": "^0.5.3",
     "sql.js": "^0.4.0",
     "sqlite3": "^3.1.13",
-    "ts-node": "^3.3.0",
+    "ts-node": "^5.0.0",
     "tslint": "^5.6.0",
     "tslint-stylish": "^2.1.0",
-    "typescript": "^2.7.1",
-    "oracledb": "^2.0.15"
+    "typescript": "^2.7.1"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
@@ -93,8 +95,16 @@
     "yargonaut": "^1.1.2",
     "yargs": "^9.0.1"
   },
+  "lint-staged": {
+    "*.ts": [
+      "tslint --fix",
+      "git add"
+    ]
+  },
   "scripts": {
-    "test": "gulp ci-tests",
+    "precommit": "lint-staged",
+    "test-ci": "gulp ci-tests",
+    "test": "mocha -r ts-node/register --file test/utils/test-setup.ts --bail './test/**/*.ts'",
     "compile": "tsc",
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"

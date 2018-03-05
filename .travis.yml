@@ -17,5 +17,8 @@ before_script:
   - docker-compose up -d
   - npm run setup:config
 
+script:
+  - npm run test-ci
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
