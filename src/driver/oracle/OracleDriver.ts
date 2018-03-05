@@ -410,7 +410,9 @@ export class OracleDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: any): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
@@ -540,7 +542,7 @@ export class OracleDriver implements Driver {
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || this.normalizeDefault(columnMetadata.default) !== tableColumn.default
+                || this.normalizeDefault(columnMetadata) !== tableColumn.default
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)

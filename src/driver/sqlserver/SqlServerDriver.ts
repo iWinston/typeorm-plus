@@ -421,7 +421,9 @@ export class SqlServerDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: any): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
@@ -533,7 +535,7 @@ export class SqlServerDriver implements Driver {
             return  tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)

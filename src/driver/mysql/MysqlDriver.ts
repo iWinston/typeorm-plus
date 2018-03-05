@@ -401,7 +401,9 @@ export class MysqlDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: any): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
@@ -537,7 +539,7 @@ export class MysqlDriver implements Driver {
             // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default));
+            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
@@ -548,7 +550,7 @@ export class MysqlDriver implements Driver {
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 // || tableColumn.comment !== columnMetadata.comment // todo
-                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata.default), tableColumn.default)
+                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)

@@ -520,7 +520,10 @@ export class PostgresDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(defaultValue: any): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
+        const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]`: '';
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
@@ -528,10 +531,10 @@ export class PostgresDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue();
+            return defaultValue() + arrayCast;
 
         } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
+            return `'${defaultValue}'${arrayCast}`;
 
         } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;
