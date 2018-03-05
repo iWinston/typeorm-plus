@@ -62,7 +62,7 @@ Before creating a new migration you need to setup your connection options proper
     "password": "test",
     "database": "test",
     "entities": ["entity/*.js"],
-    "migrationTable": "custom_migration_table",
+    "migrationsTableName": "custom_migration_table",
     "migrations": ["migration/*.js"],
     "cli": {
         "migrationsDir": "migration"
@@ -71,7 +71,7 @@ Before creating a new migration you need to setup your connection options proper
 ```
 
 Here we setup three options:
-* `"migrationTable": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
+* `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
 * `"migrations": ["migration/*.js"]` - indicates that typeorm must load migrations from the given "migration" directory.
 * `"cli": { "migrationsDir": "migration" }` - indicates that the CLI must create new migrations in the "migration" directory.
 
