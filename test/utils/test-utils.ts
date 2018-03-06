@@ -4,6 +4,9 @@ import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
+import {PromiseUtils} from "../../src/util/PromiseUtils";
+import {PostgresDriver} from "../../src/driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../../src/driver/sqlserver/SqlServerDriver";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -218,6 +221,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
 export async function createTestingConnections(options?: TestingOptions): Promise<Connection[]> {
     const connections = await createConnections(setupTestingConnections(options));
     await Promise.all(connections.map(async connection => {
+        // create new databases
         const databases: string[] = [];
         connection.entityMetadatas.forEach(metadata => {
             if (metadata.database && databases.indexOf(metadata.database) === -1)
@@ -225,9 +229,29 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         });
 
         const queryRunner = connection.createQueryRunner();
-        await Promise.all(databases.map(database => queryRunner.createDatabase(database!, true)));
+        await PromiseUtils.runInSequence(databases, database => queryRunner.createDatabase(database, true));
+
+        // create new schemas
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
+            const schemaPaths: string[] = [];
+            connection.entityMetadatas
+                .filter(entityMetadata => !!entityMetadata.schemaPath)
+                .forEach(entityMetadata => {
+                    const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
+                    if (!existSchemaPath)
+                        schemaPaths.push(entityMetadata.schemaPath!);
+                });
+
+            const schema = connection.driver.options.schema;
+            if (schema)
+                schemaPaths.push(schema);
+
+            await PromiseUtils.runInSequence(schemaPaths, schemaPath => queryRunner.createSchema(schemaPath, true));
+        }
+
         await queryRunner.release();
     }));
+
     return connections;
 }
 

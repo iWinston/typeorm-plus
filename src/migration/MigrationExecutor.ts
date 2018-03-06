@@ -6,6 +6,8 @@ import {PromiseUtils} from "../util/PromiseUtils";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -13,11 +15,20 @@ import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 export class MigrationExecutor {
 
     // -------------------------------------------------------------------------
+    // Private properties
+    // -------------------------------------------------------------------------
+
+    private migrationsTable: string;
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
                 protected queryRunner?: QueryRunner) {
+
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        this.migrationsTable = this.connection.driver.buildTableName("migrations", options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
@@ -62,6 +73,9 @@ export class MigrationExecutor {
         // if no migrations are pending then nothing to do here
         if (!pendingMigrations.length) {
             this.connection.logger.logSchemaBuild(`No migrations are pending`);
+            // if query runner was created by us then release it
+            if (!this.queryRunner)
+                await queryRunner.release();
             return;
         }
 
@@ -191,11 +205,11 @@ export class MigrationExecutor {
      * Creates table "migrations" that will store information about executed migrations.
      */
     protected async createMigrationsTableIfNotExist(queryRunner: QueryRunner): Promise<void> {
-        const tableExist = await queryRunner.hasTable("migrations"); // todo: table name should be configurable
+        const tableExist = await queryRunner.hasTable(this.migrationsTable); // todo: table name should be configurable
         if (!tableExist) {
             await queryRunner.createTable(new Table(
                 {
-                    name: "migrations",
+                    name: this.migrationsTable,
                     columns: [
                         {
                             name: "timestamp",
@@ -221,7 +235,7 @@ export class MigrationExecutor {
         const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
-            .from("migrations", "migrations")
+            .from(this.migrationsTable, "migrations")
             .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
@@ -267,10 +281,9 @@ export class MigrationExecutor {
             values["name"] = migration.name;
         }
 
-        await queryRunner.manager
-            .createQueryBuilder()
-            .insert()
-            .into("migrations")
+        const qb = queryRunner.manager.createQueryBuilder();
+        await qb.insert()
+            .into(this.migrationsTable)
             .values(values)
             .execute();
     }
@@ -289,11 +302,12 @@ export class MigrationExecutor {
             conditions["name"] = migration.name;
         }
 
-        await queryRunner.manager
-            .createQueryBuilder()
-            .delete()
-            .from("migrations")
-            .where(conditions)
+        const qb = queryRunner.manager.createQueryBuilder();
+            await qb.delete()
+            .from(this.migrationsTable)
+            .where(`${qb.escape("timestamp")} = :timestamp`)
+            .andWhere(`${qb.escape("name")} = :name`)
+            .setParameters(conditions)
             .execute();
     }
 

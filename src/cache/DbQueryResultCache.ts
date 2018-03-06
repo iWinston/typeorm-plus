@@ -7,6 +7,8 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -14,10 +16,19 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 export class DbQueryResultCache implements QueryResultCache {
 
     // -------------------------------------------------------------------------
+    // Private properties
+    // -------------------------------------------------------------------------
+
+    private queryResultCacheTable: string;
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection) {
+
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        this.queryResultCacheTable = this.connection.driver.buildTableName("query-result-cache", options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
@@ -42,13 +53,13 @@ export class DbQueryResultCache implements QueryResultCache {
     async synchronize(queryRunner?: QueryRunner): Promise<void> {
         queryRunner = this.getQueryRunner(queryRunner);
         const driver = this.connection.driver;
-        const tableExist = await queryRunner.hasTable("query-result-cache"); // todo: table name should be configurable
+        const tableExist = await queryRunner.hasTable(this.queryResultCacheTable); // todo: table name should be configurable
         if (tableExist)
             return;
 
         await queryRunner.createTable(new Table(
             {
-                name: "query-result-cache",
+                name: this.queryResultCacheTable,
                 columns: [
                     {
                         name: "id",
@@ -101,7 +112,7 @@ export class DbQueryResultCache implements QueryResultCache {
         const qb = this.connection
             .createQueryBuilder(queryRunner)
             .select()
-            .from("query-result-cache", "cache");
+            .from(this.queryResultCacheTable, "cache");
 
         if (options.identifier) {
             return qb
@@ -152,7 +163,7 @@ export class DbQueryResultCache implements QueryResultCache {
         if (savedCache && savedCache.identifier) { // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
-                .update("query-result-cache")
+                .update(this.queryResultCacheTable)
                 .set(insertedValues);
 
             qb.where(`${qb.escape("identifier")} = :condition`, { condition: insertedValues.identifier });
@@ -161,7 +172,7 @@ export class DbQueryResultCache implements QueryResultCache {
         } else if (savedCache && savedCache.query) { // if exist then update
             const qb = queryRunner.manager
                 .createQueryBuilder()
-                .update("query-result-cache")
+                .update(this.queryResultCacheTable)
                 .set(insertedValues);
 
             if (this.connection.driver instanceof OracleDriver) {
@@ -177,7 +188,7 @@ export class DbQueryResultCache implements QueryResultCache {
             await queryRunner.manager
                 .createQueryBuilder()
                 .insert()
-                .into("query-result-cache")
+                .into(this.queryResultCacheTable)
                 .values(insertedValues)
                 .execute();
         }
@@ -187,7 +198,7 @@ export class DbQueryResultCache implements QueryResultCache {
      * Clears everything stored in the cache.
      */
     async clear(queryRunner: QueryRunner): Promise<void> {
-        return this.getQueryRunner(queryRunner).clearTable("query-result-cache");
+        return this.getQueryRunner(queryRunner).clearTable(this.queryResultCacheTable);
     }
 
     /**
@@ -195,11 +206,10 @@ export class DbQueryResultCache implements QueryResultCache {
      */
     async remove(identifiers: string[], queryRunner?: QueryRunner): Promise<void> {
         await Promise.all(identifiers.map(identifier => {
-            return this.getQueryRunner(queryRunner).manager
-                .createQueryBuilder()
-                .delete()
-                .from("query-result-cache")
-                .where(`"identifier" = :identifier`, { identifier })
+            const qb = this.getQueryRunner(queryRunner).manager.createQueryBuilder();
+            return qb.delete()
+                .from(this.queryResultCacheTable)
+                .where(`${qb.escape("identifier")} = :identifier`, {identifier})
                 .execute();
         }));
     }

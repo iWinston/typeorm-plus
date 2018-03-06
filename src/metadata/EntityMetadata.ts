@@ -770,7 +770,7 @@ export class EntityMetadata {
     }
 
     /**
-     * Builds table path using database name and schema name and table name.
+     * Builds table path using database name, schema name and table name.
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;

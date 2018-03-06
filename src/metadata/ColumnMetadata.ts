@@ -299,9 +299,9 @@ export class ColumnMetadata {
             this.comment = options.args.options.comment;
         if (options.args.options.default !== undefined)
             this.default = options.args.options.default;
-        if (options.args.options.scale)
+        if (options.args.options.scale !== null && options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
-        if (options.args.options.precision)
+        if (options.args.options.precision !== null && options.args.options.precision !== undefined)
             this.precision = options.args.options.precision;
         if (options.args.options.enum) {
             if (options.args.options.enum instanceof Object) {
@@ -330,17 +330,19 @@ export class ColumnMetadata {
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {
-            this.type = options.connection.driver.mappedDataTypes.createDate;
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.createDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.createDateDefault;
-            if (!this.precision && options.connection.driver.mappedDataTypes.createDatePrecision)
+            if ((this.precision === null || this.precision === undefined) && options.connection.driver.mappedDataTypes.createDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.createDatePrecision;
         }
         if (this.isUpdateDate) {
-            this.type = options.connection.driver.mappedDataTypes.updateDate;
+            if (!this.type)
+                this.type = options.connection.driver.mappedDataTypes.updateDate;
             if (!this.default)
                 this.default = () => options.connection.driver.mappedDataTypes.updateDateDefault;
-            if (!this.precision && options.connection.driver.mappedDataTypes.updateDatePrecision)
+            if ((this.precision === null || this.precision === undefined) && options.connection.driver.mappedDataTypes.updateDatePrecision)
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isVersion)

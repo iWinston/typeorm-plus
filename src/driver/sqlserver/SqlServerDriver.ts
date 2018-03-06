@@ -466,11 +466,11 @@ export class SqlServerDriver implements Driver {
 
         if (column.length) {
             type += "(" + column.length + ")";
-        } else if (column.precision && column.scale) {
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
-        } else if (column.precision && column.type !== "real") {
+        } else if (column.precision !== null && column.precision !== undefined && column.type !== "real") {
             type +=  "(" + column.precision + ")";
-        } else if (column.scale) {
+        } else if (column.scale !== null && column.scale !== undefined) {
             type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
             type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
@@ -581,13 +581,13 @@ export class SqlServerDriver implements Driver {
         if (column.length) {
             return new MssqlParameter(value, normalizedType as any, column.length as any);
 
-        } else if (column.precision && column.scale) {
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
 
-        } else if (column.precision) {
+        } else if (column.precision !== null && column.precision !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.precision);
 
-        } else if (column.scale) {
+        } else if (column.scale !== null && column.scale !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.scale);
         }
 

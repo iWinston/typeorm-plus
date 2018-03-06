@@ -123,9 +123,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
-        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof SqlServerDriver)
-           await this.createNewSchemas(this.connection.driver);
-
         await this.dropOldForeignKeys();
         await this.dropCompositeIndices();
         await this.dropCompositeUniqueConstraints();
@@ -138,27 +135,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createCompositeIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
         await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
-    }
-
-    /**
-     * Creates new table schemas.
-     * Works only for Postgres ans SQL server drivers.
-     */
-    protected async createNewSchemas(driver: PostgresDriver|SqlServerDriver): Promise<void> {
-        const schemaPaths: string[] = [];
-        this.connection.entityMetadatas
-            .filter(entityMetadata => !!entityMetadata.schemaPath)
-            .forEach(entityMetadata => {
-                const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
-                if (!existSchemaPath)
-                    schemaPaths.push(entityMetadata.schemaPath!);
-            });
-
-        const schema = driver.options.schema;
-        if (schema)
-            schemaPaths.push(schema);
-
-        await PromiseUtils.runInSequence(schemaPaths, schemaPath => this.queryRunner.createSchema(schemaPath, true));
     }
 
     /**
