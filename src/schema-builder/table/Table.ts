@@ -247,7 +247,9 @@ export class Table {
             columns: entityMetadata.columns
                 .filter(column => column)
                 .map(column => TableUtils.createTableColumnOptions(column, driver)),
-            indices: entityMetadata.indices.map(index => TableIndex.create(index)),
+            indices: entityMetadata.indices
+                .filter(index => index.synchronize === true)
+                .map(index => TableIndex.create(index)),
             uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
         };
 

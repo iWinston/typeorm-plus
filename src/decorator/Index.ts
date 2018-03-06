@@ -20,6 +20,13 @@ export function Index(name: string, options?: IndexOptions): Function;
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  */
+export function Index(name: string, options: { synchronize: false }): Function;
+
+/**
+ * Creates a database index.
+ * Can be used on entity property or on entity.
+ * Can create indices with composite columns when used on entity.
+ */
 export function Index(name: string, fields: string[], options?: IndexOptions): Function;
 
 /**
@@ -49,7 +56,7 @@ export function Index(name: string, fields: (object?: any) => (any[]|{ [key: str
  * Can create indices with composite columns when used on entity.
  */
 export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => (any[]|{ [key: string]: number }))|IndexOptions,
-                      maybeFieldsOrOptions?: ((object?: any) => (any[]|{ [key: string]: number }))|IndexOptions|string[],
+                      maybeFieldsOrOptions?: ((object?: any) => (any[]|{ [key: string]: number }))|IndexOptions|string[]|{ synchronize: false },
                       maybeOptions?: IndexOptions): Function {
 
     // normalize parameters
@@ -65,6 +72,7 @@ export function Index(nameOrFieldsOrOptions?: string|string[]|((object: any) => 
             target: propertyName ? clsOrObject.constructor : clsOrObject as Function,
             name: name,
             columns: propertyName ? [propertyName] : fields,
+            synchronize: options && (options as { synchronize: false }).synchronize === false ? false : true,
             unique: options && options.unique ? true : false,
             sparse: options && options.sparse ? true : false
         } as IndexMetadataArgs);

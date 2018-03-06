@@ -3,12 +3,17 @@ export interface EntitySchemaIndexOptions {
     /**
      * Index column names.
      */
-    columns: string[];
+    columns?: string[];
 
     /**
      * Indicates if this index must be unique or not.
      */
-    unique: boolean;
+    unique?: boolean;
+
+    /**
+     * Indicates if index must sync with database index.
+     */
+    synchronize?: boolean;
 
     /**
      * If true, the index only references documents with the specified field.
@@ -17,4 +22,4 @@ export interface EntitySchemaIndexOptions {
      */
     sparse?: boolean;
 
-}    
+}

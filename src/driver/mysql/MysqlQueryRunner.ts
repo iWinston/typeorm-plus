@@ -1075,13 +1075,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .filter(dbColumn => this.driver.buildTableName(dbColumn["TABLE_NAME"], undefined, dbColumn["TABLE_SCHEMA"]) === tableFullName)
                 .map(dbColumn => {
 
-                    const columnIndex = dbIndices.find(dbIndex => {
+                    const columnUniqueIndex = dbIndices.find(dbIndex => {
                         return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
                             && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === 0;
                     });
 
-                    const isConstraintComposite = columnIndex
-                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
+                    const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tablePath === table.name);
+                    const hasIgnoredIndex = columnUniqueIndex && tableMetadata && tableMetadata.indices
+                        .some(index => index.name === columnUniqueIndex["INDEX_NAME"] && index.synchronize === false);
+
+                    const isConstraintComposite = columnUniqueIndex
+                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnUniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
                         : false;
 
                     const tableColumn = new TableColumn();
@@ -1100,7 +1104,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
-                    tableColumn.isUnique = !!columnIndex && !isConstraintComposite;
+                    tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => dbPrimaryKey["COLUMN_NAME"] === tableColumn.name);
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;

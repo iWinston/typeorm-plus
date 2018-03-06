@@ -124,7 +124,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
         await this.dropOldForeignKeys();
-        await this.dropCompositeIndices();
+        await this.dropOldIndices();
         await this.dropCompositeUniqueConstraints();
         await this.renameTables();
         await this.renameColumns();
@@ -132,7 +132,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropRemovedColumns();
         await this.addNewColumns();
         await this.updateExistColumns();
-        await this.createCompositeIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
+        await this.createNewIndices();
         await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
     }
@@ -217,18 +217,18 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         });
     }
 
-    protected async dropCompositeIndices(): Promise<void> {
+    protected async dropOldIndices(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
-            const compositeTableIndices = table.indices.filter(index => index.columnNames.length > 1);
-            const dropQueries = compositeTableIndices
+            const dropQueries = table.indices
                 .filter(tableIndex => {
-
                     const indexMetadata = metadata.indices.find(index => index.name === tableIndex.name);
                     if (indexMetadata) {
+                        if (indexMetadata.synchronize === false)
+                            return false;
 
                         if (indexMetadata.isUnique !== tableIndex.isUnique)
                             return true;
@@ -245,11 +245,16 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         if (metadata.uniques.length === 0)
                             return true;
 
-                        return !metadata.uniques
-                            .filter(unique => unique.columns.length > 1)
-                            .find(unique => {
-                                return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
-                            });
+                        // search composite uniques.
+                        const hasUniqueMetadata = metadata.uniques.some(unique => {
+                            return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
+                        });
+
+                        // search unique column.
+                        const hasUniqueColumn = tableIndex.columnNames.length === 1 && metadata.columns
+                            .some(column => column.databaseName === tableIndex.columnNames[0] && column.isUnique);
+
+                        return !hasUniqueMetadata && !hasUniqueColumn;
                     }
 
                     return true;
@@ -419,21 +424,21 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates composite indices which are missing in db yet.
      */
-    protected createCompositeIndices() {
+    protected createNewIndices() {
         return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
-            const compositeIndices = metadata.indices
-                .filter(indexMetadata => indexMetadata.columns.length > 1 && !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name))
+            const newIndices = metadata.indices
+                .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name) && indexMetadata.synchronize === true)
                 .map(indexMetadata => TableIndex.create(indexMetadata));
 
-            if (compositeIndices.length === 0)
+            if (newIndices.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new index: ${compositeIndices.map(index => index.name).join(", ")} in table "${table.name}"`);
-            await this.queryRunner.createIndices(table, compositeIndices);
+            this.connection.logger.logSchemaBuild(`adding new index: ${newIndices.map(index => index.name).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createIndices(table, newIndices);
         });
     }
 
