@@ -241,10 +241,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
                     // In MySql all unique constraints stores as indices.
                     // So if we doesn't find index constraint, we also looking for unique constraints.
+                    // this method need when we drop unique constraint.
                     if (this.connection.driver instanceof MysqlDriver) {
-                        if (metadata.uniques.length === 0)
-                            return true;
-
                         // search composite uniques.
                         const hasUniqueMetadata = metadata.uniques.some(unique => {
                             return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
@@ -260,7 +258,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     return true;
                 })
                 .map(async tableIndex => {
-                    this.connection.logger.logSchemaBuild(`dropping an index: ${tableIndex.name}`);
+                    this.connection.logger.logSchemaBuild(`dropping an index: "${tableIndex.name}" from table ${table.name}`);
                     await this.queryRunner.dropIndex(table, tableIndex);
                 });
 
@@ -269,36 +267,36 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropCompositeUniqueConstraints(): Promise<void> {
-        // Mysql does not support unique constraints
-        if (this.connection.driver instanceof MysqlDriver)
-            return;
-
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
-            const compositeTableUniques = table.uniques.filter(unique => unique.columnNames.length > 1);
-            const dropQueries = compositeTableUniques
-                .filter(tableUnique => {
-
-                    const indexMetadata = metadata.uniques.find(unique => unique.name === tableUnique.name);
-                    if (indexMetadata) {
-
-                        if (indexMetadata.columns.length !== tableUnique.columnNames.length)
-                            return true;
-
-                        return !indexMetadata.columns.every(column => tableUnique.columnNames.indexOf(column.databaseName) !== -1);
-                    }
-
-                    return true;
-                })
-                .map(async tableUnique => {
-                    this.connection.logger.logSchemaBuild(`dropping an unique constraint: ${tableUnique.name}`);
-                    await this.queryRunner.dropUniqueConstraint(table, tableUnique);
+            // Mysql does not support unique constraints in table, they stores as unique indices.
+            // this method needs when unique constraint was changed and we need to drop old constraint.
+            if (this.connection.driver instanceof MysqlDriver) {
+                // find composite unique indices
+                const compositeIndices = table.indices.filter(tableIndex => {
+                    return tableIndex.columnNames.length > 1 && tableIndex.isUnique === true && !metadata.uniques.find(indexMetadata => indexMetadata.name === tableIndex.name);
                 });
 
-            await Promise.all(dropQueries);
+                if (compositeIndices.length === 0)
+                    return;
+
+                this.connection.logger.logSchemaBuild(`dropping old index: ${compositeIndices.map(index => `"${index.name}"`).join(", ")} from table "${table.name}"`);
+                await this.queryRunner.dropIndices(table, compositeIndices);
+
+            } else {
+                const compositeUniques = table.uniques.filter(tableUnique => {
+                    return tableUnique.columnNames.length > 1 && !metadata.uniques.find(uniqueMetadata => uniqueMetadata.name === tableUnique.name);
+                });
+
+                if (compositeUniques.length === 0)
+                    return;
+
+                this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
+                await this.queryRunner.dropUniqueConstraints(table, compositeUniques);
+            }
         });
     }
 
@@ -443,7 +441,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newIndices.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`adding new index: ${newIndices.map(index => index.name).join(", ")} in table "${table.name}"`);
+            this.connection.logger.logSchemaBuild(`adding new index: ${newIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createIndices(table, newIndices);
         });
     }
@@ -473,7 +471,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 if (compositeIndices.length === 0)
                     return;
 
-                this.connection.logger.logSchemaBuild(`adding new index: ${compositeIndices.map(index => index.name).join(", ")} in table "${table.name}"`);
+                this.connection.logger.logSchemaBuild(`adding new index: ${compositeIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
                 await this.queryRunner.createIndices(table, compositeIndices);
 
             } else {
@@ -484,7 +482,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 if (compositeUniques.length === 0)
                     return;
 
-                this.connection.logger.logSchemaBuild(`adding new unique constraint: ${compositeUniques.map(unique => unique.name).join(", ")} in table "${table.name}"`);
+                this.connection.logger.logSchemaBuild(`adding new unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
                 await this.queryRunner.createUniqueConstraints(table, compositeUniques);
             }
         });

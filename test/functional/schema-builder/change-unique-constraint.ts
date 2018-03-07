@@ -3,10 +3,10 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {PromiseUtils} from "../../../src";
 import {Teacher} from "./entity/Teacher";
-import {Student} from "./entity/Student";
 import {UniqueMetadata} from "../../../src/metadata/UniqueMetadata";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {Post} from "./entity/Post";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 
 describe("schema builder > change unique constraint", () => {
 
@@ -14,7 +14,6 @@ describe("schema builder > change unique constraint", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -38,22 +37,26 @@ describe("schema builder > change unique constraint", () => {
         await connection.synchronize();
 
         const queryRunner = connection.createQueryRunner();
-        const teacherTable = await queryRunner.getTable("teacher");
+        const table = await queryRunner.getTable("teacher");
         await queryRunner.release();
 
         if (connection.driver instanceof MysqlDriver) {
-            teacherTable!.indices.length.should.be.equal(1);
-            teacherTable!.indices[0].isUnique!.should.be.true;
+            table!.indices.length.should.be.equal(1);
+            table!.indices[0].isUnique!.should.be.true;
 
         } else {
-            teacherTable!.uniques.length.should.be.equal(1);
+            table!.uniques.length.should.be.equal(1);
         }
 
         // revert changes
         teacherMetadata.uniques.splice(teacherMetadata.uniques.indexOf(uniqueMetadata), 1);
     }));
 
-    it.only("should correctly change unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
+        // Sqlite does not store unique constraint name
+        if (connection.driver instanceof AbstractSqliteDriver)
+            return;
+
         const postMetadata = connection.getMetadata(Post);
         const uniqueMetadata = postMetadata.uniques.find(uq => uq.columns.length === 2);
         uniqueMetadata!.name = "changed_unique";
@@ -61,34 +64,38 @@ describe("schema builder > change unique constraint", () => {
         await connection.synchronize();
 
         const queryRunner = connection.createQueryRunner();
-        const postTable = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
         if (connection.driver instanceof MysqlDriver) {
-            console.log(postTable!.indices);
-            const tableUnique = postTable!.indices.find(index => index.columnNames.length === 2 && index.isUnique === true);
-            tableUnique!.name!.should.be.equal("changed_unique");
+            const tableIndex = table!.indices.find(index => index.columnNames.length === 2 && index.isUnique === true);
+            tableIndex!.name!.should.be.equal("changed_unique");
 
         } else {
-            const tableUnique = postTable!.uniques.find(unique => unique.columnNames.length === 2);
+            const tableUnique = table!.uniques.find(unique => unique.columnNames.length === 2);
             tableUnique!.name!.should.be.equal("changed_unique");
         }
 
         // revert changes
-        uniqueMetadata!.name = connection.namingStrategy.uniqueConstraintName(postTable!, uniqueMetadata!.columns.map(c => c.databaseName));
+        uniqueMetadata!.name = connection.namingStrategy.uniqueConstraintName(table!, uniqueMetadata!.columns.map(c => c.databaseName));
     }));
 
     it("should correctly drop removed unique constraint", () => PromiseUtils.runInSequence(connections, async connection => {
-        const studentMetadata = connection.getMetadata(Student);
-        studentMetadata.indices = [];
+        const postMetadata = connection.getMetadata(Post);
+        postMetadata!.uniques = [];
 
         await connection.synchronize();
 
         const queryRunner = connection.createQueryRunner();
-        const studentTable = await queryRunner.getTable("student");
+        const table = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        studentTable!.indices.length.should.be.equal(0);
+        if (connection.driver instanceof MysqlDriver) {
+            table!.indices.length.should.be.equal(1);
+
+        } else {
+            table!.uniques.length.should.be.equal(1);
+        }
     }));
 
 });

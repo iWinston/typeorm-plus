@@ -290,9 +290,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // recreate table with new constraint names
         await this.recreateTable(newTable, oldTable);
-
-        // replace cached table
-        this.replaceCachedTable(oldTable, newTable);
     }
 
     /**
@@ -467,9 +464,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         // clone original table and add unique constraints in to cloned table
         const changedTable = table.clone();
         uniqueConstraints.forEach(uniqueConstraint => changedTable.addUniqueConstraint(uniqueConstraint));
-
         await this.recreateTable(changedTable, table);
-        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -495,7 +490,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         uniqueConstraints.forEach(uniqueConstraint => changedTable.removeUniqueConstraint(uniqueConstraint));
 
         await this.recreateTable(changedTable, table);
-        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -515,7 +509,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         foreignKeys.forEach(foreignKey => changedTable.addForeignKey(foreignKey));
 
         await this.recreateTable(changedTable, table);
-        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -541,7 +534,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         foreignKeys.forEach(foreignKey => changedTable.removeForeignKey(foreignKey));
 
         await this.recreateTable(changedTable, table);
-        this.replaceCachedTable(table, changedTable);
     }
 
     /**
@@ -743,6 +735,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                             column.isUnique = true;
                     }
 
+                    // Sqlite does not store unique constraint name, so we generate its name manually.
                     return new TableUnique({
                         name: this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
                         columnNames: indexColumns
