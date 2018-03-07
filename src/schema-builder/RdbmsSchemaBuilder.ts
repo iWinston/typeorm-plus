@@ -369,11 +369,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newColumnMetadatas.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
-
             // create columns in the database
             const newTableColumnOptions = this.metadataColumnsToTableColumnOptions(newColumnMetadatas);
             const newTableColumns = newTableColumnOptions.map(option => new TableColumn(option));
+
+            if (newTableColumns.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
             await this.queryRunner.addColumns(table, newTableColumns);
         });
     }
@@ -391,7 +394,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const changedColumns = this.connection.driver.findChangedColumns(table.columns, metadata.columns);
             if (changedColumns.length === 0)
                 return;
-            this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
 
             // drop all foreign keys that point to this column
             await PromiseUtils.runInSequence(changedColumns, changedColumn => this.dropColumnReferencedForeignKeys(metadata.tablePath, changedColumn.databaseName));
@@ -417,6 +419,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 };
             });
 
+            if (newAndOldTableColumns.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
             await this.queryRunner.changeColumns(table, newAndOldTableColumns);
         });
     }
@@ -508,16 +514,25 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Drops all foreign keys where given column of the given table is being used.
      */
-    protected async dropColumnReferencedForeignKeys(tableName: string, columnName: string): Promise<void> {
-        const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
+    protected async dropColumnReferencedForeignKeys(tablePath: string, columnName: string): Promise<void> {
+        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
         if (!table)
             return;
 
         const tablesWithFK: Table[] = [];
+        const columnForeignKey = table.foreignKeys.find(foreignKey => foreignKey.columnNames.indexOf(columnName) !== -1);
+        if (columnForeignKey) {
+            const clonedTable = table.clone();
+            clonedTable.foreignKeys = [columnForeignKey];
+            tablesWithFK.push(clonedTable);
+            table.removeForeignKey(columnForeignKey);
+        }
+
         this.queryRunner.loadedTables.forEach(loadedTable => {
             const dependForeignKeys = loadedTable.foreignKeys.filter(foreignKey => {
-                return foreignKey.referencedTableName === tableName && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
+                return foreignKey.referencedTableName === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
             });
+
             if (dependForeignKeys.length > 0) {
                 const clonedTable = loadedTable.clone();
                 clonedTable.foreignKeys = dependForeignKeys;
@@ -537,26 +552,32 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Drops all composite indices, related to given column.
      */
-    protected async dropColumnCompositeIndices(tableName: string, columnName: string): Promise<void> {
-        const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
+    protected async dropColumnCompositeIndices(tablePath: string, columnName: string): Promise<void> {
+        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
         if (!table)
             return;
 
         const relatedIndices = table.indices.filter(index => index.columnNames.length > 1 && index.columnNames.indexOf(columnName) !== -1);
-        this.connection.logger.logSchemaBuild(`dropping related indices of "${tableName}"."${columnName}": ${relatedIndices.map(index => index.name).join(", ")}`);
+        if (relatedIndices.length === 0)
+            return;
+
+        this.connection.logger.logSchemaBuild(`dropping related indices of "${tablePath}"."${columnName}": ${relatedIndices.map(index => index.name).join(", ")}`);
         await this.queryRunner.dropIndices(table, relatedIndices);
     }
 
     /**
      * Drops all composite uniques, related to given column.
      */
-    protected async dropColumnCompositeUniques(tableName: string, columnName: string): Promise<void> {
-        const table = this.queryRunner.loadedTables.find(table => table.name === tableName);
+    protected async dropColumnCompositeUniques(tablePath: string, columnName: string): Promise<void> {
+        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
         if (!table)
             return;
 
         const relatedUniques = table.uniques.filter(unique => unique.columnNames.length > 1 && unique.columnNames.indexOf(columnName) !== -1);
-        this.connection.logger.logSchemaBuild(`dropping related unique constraints of "${tableName}"."${columnName}": ${relatedUniques.map(unique => unique.name).join(", ")}`);
+        if (relatedUniques.length === 0)
+            return;
+
+        this.connection.logger.logSchemaBuild(`dropping related unique constraints of "${tablePath}"."${columnName}": ${relatedUniques.map(unique => unique.name).join(", ")}`);
         await this.queryRunner.dropUniqueConstraints(table, relatedUniques);
     }
 
