@@ -5,6 +5,10 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.1.16
+
+* security and bug fixes
+
 ## 0.1.15
 
 * security and bug fixes
