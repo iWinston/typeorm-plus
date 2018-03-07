@@ -261,7 +261,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 })
                 .map(async tableIndex => {
                     this.connection.logger.logSchemaBuild(`dropping an index: ${tableIndex.name}`);
-                    await this.queryRunner.dropIndex(metadata.tablePath, tableIndex);
+                    await this.queryRunner.dropIndex(table, tableIndex);
                 });
 
             await Promise.all(dropQueries);
@@ -295,7 +295,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 })
                 .map(async tableUnique => {
                     this.connection.logger.logSchemaBuild(`dropping an unique constraint: ${tableUnique.name}`);
-                    await this.queryRunner.dropUniqueConstraint(metadata.tablePath, tableUnique);
+                    await this.queryRunner.dropUniqueConstraint(table, tableUnique);
                 });
 
             await Promise.all(dropQueries);

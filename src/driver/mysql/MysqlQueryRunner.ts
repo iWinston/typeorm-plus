@@ -900,7 +900,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
         await this.executeQueries(up, down);
-        table.addIndex(index);
+        table.addIndex(index, true);
     }
 
     /**
@@ -923,7 +923,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
         await this.executeQueries(up, down);
-        table.removeIndex(index);
+        table.removeIndex(index, true);
     }
 
     /**

@@ -180,17 +180,34 @@ export class Table {
     /**
      * Adds index.
      */
-    addIndex(index: TableIndex): void {
+    addIndex(index: TableIndex, isMysql: boolean = false): void {
         this.indices.push(index);
+
+        // in Mysql unique indices and unique constraints are the same thing
+        // if index is unique and have only one column, we mark this column as unique
+        if (index.columnNames.length === 1 && index.isUnique && isMysql) {
+            const column = this.columns.find(c => c.name === index.columnNames[0]);
+            if (column)
+                column.isUnique = true;
+        }
     }
 
     /**
      * Removes index.
      */
-    removeIndex(tableIndex: TableIndex): void {
+    removeIndex(tableIndex: TableIndex, isMysql: boolean = false): void {
         const index = this.indices.find(index => index.name === tableIndex.name);
-        if (index)
+        if (index) {
             this.indices.splice(this.indices.indexOf(index), 1);
+
+            // in Mysql unique indices and unique constraints are the same thing
+            // if index is unique and have only one column, we move `unique` attribute from its column
+            if (index.columnNames.length === 1 && index.isUnique && isMysql) {
+                const column = this.columns.find(c => c.name === index.columnNames[0]);
+                if (column)
+                    column.isUnique = false;
+            }
+        }
     }
 
     findColumnByName(name: string): TableColumn|undefined {
