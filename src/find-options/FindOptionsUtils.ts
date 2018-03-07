@@ -108,12 +108,12 @@ export class FindOptionsUtils {
 
         // apply all options from FindOptions
         if (options.select) {
-            qb.select();
+            qb.select([]);
             options.select.forEach(select => {
                 if (!metadata.findColumnWithPropertyPath(select))
                     throw new Error(`${select} column was not found in the ${metadata.name} entity.`);
 
-                qb.select(qb.alias + "." + select);
+                qb.addSelect(qb.alias + "." + select);
             });
         }
 
