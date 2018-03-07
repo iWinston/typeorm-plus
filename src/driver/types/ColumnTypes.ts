@@ -61,6 +61,16 @@ export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqli
     |"varbinary"; // mssql
 
 /**
+ * Range types
+ */
+export type RangeColumnType = "int4range" // postgres
+    |"int8range" // postgres
+    |"numrange" // postgres
+    |"tsrange" // postgres
+    |"tstzrange" // postgres
+    |"daterange"; // postgres
+
+/**
  * All other regular column types.
  */
 export type SimpleColumnType =
@@ -159,4 +169,5 @@ export type ColumnType = WithPrecisionColumnType
     |BooleanConstructor
     |DateConstructor
     |NumberConstructor
-    |StringConstructor;
+    |StringConstructor
+    |RangeColumnType;

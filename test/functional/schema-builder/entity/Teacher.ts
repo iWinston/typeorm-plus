@@ -3,7 +3,7 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Student} from "./Student";
 import {OneToMany} from "../../../../src/decorator/relations/OneToMany";
-import {Index} from "../../../../src/decorator";
+import {Index} from "../../../../src/decorator/Index";
 
 @Entity()
 @Index("ignored_index", { synchronize: false })

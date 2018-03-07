@@ -137,7 +137,13 @@ export class PostgresDriver implements Driver {
         "uuid",
         "xml",
         "json",
-        "jsonb"
+        "jsonb",
+        "int4range",
+        "int8range",
+        "numrange",
+        "tsrange",
+        "tstzrange",
+        "daterange"
     ];
 
     /**

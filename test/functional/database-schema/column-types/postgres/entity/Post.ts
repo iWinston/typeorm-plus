@@ -214,6 +214,28 @@ export class Post {
     jsonb: Object;
 
     // -------------------------------------------------------------------------
+    // Range Type
+    // -------------------------------------------------------------------------
+
+    @Column("int4range")
+    int4range: string;
+
+    @Column("int8range")
+    int8range: string;
+
+    @Column("numrange")
+    numrange: string;
+
+    @Column("tsrange")
+    tsrange: string;
+
+    @Column("tstzrange")
+    tstzrange: string;
+
+    @Column("daterange")
+    daterange: string;
+
+    // -------------------------------------------------------------------------
     // Array Type
     // -------------------------------------------------------------------------
 
