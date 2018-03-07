@@ -59,7 +59,8 @@ describe("indices > reading index from entity schema and updating database", () 
                 target: entityMetadata!.target,
                 name: "IDX_TEST",
                 columns: ["LastName", "FirstName"],
-                unique: false
+                unique: false,
+                synchronize: true
             }
         })];
         entityMetadata!.indices.forEach(index => index.build(connection.namingStrategy));
