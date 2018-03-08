@@ -522,7 +522,7 @@ export class PostgresDriver implements Driver {
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
-        const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]`: "";
+        const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
@@ -723,7 +723,7 @@ export class PostgresDriver implements Driver {
             try {
                 const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
-                
+
             } catch (e) { }
 
         } catch (e) { // todo: better error for browser env
