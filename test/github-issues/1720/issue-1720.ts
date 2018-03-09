@@ -4,7 +4,7 @@ import {Connection} from "../../../src";
 import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 
-describe.only("github issues > #1720 Listener not invoked when relation loaded through getter", () => {
+describe("github issues > #1720 Listener not invoked when relation loaded through getter", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
