@@ -103,7 +103,7 @@
   "scripts": {
     "precommit": "lint-staged",
     "test-ci": "gulp ci-tests",
-    "test": "mocha -r ts-node/register --file test/utils/test-setup.ts --bail './test/**/*.ts'",
+    "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail './build/compiled/test/**/*.js' --timeout 30000 --color",
     "compile": "tsc",
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"
