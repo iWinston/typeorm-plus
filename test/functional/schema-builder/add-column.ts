@@ -32,7 +32,6 @@ describe("schema builder > add column", () => {
                     type: "int",
                     name: "secondId",
                     primary: true,
-                    unique: true,
                     nullable: false
                 }
             }
@@ -64,7 +63,6 @@ describe("schema builder > add column", () => {
         const column1 = table!.findColumnByName("secondId")!;
         column1.should.be.exist;
         column1.isPrimary.should.be.true;
-        column1.isUnique.should.be.true;
         column1.isNullable.should.be.false;
 
         const column2 = table!.findColumnByName("description")!;
