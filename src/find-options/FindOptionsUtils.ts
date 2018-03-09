@@ -42,7 +42,9 @@ export class FindOptionsUtils {
         return possibleOptions && (
             this.isFindOneOptions(possibleOptions) ||
             typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||
-            typeof (possibleOptions as FindManyOptions<any>).take === "number"
+            typeof (possibleOptions as FindManyOptions<any>).take === "number" ||
+            typeof (possibleOptions as FindManyOptions<any>).skip === "string" ||
+            typeof (possibleOptions as FindManyOptions<any>).take === "string"
         );
     }
 
@@ -78,9 +80,20 @@ export class FindOptionsUtils {
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
             return qb;
 
+        if (!qb.expressionMap.mainAlias || !qb.expressionMap.mainAlias.hasMetadata)
+            return qb;
+
+        const metadata = qb.expressionMap.mainAlias!.metadata;
+
         // apply all options from FindOptions
         if (options.select) {
-            qb.select(options.select.map(selection => qb.alias + "." + selection));
+            qb.select([]);
+            options.select.forEach(select => {
+                if (!metadata.findColumnWithPropertyPath(select))
+                    throw new Error(`${select} column was not found in the ${metadata.name} entity.`);
+
+                qb.addSelect(qb.alias + "." + select);
+            });
         }
 
         if (options.where)
@@ -95,6 +108,10 @@ export class FindOptionsUtils {
         if (options.order)
             Object.keys(options.order).forEach(key => {
                 const order = ((options as FindOneOptions<T>).order as any)[key as any];
+
+                if (!metadata.findColumnWithPropertyPath(key))
+                    throw new Error(`${key} column was not found in the ${metadata.name} entity.`);
+
                 switch (order) {
                     case 1:
                         qb.addOrderBy(qb.alias + "." + key, "ASC");

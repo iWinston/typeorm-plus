@@ -19,6 +19,7 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     private migrationsTable: string;
+    private migrationsTableName: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -28,7 +29,8 @@ export class MigrationExecutor {
                 protected queryRunner?: QueryRunner) {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        this.migrationsTable = this.connection.driver.buildTableName("migrations", options.schema, options.database);
+        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
+        this.migrationsTableName = "migrations" || connection.options.migrationsTableName;
     }
 
     // -------------------------------------------------------------------------
@@ -235,7 +237,7 @@ export class MigrationExecutor {
         const migrationsRaw: ObjectLiteral[] = await this.connection.manager
             .createQueryBuilder(queryRunner)
             .select()
-            .from(this.migrationsTable, "migrations")
+            .from(this.migrationsTable, this.migrationsTableName)
             .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
@@ -303,7 +305,7 @@ export class MigrationExecutor {
         }
 
         const qb = queryRunner.manager.createQueryBuilder();
-            await qb.delete()
+        await qb.delete()
             .from(this.migrationsTable)
             .where(`${qb.escape("timestamp")} = :timestamp`)
             .andWhere(`${qb.escape("name")} = :name`)

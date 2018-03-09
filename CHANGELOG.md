@@ -62,6 +62,18 @@ composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", 
 * fixed `Oracle` issues, now it will be maintained as other drivers 
 * implemented migrations functionality in all drivers
 
+## 0.1.16
+
+* security and bug fixes
+
+## 0.1.15
+
+* security and bug fixes
+
+## 0.1.14
+
+* optimized hydration performance ([#1672](https://github.com/typeorm/typeorm/pull/1672))
+
 ## 0.1.13
 
 * added simple-json column type ([#1448](https://github.com/typeorm/typeorm/pull/1488))

@@ -25,8 +25,12 @@ export function Transaction(connectionName: string = "default"): MethodDecorator
                 let argsWithInjectedTransactionManagerAndRepositories: any[];
 
                 // filter all @TransactionEntityManager() and @TransactionRepository() decorator usages for this method
-                const transactionEntityManagerMetadatas = getMetadataArgsStorage().filterTransactionEntityManagers(target.constructor, methodName);
-                const transactionRepositoryMetadatas = getMetadataArgsStorage().filterTransactionRepository(target.constructor, methodName);
+                const transactionEntityManagerMetadatas = getMetadataArgsStorage()
+                    .filterTransactionEntityManagers(target.constructor, methodName)
+                    .reverse();
+                const transactionRepositoryMetadatas = getMetadataArgsStorage()
+                    .filterTransactionRepository(target.constructor, methodName)
+                    .reverse();
 
                 // if there are @TransactionEntityManager() decorator usages the inject them
                 if (transactionEntityManagerMetadatas.length > 0) {
