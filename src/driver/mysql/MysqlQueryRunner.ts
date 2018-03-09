@@ -1214,17 +1214,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }));
             });
 
-        // as MySql does not have unique constraints, we must create table indices from table uniques and mark them as unique.
-        if (table.uniques.length > 0) {
-            table.uniques.forEach(unique => {
-                table.indices.push(new TableIndex({
-                    name: unique.name,
-                    columnNames: unique.columnNames,
-                    isUnique: true
-                }));
-            });
-        }
-
         if (table.indices.length > 0) {
             const indicesSql = table.indices.map(index => {
                 const columnNames = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");

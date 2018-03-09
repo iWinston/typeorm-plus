@@ -111,7 +111,7 @@ describe("query runner > create table", () => {
             ]
         }), true);
 
-        await queryRunner.createTable(new Table({
+        const questionTableOptions = <TableOptions>{
             name: "question",
             columns: [
                 {
@@ -139,7 +139,6 @@ describe("query runner > create table", () => {
                     type: "int"
                 }
             ],
-            uniques: [{ columnNames: ["name", "text"] }],
             indices: [{ columnNames: ["authorId", "authorUserId"], isUnique: true }],
             foreignKeys: [
                 {
@@ -148,7 +147,15 @@ describe("query runner > create table", () => {
                     referencedColumnNames: ["id", "userId"]
                 }
             ]
-        }), true);
+        };
+
+        if (connection.driver instanceof MysqlDriver) {
+            questionTableOptions.indices!.push({ columnNames: ["name", "text"] });
+        } else {
+            questionTableOptions.uniques = [{ columnNames: ["name", "text"] }];
+        }
+
+        await queryRunner.createTable(new Table(questionTableOptions), true);
 
         const categoryTableOptions = <TableOptions>{
             name: "category",
@@ -177,7 +184,6 @@ describe("query runner > create table", () => {
                     isUnique: true
                 }
             ],
-            uniques: [{ columnNames: ["name", "alternativeName"] }],
             foreignKeys: [
                 {
                     columnNames: ["questionId"],
@@ -186,6 +192,13 @@ describe("query runner > create table", () => {
                 }
             ]
         };
+
+        if (connection.driver instanceof MysqlDriver) {
+            categoryTableOptions.indices = [{ columnNames: ["name", "alternativeName"]}];
+        } else {
+            categoryTableOptions.uniques = [{ columnNames: ["name", "alternativeName"]}];
+        }
+
         // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
         if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof OracleDriver))
             categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
@@ -208,7 +221,7 @@ describe("query runner > create table", () => {
 
         // Only composite Unique constraints listed in table.uniques array.
         if (connection.driver instanceof MysqlDriver) {
-            // MySql driver does not have unique constraints. All unique constraints is unique indexes.
+            // MySql driver don't have unique constraints. All unique constraints is unique indexes.
             questionTable!.uniques.length.should.be.equal(0);
             questionTable!.indices.length.should.be.equal(2);
 

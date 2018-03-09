@@ -111,6 +111,10 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
             if (!options.type)
                 throw new ColumnTypeUndefinedError(object, propertyName);
 
+            // create unique
+            if (options.unique === true)
+                getMetadataArgsStorage().uniques.push({ target: object.constructor, columns: [propertyName] });
+
             getMetadataArgsStorage().columns.push({
                 target: object.constructor,
                 propertyName: propertyName,

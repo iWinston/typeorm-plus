@@ -80,11 +80,6 @@ export class ColumnMetadata {
     isGenerated: boolean = false;
 
     /**
-     * Indicates if column value in the database should be unique or not.
-     */
-    isUnique: boolean = false;
-
-    /**
      * Indicates if column can contain nulls or not.
      */
     isNullable: boolean = false;
@@ -285,8 +280,6 @@ export class ColumnMetadata {
             this.collation = options.args.options.collation;
         if (options.args.options.primary)
             this.isPrimary = options.args.options.primary;
-        if (options.args.options.unique)
-            this.isUnique = options.args.options.unique;
         if (options.args.options.default === null) // to make sure default: null is the same as nullable: true
             this.isNullable = true;
         if (options.args.options.nullable !== undefined)

@@ -15,6 +15,7 @@ import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {UniqueMetadata} from "../metadata/UniqueMetadata";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -392,13 +393,32 @@ export class EntityMetadataBuilder {
         entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
         });
+
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
-        // TODO: ownUniques?
-        entityMetadata.uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
-            return new UniqueMetadata({ entityMetadata, args });
-        });
+
+        // Mysql stores unique constraints as unique indices.
+        if (this.connection.driver instanceof MysqlDriver) {
+            const indices = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+                return new IndexMetadata({
+                    entityMetadata: entityMetadata,
+                    args: {
+                        target: args.target,
+                        name: args.name,
+                        columns: args.columns,
+                        unique: true,
+                        synchronize: true
+                    }
+                });
+            });
+            entityMetadata.ownIndices.push(...indices);
+
+        } else {
+            entityMetadata.uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+                return new UniqueMetadata({ entityMetadata, args });
+            });
+        }
     }
 
     /**

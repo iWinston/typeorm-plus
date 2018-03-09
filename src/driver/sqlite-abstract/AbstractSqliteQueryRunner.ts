@@ -785,6 +785,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
         let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
 
+        // need for `addColumn()` method, because it recreates table.
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {

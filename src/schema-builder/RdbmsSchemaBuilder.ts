@@ -126,7 +126,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropOldForeignKeys();
         await this.dropOldIndices();
         await this.dropCompositeUniqueConstraints();
-        await this.renameTables();
+        // await this.renameTables();
         await this.renameColumns();
         await this.createNewTables();
         await this.dropRemovedColumns();
@@ -239,22 +239,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         return !indexMetadata.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
                     }
 
-                    // In MySql all unique constraints stores as indices.
-                    // So if we doesn't find index constraint, we also looking for unique constraints.
-                    // this method need when we drop unique constraint.
-                    if (this.connection.driver instanceof MysqlDriver) {
-                        // search composite uniques.
-                        const hasUniqueMetadata = metadata.uniques.some(unique => {
-                            return unique.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
-                        });
-
-                        // search unique column.
-                        const hasUniqueColumn = tableIndex.columnNames.length === 1 && metadata.columns
-                            .some(column => column.databaseName === tableIndex.columnNames[0] && column.isUnique);
-
-                        return !hasUniqueMetadata && !hasUniqueColumn;
-                    }
-
                     return true;
                 })
                 .map(async tableIndex => {
@@ -272,31 +256,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 return;
 
-            // Mysql does not support unique constraints in table, they stores as unique indices.
-            // this method needs when unique constraint was changed and we need to drop old constraint.
-            if (this.connection.driver instanceof MysqlDriver) {
-                // find composite unique indices
-                const compositeIndices = table.indices.filter(tableIndex => {
-                    return tableIndex.columnNames.length > 1 && tableIndex.isUnique === true && !metadata.uniques.find(indexMetadata => indexMetadata.name === tableIndex.name);
-                });
+            const compositeUniques = table.uniques.filter(tableUnique => {
+                return tableUnique.columnNames.length > 1 && !metadata.uniques.find(uniqueMetadata => uniqueMetadata.name === tableUnique.name);
+            });
 
-                if (compositeIndices.length === 0)
-                    return;
+            if (compositeUniques.length === 0)
+                return;
 
-                this.connection.logger.logSchemaBuild(`dropping old index: ${compositeIndices.map(index => `"${index.name}"`).join(", ")} from table "${table.name}"`);
-                await this.queryRunner.dropIndices(table, compositeIndices);
-
-            } else {
-                const compositeUniques = table.uniques.filter(tableUnique => {
-                    return tableUnique.columnNames.length > 1 && !metadata.uniques.find(uniqueMetadata => uniqueMetadata.name === tableUnique.name);
-                });
-
-                if (compositeUniques.length === 0)
-                    return;
-
-                this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
-                await this.queryRunner.dropUniqueConstraints(table, compositeUniques);
-            }
+            this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
+            await this.queryRunner.dropUniqueConstraints(table, compositeUniques);
         });
     }
 
@@ -455,36 +423,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!table)
                 return;
 
-            // Mysql does not support unique constraints in table, but we have uniques in metadata.
-            // we must check that uniques as indices.
-            if (this.connection.driver instanceof MysqlDriver) {
-                const compositeIndices = metadata.uniques
-                    .filter(uniqueMetadata => uniqueMetadata.columns.length > 1 && !table.indices.find(tableUnique => tableUnique.name === uniqueMetadata.name))
-                    .map(uniqueMetadata => {
-                        return new TableIndex({
-                            name: uniqueMetadata.name,
-                            columnNames: uniqueMetadata.columns.map(column => column.databaseName),
-                            isUnique: true
-                        });
-                    });
+            const compositeUniques = metadata.uniques
+                .filter(uniqueMetadata => uniqueMetadata.columns.length > 1 && !table.uniques.find(tableUnique => tableUnique.name === uniqueMetadata.name))
+                .map(uniqueMetadata => TableUnique.create(uniqueMetadata));
 
-                if (compositeIndices.length === 0)
-                    return;
+            if (compositeUniques.length === 0)
+                return;
 
-                this.connection.logger.logSchemaBuild(`adding new index: ${compositeIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
-                await this.queryRunner.createIndices(table, compositeIndices);
-
-            } else {
-                const compositeUniques = metadata.uniques
-                    .filter(uniqueMetadata => uniqueMetadata.columns.length > 1 && !table.uniques.find(tableUnique => tableUnique.name === uniqueMetadata.name))
-                    .map(uniqueMetadata => TableUnique.create(uniqueMetadata));
-
-                if (compositeUniques.length === 0)
-                    return;
-
-                this.connection.logger.logSchemaBuild(`adding new unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
-                await this.queryRunner.createUniqueConstraints(table, compositeUniques);
-            }
+            this.connection.logger.logSchemaBuild(`adding new unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createUniqueConstraints(table, compositeUniques);
         });
     }
 
