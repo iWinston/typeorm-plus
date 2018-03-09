@@ -79,6 +79,12 @@ describe("database schema > column types > postgres", () => {
         post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976";
         post.json = { id: 1, name: "Post" };
         post.jsonb = { id: 1, name: "Post" };
+        post.int4range = "[10,20)";
+        post.int8range = "[200000,500000)";
+        post.numrange = "(10.5,20.2)";
+        post.tsrange = "[2010-01-01 14:30,2010-01-01 15:30)";
+        post.tstzrange = "[2010-01-01 14:30:00+00,2010-01-01 15:30:00+00)";
+        post.daterange = "[2010-01-01,2010-01-05)";
         post.xml = "<book><title>Manual</title><chapter>...</chapter></book>";
         post.array = [1, 2, 3];
         post.simpleArray = ["A", "B", "C"];
@@ -142,6 +148,12 @@ describe("database schema > column types > postgres", () => {
         loadedPost.uuid.should.be.equal(post.uuid);
         loadedPost.json.should.be.eql(post.json);
         loadedPost.jsonb.should.be.eql(post.jsonb);
+        loadedPost.int4range.should.be.eql(post.int4range);
+        loadedPost.int8range.should.be.eql(post.int8range);
+        loadedPost.numrange.should.be.eql(post.numrange);
+        loadedPost.tsrange.should.be.eql(`["2010-01-01 14:30:00","2010-01-01 15:30:00")`);
+        loadedPost.tstzrange.should.be.eql(`["2010-01-01 14:30:00+00","2010-01-01 15:30:00+00")`);
+        loadedPost.daterange.should.be.eql(post.daterange);
         loadedPost.xml.should.be.equal(post.xml);
         loadedPost.array[0].should.be.equal(post.array[0]);
         loadedPost.array[1].should.be.equal(post.array[1]);
@@ -205,6 +217,12 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("xml")!.type.should.be.equal("xml");
         table!.findColumnByName("json")!.type.should.be.equal("json");
         table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb");
+        table!.findColumnByName("int4range")!.type.should.be.equal("int4range");
+        table!.findColumnByName("int8range")!.type.should.be.equal("int8range");
+        table!.findColumnByName("numrange")!.type.should.be.equal("numrange");
+        table!.findColumnByName("tsrange")!.type.should.be.equal("tsrange");
+        table!.findColumnByName("tstzrange")!.type.should.be.equal("tstzrange");
+        table!.findColumnByName("daterange")!.type.should.be.equal("daterange");
         table!.findColumnByName("array")!.type.should.be.equal("integer");
         table!.findColumnByName("array")!.isArray!.should.be.true;
         table!.findColumnByName("simpleArray")!.type.should.be.equal("text");

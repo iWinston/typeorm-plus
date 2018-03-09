@@ -156,7 +156,8 @@ export class EntitySchemaTransformer {
                     const indexAgrs: IndexMetadataArgs = {
                         target: options.target || options.name,
                         name: indexName,
-                        unique: tableIndex.unique,
+                        unique: tableIndex.unique === true ? true : false,
+                        synchronize: tableIndex.synchronize === false ? false : true,
                         sparse: tableIndex.sparse,
                         columns: tableIndex.columns
                     };

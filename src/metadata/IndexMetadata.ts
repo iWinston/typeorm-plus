@@ -29,6 +29,11 @@ export class IndexMetadata {
     isUnique: boolean = false;
 
     /**
+     * Indicates if this index must synchronize with database index.
+     */
+    synchronize?: boolean;
+
+    /**
      * If true, the index only references documents with the specified field.
      * These indexes use less space but behave differently in some situations (particularly sorts).
      * This option is only supported for mongodb database.
@@ -85,6 +90,7 @@ export class IndexMetadata {
 
         if (options.args) {
             this.target = options.args.target;
+            this.synchronize = options.args.synchronize;
             this.isUnique = options.args.unique;
             this.isSparse = options.args.sparse;
             this.givenName = options.args.name;
@@ -101,6 +107,10 @@ export class IndexMetadata {
      * Must be called after all entity metadata's properties map, columns and relations are built.
      */
     build(namingStrategy: NamingStrategyInterface): this {
+        if (this.synchronize === false) {
+            this.name = this.givenName!;
+            return this;
+        }
 
         const map: { [key: string]: number } = {};
 

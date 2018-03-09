@@ -32,14 +32,14 @@ export interface BaseConnectionOptions {
      * Accepts both subscriber classes and directories where from subscribers need to be loaded.
      * Directories support glob patterns.
      */
-    readonly subscribers?: Function[]|string[];
+    readonly subscribers?: (Function|string)[];
 
     /**
      * Migrations to be loaded for this connection.
      * Accepts both migration classes and directories where from migrations need to be loaded.
      * Directories support glob patterns.
      */
-    readonly migrations?: Function[]|string[];
+    readonly migrations?: (Function|string)[];
 
     /**
      * Naming strategy to be used to name tables and columns in the database.
