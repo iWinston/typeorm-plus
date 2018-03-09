@@ -531,7 +531,7 @@ export class PostgresDriver implements Driver {
             return defaultValue === true ? "true" : "false";
 
         } else if (typeof defaultValue === "function") {
-            return defaultValue() + arrayCast;
+            return defaultValue();
 
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
