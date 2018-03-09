@@ -472,6 +472,8 @@ export class PostgresDriver implements Driver {
      * Normalizes "default" value of the column.
      */
     normalizeDefault(column: ColumnMetadata): string {
+        const arrayCast = column.isArray ? `::${column.type}[]` : "";
+
         if (typeof column.default === "number") {
             return "" + column.default;
 
@@ -479,10 +481,10 @@ export class PostgresDriver implements Driver {
             return column.default === true ? "true" : "false";
 
         } else if (typeof column.default === "function") {
-            return column.default();
+            return column.default() + arrayCast;
 
         } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+            return `'${column.default}'${arrayCast}`;
 
         } else if (typeof column.default === "object") {
             return `'${JSON.stringify(column.default)}'`;
@@ -610,7 +612,7 @@ export class PostgresDriver implements Driver {
             try {
                 const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
-                
+
             } catch (e) { }
 
         } catch (e) { // todo: better error for browser env
