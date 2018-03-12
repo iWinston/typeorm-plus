@@ -11,7 +11,7 @@ const chalk = require("chalk");
  */
 export class MigrationGenerateCommand {
 
-    command = "migrations:generate";
+    command = "migration:generate";
     describe = "Generates a new migration file with sql needs to be executed to update schema.";
 
     builder(yargs: any) {
