@@ -46,16 +46,17 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                if (result.rows.length === 0) {
-                    ok([]);
+                if (query.substr(0, 11) === "INSERT INTO") {
+                    ok(result.insertId);
                 }
-
-                let resultSet = [];
-                for (let i = 0; i < result.rows.length; i++) {
-                    resultSet.push(result.rows.item(i));
+                else {
+                    let resultSet = [];
+                    for (let i = 0; i < result.rows.length; i++) {
+                        resultSet.push(result.rows.item(i));
+                    }
+                    
+                    ok(resultSet);
                 }
-                
-                ok(resultSet);
             }, (err: any) => {
                 this.driver.connection.logger.logQueryError(err, query, parameters, this);
                 fail(new QueryFailedError(query, parameters, err));
