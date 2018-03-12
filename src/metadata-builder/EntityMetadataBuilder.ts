@@ -108,10 +108,13 @@ export class EntityMetadataBuilder {
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
                 entityMetadata.relations.filter(relation => relation.isOneToOne || relation.isManyToOne).forEach(relation => {
                     const joinColumns = this.metadataArgsStorage.filterJoinColumns(relation.target, relation.propertyName);
-                    const foreignKey = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
+                    const { foreignKey, uniqueConstraint } = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
                     if (foreignKey) {
                         relation.registerForeignKeys(foreignKey); // push it to the relation and thus register there a join column
                         entityMetadata.foreignKeys.push(foreignKey);
+                    }
+                    if (uniqueConstraint) {
+                        entityMetadata.uniques.push(uniqueConstraint);
                     }
                 });
 

@@ -1,4 +1,5 @@
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
@@ -50,13 +51,16 @@ export class RelationJoinColumnBuilder {
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
      */
-    build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ForeignKeyMetadata|undefined {
+    build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): {
+      foreignKey: ForeignKeyMetadata|undefined,
+      uniqueConstraint: UniqueMetadata|undefined,
+    } {
         const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
         if (!referencedColumns.length)
-            return undefined; // this case is possible only for one-to-one non owning side
+            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible only for one-to-one non owning side
 
         const columns = this.collectColumns(joinColumns, relation, referencedColumns);
-        return new ForeignKeyMetadata({
+        const foreignKey = new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
             namingStrategy: this.connection.namingStrategy,
@@ -64,6 +68,20 @@ export class RelationJoinColumnBuilder {
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
         });
+
+        if (referencedColumns.length > 1 && relation.isOneToOne) {
+          const uniqueConstraint = new UniqueMetadata({
+              entityMetadata: relation.entityMetadata,
+              columns: foreignKey.columns,
+              args: {
+                  name: foreignKey.name,
+                  target: relation.entityMetadata.target,
+              }
+          });
+          return { foreignKey, uniqueConstraint };
+        }
+
+        return { foreignKey, uniqueConstraint: undefined };
     }
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -124,6 +142,7 @@ export class RelationJoinColumnBuilder {
                             comment: referencedColumn.comment,
                             primary: relation.isPrimary,
                             nullable: relation.isNullable,
+                            unique: relation.isOneToOne && referencedColumns.length === 1 ? true : false,
                         }
                     }
                 });
