@@ -10,7 +10,7 @@ const chalk = require("chalk");
  */
 export class MigrationRunCommand {
 
-    command = "migrations:run";
+    command = "migration:run";
     describe = "Runs all pending migrations.";
 
     builder(yargs: any) {

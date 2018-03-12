@@ -174,7 +174,7 @@ Learn more about [Migrations](./migrations.md).
 To execute all pending migrations use following command:
 
 ```
-typeorm migrations:run
+typeorm migration:run
 ```
 
 Learn more about [Migrations](./migrations.md).
