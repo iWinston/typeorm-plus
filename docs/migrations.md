@@ -141,7 +141,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 Once you have a migration to run on production, you can run them using a CLI command:
 
 ```
-typeorm migrations:run
+typeorm migration:run
 ```
 
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
