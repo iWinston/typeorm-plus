@@ -1594,6 +1594,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             sql += `, ${uniquesSql}`;
         }
 
+        if (table.checks.length > 0) {
+            const checksSql = table.checks.map(check => {
+                const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table.name, check.expression!);
+                return `CONSTRAINT "${checkName}" CHECK (${check.expression})`;
+            }).join(", ");
+
+            sql += `, ${checksSql}`;
+        }
+
         if (table.foreignKeys.length > 0 && createForeignKeys) {
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");

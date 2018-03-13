@@ -77,8 +77,10 @@ describe("query runner > create table", () => {
         const versionColumn = table!.findColumnByName("version");
         const nameColumn = table!.findColumnByName("name");
         table!.should.exist;
-        if (!(connection.driver instanceof MysqlDriver))
+        if (!(connection.driver instanceof MysqlDriver)) {
             table!.uniques.length.should.be.equal(2);
+            table!.checks.length.should.be.equal(1);
+        }
 
         idColumn!.isPrimary.should.be.true;
         versionColumn!.isUnique.should.be.true;
@@ -153,6 +155,7 @@ describe("query runner > create table", () => {
             questionTableOptions.indices!.push({ columnNames: ["name", "text"] });
         } else {
             questionTableOptions.uniques = [{ columnNames: ["name", "text"] }];
+            questionTableOptions.checks = [{ expression: `${connection.driver.escape("name")} <> 'ASD'` }];
         }
 
         await queryRunner.createTable(new Table(questionTableOptions), true);
@@ -219,9 +222,9 @@ describe("query runner > create table", () => {
         questionIdColumn!.generationStrategy!.should.be.equal("increment");
         questionTable!.should.exist;
 
-        // Only composite Unique constraints listed in table.uniques array.
         if (connection.driver instanceof MysqlDriver) {
-            // MySql driver don't have unique constraints. All unique constraints is unique indexes.
+            // MySql driver does not have unique and check constraints.
+            // all unique constraints is unique indexes.
             questionTable!.uniques.length.should.be.equal(0);
             questionTable!.indices.length.should.be.equal(2);
 
@@ -230,6 +233,7 @@ describe("query runner > create table", () => {
             questionTable!.uniques[0].columnNames.length.should.be.equal(2);
             questionTable!.indices.length.should.be.equal(1);
             questionTable!.indices[0].columnNames.length.should.be.equal(2);
+            questionTable!.checks.length.should.be.equal(1);
         }
 
         questionTable!.foreignKeys.length.should.be.equal(1);

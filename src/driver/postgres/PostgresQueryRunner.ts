@@ -1373,7 +1373,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }), dbIndex => dbIndex["constraint_name"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
-                const indices = dbConstraints.filter(index => index["constraint_name"] === constraint["constraint_name"]);
+                const indices = dbIndices.filter(index => index["constraint_name"] === constraint["constraint_name"]);
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["constraint_name"],
@@ -1412,6 +1412,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }).join(", ");
 
             sql += `, ${uniquesSql}`;
+        }
+
+        if (table.checks.length > 0) {
+            const checksSql = table.checks.map(check => {
+                const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table.name, check.expression!);
+                return `CONSTRAINT "${checkName}" CHECK (${check.expression})`;
+            }).join(", ");
+
+            sql += `, ${checksSql}`;
         }
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
