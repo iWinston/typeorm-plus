@@ -1,4 +1,5 @@
 import {TableCheckOptions} from "../options/TableCheckOptions";
+import {CheckMetadata} from "../../metadata/CheckMetadata";
 
 /**
  * Database's table check constraint stored in this class.
@@ -12,12 +13,17 @@ export class TableCheck {
     /**
      * Constraint name.
      */
-    name: string;
+    name?: string;
 
     /**
      * Column that contains this constraint.
      */
-    columnNames: string[] = [];
+    columnNames?: string[] = [];
+
+    /**
+     * Check expression.
+     */
+    expression?: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -26,6 +32,7 @@ export class TableCheck {
     constructor(options: TableCheckOptions) {
         this.name = options.name;
         this.columnNames = options.columnNames;
+        this.expression = options.expression;
     }
 
     // -------------------------------------------------------------------------
@@ -38,7 +45,22 @@ export class TableCheck {
     clone(): TableCheck {
         return new TableCheck(<TableCheckOptions>{
             name: this.name,
-            columnNames: [...this.columnNames],
+            columnNames: this.columnNames ? [...this.columnNames] : [],
+            expression: this.expression,
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates checks from the check metadata object.
+     */
+    static create(checkMetadata: CheckMetadata): TableCheck {
+        return new TableCheck(<TableCheckOptions>{
+            name: checkMetadata.name,
+            expression: checkMetadata.expression
         });
     }
 

@@ -811,9 +811,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 // rename check constraints
                 clonedTable.findColumnChecks(oldColumn).forEach(check => {
                     // build new constraint name
-                    check.columnNames.splice(check.columnNames.indexOf(oldColumn.name), 1);
-                    check.columnNames.push(newColumn.name);
-                    const newCheckName = this.connection.namingStrategy.checkConstraintName(clonedTable, check.columnNames);
+                    check.columnNames!.splice(check.columnNames!.indexOf(oldColumn.name), 1);
+                    check.columnNames!.push(newColumn.name);
+                    const newCheckName = this.connection.namingStrategy.checkConstraintName(clonedTable, check.expression!);
 
                     // build queries
                     upQueries.push(`EXEC sp_rename "${this.escapeTableName(clonedTable, true)}.${check.name}", "${newCheckName}"`);
@@ -1033,6 +1033,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         });
     }
 
+    /**
+     * Creates a new unique constraint.
+     */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
 
@@ -1054,6 +1057,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         await Promise.all(promises);
     }
 
+    /**
+     * Drops unique constraint.
+     */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
@@ -1067,10 +1073,57 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Creates an unique constraints.
+     * Drops an unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
         const promises = uniqueConstraints.map(uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+        await Promise.all(promises);
+    }
+
+    /**
+     * Creates a new check constraint.
+     */
+    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        if (!checkConstraint.name)
+            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table.name, checkConstraint.expression!);
+
+        const up = this.createCheckConstraintSql(table, checkConstraint);
+        const down = this.dropCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.addCheckConstraint(checkConstraint);
+    }
+
+    /**
+     * Creates a new check constraints.
+     */
+    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const promises = checkConstraints.map(checkConstraint => this.createCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
+        if (!checkConstraint)
+            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint);
+        const down = this.createCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.removeCheckConstraint(checkConstraint);
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const promises = checkConstraints.map(checkConstraint => this.dropCheckConstraint(tableOrName, checkConstraint));
         await Promise.all(promises);
     }
 
@@ -1310,7 +1363,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const constraintsSql = dbNames.map(dbName => {
             return `SELECT "columnUsages".*, "tableConstraints"."CONSTRAINT_TYPE" FROM "${dbName}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
                 `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints" ON "tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" ` +
-                `WHERE (${constraintsCondition}) AND "tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE')`;
+                `WHERE (${constraintsCondition}) AND "tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE', 'CHECK')`;
         }).join(" UNION ALL ");
 
         const foreignKeysSql = dbNames.map(dbName => {
@@ -1627,6 +1680,21 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): string {
         const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
         return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`;
+    }
+
+    /**
+     * Builds create check constraint sql.
+     */
+    protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): string {
+        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`;
+    }
+
+    /**
+     * Builds drop check constraint sql.
+     */
+    protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): string {
+        const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
+        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${checkName}"`;
     }
 
     /**

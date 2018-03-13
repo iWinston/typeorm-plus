@@ -16,6 +16,7 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {PromiseUtils} from "../../index";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -816,28 +817,56 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
-        throw new Error(`MySql does not supports unique constraints. Use unique index instead.`);
+        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Creates a new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        throw new Error(`MySql does not supports unique constraints. Use unique index instead.`);
+        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops an unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
-        throw new Error(`MySql does not supports unique constraints. Use unique index instead.`);
+        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops an unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        throw new Error(`MySql does not supports unique constraints. Use unique index instead.`);
+        throw new Error(`MySql does not support unique constraints. Use unique index instead.`);
+    }
+
+    /**
+     * Creates a new check constraint.
+     */
+    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+        throw new Error(`MySql does not support check constraints.`);
+    }
+
+    /**
+     * Creates a new check constraints.
+     */
+    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        throw new Error(`MySql does not support check constraints.`);
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+        throw new Error(`MySql does not support check constraints.`);
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        throw new Error(`MySql does not support check constraints.`);
     }
 
     /**

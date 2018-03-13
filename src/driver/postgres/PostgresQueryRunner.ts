@@ -16,6 +16,7 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {PromiseUtils} from "../../";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -921,7 +922,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
-     * Creates a new unique constraint.
+     * Creates new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
@@ -937,14 +938,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
-     * Creates a new unique constraints.
+     * Creates new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
         await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.createUniqueConstraint(tableOrName, uniqueConstraint));
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
@@ -959,10 +960,57 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
-     * Creates an unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
         await PromiseUtils.runInSequence(uniqueConstraints, uniqueConstraint => this.dropUniqueConstraint(tableOrName, uniqueConstraint));
+    }
+
+    /**
+     * Creates new check constraint.
+     */
+    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        if (!checkConstraint.name)
+            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table.name, checkConstraint.expression!);
+
+        const up = this.createCheckConstraintSql(table, checkConstraint);
+        const down = this.dropCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.addCheckConstraint(checkConstraint);
+    }
+
+    /**
+     * Creates new check constraints.
+     */
+    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const promises = checkConstraints.map(checkConstraint => this.createCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
+        if (!checkConstraint)
+            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint);
+        const down = this.createCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.removeCheckConstraint(checkConstraint);
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const promises = checkConstraints.map(checkConstraint => this.dropCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
     }
 
     /**
@@ -1132,16 +1180,24 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
             return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${name}')`;
         }).join(" OR ");
-        const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", ` +
-            `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' ELSE 'INDEX' END as "constraint_type", ` +
-            `"a"."attname" AS "column_name", CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE 'FALSE' END as "is_unique" ` +
+
+        const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
+            `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' END AS "constraint_type", "a"."attname" AS "column_name" ` +
+            `FROM "pg_constraint" "cnst" ` +
+            `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "cnst"."connamespace" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
+            `WHERE "t"."relkind" = 'r' AND ` + constraintsCondition;
+
+        const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
-            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid" AND "a"."attnum" = ANY("ix"."indkey") ` +
-            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid"  = "t"."relnamespace" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
-            `WHERE "t"."relkind" = 'r' AND ` + constraintsCondition;
+            `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND ` + constraintsCondition;
 
         const foreignKeysCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1166,10 +1222,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`;
-        const [dbTables, dbColumns, dbConstraints, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
+        const [dbTables, dbColumns, dbConstraints, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(constraintsSql),
+            this.query(indicesSql),
             this.query(foreignKeysSql),
         ]);
 
@@ -1274,6 +1331,20 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 });
             });
 
+            // find check constraints of table, group them by constraint name and build TableCheck.
+            const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
+                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
+                    && dbConstraint["constraint_type"] === "CHECK";
+            }), dbConstraint => dbConstraint["constraint_name"]);
+
+            table.checks = tableCheckConstraints.map(constraint => {
+                const checks = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
+                return new TableUnique({
+                    name: constraint["constraint_name"],
+                    columnNames: checks.map(c => c["column_name"])
+                });
+            });
+
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
             const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
                 return this.driver.buildTableName(dbForeignKey["table_name"], dbForeignKey["table_schema"]) === tableFullName;
@@ -1297,10 +1368,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             });
 
             // find index constraints of table, group them by constraint name and build TableIndex.
-            const tableIndexConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["table_name"], dbConstraint["table_schema"]) === tableFullName
-                    && dbConstraint["constraint_type"] === "INDEX";
-            }), dbConstraint => dbConstraint["constraint_name"]);
+            const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => {
+                return this.driver.buildTableName(dbIndex["table_name"], dbIndex["table_schema"]) === tableFullName;
+            }), dbIndex => dbIndex["constraint_name"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
                 const indices = dbConstraints.filter(index => index["constraint_name"] === constraint["constraint_name"]);
@@ -1483,6 +1553,21 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): string {
         const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
         return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`;
+    }
+
+    /**
+     * Builds create check constraint sql.
+     */
+    protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): string {
+        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`;
+    }
+
+    /**
+     * Builds drop check constraint sql.
+     */
+    protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): string {
+        const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
+        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${checkName}"`;
     }
 
     /**

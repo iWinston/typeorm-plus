@@ -162,6 +162,23 @@ export class Table {
     }
 
     /**
+     * Adds check constraint.
+     */
+    addCheckConstraint(checkConstraint: TableCheck): void {
+        this.checks.push(checkConstraint);
+    }
+
+    /**
+     * Removes check constraint.
+     */
+    removeCheckConstraint(removedCheck: TableCheck): void {
+        const foundCheck = this.checks.find(check => check.name === removedCheck.name);
+        if (foundCheck) {
+            this.checks.splice(this.checks.indexOf(foundCheck), 1);
+        }
+    }
+
+    /**
      * Adds foreign keys.
      */
     addForeignKey(foreignKey: TableForeignKey): void {
@@ -246,7 +263,7 @@ export class Table {
      */
     findColumnChecks(column: TableColumn): TableCheck[] {
         return this.checks.filter(check => {
-            return !!check.columnNames.find(columnName => columnName === column.name);
+            return !!check.columnNames!.find(columnName => columnName === column.name);
         });
     }
 
@@ -268,6 +285,7 @@ export class Table {
                 .filter(index => index.synchronize === true)
                 .map(index => TableIndex.create(index)),
             uniques: entityMetadata.uniques.map(unique => TableUnique.create(unique)),
+            checks: entityMetadata.checks.map(check => TableCheck.create(check)),
         };
 
         return new Table(options);

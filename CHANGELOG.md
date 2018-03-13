@@ -59,7 +59,9 @@ This fixed various issues on how real arrays must work
 * changed the way how entity schemas are created (now more type-safe), now interface EntitySchema is a class
 * added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
-* fixed `Oracle` issues, now it will be maintained as other drivers 
+* added `@Check` decorator. Accepts custom check constraint name and expression. Used only on as 
+composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'asd'")`
+* fixed `Oracle` issues, now it will be fully maintained as other drivers 
 * implemented migrations functionality in all drivers
 * CLI commands changed from `migrations:create`, `migrations:generate`, `migrations:revert` and `migrations:run` to `migration:create`, `migration:generate`, `migration:revert` and `migration:run`
 

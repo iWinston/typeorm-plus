@@ -20,6 +20,7 @@ import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapErro
 import {TreeType} from "./types/TreeTypes";
 import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
 import {UniqueMetadata} from "./UniqueMetadata";
+import {CheckMetadata} from "./CheckMetadata";
 
 /**
  * Contains all entity metadata.
@@ -395,6 +396,11 @@ export class EntityMetadata {
      * Entity's unique metadatas.
      */
     uniques: UniqueMetadata[] = [];
+
+    /**
+     * Entity's check metadatas.
+     */
+    checks: CheckMetadata[] = [];
 
     /**
      * Entity's own listener metadatas.

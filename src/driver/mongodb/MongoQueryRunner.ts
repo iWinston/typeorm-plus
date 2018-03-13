@@ -41,6 +41,7 @@ import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
 import {SqlInMemory} from "../SqlInMemory";
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {Broadcaster} from "../../subscriber/Broadcaster";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -648,6 +649,34 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops an unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new check constraint.
+     */
+    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new check constraints.
+     */
+    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

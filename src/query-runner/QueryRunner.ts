@@ -9,6 +9,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUnique} from "../schema-builder/table/TableUnique";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {TableCheck} from "../schema-builder/table/TableCheck";
 
 /**
  * Runs queries on a single database connection.
@@ -234,12 +235,12 @@ export interface QueryRunner {
     dropPrimaryKey(tableOrName: Table|string): Promise<void>;
 
     /**
-     * Creates a new unique constraint.
+     * Creates new unique constraint.
      */
     createUniqueConstraint(tableName: Table|string, uniqueConstraint: TableUnique): Promise<void>;
 
     /**
-     * Creates a new unique constraint.
+     * Creates new unique constraints.
      */
     createUniqueConstraints(tableName: Table|string, uniqueConstraint: TableUnique[]): Promise<void>;
 
@@ -252,6 +253,26 @@ export interface QueryRunner {
      * Drops an unique constraints.
      */
     dropUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
+
+    /**
+     * Creates new check constraint.
+     */
+    createCheckConstraint(tableName: Table|string, checkConstraint: TableCheck): Promise<void>;
+
+    /**
+     * Creates new check constraints.
+     */
+    createCheckConstraints(tableName: Table|string, checkConstraint: TableCheck[]): Promise<void>;
+
+    /**
+     * Drops check constraint.
+     */
+    dropCheckConstraint(tableName: Table|string, checkOrName: TableCheck|string): Promise<void>;
+
+    /**
+     * Drops check constraints.
+     */
+    dropCheckConstraints(tableName: Table|string, checkConstraints: TableCheck[]): Promise<void>;
 
     /**
      * Creates a new foreign key.
@@ -318,8 +339,6 @@ export interface QueryRunner {
      * Flushes all memorized sqls.
      */
     clearSqlMemory(): void;
-
-    // todo: add methods: addCheck, dropCheck
 
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.

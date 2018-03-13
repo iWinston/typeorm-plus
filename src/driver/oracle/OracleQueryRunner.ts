@@ -866,6 +866,53 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Creates new check constraint.
+     */
+    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        if (!checkConstraint.name)
+            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table.name, checkConstraint.expression!);
+
+        const up = this.createCheckConstraintSql(table, checkConstraint);
+        const down = this.dropCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.addCheckConstraint(checkConstraint);
+    }
+
+    /**
+     * Creates new check constraints.
+     */
+    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const promises = checkConstraints.map(checkConstraint => this.createCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
+        if (!checkConstraint)
+            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint);
+        const down = this.createCheckConstraintSql(table, checkConstraint);
+        await this.executeQueries(up, down);
+        table.removeCheckConstraint(checkConstraint);
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const promises = checkConstraints.map(checkConstraint => this.dropCheckConstraint(tableOrName, checkConstraint));
+        await Promise.all(promises);
+    }
+
+    /**
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
@@ -1272,6 +1319,21 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): string {
         const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
         return `ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueName}"`;
+    }
+
+    /**
+     * Builds create check constraint sql.
+     */
+    protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): string {
+        return `ALTER TABLE "${table.name}" ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`;
+    }
+
+    /**
+     * Builds drop check constraint sql.
+     */
+    protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): string {
+        const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
+        return `ALTER TABLE "${table.name}" DROP CONSTRAINT "${checkName}"`;
     }
 
     /**

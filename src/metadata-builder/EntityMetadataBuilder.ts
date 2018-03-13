@@ -16,6 +16,7 @@ import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
 import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {CheckMetadata} from "../metadata/CheckMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -172,6 +173,11 @@ export class EntityMetadataBuilder {
         // build all unique constraints (need to do it after relations and their join columns are built)
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.uniques.forEach(unique => unique.build(this.connection.namingStrategy));
+        });
+
+        // build all check constraints
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.checks.forEach(check => check.build(this.connection.namingStrategy));
         });
 
         // add lazy initializer for entity relations
@@ -396,9 +402,11 @@ export class EntityMetadataBuilder {
         entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
             return new IndexMetadata({ entityMetadata, args });
         });
-
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
+        });
+        entityMetadata.checks = this.metadataArgsStorage.filterChecks(entityMetadata.inheritanceTree).map(args => {
+            return new CheckMetadata({ entityMetadata, args });
         });
 
         // Mysql stores unique constraints as unique indices.

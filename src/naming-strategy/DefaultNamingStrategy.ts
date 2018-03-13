@@ -85,14 +85,11 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "IDX_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
-    checkConstraintName(tableOrName: Table|string, columnNames: string[]): string {
-        // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        const clonedColumnNames = [...columnNames];
-        clonedColumnNames.sort();
+    checkConstraintName(tableOrName: Table|string, expression: string): string {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
-        const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-        return "CK_" + RandomGenerator.sha1(key).substr(0, 26);
+        const key = `${replacedTableName}_${expression}`;
+        return "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
     joinColumnName(relationName: string, referencedColumnName: string): string {

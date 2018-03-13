@@ -13,6 +13,7 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -493,6 +494,50 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Creates new check constraint.
+     */
+    async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
+        await this.createCheckConstraints(tableOrName, [checkConstraint]);
+    }
+
+    /**
+     * Creates new check constraints.
+     */
+    async createCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // clone original table and add check constraints in to cloned table
+        const changedTable = table.clone();
+        checkConstraints.forEach(checkConstraint => changedTable.addCheckConstraint(checkConstraint));
+        await this.recreateTable(changedTable, table);
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
+        if (!checkConstraint)
+            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+
+        await this.dropCheckConstraints(table, [checkConstraint]);
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropCheckConstraints(tableOrName: Table|string, checkConstraints: TableCheck[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+
+        // clone original table and remove check constraints from cloned table
+        const changedTable = table.clone();
+        checkConstraints.forEach(checkConstraint => changedTable.removeCheckConstraint(checkConstraint));
+
+        await this.recreateTable(changedTable, table);
+    }
+
+    /**
      * Creates a new foreign key.
      */
     async createForeignKey(tableOrName: Table|string, foreignKey: TableForeignKey): Promise<void> {
@@ -638,6 +683,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table({name: dbTable["name"]});
+            const sql = dbTable["sql"];
 
             // load columns and indices
             const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
@@ -743,6 +789,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 });
             table.uniques = (await Promise.all(tableUniquePromises)) as TableUnique[];
 
+            // build checks
+            let result;
+            const regexp = /CONSTRAINT "(.*?)" CHECK/g;
+            while (((result = regexp.exec(sql)) !== null)) {
+                table.checks.push(new TableCheck({ name: result[1] }));
+            }
+
             // build indices
             const indicesPromises = dbIndices
                 .filter(dbIndex => dbIndex["origin"] === "c")
@@ -805,6 +858,15 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }).join(", ");
 
             sql += `, ${uniquesSql}`;
+        }
+
+        if (table.checks.length > 0) {
+            const checksSql = table.checks.map(check => {
+                const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table.name, check.expression!);
+                return `CONSTRAINT "${checkName}" CHECK (${check.expression})`;
+            }).join(", ");
+
+            sql += `, ${checksSql}`;
         }
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
