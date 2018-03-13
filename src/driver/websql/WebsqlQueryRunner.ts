@@ -148,11 +148,16 @@ export class WebsqlQueryRunner extends AbstractSqliteQueryRunner {
                         if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                             this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                        const rows = Object
-                            .keys(result.rows)
-                            .filter(key => key !== "length")
-                            .map(key => result.rows[key]);
-                        ok(rows);
+                        if (query.substr(0, 11) === "INSERT INTO") {
+                            ok(result.insertId);
+                        }
+                        else {
+                            const rows = Object
+                                .keys(result.rows)
+                                .filter(key => key !== "length")
+                                .map(key => result.rows[key]);
+                            ok(rows);
+                        }
 
                     }, (tx: any, err: any) => {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
