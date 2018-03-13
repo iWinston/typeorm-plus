@@ -1187,7 +1187,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "cnst"."connamespace" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
-            `WHERE "t"."relkind" = 'r' AND ` + constraintsCondition;
+            `WHERE "t"."relkind" = 'r' AND (${constraintsCondition})`;
 
         const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique" ` +
@@ -1197,7 +1197,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
-            `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND ` + constraintsCondition;
+            `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
 
         const foreignKeysCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
