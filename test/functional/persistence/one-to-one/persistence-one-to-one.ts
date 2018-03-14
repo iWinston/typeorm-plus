@@ -52,7 +52,7 @@ describe("persistence > one-to-one", function() {
 
     });
 
-    describe("doesnt allow the same relation to be used twice", function() {
+    describe.skip("doesnt allow the same relation to be used twice", function() {
 
         it("should reject the saving attempt", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository(User);
