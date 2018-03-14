@@ -791,9 +791,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
             // build checks
             let result;
-            const regexp = /CONSTRAINT "(.*?)" CHECK/g;
+            const regexp = /CONSTRAINT "([^"]*)" CHECK (\(.*?\))([,]|[)]$)/g;
             while (((result = regexp.exec(sql)) !== null)) {
-                table.checks.push(new TableCheck({ name: result[1] }));
+                table.checks.push(new TableCheck({ name: result[1], expression: result[2] }));
             }
 
             // build indices

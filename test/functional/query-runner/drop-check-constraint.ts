@@ -3,7 +3,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
-describe.skip("query runner > drop check constraint", () => {
+describe("query runner > drop check constraint", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -18,26 +18,24 @@ describe.skip("query runner > drop check constraint", () => {
 
     it("should correctly drop check constraint and revert drop", () => Promise.all(connections.map(async connection => {
 
-        // Mysql does not support check constraint.
+        // Mysql does not support check constraints.
         if (connection.driver instanceof MysqlDriver)
             return;
 
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
-        table!.uniques.length.should.be.equal(2);
+        table!.checks.length.should.be.equal(1);
 
-        // find composite unique constraint to delete
-        const unique = table!.uniques.find(u => u.columnNames.length === 2);
-        await queryRunner.dropUniqueConstraint(table!, unique!);
+        await queryRunner.dropCheckConstraint(table!, table!.checks[0]);
 
         table = await queryRunner.getTable("post");
-        table!.uniques.length.should.be.equal(1);
+        table!.checks.length.should.be.equal(0);
 
         await queryRunner.executeMemoryDownSql();
 
         table = await queryRunner.getTable("post");
-        table!.uniques.length.should.be.equal(2);
+        table!.checks.length.should.be.equal(1);
 
         await queryRunner.release();
     })));

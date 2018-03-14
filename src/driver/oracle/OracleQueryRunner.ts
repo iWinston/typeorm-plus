@@ -495,8 +495,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const queries = columns.map(column => this.addColumn(tableOrName, column));
-        await Promise.all(queries);
+        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
     }
 
     /**
@@ -719,9 +718,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => {
-            return this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn);
-        });
+        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
     }
 
     /**
@@ -758,14 +755,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.createIndexSql(table, columnIndex));
         }
 
-        // drop unique constraint
-        if (column.isUnique) {
-            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
-            const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);
-            if (foundUnique)
-                clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
-            upQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueName}"`);
-            downQueries.push(`ALTER TABLE "${table.name}" ADD CONSTRAINT "${uniqueName}" UNIQUE ("${column.name}")`);
+        // drop column check
+        const columnCheck = clonedTable.checks.find(check => !!check.columnNames && check.columnNames.length === 1 && check.columnNames[0] === column.name);
+        if (columnCheck) {
+            clonedTable.checks.splice(clonedTable.checks.indexOf(columnCheck), 1);
+            upQueries.push(this.dropCheckConstraintSql(table, columnCheck));
+            downQueries.push(this.createCheckConstraintSql(table, columnCheck));
+        }
+
+        // drop column unique
+        const columnUnique = clonedTable.uniques.find(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
+        if (columnUnique) {
+            clonedTable.uniques.splice(clonedTable.uniques.indexOf(columnUnique), 1);
+            upQueries.push(this.dropUniqueConstraintSql(table, columnUnique));
+            downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
         }
 
         upQueries.push(`ALTER TABLE "${table.name}" DROP COLUMN "${column.name}"`);
@@ -781,8 +784,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        const dropPromises = columns.map(column => this.dropColumn(tableOrName, column));
-        await Promise.all(dropPromises);
+        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
     }
 
     /**
@@ -1067,7 +1069,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             `INNER JOIN "USER_CONS_COLUMNS" "REF_COL" ON "REF_COL"."OWNER" = "C"."R_OWNER" AND "REF_COL"."CONSTRAINT_NAME" = "C"."R_CONSTRAINT_NAME" AND "REF_COL"."POSITION" = "COL"."POSITION" ` +
             `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" = 'R'`;
 
-        const constraintsSql = `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME" ` +
+        const constraintsSql = `SELECT "C"."CONSTRAINT_NAME", "C"."CONSTRAINT_TYPE", "C"."TABLE_NAME", "COL"."COLUMN_NAME", "C"."SEARCH_CONDITION" ` +
             `FROM "USER_CONSTRAINTS" "C" ` +
             `INNER JOIN "USER_CONS_COLUMNS" "COL" ON "COL"."OWNER" = "C"."OWNER" AND "COL"."CONSTRAINT_NAME" = "C"."CONSTRAINT_NAME" ` +
             `WHERE "C"."TABLE_NAME" IN (${tableNamesString}) AND "C"."CONSTRAINT_TYPE" IN ('C', 'U', 'P') AND "C"."GENERATED" = 'USER NAME'`;
@@ -1172,7 +1174,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
                 return new TableCheck({
                     name: constraint["CONSTRAINT_NAME"],
-                    columnNames: checks.map(c => c["COLUMN_NAME"])
+                    columnNames: checks.map(c => c["COLUMN_NAME"]),
+                    expression: constraint["SEARCH_CONDITION"]
                 });
             });
 

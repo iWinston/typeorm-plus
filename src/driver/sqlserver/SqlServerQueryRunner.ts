@@ -967,14 +967,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             downQueries.push(this.createIndexSql(table, columnIndex));
         }
 
-        // drop unique constraint
-        if (column.isUnique) {
-            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
-            const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);
-            if (foundUnique)
-                clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueName}" UNIQUE ("${column.name}")`);
+        // drop column check
+        const columnCheck = clonedTable.checks.find(check => !!check.columnNames && check.columnNames.length === 1 && check.columnNames[0] === column.name);
+        if (columnCheck) {
+            clonedTable.checks.splice(clonedTable.checks.indexOf(columnCheck), 1);
+            upQueries.push(this.dropCheckConstraintSql(table, columnCheck));
+            downQueries.push(this.createCheckConstraintSql(table, columnCheck));
+        }
+
+        // drop column unique
+        const columnUnique = clonedTable.uniques.find(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
+        if (columnUnique) {
+            clonedTable.uniques.splice(clonedTable.uniques.indexOf(columnUnique), 1);
+            upQueries.push(this.dropUniqueConstraintSql(table, columnUnique));
+            downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
         }
 
         // drop default constraint
@@ -1361,8 +1367,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }).join(" OR ");
 
         const constraintsSql = dbNames.map(dbName => {
-            return `SELECT "columnUsages".*, "tableConstraints"."CONSTRAINT_TYPE" FROM "${dbName}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
+            return `SELECT "columnUsages".*, "tableConstraints"."CONSTRAINT_TYPE", "chk"."definition" ` +
+                `FROM "${dbName}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
                 `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints" ON "tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" ` +
+                `LEFT JOIN "${dbName}"."sys"."check_constraints" "chk" ON "chk"."name" = "columnUsages"."CONSTRAINT_NAME" ` +
                 `WHERE (${constraintsCondition}) AND "tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE', 'CHECK')`;
         }).join(" UNION ALL ");
 
@@ -1520,7 +1528,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
                 return new TableCheck({
                     name: constraint["CONSTRAINT_NAME"],
-                    columnNames: checks.map(c => c["COLUMN_NAME"])
+                    columnNames: checks.map(c => c["COLUMN_NAME"]),
+                    expression: constraint["definition"]
                 });
             });
 

@@ -853,14 +853,20 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(this.createIndexSql(table, columnIndex));
         }
 
-        // drop unique constraint
-        if (column.isUnique) {
-            const uniqueName = this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]);
-            const foundUnique = clonedTable.uniques.find(unique => unique.name === uniqueName);
-            if (foundUnique)
-                clonedTable.uniques.splice(clonedTable.uniques.indexOf(foundUnique), 1);
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueName}" UNIQUE ("${column.name}")`);
+        // drop column check
+        const columnCheck = clonedTable.checks.find(check => !!check.columnNames && check.columnNames.length === 1 && check.columnNames[0] === column.name);
+        if (columnCheck) {
+            clonedTable.checks.splice(clonedTable.checks.indexOf(columnCheck), 1);
+            upQueries.push(this.dropCheckConstraintSql(table, columnCheck));
+            downQueries.push(this.createCheckConstraintSql(table, columnCheck));
+        }
+
+        // drop column unique
+        const columnUnique = clonedTable.uniques.find(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
+        if (columnUnique) {
+            clonedTable.uniques.splice(clonedTable.uniques.indexOf(columnUnique), 1);
+            upQueries.push(this.dropUniqueConstraintSql(table, columnUnique));
+            downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
         }
 
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
@@ -995,6 +1001,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        console.log(checkOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
             throw new Error(`Supplied check constraint was not found in table ${table.name}`);
@@ -1181,7 +1188,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${name}')`;
         }).join(" OR ");
 
-        const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
+        const constraintsSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", "cnst"."consrc" AS "expression", ` +
             `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' END AS "constraint_type", "a"."attname" AS "column_name" ` +
             `FROM "pg_constraint" "cnst" ` +
             `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
@@ -1339,9 +1346,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             table.checks = tableCheckConstraints.map(constraint => {
                 const checks = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
-                return new TableUnique({
+                return new TableCheck({
                     name: constraint["constraint_name"],
-                    columnNames: checks.map(c => c["column_name"])
+                    columnNames: checks.map(c => c["column_name"]),
+                    expression: constraint["expression"] // column names are not escaped, may cause problems
                 });
             });
 
