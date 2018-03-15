@@ -69,8 +69,8 @@ export class RelationJoinColumnBuilder {
             onDelete: relation.onDelete,
         });
 
-        if (referencedColumns.length > 1 && relation.isOneToOne) {
-          const uniqueConstraint = new UniqueMetadata({
+        if (referencedColumns.length > 0 && relation.isOneToOne) {
+            const uniqueConstraint = new UniqueMetadata({
               entityMetadata: relation.entityMetadata,
               columns: foreignKey.columns,
               args: {

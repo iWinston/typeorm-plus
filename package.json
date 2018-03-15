@@ -101,7 +101,6 @@
     ]
   },
   "scripts": {
-    "precommit": "lint-staged",
     "test-ci": "gulp ci-tests",
     "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail './build/compiled/test/**/*.js' --timeout 30000 --color",
     "compile": "tsc",
