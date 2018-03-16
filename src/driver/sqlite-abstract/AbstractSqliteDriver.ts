@@ -221,7 +221,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToUtcDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
+            return DateUtils.mixedDateToDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);

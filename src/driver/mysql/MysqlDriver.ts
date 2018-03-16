@@ -316,8 +316,8 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true);
+        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
