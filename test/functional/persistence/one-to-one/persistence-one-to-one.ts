@@ -15,8 +15,6 @@ describe("persistence > one-to-one", function() {
     before(() => {
         return createTestingConnections({
             entities: [User, AccessToken],
-            schemaCreate: true,
-            dropSchema: true,
         }).then(all => connections = all);
     });
     after(() => closeTestingConnections(connections));

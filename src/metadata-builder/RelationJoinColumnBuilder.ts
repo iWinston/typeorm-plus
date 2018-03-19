@@ -71,14 +71,15 @@ export class RelationJoinColumnBuilder {
 
         if (referencedColumns.length > 0 && relation.isOneToOne) {
             const uniqueConstraint = new UniqueMetadata({
-              entityMetadata: relation.entityMetadata,
-              columns: foreignKey.columns,
-              args: {
-                  name: this.connection.namingStrategy.uniqueConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
-                  target: relation.entityMetadata.target,
-              }
-          });
-          return { foreignKey, uniqueConstraint };
+                entityMetadata: relation.entityMetadata,
+                columns: foreignKey.columns,
+                args: {
+                    name: this.connection.namingStrategy.uniqueConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                    target: relation.entityMetadata.target,
+                }
+            });
+            uniqueConstraint.build(this.connection.namingStrategy);
+            return {foreignKey, uniqueConstraint};
         }
 
         return { foreignKey, uniqueConstraint: undefined };
@@ -141,8 +142,7 @@ export class RelationJoinColumnBuilder {
                             scale: referencedColumn.scale,
                             comment: referencedColumn.comment,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable,
-                            unique: relation.isOneToOne && referencedColumns.length === 1 ? true : false,
+                            nullable: relation.isNullable
                         }
                     }
                 });

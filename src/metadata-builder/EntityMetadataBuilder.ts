@@ -115,7 +115,20 @@ export class EntityMetadataBuilder {
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
                     if (uniqueConstraint) {
-                        entityMetadata.uniques.push(uniqueConstraint);
+                        if (this.connection.driver instanceof MysqlDriver) {
+                            entityMetadata.ownIndices.push(new IndexMetadata({
+                                entityMetadata: uniqueConstraint.entityMetadata,
+                                columns: uniqueConstraint.columns,
+                                args: {
+                                    target: uniqueConstraint.target,
+                                    name: uniqueConstraint.name,
+                                    unique: true,
+                                    synchronize: true
+                                }
+                            }));
+                        } else {
+                            entityMetadata.uniques.push(uniqueConstraint);
+                        }
                     }
                 });
 
