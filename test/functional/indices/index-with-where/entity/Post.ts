@@ -1,5 +1,5 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "../../../../../src";
-import {Index} from "../../../../../src/decorator";
+import {Index} from "../../../../../src/decorator/Index";
 
 @Index(["name", "text"], { where: `"name" IS NOT NULL AND "text" IS NOT NULL` })
 @Entity()
