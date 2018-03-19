@@ -116,7 +116,7 @@ export class EntityMetadataBuilder {
                     }
                     if (uniqueConstraint) {
                         if (this.connection.driver instanceof MysqlDriver) {
-                            entityMetadata.ownIndices.push(new IndexMetadata({
+                            entityMetadata.indices.push(new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
                                 args: {
