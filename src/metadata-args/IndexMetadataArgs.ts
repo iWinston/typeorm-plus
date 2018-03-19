@@ -6,7 +6,7 @@ export interface IndexMetadataArgs {
     /**
      * Class to which index is applied.
      */
-    target?: Function|string;
+    target: Function|string;
 
     /**
      * Index name.

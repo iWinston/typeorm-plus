@@ -120,7 +120,7 @@ export class EntityMetadataBuilder {
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
                                 args: {
-                                    target: uniqueConstraint.target,
+                                    target: uniqueConstraint.target!,
                                     name: uniqueConstraint.name,
                                     unique: true,
                                     synchronize: true
