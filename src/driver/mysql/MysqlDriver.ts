@@ -683,7 +683,7 @@ export class MysqlDriver implements Driver {
 
             // if we found something to compare with then do it, else skip it
             // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength)
+            if (metadataLength !== null && metadataLength !== undefined)
                 return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
         }
 
