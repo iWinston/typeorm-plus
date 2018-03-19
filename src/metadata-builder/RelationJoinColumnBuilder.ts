@@ -74,7 +74,7 @@ export class RelationJoinColumnBuilder {
               entityMetadata: relation.entityMetadata,
               columns: foreignKey.columns,
               args: {
-                  name: foreignKey.name,
+                  name: this.connection.namingStrategy.uniqueConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
                   target: relation.entityMetadata.target,
               }
           });

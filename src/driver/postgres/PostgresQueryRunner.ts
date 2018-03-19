@@ -1247,7 +1247,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             // We do not need to join schema name, when database is by default.
             // In this case we need local variable `tableFullName` for below comparision.
-            const schema = dbTable["table_schema"] === currentSchema ? undefined : dbTable["table_schema"];
+            const schema = dbTable["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["table_schema"];
             table.name = this.driver.buildTableName(dbTable["table_name"], schema);
             const tableFullName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
 

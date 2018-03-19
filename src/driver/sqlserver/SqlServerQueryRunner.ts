@@ -1436,7 +1436,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             // We do not need to join schema and database names, when db or schema is by default.
             // In this case we need local variable `tableFullName` for below comparision.
             const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
-            const schema = dbTable["TABLE_SCHEMA"] === currentSchema ? undefined : dbTable["TABLE_SCHEMA"];
+            const schema = dbTable["TABLE_SCHEMA"] === currentSchema && !this.driver.options.schema ? undefined : dbTable["TABLE_SCHEMA"];
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
             const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
             const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
