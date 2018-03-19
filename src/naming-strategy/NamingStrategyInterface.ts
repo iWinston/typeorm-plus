@@ -59,7 +59,7 @@ export interface NamingStrategyInterface {
     /**
      * Gets the name of the index - simple and compose index.
      */
-    indexName(tableOrName: Table|string, columns: string[]): string;
+    indexName(tableOrName: Table|string, columns: string[], where?: string): string;
 
     /**
      * Gets the name of the check constraint.

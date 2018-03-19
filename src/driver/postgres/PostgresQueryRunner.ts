@@ -345,7 +345,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(table, index));
             });
@@ -431,7 +431,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         newTable.indices.forEach(index => {
             // build new constraint name
             const schema = this.extractSchema(newTable);
-            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames);
+            const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
             const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
@@ -646,7 +646,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
                     const schema = this.extractSchema(table);
-                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames);
+                    const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
                     const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
@@ -1073,7 +1073,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames);
+            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
