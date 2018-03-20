@@ -673,8 +673,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
 
-        // load tables, columns, indices and foreign keys
+        // load tables
         const dbTables: ObjectLiteral[] = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" IN (${tableNamesString})`);
+
+        // load indices
+        const dbIndicesDef: ObjectLiteral[] = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'index' AND "tbl_name" IN (${tableNamesString})`);
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables || !dbTables.length)
@@ -803,6 +806,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 .filter((value, index, self) => self.indexOf(value) === index) // unqiue
                 .map(async dbIndexName => {
 
+                    const indexDef = dbIndicesDef.find(dbIndexDef => dbIndexDef["name"] === dbIndexName);
+                    const condition = /WHERE (.*)/.exec(indexDef!["sql"]);
                     const dbIndex = dbIndices.find(dbIndex => dbIndex["name"] === dbIndexName);
                     const indexInfos: ObjectLiteral[] = await this.query(`PRAGMA index_info("${dbIndex!["name"]}")`);
                     const indexColumns = indexInfos
@@ -814,7 +819,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                         table: table,
                         name: dbIndex!["name"],
                         columnNames: indexColumns,
-                        isUnique: isUnique
+                        isUnique: isUnique,
+                        where: condition ? condition[1] : undefined
                     });
                 });
             const indices = await Promise.all(indicesPromises);

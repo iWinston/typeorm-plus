@@ -1197,7 +1197,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `WHERE "t"."relkind" = 'r' AND (${constraintsCondition})`;
 
         const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
-            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique" ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
@@ -1386,7 +1386,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     table: table,
                     name: constraint["constraint_name"],
                     columnNames: indices.map(i => i["column_name"]),
-                    isUnique: constraint["is_unique"] === "TRUE"
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"]
                 });
             });
 
