@@ -55,6 +55,13 @@ export class BaseEntity {
         return (this.constructor as any).getRepository().remove(this);
     }
 
+    async reload(): Promise<void> {
+        const base: any = this.constructor;
+        const newestEntity: BaseEntity = base.getRepository().findOneOrFail(base.getId());
+
+        Object.assign(this, newestEntity);
+    }
+
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
