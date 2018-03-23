@@ -153,7 +153,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(tableForeignKey => {
                 const metadataFK = metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
-                return !metadataFK || metadataFK.onDelete !== tableForeignKey.onDelete || metadataFK.onUpdate !== tableForeignKey.onUpdate;
+                return !metadataFK
+                    || metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete
+                    || metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate;
             });
             if (tableForeignKeysToDrop.length === 0)
                 return;
