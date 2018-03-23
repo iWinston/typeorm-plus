@@ -27,7 +27,7 @@ export interface QueryRunner {
     readonly broadcaster: Broadcaster;
 
     /**
-     * Isolated entity manager working only with this query runner.
+     * Entity manager working only with this query runner.
      */
     readonly manager: EntityManager;
 

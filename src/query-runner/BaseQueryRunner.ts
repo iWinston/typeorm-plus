@@ -18,7 +18,7 @@ export abstract class BaseQueryRunner {
     connection: Connection;
 
     /**
-     * Isolated entity manager working only with current query runner.
+     * Entity manager working only with current query runner.
      */
     manager: EntityManager;
 

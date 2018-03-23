@@ -167,6 +167,7 @@ export class MongoDriver implements Driver {
                 if (err) return fail(err);
 
                 this.queryRunner = new MongoQueryRunner(this.connection, dbConnection);
+                Object.assign(this.queryRunner, { manager: this.connection.manager });
                 ok();
             });
         });

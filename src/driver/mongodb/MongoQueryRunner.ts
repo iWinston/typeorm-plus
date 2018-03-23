@@ -63,7 +63,7 @@ export class MongoQueryRunner implements QueryRunner {
     broadcaster: Broadcaster;
 
     /**
-     * Isolated entity manager working only with current query runner.
+     * Entity manager working only with current query runner.
      */
     manager: MongoEntityManager;
 

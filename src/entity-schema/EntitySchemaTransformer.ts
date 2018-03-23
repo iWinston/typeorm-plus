@@ -63,7 +63,7 @@ export class EntitySchemaTransformer {
                     propertyName: columnName,
                     options: {
                         type: tableColumn.type,
-                        name: tableColumn.name,
+                        name: tableColumn.objectId ? "_id" : tableColumn.name,
                         length: tableColumn.length,
                         primary: tableColumn.primary,
                         unique: tableColumn.unique,
