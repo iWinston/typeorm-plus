@@ -235,13 +235,13 @@ export class PostgresDriver implements Driver {
                             try {
                                 await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "uuid-ossp"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please it manually using superuser rights");
+                                logger.log("warn", "At least one of the entities has uuid column, but the 'uuid-ossp' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         if (hasCitextColumns)
                             try {
                                 await this.executeQuery(connection, `CREATE extension IF NOT EXISTS "citext"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please it manually using superuser rights");
+                                logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         release();
                         ok();
@@ -323,34 +323,34 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-json") {
-            return DateUtils.stringToSimpleJson(value);
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -472,6 +472,8 @@ export class PostgresDriver implements Driver {
      * Normalizes "default" value of the column.
      */
     normalizeDefault(column: ColumnMetadata): string {
+        const arrayCast = column.isArray ? `::${column.type}[]` : "";
+
         if (typeof column.default === "number") {
             return "" + column.default;
 
@@ -482,7 +484,7 @@ export class PostgresDriver implements Driver {
             return column.default();
 
         } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+            return `'${column.default}'${arrayCast}`;
 
         } else if (typeof column.default === "object") {
             return `'${JSON.stringify(column.default)}'`;
@@ -610,7 +612,7 @@ export class PostgresDriver implements Driver {
             try {
                 const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
-                
+
             } catch (e) { }
 
         } catch (e) { // todo: better error for browser env
@@ -637,6 +639,12 @@ export class PostgresDriver implements Driver {
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions);
+        const { logger } = this.connection;
+        /*
+          Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+          cause the hosting app to crash.
+         */
+        pool.on("error", (error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {
