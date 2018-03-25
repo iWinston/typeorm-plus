@@ -1,8 +1,8 @@
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
 import {EntitySchema} from "../../../src";
-import {Author, AuthorSchema} from "./entity/Author"
-import {Post, PostSchema} from "./entity/Post"
+import {Author, AuthorSchema} from "./entity/Author";
+import {Post, PostSchema} from "./entity/Post";
 
 describe("github issues > #1123 load relation eagerly by setting isEager property", () => {
   let connections: Connection[];
