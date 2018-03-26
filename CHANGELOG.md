@@ -65,6 +65,14 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * implemented migrations functionality in all drivers
 * CLI commands changed from `migrations:create`, `migrations:generate`, `migrations:revert` and `migrations:run` to `migration:create`, `migration:generate`, `migration:revert` and `migration:run`
 
+## 0.1.18
+
+* fixed timestamp issues
+
+## 0.1.17
+
+* fixed issue with entity order by applied to update query builder
+
 ## 0.1.16
 
 * security and bug fixes

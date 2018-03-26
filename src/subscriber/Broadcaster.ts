@@ -272,6 +272,11 @@ export class Broadcaster {
             // collect load events for all children entities that were loaded with the main entity
             if (metadata.relations.length) {
                 metadata.relations.forEach(relation => {
+
+                    // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
+                    if (relation.isLazy && !entity.hasOwnProperty(relation.propertyName))
+                        return;
+
                     const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
                         this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, value instanceof Array ? value : [value]);
@@ -312,10 +317,10 @@ export class Broadcaster {
      */
     protected isAllowedSubscriber(subscriber: EntitySubscriberInterface<any>, target: Function|string): boolean {
         return  !subscriber.listenTo ||
-                !subscriber.listenTo() ||
-                subscriber.listenTo() === Object ||
-                subscriber.listenTo() === target ||
-                subscriber.listenTo().isPrototypeOf(target);
+            !subscriber.listenTo() ||
+            subscriber.listenTo() === Object ||
+            subscriber.listenTo() === target ||
+            subscriber.listenTo().isPrototypeOf(target);
     }
 
 }

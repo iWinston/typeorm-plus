@@ -161,7 +161,7 @@ export class MysqlDriver implements Driver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    
+
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
@@ -335,7 +335,7 @@ export class MysqlDriver implements Driver {
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
 
@@ -353,7 +353,7 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value);
-            
+
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
         }
@@ -437,11 +437,11 @@ export class MysqlDriver implements Driver {
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
-    }    
-    
+    }
+
     createFullType(column: TableColumn): string {
         let type = column.type;
 
@@ -472,12 +472,12 @@ export class MysqlDriver implements Driver {
         return new Promise<any>((ok, fail) => {
             if (this.poolCluster) {
                 this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(dbConnection);
+                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
 
             } else if (this.pool) {
                 this.pool.getConnection((err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(dbConnection);
+                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
                 fail(new Error(`Connection is not established with mysql database`));
@@ -657,6 +657,19 @@ export class MysqlDriver implements Driver {
                 ok(pool);
             });
         });
+    }
+
+    /**
+     * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     */
+    private prepareDbConnection(connection: any): any {
+        const { logger } = this.connection;
+        /*
+          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+          cause the hosting app to crash.
+         */
+        connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        return connection;
     }
 
     /**

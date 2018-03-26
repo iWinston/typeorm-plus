@@ -111,7 +111,7 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"        
+        "xml"
     ];
 
     /**
@@ -125,7 +125,7 @@ export class SqlServerDriver implements Driver {
         "binary",
         "varbinary"
     ];
-    
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -452,13 +452,13 @@ export class SqlServerDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        
+
         if (column.length)
             return column.length.toString();
 
         const normalizedType = this.normalizeType(column) as string;
         if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+            return this.dataTypeDefaults[normalizedType].length!.toString();
 
         return "";
     }
@@ -666,7 +666,16 @@ export class SqlServerDriver implements Driver {
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
-            const connection = new this.mssql.ConnectionPool(connectionOptions).connect((err: any) => {
+            const pool = new this.mssql.ConnectionPool(connectionOptions);
+
+            const { logger } = this.connection;
+            /*
+              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+              cause the hosting app to crash.
+             */
+            pool.on("error", (error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
+
+            const connection = pool.connect((err: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });
