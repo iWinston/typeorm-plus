@@ -134,7 +134,7 @@ export class SubjectChangedColumnsComputer {
                 // if relation entity is just a relation id set (for example post.tag = 1)
                 // then we create an id map from it to make a proper comparision
                 let relatedEntityRelationIdMap: ObjectLiteral = relatedEntity;
-                if (relatedEntityRelationIdMap !== null && !(relatedEntityRelationIdMap instanceof Object))
+                if (relatedEntityRelationIdMap !== null && relatedEntityRelationIdMap instanceof Object)
                     relatedEntityRelationIdMap = relation.getRelationIdMap(relatedEntityRelationIdMap)!;
 
                 // get database related entity. Since loadRelationIds are used on databaseEntity
