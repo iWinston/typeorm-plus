@@ -326,7 +326,7 @@ describe("repository > basic methods", () => {
         it("should update existing entity using transformers", async () => {
             const connection = connections.find((c: Connection) => c.name === "sqlite");
             if (!connection || (connection.options as any).skip === true) {
-                return (this as any).skip();
+                return;
             }
 
             const post = new Post();
