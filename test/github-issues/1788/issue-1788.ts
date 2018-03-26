@@ -1,15 +1,11 @@
 import "reflect-metadata";
-import {
-  closeTestingConnections,
-  createTestingConnections,
-  reloadTestingDatabases
-} from "../../utils/test-utils";
-import { Connection } from "../../../src";
-import { Provider } from "./entity/Provider";
-import { Personalization } from "./entity/Personalization";
-import { expect } from "chai";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src";
+import {Provider} from "./entity/Provider";
+import {Personalization} from "./entity/Personalization";
+import {expect} from "chai";
 
-describe("github issues > #1788 One to One does not load relationships.", () => {
+describe.skip("github issues > #1788 One to One does not load relationships.", () => {
   let connections: Connection[];
   before(
     async () =>
