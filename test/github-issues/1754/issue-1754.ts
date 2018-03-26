@@ -1,9 +1,8 @@
-import { Cliente } from "./entity/cliente";
+import {Cliente} from "./entity/cliente";
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src";
-import { TipoCliente } from "./entity/tipo-cliente";
-import {expect} from "chai";
+import {TipoCliente} from "./entity/tipo-cliente";
 
 describe("github issue #1754 Repository.save() always updating ManyToOne relation", () => {
 
@@ -27,10 +26,14 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
         cliente.tipo = tipoCliente;
         await connection.manager.save(cliente);
 
+        console.log(1);
+
         // The issue happens when I receive the cliente JSON from user interface
         // 1. First I tried to call save() after receive the JSON
         let myReceivedJson1 = {id: 1, nome: "Kirliam changed 1", tipo: {id: 1, descricao: "Mensalista"}};
         await connection.manager.getRepository(Cliente).save(myReceivedJson1);
+
+        console.log(2);
 
         // 2. After I tried to preload the entity before saving. I was expecting that just
         // the name column to be updated, but in both cases tipoCliente is also being updated.
@@ -40,7 +43,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
 
         // Fail just to check the query log!
         // Query from log:  UPDATE `cliente` SET `nome`=?, `tipoCliente`=?  WHERE `id`=? -- PARAMETERS: ["Kirliam changed 2",1,1]
-        expect(false, "Verificar as queries!!!").is.true;        
+        // expect(false, "Verificar as queries!!!").is.true;
     })));
 
 });
