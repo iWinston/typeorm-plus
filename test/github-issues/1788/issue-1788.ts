@@ -5,7 +5,7 @@ import {Provider} from "./entity/Provider";
 import {Personalization} from "./entity/Personalization";
 import {expect} from "chai";
 
-describe.skip("github issues > #1788 One to One does not load relationships.", () => {
+describe("github issues > #1788 One to One does not load relationships.", () => {
   let connections: Connection[];
   before(
     async () =>
@@ -27,13 +27,17 @@ describe.skip("github issues > #1788 One to One does not load relationships.", (
         const personalization = personalizationRepository.create({
           logo: "https://typeorm.io/logo.png"
         });
+          await personalizationRepository.save(personalization);
+
         const provider = providerRepository.create({
           name: "Provider",
           description: "Desc",
           personalization
         });
 
-        await personalizationRepository.save(personalization);
+
+          console.log(personalization);
+          console.log(provider);
         await providerRepository.save(provider);
 
         const dbProvider = await providerRepository.find({

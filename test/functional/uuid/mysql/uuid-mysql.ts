@@ -66,4 +66,14 @@ describe("uuid-mysql", () => {
         expect(loadedQuestion2!.uuid3).to.be.null;
         expect(loadedQuestion2!.uuid4).to.be.null;
     })));
+
+    it("should set generated uuid in the model after save", () => Promise.all(connections.map(async connection => {
+        const question = new Question();
+        question.uuid2 = "fd357b8f-8838-42f6-b7a2-ae027444e895";
+        await connection.manager.save(question);
+        expect(question!.id).to.exist;
+        expect(question!.uuid).to.exist;
+        expect(question!.uuid2).to.exist;
+    })));
+
 });
