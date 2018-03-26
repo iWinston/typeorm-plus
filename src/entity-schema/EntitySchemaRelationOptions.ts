@@ -26,6 +26,11 @@ export interface EntitySchemaRelationOptions {
     isLazy?: boolean;
 
     /**
+     * Indicates if this relation will be eagerly loaded.
+     */
+    isEager?: boolean;
+
+    /**
      * Join table options of this column. If set to true then it simply means that it has a join table.
      */
     joinTable?: boolean | JoinColumnOptions | JoinTableMultipleColumnsOptions;
