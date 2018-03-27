@@ -569,7 +569,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
+        if (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
@@ -675,6 +675,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const oldTableColumn = clonedTable.columns.find(column => column.name === oldColumn.name);
                 clonedTable.columns[clonedTable.columns.indexOf(oldTableColumn!)].name = newColumn.name;
                 oldColumn.name = newColumn.name;
+            }
+
+            if (newColumn.precision !== oldColumn.precision || newColumn.scale !== oldColumn.scale) {
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
             }
 
             if (newColumn.type === "enum" && oldColumn.type === "enum" && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)) {
@@ -1264,14 +1269,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (tableColumn.type === "numeric" || tableColumn.type === "decimal" || tableColumn.type === "float") {
                         // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                         // we set 'undefined' in to unspecified property to avoid changing column on sync
-                        if (dbColumn["numeric_precision"]) {
+                        if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["numeric_precision"])) {
                             tableColumn.precision = dbColumn["numeric_precision"];
-                        } else if (dbColumn["numeric_scale"]) {
+                        } else if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["numeric_scale"])) {
                             tableColumn.precision = undefined;
                         }
-                        if (dbColumn["numeric_scale"]) {
+                        if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["numeric_scale"])) {
                             tableColumn.scale = dbColumn["numeric_scale"];
-                        } else if (dbColumn["numeric_precision"]) {
+                        } else if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["numeric_precision"])) {
                             tableColumn.scale = undefined;
                         }
                     }
@@ -1282,11 +1287,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         tableColumn.type = this.connection.driver.normalizeType({type: type});
                     }
 
-                    if (tableColumn.type === "time without time zone"
+                    if (tableColumn.type === "interval"
+                        || tableColumn.type === "time without time zone"
                         || tableColumn.type === "time with time zone"
                         || tableColumn.type === "timestamp without time zone"
                         || tableColumn.type === "timestamp with time zone") {
-                        tableColumn.precision = dbColumn["datetime_precision"];
+                        tableColumn.precision = !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["datetime_precision"]) ? dbColumn["datetime_precision"] : undefined;
                     }
 
                     if (tableColumn.type.indexOf("enum") !== -1) {
@@ -1299,7 +1305,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         tableColumn.enum = results.map(result => result["value"]);
                     }
 
-                    tableColumn.length = dbColumn["character_maximum_length"] ? dbColumn["character_maximum_length"].toString() : "";
+                    const length = dbColumn["character_maximum_length"];
+                    tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 

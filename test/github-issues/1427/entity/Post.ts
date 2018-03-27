@@ -6,7 +6,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({type: "decimal", precision: 22})
+    @Column({type: "timestamp with time zone"})
     qty: number;
 
 }

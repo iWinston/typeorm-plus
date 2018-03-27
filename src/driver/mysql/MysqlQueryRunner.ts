@@ -534,8 +534,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
         if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
-            console.log(oldColumn.length);
-            console.log(newColumn.length);
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
 

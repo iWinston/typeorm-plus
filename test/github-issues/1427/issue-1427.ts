@@ -9,7 +9,7 @@ describe.skip("github issues > #1427 precision and scale column types with erran
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"],
+            enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -26,7 +26,7 @@ describe.skip("github issues > #1427 precision and scale column types with erran
         const metadata = connection.getMetadata(Post);
         const column = metadata.findColumnWithPropertyName("qty");
         // column!.scale = undefined;
-        column!.isNullable = true;
+        column!.precision = 3;
 
         await connection.synchronize();
 

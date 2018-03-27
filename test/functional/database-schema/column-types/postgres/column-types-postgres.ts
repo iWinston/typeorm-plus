@@ -179,9 +179,7 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("float4")!.type.should.be.equal("real");
         table!.findColumnByName("money")!.type.should.be.equal("money");
         table!.findColumnByName("char")!.type.should.be.equal("character");
-        table!.findColumnByName("char")!.length!.should.be.equal("1");
         table!.findColumnByName("character")!.type.should.be.equal("character");
-        table!.findColumnByName("character")!.length!.should.be.equal("1");
         table!.findColumnByName("varchar")!.type.should.be.equal("character varying");
         table!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
         table!.findColumnByName("text")!.type.should.be.equal("text");
@@ -210,7 +208,6 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("inet")!.type.should.be.equal("inet");
         table!.findColumnByName("macaddr")!.type.should.be.equal("macaddr");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
-        table!.findColumnByName("bit")!.length!.should.be.equal("1");
         table!.findColumnByName("varbit")!.type.should.be.equal("bit varying");
         table!.findColumnByName("bitVarying")!.type.should.be.equal("bit varying");
         table!.findColumnByName("uuid")!.type.should.be.equal("uuid");

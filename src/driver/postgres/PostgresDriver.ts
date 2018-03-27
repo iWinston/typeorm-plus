@@ -163,12 +163,23 @@ export class PostgresDriver implements Driver {
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = [
+        "numeric",
+        "decimal",
+        "interval",
+        "time without time zone",
+        "time with time zone",
+        "timestamp without time zone",
+        "timestamp with time zone"
+    ];
 
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [];
+    withScaleColumnTypes: ColumnType[] = [
+        "numeric",
+        "decimal"
+    ];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -195,7 +206,15 @@ export class PostgresDriver implements Driver {
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults = {};
+    dataTypeDefaults: DataTypeDefaults = {
+        "character": { length: 1 },
+        "bit": { length: 1 },
+        "interval": { precision: 6 },
+        "time without time zone": { precision: 6 },
+        "time with time zone": { precision: 6 },
+        "timestamp without time zone": { precision: 6 },
+        "timestamp with time zone": { precision: 6 },
+    };
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -561,17 +580,10 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Calculates column length taking into account the default length values.
+     * Returns default column lengths, which is required on column creation.
      */
     getColumnLength(column: ColumnMetadata): string {
-        if (column.length)
-            return column.length.toString();
-
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();
-
-        return "";
+        return column.length ? column.length.toString() : "";
     }
 
     /**
@@ -586,8 +598,6 @@ export class PostgresDriver implements Driver {
             type += "(" + column.precision + "," + column.scale + ")";
         } else if (column.precision !== null && column.precision !== undefined) {
             type +=  "(" + column.precision + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.type === "time without time zone") {
@@ -669,13 +679,15 @@ export class PostgresDriver implements Driver {
 
             return  tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || (!tableColumn.isGenerated && this.normalizeDefault(columnMetadata) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated
-                || !this.compareColumnLengths(tableColumn, columnMetadata);
+                || tableColumn.isGenerated !== columnMetadata.isGenerated;
         });
     }
 
@@ -792,23 +804,6 @@ export class PostgresDriver implements Driver {
                 ok(result);
             });
         });
-    }
-
-    /**
-     * Compare column lengths only if the datatype supports it.
-     */
-    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
-        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
-        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
-            let metadataLength = this.getColumnLength(columnMetadata);
-
-            // if we found something to compare with then do it, else skip it
-            // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength !== null && metadataLength !== undefined)
-                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
-        }
-
-        return true;
     }
 
 }
