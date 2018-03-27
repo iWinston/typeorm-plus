@@ -751,8 +751,6 @@ export abstract class QueryBuilder<Entity> {
                         return columns.map((column, columnIndex) => {
 
                             let parameterValue = column.getEntityValue(where, true);
-                            console.log("parameterValue", parameterValue);
-
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                             if (parameterValue === null) {
                                 return `${aliasPath} IS NULL`;
