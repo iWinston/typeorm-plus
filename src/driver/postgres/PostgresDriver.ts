@@ -94,6 +94,7 @@ export class PostgresDriver implements Driver {
         "decimal",
         "numeric",
         "real",
+        "float",
         "float4",
         "float8",
         "double precision",
@@ -158,6 +159,16 @@ export class PostgresDriver implements Driver {
         "varbit",
         "bit varying"
     ];
+
+    /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -575,8 +586,6 @@ export class PostgresDriver implements Driver {
             type += "(" + column.precision + "," + column.scale + ")";
         } else if (column.precision !== null && column.precision !== undefined) {
             type +=  "(" + column.precision + ")";
-        } else if (column.scale !== null && column.scale !== undefined) {
-            type +=  "(" + column.scale + ")";
         } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
             type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }

@@ -533,8 +533,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
-            || this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
+            console.log(oldColumn.length);
+            console.log(newColumn.length);
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
 
@@ -671,7 +672,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``);
 
                 } else {
-                    const uniqueIndex = table.indices.find(index => {
+                    const uniqueIndex = clonedTable.indices.find(index => {
                         return index.columnNames.length === 1 && index.isUnique === true && !!index.columnNames.find(columnName => columnName === newColumn.name);
                     });
                     clonedTable.indices.splice(clonedTable.indices.indexOf(uniqueIndex!), 1);
@@ -1142,23 +1143,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     tableColumn.comment = dbColumn["COLUMN_COMMENT"];
 
-                    if (dbColumn["NUMERIC_PRECISION"] !== null)
+                    if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["NUMERIC_PRECISION"]))
                         tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                    if (dbColumn["NUMERIC_SCALE"] !== null)
+                    if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["NUMERIC_SCALE"]))
                         tableColumn.scale = dbColumn["NUMERIC_SCALE"];
 
                     tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
 
-                    if (tableColumn.type === "int" || tableColumn.type === "tinyint"
-                        ||  tableColumn.type === "smallint" || tableColumn.type === "mediumint"
-                        || tableColumn.type === "bigint" || tableColumn.type === "year") {
-
+                    if (tableColumn.type === "int" || tableColumn.type === "tinyint" ||  tableColumn.type === "smallint"
+                        || tableColumn.type === "mediumint" || tableColumn.type === "bigint" || tableColumn.type === "year") {
                         const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
-                        tableColumn.length = length ? length.toString() : "";
+                        tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
 
                     } else {
-                        tableColumn.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
+                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                        tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
                     }
 
                     if (tableColumn.type === "enum") {
@@ -1167,9 +1167,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.enum = (items as string[]).map(item => {
                             return item.substring(1, item.length - 1);
                         });
+                        tableColumn.length = "";
                     }
 
-                    if (tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") {
+                    if ((tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") && dbColumn["DATETIME_PRECISION"]) {
                         tableColumn.precision = dbColumn["DATETIME_PRECISION"];
                     }
 

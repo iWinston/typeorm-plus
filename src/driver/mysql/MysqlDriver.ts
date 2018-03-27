@@ -86,7 +86,9 @@ export class MysqlDriver implements Driver {
         "bigint",
         "float",
         "double",
+        "dec",
         "decimal",
+        "numeric",
         "date",
         "datetime",
         "timestamp",
@@ -94,6 +96,7 @@ export class MysqlDriver implements Driver {
         "year",
         "char",
         "varchar",
+        "nvarchar",
         "blob",
         "text",
         "tinyblob",
@@ -103,7 +106,9 @@ export class MysqlDriver implements Driver {
         "longblob",
         "longtext",
         "enum",
-        "json"
+        "json",
+        "binary",
+        "bit"
     ];
 
     /**
@@ -117,8 +122,31 @@ export class MysqlDriver implements Driver {
         "bigint",
         "char",
         "varchar",
+        "nvarchar",
         "blob",
         "text"
+    ];
+
+    /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [
+        "dec",
+        "decimal",
+        "numeric",
+        "float",
+        "double",
+    ];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [
+        "dec",
+        "decimal",
+        "numeric",
+        "float",
+        "double",
     ];
 
     /**
@@ -150,12 +178,25 @@ export class MysqlDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults = {
         "varchar": { length: 255 },
-        "int": { length: 11 },
-        "tinyint": { length: 4 },
-        "smallint": { length: 5 },
-        "mediumint": { length: 9 },
-        "bigint": { length: 20 },
-        "year": { length: 4 }
+        "char": { length: 1 },
+        "tinytext": { length: 255 },
+        "text": { length: 65535 },
+        "mediumtext": { length: 16777215 },
+        "longtext": { length: 4294967295 },
+        "tinyblob": { length: 255 },
+        "blob": { length: 65535 },
+        "mediumblob": { length: 16777215 },
+        "longblob": { length: 4294967295 },
+        "year": { length: 4 },
+        "binary": { length: 1 },
+        "int": { length: 11, precision: 10, scale: 0 },
+        "tinyint": { length: 4, precision: 3, scale: 0 },
+        "smallint": { length: 6, precision: 5, scale: 0 },
+        "mediumint": { length: 9, precision: 7, scale: 0 },
+        "bigint": { length: 20, precision: 19, scale: 0 },
+        "decimal": { precision: 10, scale: 0 },
+        "float": { precision: 12 },
+        "double": { precision: 22 }
     };
 
     // -------------------------------------------------------------------------
@@ -371,7 +412,7 @@ export class MysqlDriver implements Driver {
         if (column.type === Number || column.type === "integer") {
             return "int";
 
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "nvarchar") {
             return "varchar";
 
         } else if (column.type === Date) {
@@ -383,14 +424,13 @@ export class MysqlDriver implements Driver {
         } else if (column.type === Boolean) {
             return "tinyint";
 
+        } else if (column.type === "numeric" || column.type === "dec") {
+            return "decimal";
+
         } else if (column.type === "uuid") {
-            column.length = 36;
             return "varchar";
 
-        } else if (column.type === "simple-array") {
-            return "text";
-
-        } else if (column.type === "simple-json") {
+        } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
         } else {
@@ -429,32 +469,35 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Calculates column length taking into account the default length values.
+     * Returns default column lengths, which is required on column creation.
      */
     getColumnLength(column: ColumnMetadata): string {
         if (column.length)
             return column.length.toString();
 
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();
-
-        return "";
+        switch (column.type) {
+            case String:
+            case "varchar":
+            case "nvarchar":
+                return "255";
+            case "uuid":
+                return "36";
+            default:
+                return "";
+        }
     }
-
+    
     createFullType(column: TableColumn): string {
         let type = column.type;
 
         if (column.length) {
-            type += "(" + column.length + ")";
+            type += `(${column.length})`;
+
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
-            type += "(" + column.precision + "," + column.scale + ")";
+            type += `(${column.precision},${column.scale})`;
+
         } else if (column.precision !== null && column.precision !== undefined) {
-            type +=  "(" + column.precision + ")";
-        } else if (column.scale !== null && column.scale !== undefined) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
+            type += `(${column.precision})`;
         }
 
         if (column.isArray)
@@ -505,7 +548,6 @@ export class MysqlDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
-        // console.log("uuidMap", uuidMap);
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
@@ -534,6 +576,8 @@ export class MysqlDriver implements Driver {
             // console.log("table:", columnMetadata.entityMetadata.tableName);
             // console.log("name:", tableColumn.name, columnMetadata.databaseName);
             // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
@@ -541,18 +585,19 @@ export class MysqlDriver implements Driver {
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log("length changed:", !this.compareColumnLengths(tableColumn, columnMetadata));
             // console.log("==========================================");
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated)
-                || !this.compareColumnLengths(tableColumn, columnMetadata);
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
     }
 
@@ -684,23 +729,6 @@ export class MysqlDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue;
-    }
-
-    /**
-     * Compare column lengths only if the datatype supports it.
-     */
-    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
-        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
-        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
-            let metadataLength = this.getColumnLength(columnMetadata);
-
-            // if we found something to compare with then do it, else skip it
-            // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength !== null && metadataLength !== undefined)
-                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
-        }
-
-        return true;
     }
 
 }

@@ -150,8 +150,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        // console.log("query: ", query);
-        // console.log("parameters: ", parameters);
         return new Promise<any[]>(async (ok, fail) => {
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
@@ -1001,7 +999,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async dropCheckConstraint(tableOrName: Table|string, checkOrName: TableCheck|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        console.log(checkOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
             throw new Error(`Supplied check constraint was not found in table ${table.name}`);
@@ -1264,9 +1261,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.name = dbColumn["column_name"];
                     tableColumn.type = dbColumn["regtype"].toLowerCase();
 
-                    if (tableColumn.type !== "integer") {
-                        tableColumn.precision = dbColumn["numeric_precision"];
-                        tableColumn.scale = dbColumn["numeric_scale"];
+                    if (tableColumn.type === "numeric" || tableColumn.type === "decimal" || tableColumn.type === "float") {
+                        // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
+                        // we set 'undefined' in to unspecified property to avoid changing column on sync
+                        if (dbColumn["numeric_precision"]) {
+                            tableColumn.precision = dbColumn["numeric_precision"];
+                        } else if (dbColumn["numeric_scale"]) {
+                            tableColumn.precision = undefined;
+                        }
+                        if (dbColumn["numeric_scale"]) {
+                            tableColumn.scale = dbColumn["numeric_scale"];
+                        } else if (dbColumn["numeric_precision"]) {
+                            tableColumn.scale = undefined;
+                        }
                     }
 
                     if (dbColumn["data_type"].toLowerCase() === "array") {

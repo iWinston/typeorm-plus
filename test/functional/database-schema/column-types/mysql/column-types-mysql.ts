@@ -95,34 +95,22 @@ describe("database schema > column types > mysql", () => {
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
-        table!.findColumnByName("id")!.length!.should.be.equal("11");
         table!.findColumnByName("name")!.type.should.be.equal("varchar");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("int")!.type.should.be.equal("int");
-        table!.findColumnByName("int")!.length!.should.be.equal("11");
         table!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
-        table!.findColumnByName("tinyint")!.length!.should.be.equal("4");
         table!.findColumnByName("smallint")!.type.should.be.equal("smallint");
-        table!.findColumnByName("smallint")!.length!.should.be.equal("5");
         table!.findColumnByName("mediumint")!.type.should.be.equal("mediumint");
-        table!.findColumnByName("mediumint")!.length!.should.be.equal("9");
         table!.findColumnByName("bigint")!.type.should.be.equal("bigint");
-        table!.findColumnByName("bigint")!.length!.should.be.equal("20");
         table!.findColumnByName("float")!.type.should.be.equal("float");
         table!.findColumnByName("double")!.type.should.be.equal("double");
         table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
-        table!.findColumnByName("decimal")!.precision!.should.be.equal(10);
-        table!.findColumnByName("decimal")!.scale!.should.be.equal(0);
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
         table!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
         table!.findColumnByName("time")!.type.should.be.equal("time");
         table!.findColumnByName("year")!.type.should.be.equal("year");
-        table!.findColumnByName("year")!.length!.should.be.equal("4");
         table!.findColumnByName("char")!.type.should.be.equal("char");
-        table!.findColumnByName("char")!.length!.should.be.equal("1");
         table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        table!.findColumnByName("varchar")!.length!.should.be.equal("255");
         table!.findColumnByName("blob")!.type.should.be.equal("blob");
         table!.findColumnByName("text")!.type.should.be.equal("text");
         table!.findColumnByName("tinyblob")!.type.should.be.equal("tinyblob");
@@ -188,7 +176,6 @@ describe("database schema > column types > mysql", () => {
         loadedPost.time.should.be.equal(post.time);
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
-        table!.findColumnByName("id")!.length!.should.be.equal("11");
         table!.findColumnByName("name")!.type.should.be.equal("varchar");
         table!.findColumnByName("name")!.length!.should.be.equal("10");
         table!.findColumnByName("int")!.type.should.be.equal("int");
@@ -247,11 +234,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
-        table!.findColumnByName("id")!.length!.should.be.equal("11");
         table!.findColumnByName("name")!.type.should.be.equal("varchar");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("boolean")!.type.should.be.equal("tinyint");
-        table!.findColumnByName("boolean")!.length!.should.be.equal("4");
         table!.findColumnByName("blob")!.type.should.be.equal("blob");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 

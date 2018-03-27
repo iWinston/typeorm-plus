@@ -65,6 +65,16 @@ export class MongoDriver implements Driver {
     withLengthColumnTypes: ColumnType[] = [];
 
     /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [];
+
+    /**
      * Mongodb does not need to have a strong defined mapped column types because they are not used in schema sync.
      */
     mappedDataTypes: MappedColumnTypes = {

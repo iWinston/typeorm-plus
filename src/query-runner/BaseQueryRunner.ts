@@ -238,6 +238,36 @@ export abstract class BaseQueryRunner {
             || oldColumn.enum !== newColumn.enum;
     }
 
+    protected isDefaultColumnLength(columnType: string, length: string): boolean {
+        if (this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[columnType]
+            && this.connection.driver.dataTypeDefaults[columnType].length) {
+            return this.connection.driver.dataTypeDefaults[columnType].length!.toString() === length.toString();
+        }
+
+        return false;
+    }
+
+    protected isDefaultColumnPrecision(columnType: string, precision: number): boolean {
+        if (this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[columnType]
+            && this.connection.driver.dataTypeDefaults[columnType].precision !== null
+            && this.connection.driver.dataTypeDefaults[columnType].precision !== undefined)
+            return this.connection.driver.dataTypeDefaults[columnType].precision === precision;
+
+        return false;
+    }
+
+    protected isDefaultColumnScale(columnType: string, scale: number): boolean {
+        if (this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[columnType]
+            && this.connection.driver.dataTypeDefaults[columnType].scale !== null
+            && this.connection.driver.dataTypeDefaults[columnType].scale !== undefined)
+            return this.connection.driver.dataTypeDefaults[columnType].scale === scale;
+
+        return false;
+    }
+
     /**
      * Executes sql used special for schema build.
      */

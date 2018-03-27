@@ -122,6 +122,16 @@ export abstract class AbstractSqliteDriver implements Driver {
     ];
 
     /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [];
+
+    /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
      */
@@ -246,7 +256,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
             /**
              * Fix date conversion issue
-             * 
+             *
              * If the format of the date string is "2018-03-14 02:33:33.906", Safari (and iOS WKWebView) will convert it to an invalid date object.
              * We need to modify the date string to "2018-03-14T02:33:33.906Z" and Safari will convert it correctly.
              *

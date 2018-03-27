@@ -700,7 +700,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(`ALTER TABLE "${table.name}" DROP CONSTRAINT "${uniqueConstraint.name}"`);
 
                 } else {
-                    const uniqueConstraint = table.uniques.find(unique => {
+                    const uniqueConstraint = clonedTable.uniques.find(unique => {
                         return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
                     });
                     clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
