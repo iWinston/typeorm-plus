@@ -711,7 +711,7 @@ export abstract class QueryBuilder<Entity> {
                 const parameterName = "id_" + index + "_" + secondIndex;
                 // whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + "=:id_" + index + "_" + secondIndex);
                 whereSubStrings.push(alias + this.escape(primaryColumn.databaseName) + " = " + this.connection.driver.createParameter(parameterName, parameterIndex));
-                this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id);
+                this.expressionMap.nativeParameters[parameterName] = primaryColumn.getEntityValue(id, true);
                 parameterIndex++;
             });
             return whereSubStrings.join(" AND ");
@@ -750,7 +750,9 @@ export abstract class QueryBuilder<Entity> {
                         const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
                         return columns.map((column, columnIndex) => {
 
-                            let parameterValue = column.getEntityValue(where);
+                            let parameterValue = column.getEntityValue(where, true);
+                            console.log("parameterValue", parameterValue);
+
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                             if (parameterValue === null) {
                                 return `${aliasPath} IS NULL`;

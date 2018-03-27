@@ -471,10 +471,11 @@ export class ColumnMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-     getEntityValue(entity: ObjectLiteral): any|undefined {
+     getEntityValue(entity: ObjectLiteral, transform: boolean = false): any|undefined {
         // if (entity === undefined || entity === null) return undefined; // uncomment if needed
 
         // extract column value from embeddeds of entity if column is in embedded
+        let value: any = undefined;
         if (this.embeddedMetadata) {
 
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
@@ -496,35 +497,49 @@ export class ColumnMetadata {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
                     if (relatedEntity && relatedEntity instanceof Object) {
-                        return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+                        value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
 
                     } else if (embeddedObject[this.propertyName] && embeddedObject[this.propertyName] instanceof Object) {
-                        return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                        value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+
+                    } else {
+                        value = PromiseUtils.extractValue(embeddedObject[this.propertyName]);
+
                     }
 
                 } else if (this.referencedColumn) {
-                    return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
+
+                } else {
+                    value = PromiseUtils.extractValue(embeddedObject[this.propertyName]);
                 }
-                return PromiseUtils.extractValue(embeddedObject[this.propertyName]);
             }
-            return undefined;
 
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
                 if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof Function)) {
-                    return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
+                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
 
                 } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof Function)) {
-                    return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+                    value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
+
+                } else {
+                    value = entity[this.propertyName];
                 }
 
             } else if (this.referencedColumn) {
-                return this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
-            }
+                value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
 
-            return entity[this.propertyName];
+            } else {
+                value = entity[this.propertyName];
+            }
         }
+
+        if (transform && this.transformer)
+            value = this.transformer.to(value);
+
+        return value;
     }
 
     /**
