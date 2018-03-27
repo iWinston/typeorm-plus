@@ -244,6 +244,19 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            /**
+             * Fix date conversion issue
+             * 
+             * If the format of the date string is "2018-03-14 02:33:33.906", Safari (and iOS WKWebView) will convert it to an invalid date object.
+             * We need to modify the date string to "2018-03-14T02:33:33.906Z" and Safari will convert it correctly.
+             *
+             * ISO 8601
+             * https://www.w3.org/TR/NOTE-datetime
+             */
+            if (value && typeof value === "string") {
+                value = value.replace(" ", "T") + "Z";
+            }
+
             value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
