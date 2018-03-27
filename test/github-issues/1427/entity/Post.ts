@@ -6,7 +6,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({type: "timestamp with time zone"})
+    @Column({type: "float"})
     qty: number;
 
 }

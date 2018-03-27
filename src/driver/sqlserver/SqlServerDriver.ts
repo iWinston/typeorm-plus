@@ -129,12 +129,21 @@ export class SqlServerDriver implements Driver {
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = [
+        "decimal",
+        "numeric",
+        "time",
+        "datetime2",
+        "datetimeoffset"
+    ];
 
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [];
+    withScaleColumnTypes: ColumnType[] = [
+        "decimal",
+        "numeric"
+    ];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -162,8 +171,17 @@ export class SqlServerDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        "varchar": { length: 255 },
-        "nvarchar": { length: 255 }
+        "char": { length: 1 },
+        "nchar": { length: 1 },
+        "varchar": { length: 1 },
+        "nvarchar": { length: 1 },
+        "binary": { length: 1 },
+        "varbinary": { length: 1 },
+        "decimal": { precision: 18, scale: 0 },
+        "numeric": { precision: 18, scale: 0 },
+        "time": { precision: 7 },
+        "datetime2": { precision: 7 },
+        "datetimeoffset": { precision: 7 }
     };
 
     // -------------------------------------------------------------------------
@@ -387,7 +405,7 @@ export class SqlServerDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
-        if (column.type === Number) {
+        if (column.type === Number || column.type === "integer") {
             return "int";
 
         } else if (column.type === String) {
@@ -405,20 +423,11 @@ export class SqlServerDriver implements Driver {
         } else if (column.type === "uuid") {
             return "uniqueidentifier";
 
-        } else if (column.type === "simple-array") {
+        } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "ntext";
-
-        } else if (column.type === "simple-json") {
-            return "ntext";
-
-        } else if (column.type === "integer") {
-            return "int";
 
         } else if (column.type === "dec") {
             return "decimal";
-
-        } else if (column.type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
-            return "real";
 
         } else if (column.type === "double precision") {
             return "float";
@@ -459,20 +468,21 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
-     * Calculates column length taking into account the default length values.
+     * Returns default column lengths, which is required on column creation.
      */
     getColumnLength(column: ColumnMetadata): string {
-
         if (column.length)
             return column.length.toString();
 
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();
+        if (column.type === "varchar" || column.type === "nvarchar" || column.type === String)
+            return "255";
 
         return "";
     }
 
+    /**
+     * Creates column type definition including length, precision and scale
+     */
     createFullType(column: TableColumn): string {
         let type = column.type;
 
@@ -480,12 +490,8 @@ export class SqlServerDriver implements Driver {
             type += "(" + column.length + ")";
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
-        } else if (column.precision !== null && column.precision !== undefined && column.type !== "real") {
+        } else if (column.precision !== null && column.precision !== undefined) {
             type +=  "(" + column.precision + ")";
-        } else if (column.scale !== null && column.scale !== undefined) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)
@@ -544,13 +550,15 @@ export class SqlServerDriver implements Driver {
 
             return  tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
                 || (!tableColumn.isGenerated && !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || tableColumn.isGenerated !== columnMetadata.isGenerated
-                || !this.compareColumnLengths(tableColumn, columnMetadata);
+                || tableColumn.isGenerated !== columnMetadata.isGenerated;
         });
     }
 
@@ -709,23 +717,6 @@ export class SqlServerDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue;
-    }
-
-    /**
-     * Compare column lengths only if the datatype supports it.
-     */
-    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
-        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
-        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
-            let metadataLength = this.getColumnLength(columnMetadata);
-
-            // if we found something to compare with then do it, else skip it
-            // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength !== null && metadataLength !== undefined)
-                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
-        }
-
-        return true;
     }
 
 }

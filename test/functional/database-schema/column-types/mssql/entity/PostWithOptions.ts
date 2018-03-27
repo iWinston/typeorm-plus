@@ -21,9 +21,6 @@ export class PostWithOptions {
     @Column("numeric", { precision: 10, scale: 5 })
     numeric: number;
 
-    @Column("float", { precision: 24 })
-    float: number;
-
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
@@ -50,13 +47,13 @@ export class PostWithOptions {
     // Date Types
     // -------------------------------------------------------------------------
 
-    @Column("datetime2", { precision: 5 })
+    @Column("datetime2", { precision: 4 })
     datetime2: Date;
 
-    @Column("time", { precision: 6 })
+    @Column("time", { precision: 5 })
     time: Date;
 
-    @Column("datetimeoffset", { precision: 7 })
+    @Column("datetimeoffset", { precision: 6 })
     datetimeoffset: Date;
 
 }

@@ -17,7 +17,7 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {PromiseUtils} from "../../index";
+import {ColumnType, PromiseUtils} from "../../index";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -720,9 +720,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
-            || this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
-
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || newColumn.type !== oldColumn.type || newColumn.length !== oldColumn.length) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn);
@@ -1467,14 +1465,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.name = dbColumn["COLUMN_NAME"];
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
-                    tableColumn.length = dbColumn["CHARACTER_MAXIMUM_LENGTH"] ? dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString() : "";
-                    if (tableColumn.length === "-1")
-                        tableColumn.length = "MAX";
+                    // check only columns that have length property
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
+                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                        if (length === "-1") {
+                            tableColumn.length = "MAX";
+                        } else {
+                            tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
+                        }
+                    }
 
-                    if (tableColumn.type !== "int") {
-                        if (dbColumn["NUMERIC_PRECISION"] !== null)
+                    if (tableColumn.type === "decimal" || tableColumn.type === "numeric") {
+                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["NUMERIC_PRECISION"]))
                             tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                        if (dbColumn["NUMERIC_PRECISION"] !== null)
+                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["NUMERIC_SCALE"]))
                             tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 
@@ -1498,7 +1502,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation["COLLATION_NAME"] ? undefined : dbColumn["COLLATION_NAME"];
 
                     if (tableColumn.type === "datetime2" || tableColumn.type === "time" || tableColumn.type === "datetimeoffset") {
-                        tableColumn.precision = dbColumn["DATETIME_PRECISION"];
+                        tableColumn.precision = !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["DATETIME_PRECISION"]) ? dbColumn["DATETIME_PRECISION"] : undefined;
                     }
 
                     return tableColumn;

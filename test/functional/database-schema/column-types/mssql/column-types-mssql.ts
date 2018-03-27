@@ -122,19 +122,15 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("money")!.type.should.be.equal("money");
         table!.findColumnByName("uniqueidentifier")!.type.should.be.equal("uniqueidentifier");
         table!.findColumnByName("char")!.type.should.be.equal("char");
-        table!.findColumnByName("char")!.length!.should.be.equal("1");
         table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
         table!.findColumnByName("varchar")!.length!.should.be.equal("255");
         table!.findColumnByName("text")!.type.should.be.equal("text");
         table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        table!.findColumnByName("nchar")!.length!.should.be.equal("1");
         table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
         table!.findColumnByName("nvarchar")!.length!.should.be.equal("255");
         table!.findColumnByName("ntext")!.type.should.be.equal("ntext");
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
-        table!.findColumnByName("binary")!.length!.should.be.equal("1");
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        table!.findColumnByName("varbinary")!.length!.should.be.equal("1");
         table!.findColumnByName("image")!.type.should.be.equal("image");
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("dateObj")!.type.should.be.equal("date");
@@ -161,7 +157,6 @@ describe("database schema > column types > mssql", () => {
         post.decimal = 50;
         post.dec = 60;
         post.numeric = 70;
-        post.float = 5.25;
         post.char = "AAA";
         post.varchar = "This is varchar";
         post.nchar = "AAA";
@@ -182,7 +177,6 @@ describe("database schema > column types > mssql", () => {
         loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.dec.should.be.equal(post.dec);
         loadedPost.numeric.should.be.equal(post.numeric);
-        loadedPost.float.should.be.equal(post.float);
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.nchar.should.be.equal(post.nchar);
@@ -205,8 +199,6 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
         table!.findColumnByName("numeric")!.precision!.should.be.equal(10);
         table!.findColumnByName("numeric")!.scale!.should.be.equal(5);
-        table!.findColumnByName("float")!.type.should.be.equal("real");
-        table!.findColumnByName("float")!.precision!.should.be.equal(24);
         table!.findColumnByName("char")!.type.should.be.equal("char");
         table!.findColumnByName("char")!.length!.should.be.equal("3");
         table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
@@ -220,11 +212,11 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
         table!.findColumnByName("varbinary")!.length!.should.be.equal("5");
         table!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
-        table!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
+        table!.findColumnByName("datetime2")!.precision!.should.be.equal(4);
         table!.findColumnByName("time")!.type.should.be.equal("time");
-        table!.findColumnByName("time")!.precision!.should.be.equal(6);
+        table!.findColumnByName("time")!.precision!.should.be.equal(5);
         table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
-        table!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(7);
+        table!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(6);
 
     })));
 
@@ -256,7 +248,6 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
-        table!.findColumnByName("binary")!.length!.should.be.equal("1");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 
     })));

@@ -486,7 +486,10 @@ export class MysqlDriver implements Driver {
                 return "";
         }
     }
-    
+
+    /**
+     * Creates column type definition including length, precision and scale
+     */
     createFullType(column: TableColumn): string {
         let type = column.type;
 

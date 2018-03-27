@@ -587,7 +587,7 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Normalizes "default" value of the column.
+     * Creates column type definition including length, precision and scale
      */
     createFullType(column: TableColumn): string {
         let type = column.type;
