@@ -115,36 +115,29 @@ export class MysqlDriver implements Driver {
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [
-        "int",
-        "tinyint",
-        "smallint",
-        "mediumint",
-        "bigint",
         "char",
         "varchar",
         "nvarchar",
-        "blob",
-        "text"
+        "binary"
     ];
 
     /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [
-        "dec",
         "decimal",
-        "numeric",
         "float",
         "double",
+        "time",
+        "datetime",
+        "timestamp"
     ];
 
     /**
      * Gets list of column data types that support scale by a driver.
      */
     withScaleColumnTypes: ColumnType[] = [
-        "dec",
         "decimal",
-        "numeric",
         "float",
         "double",
     ];
@@ -179,21 +172,7 @@ export class MysqlDriver implements Driver {
     dataTypeDefaults: DataTypeDefaults = {
         "varchar": { length: 255 },
         "char": { length: 1 },
-        "tinytext": { length: 255 },
-        "text": { length: 65535 },
-        "mediumtext": { length: 16777215 },
-        "longtext": { length: 4294967295 },
-        "tinyblob": { length: 255 },
-        "blob": { length: 65535 },
-        "mediumblob": { length: 16777215 },
-        "longblob": { length: 4294967295 },
-        "year": { length: 4 },
         "binary": { length: 1 },
-        "int": { length: 11, precision: 10, scale: 0 },
-        "tinyint": { length: 4, precision: 3, scale: 0 },
-        "smallint": { length: 6, precision: 5, scale: 0 },
-        "mediumint": { length: 9, precision: 7, scale: 0 },
-        "bigint": { length: 20, precision: 19, scale: 0 },
         "decimal": { precision: 10, scale: 0 },
         "float": { precision: 12 },
         "double": { precision: 22 }

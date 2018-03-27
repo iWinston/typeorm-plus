@@ -15,7 +15,7 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {PromiseUtils} from "../../index";
+import {ColumnType, PromiseUtils} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 
 /**
@@ -1118,10 +1118,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
-
-                    const columnType = dbColumn["COLUMN_TYPE"].toLowerCase();
-                    const endIndex = columnType.indexOf("(");
-                    tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
+                    tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
                     if (dbColumn["COLUMN_DEFAULT"] === null
                         || dbColumn["COLUMN_DEFAULT"] === undefined
@@ -1140,23 +1137,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.generationStrategy = "increment";
 
                     tableColumn.comment = dbColumn["COLUMN_COMMENT"];
-
-                    if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["NUMERIC_PRECISION"]))
-                        tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                    if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["NUMERIC_SCALE"]))
-                        tableColumn.scale = dbColumn["NUMERIC_SCALE"];
-
                     tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
 
-                    if (tableColumn.type === "int" || tableColumn.type === "tinyint" ||  tableColumn.type === "smallint"
-                        || tableColumn.type === "mediumint" || tableColumn.type === "bigint" || tableColumn.type === "year") {
-                        const length = columnType.substring(columnType.indexOf("(") + 1, columnType.indexOf(")"));
-                        tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
-
-                    } else {
+                    // check only columns that have length property
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
                         const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
                         tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
+                    }
+
+                    if (tableColumn.type === "decimal" || tableColumn.type === "double" || tableColumn.type === "float") {
+                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["NUMERIC_PRECISION"]))
+                            tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
+                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["NUMERIC_SCALE"]))
+                            tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 
                     if (tableColumn.type === "enum") {

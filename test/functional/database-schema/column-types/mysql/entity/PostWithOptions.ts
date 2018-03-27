@@ -11,21 +11,6 @@ export class PostWithOptions {
     @Column({ length: 10 })
     name: string;
 
-    @Column("int", { length: 3 })
-    int: number;
-
-    @Column("tinyint", { length: 3 })
-    tinyint: number;
-
-    @Column("smallint", { length: 3 })
-    smallint: number;
-
-    @Column("mediumint", { length: 3 })
-    mediumint: number;
-
-    @Column("bigint", { length: 3 })
-    bigint: number;
-
     @Column("float", { precision: 5, scale: 2 })
     float: number;
 
