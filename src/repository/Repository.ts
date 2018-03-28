@@ -323,4 +323,18 @@ export class Repository<Entity extends ObjectLiteral> {
         return this.manager.clear(this.metadata.target);
     }
 
+    /**
+     * Increments some column by provided value of the entities matched given conditions.
+     */
+    increment(conditions: DeepPartial<Entity>, propertyPath: string, value: number): Promise<void> {
+        return this.manager.increment(this.metadata.target, conditions, propertyPath, value);
+    }
+
+    /**
+     * Decrements some column by provided value of the entities matched given conditions.
+     */
+    decrement(conditions: DeepPartial<Entity>, propertyPath: string, value: number): Promise<void> {
+        return this.manager.decrement(this.metadata.target, conditions, propertyPath, value);
+    }
+
 }
