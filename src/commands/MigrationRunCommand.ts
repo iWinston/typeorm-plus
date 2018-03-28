@@ -4,7 +4,6 @@ import {Connection} from "../connection/Connection";
 import * as process from "process";
 const chalk = require("chalk");
 
-
 /**
  * Runs migration command.
  */
@@ -19,6 +18,11 @@ export class MigrationRunCommand {
                 alias: "c",
                 default: "default",
                 describe: "Name of the connection on which run a query."
+            })
+            .option("transaction", {
+                alias: "t",
+                default: "default",
+                describe: "Indicates if transaction should be used or not for migration run. Enabled by default."
             })
             .option("config", {
                 alias: "f",
@@ -42,7 +46,10 @@ export class MigrationRunCommand {
             });
             connection = await createConnection(connectionOptions);
 
-            await connection.runMigrations();
+            const options = {
+                transaction: argv["t"] === "false" ? false : true
+            };
+            await connection.runMigrations(options);
             await connection.close();
             // exit process if no errors
             process.exit(0);

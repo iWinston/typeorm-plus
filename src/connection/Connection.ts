@@ -270,11 +270,14 @@ export class Connection {
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
      */
-    async runMigrations(): Promise<void> {
+    async runMigrations(options?: { transaction?: boolean }): Promise<void> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
         const migrationExecutor = new MigrationExecutor(this);
+        if (options && options.transaction === false) {
+            migrationExecutor.transaction = false;
+        }
         await migrationExecutor.executePendingMigrations();
     }
 

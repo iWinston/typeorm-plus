@@ -15,11 +15,20 @@ import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOp
 export class MigrationExecutor {
 
     // -------------------------------------------------------------------------
-    // Private properties
+    // Public Properties
     // -------------------------------------------------------------------------
 
-    private migrationsTable: string;
-    private migrationsTableName: string;
+    /**
+     * Indicates if migrations must be executed in a transaction.
+     */
+    transaction: boolean = true;
+
+    // -------------------------------------------------------------------------
+    // Private Properties
+    // -------------------------------------------------------------------------
+
+    private readonly migrationsTable: string;
+    private readonly migrationsTableName: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -90,7 +99,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive) {
+        if (this.transaction && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
