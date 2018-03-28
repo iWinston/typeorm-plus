@@ -462,7 +462,7 @@ export class OracleDriver implements Driver {
     /**
      * Calculates column length taking into account the default length values.
      */
-    getColumnLength(column: ColumnMetadata): string {
+    getColumnLength(column: ColumnMetadata|TableColumn): string {
         if (column.length)
             return column.length.toString();
 
@@ -484,8 +484,9 @@ export class OracleDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type;
 
-        if (column.length) {
-            type += "(" + column.length + ")";
+        // used 'getColumnLength()' method, because in Oracle column length is required for some data types.
+        if (this.getColumnLength(column)) {
+            type += `(${this.getColumnLength(column)})`;
 
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
