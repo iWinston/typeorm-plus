@@ -151,6 +151,7 @@ export class OracleDriver implements Driver {
         updateDateDefault: "CURRENT_TIMESTAMP",
         version: "number",
         treeLevel: "number",
+        migrationId: "number",
         migrationName: "varchar2",
         migrationTimestamp: "number",
         cacheId: "number",

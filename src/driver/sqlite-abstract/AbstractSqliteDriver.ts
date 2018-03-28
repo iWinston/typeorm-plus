@@ -142,6 +142,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         updateDateDefault: "datetime('now')",
         version: "integer",
         treeLevel: "integer",
+        migrationId: "integer",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",

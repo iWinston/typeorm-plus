@@ -192,6 +192,7 @@ export class PostgresDriver implements Driver {
         updateDateDefault: "now()",
         version: "int4",
         treeLevel: "int4",
+        migrationId: "int4",
         migrationName: "varchar",
         migrationTimestamp: "int8",
         cacheId: "int4",

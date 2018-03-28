@@ -61,7 +61,7 @@ export class MigrationExecutor {
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
 
         // get the time when last migration was executed
-        let lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
+        let lastTimeExecutedMigration = this.getLatestTimestampMigration(executedMigrations);
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations();
@@ -74,8 +74,8 @@ export class MigrationExecutor {
                 return false;
 
             // migration is new and not executed. now check if its timestamp is correct
-            if (lastTimeExecutedMigration && migration.timestamp < lastTimeExecutedMigration.timestamp)
-                throw new Error(`New migration found: ${migration.name}, however this migration's timestamp is not valid. Migration's timestamp should not be older then migrations already executed in the database.`);
+            // if (lastTimeExecutedMigration && migration.timestamp < lastTimeExecutedMigration.timestamp)
+            //     throw new Error(`New migration found: ${migration.name}, however this migration's timestamp is not valid. Migration's timestamp should not be older then migrations already executed in the database.`);
 
             // every check is passed means that migration was not run yet and we need to run it
             return true;
@@ -152,7 +152,7 @@ export class MigrationExecutor {
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
 
         // get the time when last migration was executed
-        let lastTimeExecutedMigration = this.getLatestMigration(executedMigrations);
+        let lastTimeExecutedMigration = this.getLatestExecutedMigration(executedMigrations);
 
         // if no migrations found in the database then nothing to revert
         if (!lastTimeExecutedMigration) {
@@ -177,7 +177,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false;
-        if (!queryRunner.isTransactionActive) {
+        if (this.transaction && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction();
             transactionStartedByUs = true;
         }
@@ -223,9 +223,16 @@ export class MigrationExecutor {
                     name: this.migrationsTable,
                     columns: [
                         {
+                            name: "id",
+                            type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationId}),
+                            isGenerated: true,
+                            isPrimary: true,
+                            isNullable: false
+                        },
+                        {
                             name: "timestamp",
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationTimestamp}),
-                            isPrimary: true,
+                            isPrimary: false,
                             isNullable: false
                         },
                         {
@@ -274,8 +281,16 @@ export class MigrationExecutor {
     /**
      * Finds the latest migration (sorts by timestamp) in the given array of migrations.
      */
-    protected getLatestMigration(migrations: Migration[]): Migration|undefined {
+    protected getLatestTimestampMigration(migrations: Migration[]): Migration|undefined {
         const sortedMigrations = migrations.map(migration => migration).sort((a, b) => (a.timestamp - b.timestamp) * -1);
+        return sortedMigrations.length > 0 ? sortedMigrations[0] : undefined;
+    }
+
+    /**
+     * Finds the latest migration (sorts by id) in the given array of migrations.
+     */
+    protected getLatestExecutedMigration(migrations: Migration[]): Migration|undefined {
+        const sortedMigrations = migrations.map(migration => migration).sort((a, b) => (a.id - b.id) * -1);
         return sortedMigrations.length > 0 ? sortedMigrations[0] : undefined;
     }
 

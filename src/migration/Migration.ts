@@ -10,6 +10,12 @@ export class Migration {
     // -------------------------------------------------------------------------
 
     /**
+     * Migration id.
+     * Indicates order of the executed migrations.
+     */
+    id: number;
+
+    /**
      * Timestamp of the migration.
      */
     timestamp: number;

@@ -155,6 +155,7 @@ export class MysqlDriver implements Driver {
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
         version: "int",
         treeLevel: "int",
+        migrationId: "int",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",

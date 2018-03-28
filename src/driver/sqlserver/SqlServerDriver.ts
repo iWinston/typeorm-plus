@@ -156,6 +156,7 @@ export class SqlServerDriver implements Driver {
         updateDateDefault: "getdate()",
         version: "int",
         treeLevel: "int",
+        migrationId: "int",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",
