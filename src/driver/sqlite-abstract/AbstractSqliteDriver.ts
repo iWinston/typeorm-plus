@@ -231,7 +231,9 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
+            // to string conversation needs because SQLite stores date as integer number, when date came as Object
+            // TODO: think about `toUTC` conversion
+            return DateUtils.mixedDateToUtcDatetimeString(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -361,7 +363,6 @@ export abstract class AbstractSqliteDriver implements Driver {
             return "boolean";
 
         } else if (column.type === "uuid") {
-            column.length = 36;
             return "varchar";
 
         } else if (column.type === "simple-array") {
@@ -409,15 +410,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-
-        if (column.length)
-            return column.length.toString();
-
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();
-
-        return "";
+        return column.length ? column.length.toString() : "";
     }
 
     /**
@@ -428,14 +421,12 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         if (column.length) {
             type += "(" + column.length + ")";
+
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
+
         } else if (column.precision !== null && column.precision !== undefined) {
             type +=  "(" + column.precision + ")";
-        } else if (column.scale !== null && column.scale !== undefined) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)
@@ -494,24 +485,28 @@ export abstract class AbstractSqliteDriver implements Driver {
             // console.log("table:", columnMetadata.entityMetadata.tableName);
             // console.log("name:", tableColumn.name, columnMetadata.databaseName);
             // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log("length changed:", !this.compareColumnLengths(tableColumn, columnMetadata));
             // console.log("==========================================");
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
                 //  || tableColumn.comment !== columnMetadata.comment || // todo
                 || this.normalizeDefault(columnMetadata) !== tableColumn.default
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated)
-                || !this.compareColumnLengths(tableColumn, columnMetadata);
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
     }
 
@@ -554,23 +549,6 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     protected loadDependencies(): void {
         // dependencies have to be loaded in the specific driver
-    }
-
-    /**
-     * Compare column lengths only if the datatype supports it.
-     */
-    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
-        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
-        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
-            let metadataLength = this.getColumnLength(columnMetadata);
-
-            // if we found something to compare with then do it, else skip it
-            // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength !== null && metadataLength !== undefined)
-                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
-        }
-
-        return true;
     }
 
 }

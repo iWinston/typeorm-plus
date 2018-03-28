@@ -1141,9 +1141,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
 
                     // check only columns that have length property
-                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
-                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
-                        tableColumn.length = length && !this.isDefaultColumnLength(table, tableColumn, length) ? length.toString() : "";
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["CHARACTER_MAXIMUM_LENGTH"]) {
+                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString();
+                        tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
 
                     if (tableColumn.type === "decimal" || tableColumn.type === "double" || tableColumn.type === "float") {

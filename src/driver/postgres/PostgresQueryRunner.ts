@@ -17,6 +17,7 @@ import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {PromiseUtils} from "../../";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
+import {ColumnType} from "../../index";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -1305,8 +1306,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         tableColumn.enum = results.map(result => result["value"]);
                     }
 
-                    const length = dbColumn["character_maximum_length"];
-                    tableColumn.length = length && !this.isDefaultColumnLength(table, tableColumn, length) ? length.toString() : "";
+                    // check only columns that have length property
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["character_maximum_length"]) {
+                        const length = dbColumn["character_maximum_length"].toString();
+                        tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
+                    }
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
@@ -1699,7 +1703,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true && column.generationStrategy === "increment") {
+        if (column.isGenerated === true && column.generationStrategy !== "uuid") {
             if (column.type === "integer" || column.type === "int" || column.type === "int4")
                 c += " SERIAL";
             if (column.type === "smallint" || column.type === "int2")

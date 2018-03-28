@@ -245,7 +245,7 @@ export abstract class BaseQueryRunner {
         // check if length is specified in metadata
         const metadata = this.connection.getMetadata(table.name);
         const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-        if (columnMetadata!.length)
+        if (columnMetadata && columnMetadata.length)
             return false;
 
         if (this.connection.driver.dataTypeDefaults
@@ -264,7 +264,7 @@ export abstract class BaseQueryRunner {
         // check if precision is specified in metadata
         const metadata = this.connection.getMetadata(table.name);
         const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-        if (columnMetadata!.precision !== null && columnMetadata!.precision !== undefined)
+        if (columnMetadata && columnMetadata.precision !== null && columnMetadata.precision !== undefined)
             return false;
 
         if (this.connection.driver.dataTypeDefaults
@@ -283,7 +283,7 @@ export abstract class BaseQueryRunner {
         // check if scale is specified in metadata
         const metadata = this.connection.getMetadata(table.name);
         const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-        if (columnMetadata!.scale !== null && columnMetadata!.scale !== undefined)
+        if (columnMetadata && columnMetadata.scale !== null && columnMetadata.scale !== undefined)
             return false;
 
         if (this.connection.driver.dataTypeDefaults

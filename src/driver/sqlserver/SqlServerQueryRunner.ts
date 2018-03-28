@@ -1466,12 +1466,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
                     // check only columns that have length property
-                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
-                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["CHARACTER_MAXIMUM_LENGTH"]) {
+                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString();
                         if (length === "-1") {
                             tableColumn.length = "MAX";
                         } else {
-                            tableColumn.length = length && !this.isDefaultColumnLength(table, tableColumn, length) ? length.toString() : "";
+                            tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                         }
                     }
 
