@@ -3,7 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 
-describe.only("repository > decrement method", () => {
+describe("repository > decrement method", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
