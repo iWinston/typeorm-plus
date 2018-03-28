@@ -471,7 +471,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Returns default column lengths, which is required on column creation.
      */
-    getColumnLength(column: ColumnMetadata): string {
+    getColumnLength(column: ColumnMetadata|TableColumn): string {
         if (column.length)
             return column.length.toString();
 
@@ -487,12 +487,15 @@ export class SqlServerDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type;
 
-        if (column.length) {
-            type += "(" + column.length + ")";
+        // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
+        if (this.getColumnLength(column)) {
+            type += `(${this.getColumnLength(column)})`;
+
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
-            type += "(" + column.precision + "," + column.scale + ")";
+            type += `(${column.precision},${column.scale})`;
+
         } else if (column.precision !== null && column.precision !== undefined) {
-            type +=  "(" + column.precision + ")";
+            type +=  `(${column.precision})`;
         }
 
         if (column.isArray)

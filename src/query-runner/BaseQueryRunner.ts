@@ -242,11 +242,13 @@ export abstract class BaseQueryRunner {
      * Checks if column length is by default.
      */
     protected isDefaultColumnLength(table: Table, column: TableColumn, length: string): boolean {
-        // check if length is specified in metadata
-        const metadata = this.connection.getMetadata(table.name);
-        const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-        if (columnMetadata && columnMetadata.length)
-            return false;
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.length)
+                return false;
+        }
 
         if (this.connection.driver.dataTypeDefaults
             && this.connection.driver.dataTypeDefaults[column.type]
@@ -261,11 +263,13 @@ export abstract class BaseQueryRunner {
      * Checks if column precision is by default.
      */
     protected isDefaultColumnPrecision(table: Table, column: TableColumn, precision: number): boolean {
-        // check if precision is specified in metadata
-        const metadata = this.connection.getMetadata(table.name);
-        const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-        if (columnMetadata && columnMetadata.precision !== null && columnMetadata.precision !== undefined)
-            return false;
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.precision !== null && columnMetadata.precision !== undefined)
+                return false;
+        }
 
         if (this.connection.driver.dataTypeDefaults
             && this.connection.driver.dataTypeDefaults[column.type]
@@ -280,11 +284,13 @@ export abstract class BaseQueryRunner {
      * Checks if column scale is by default.
      */
     protected isDefaultColumnScale(table: Table, column: TableColumn, scale: number): boolean {
-        // check if scale is specified in metadata
-        const metadata = this.connection.getMetadata(table.name);
-        const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-        if (columnMetadata && columnMetadata.scale !== null && columnMetadata.scale !== undefined)
-            return false;
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.scale !== null && columnMetadata.scale !== undefined)
+                return false;
+        }
 
         if (this.connection.driver.dataTypeDefaults
             && this.connection.driver.dataTypeDefaults[column.type]

@@ -31,7 +31,7 @@ export class IndexMetadata {
     /**
      * Indicates if this index must synchronize with database index.
      */
-    synchronize?: boolean;
+    synchronize: boolean = true;
 
     /**
      * If true, the index only references documents with the specified field.
@@ -95,7 +95,8 @@ export class IndexMetadata {
 
         if (options.args) {
             this.target = options.args.target;
-            this.synchronize = options.args.synchronize;
+            if (options.args.synchronize !== null && options.args.synchronize !== undefined)
+                this.synchronize = options.args.synchronize;
             this.isUnique = options.args.unique;
             this.where = options.args.where;
             this.isSparse = options.args.sparse;

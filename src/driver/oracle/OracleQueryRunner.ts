@@ -305,10 +305,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (createIndices) {
             table.indices.forEach(index => {
-                const hasPrimaryAndIndexedColumns = table.primaryColumns.every(column => index.columnNames.indexOf(column.name) !== -1);
-                if (hasPrimaryAndIndexedColumns)
-                    return;
-
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
                     index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
@@ -339,10 +335,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (dropIndices) {
             table.indices.forEach(index => {
-                const primaryColumnNames = table.primaryColumns.map(column => column.name).sort();
-                if (OrmUtils.isArraysEqual(primaryColumnNames, index.columnNames.sort()))
-                    return;
-
                 upQueries.push(this.dropIndexSql(index));
                 downQueries.push(this.createIndexSql(table, index));
             });
