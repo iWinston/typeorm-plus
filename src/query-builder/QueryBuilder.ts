@@ -17,6 +17,7 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {EntitySchema} from "../";
+import {FindOperator} from "../find-options/FindOperator";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -750,17 +751,32 @@ export abstract class QueryBuilder<Entity> {
                         const columns = this.expressionMap.mainAlias!.metadata.findColumnsWithPropertyPath(propertyPath);
                         return columns.map((column, columnIndex) => {
 
-                            let parameterValue = column.getEntityValue(where, true);
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
+                            let parameterValue = column.getEntityValue(where, true);
+                            const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
+
                             if (parameterValue === null) {
                                 return `${aliasPath} IS NULL`;
 
+                            } else if (parameterValue instanceof FindOperator) {
+                                let parameters: any[] = [];
+                                if (parameterValue.useParameter) {
+                                    const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
+                                    realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
+                                        this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
+                                        parameterIndex++;
+                                        parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
+                                    });
+                                }
+                                return parameterValue.toSql(this.connection, aliasPath, parameters);
+
                             } else {
-                                const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
                                 this.expressionMap.nativeParameters[parameterName] = parameterValue;
                                 parameterIndex++;
-                                return `${aliasPath} = ${this.connection.driver.createParameter(parameterName, parameterIndex - 1)}`;
+                                const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
+                                return `${aliasPath} = ${parameter}`;
                             }
+
                         }).filter(expression => !!expression).join(" AND ");
                     }).filter(expression => !!expression).join(" AND ");
                 });
