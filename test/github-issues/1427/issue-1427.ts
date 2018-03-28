@@ -9,7 +9,7 @@ describe.skip("github issues > #1427 precision and scale column types with erran
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["oracle"],
+            enabledDrivers: ["mysql"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -28,7 +28,7 @@ describe.skip("github issues > #1427 precision and scale column types with erran
         console.log(column!.databaseName);
         // column!.scale = undefined;
         // column!.length = "300";
-        column!.precision = 37;
+        // column!.length = "255";
 
         await connection.synchronize();
 

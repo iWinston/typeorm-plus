@@ -3,7 +3,7 @@ import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn"
 
 export class Counters {
 
-    @PrimaryColumn({unique: true})
+    @PrimaryColumn()
     code: number;
 
     @Column()

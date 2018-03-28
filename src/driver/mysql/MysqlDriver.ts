@@ -171,7 +171,6 @@ export class MysqlDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        "varchar": { length: 255 },
         "char": { length: 1 },
         "binary": { length: 1 },
         "decimal": { precision: 10, scale: 0 },
