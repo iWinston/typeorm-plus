@@ -5,20 +5,16 @@ import {Thing, EmbeddedInThing} from "./entity/thing";
 import {expect} from "chai";
 
 describe("github issues > #1825 Invalid field values being loaded with long camelCased embedded field names.", () => {
-  let connections: Connection[];
-  before(
-    async () =>
-      (connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql", "postgres", "mariadb"]
-      }))
-  );
-  beforeEach(() => reloadTestingDatabases(connections));
-  after(() => closeTestingConnections(connections));
+    let connections: Connection[];
+    before(async () => (connections = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "postgres", "mariadb"]
+        }))
+    );
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(() => closeTestingConnections(connections));
 
-  it("should load valid values in embedded with long field names", () =>
-    Promise.all(
-      connections.map(async connection => {
+    it("should load valid values in embedded with long field names", () => Promise.all(connections.map(async connection => {
         const thingRepository = connection.getRepository(Thing);
 
         const thing = new Thing();
@@ -32,6 +28,5 @@ describe("github issues > #1825 Invalid field values being loaded with long came
         const loadedThing = await thingRepository.findOne(thing.id);
 
         expect(loadedThing).to.eql(thing);
-      })
-    ));
+    })));
 });

@@ -1,4 +1,4 @@
-import {CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "../../../../src";
+import {CreateDateColumn, Entity, PrimaryGeneratedColumn} from "../../../../src";
 
 @Entity()
 export class Post {
@@ -6,10 +6,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ precision: 0, default: () => "CURRENT_TIMESTAMP" })
     createDate: Date;
-
-    @UpdateDateColumn({ precision: undefined, default: () => "CURRENT_TIMESTAMP" })
-    updateDate: Date;
 
 }

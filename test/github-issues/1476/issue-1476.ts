@@ -5,6 +5,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Plan } from "./entity/Plan";
 import { Item } from "./entity/Item";
+import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
 describe("github issues > #1476 subqueries", () => {
 
@@ -53,7 +54,13 @@ describe("github issues > #1476 subqueries", () => {
         const plan = plans![0];
         expect(plan.b_planId).to.be.equal(1);
         expect(plan.b_planName).to.be.equal("Test");
-        expect(plan.total).to.be.equal(2);
         expect(plan.planId).to.be.equal(1);
+
+        if (connection.driver instanceof MysqlDriver) {
+            expect(plan.total).to.be.equal("2");
+        } else {
+            expect(plan.total).to.be.equal(2);
+        }
+
     })));
 });
