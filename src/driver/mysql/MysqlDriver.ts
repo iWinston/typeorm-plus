@@ -695,7 +695,9 @@ export class MysqlDriver implements Driver {
           Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
           cause the hosting app to crash.
          */
-        connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        if (connection.listeners("error").length === 0) {
+            connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        }
         return connection;
     }
 
