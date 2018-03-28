@@ -7,6 +7,6 @@ export class Post {
     id: number;
 
     @Column({type: "decimal", precision: 10, scale: 6})
-    qty: number;
+    qty: string;
 
 }

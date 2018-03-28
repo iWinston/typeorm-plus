@@ -7,7 +7,7 @@ import {ActivityEntity} from "./ActivityEntity";
 @Entity("tile")
 export class TileEntity {
     @PrimaryGeneratedColumn({type: "bigint"})
-    id: number;
+    id: string;
 
     @ManyToMany(type => TileEntity, tile => tile.children, {
         cascade: ["insert"]

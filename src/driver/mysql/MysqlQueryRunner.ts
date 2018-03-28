@@ -1105,7 +1105,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     const columnUniqueIndex = dbIndices.find(dbIndex => {
                         return this.driver.buildTableName(dbIndex["TABLE_NAME"], undefined, dbIndex["TABLE_SCHEMA"]) === tableFullName
-                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === 0;
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"] && dbIndex["NON_UNIQUE"] === "0";
                     });
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => metadata.tablePath === table.name);
@@ -1148,9 +1148,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     if (tableColumn.type === "decimal" || tableColumn.type === "double" || tableColumn.type === "float") {
                         if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["NUMERIC_PRECISION"]))
-                            tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
+                            tableColumn.precision = parseInt(dbColumn["NUMERIC_PRECISION"]);
                         if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["NUMERIC_SCALE"]))
-                            tableColumn.scale = dbColumn["NUMERIC_SCALE"];
+                            tableColumn.scale = parseInt(dbColumn["NUMERIC_SCALE"]);
                     }
 
                     if (tableColumn.type === "enum") {
@@ -1163,7 +1163,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }
 
                     if ((tableColumn.type === "datetime" || tableColumn.type === "time" || tableColumn.type === "timestamp") && dbColumn["DATETIME_PRECISION"]) {
-                        tableColumn.precision = dbColumn["DATETIME_PRECISION"];
+                        tableColumn.precision = parseInt(dbColumn["DATETIME_PRECISION"]);
                     }
 
                     return tableColumn;
@@ -1202,7 +1202,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["NON_UNIQUE"] === 0
+                    isUnique: constraint["NON_UNIQUE"] === "0"
                 });
             });
 

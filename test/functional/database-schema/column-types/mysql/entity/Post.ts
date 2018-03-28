@@ -25,7 +25,7 @@ export class Post {
     mediumint: number;
 
     @Column("bigint")
-    bigint: number;
+    bigint: string;
 
     @Column("float")
     float: number;
@@ -34,7 +34,7 @@ export class Post {
     double: number;
 
     @Column("decimal")
-    decimal: number;
+    decimal: string;
 
     @Column("date")
     date: string;

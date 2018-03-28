@@ -17,8 +17,8 @@ export class PostWithOptions {
     @Column("double", { precision: 5, scale: 2 })
     double: number;
 
-    @Column("decimal", { precision: 5, scale: 2 })
-    decimal: number;
+    @Column("decimal", { precision: 7, scale: 2 })
+    decimal: string;
 
     @Column("char", { length: 5 })
     char: string;

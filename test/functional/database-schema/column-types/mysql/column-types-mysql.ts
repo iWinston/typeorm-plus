@@ -32,10 +32,10 @@ describe("database schema > column types > mysql", () => {
         post.tinyint = 127;
         post.smallint = 32767;
         post.mediumint = 8388607;
-        post.bigint = 8223372036854775807;
+        post.bigint = "8223372036854775807";
         post.float = 10.53;
         post.double = 10.1234;
-        post.decimal = 50;
+        post.decimal = "822337";
         post.date = "2017-06-21";
         post.datetime = new Date();
         post.datetime.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
@@ -145,7 +145,7 @@ describe("database schema > column types > mysql", () => {
         post.name = "Post";
         post.float = 10.53;
         post.double = 10.12;
-        post.decimal = 50;
+        post.decimal = "12345.00";
         post.char = "A";
         post.varchar = "This is varchar";
         post.datetime = new Date();
@@ -175,7 +175,7 @@ describe("database schema > column types > mysql", () => {
         table!.findColumnByName("double")!.precision!.should.be.equal(5);
         table!.findColumnByName("double")!.scale!.should.be.equal(2);
         table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
-        table!.findColumnByName("decimal")!.precision!.should.be.equal(5);
+        table!.findColumnByName("decimal")!.precision!.should.be.equal(7);
         table!.findColumnByName("decimal")!.scale!.should.be.equal(2);
         table!.findColumnByName("char")!.type.should.be.equal("char");
         table!.findColumnByName("char")!.length!.should.be.equal("5");

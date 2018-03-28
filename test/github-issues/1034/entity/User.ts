@@ -10,7 +10,7 @@ export class User {
      * User's identifier
      */
     @PrimaryGeneratedColumn({type: "bigint"})
-    private id: number;
+    private id: string;
 
     @ManyToMany((type: object) => Circle, (circle) => "users")
     private circles: Promise<Circle[]>;
@@ -20,7 +20,7 @@ export class User {
      *
      * @returns {number}
      */
-    public getId(): number {
+    public getId(): string {
         return this.id;
     }
 
@@ -29,7 +29,7 @@ export class User {
      *
      * @param id new identifier value
      */
-    public setId(id: number): void {
+    public setId(id: string): void {
         this.id = id;
     }
     /**
