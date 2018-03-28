@@ -4,6 +4,7 @@ import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {abbreviate} from "../../util/StringUtils";
+import {OracleDriver} from "../../driver/oracle/OracleDriver";
 
 export class RelationIdLoader {
 
@@ -185,7 +186,7 @@ export class RelationIdLoader {
      */
     protected buildColumnAlias(aliasName: string, columnName: string): string {
         const columnAliasName = aliasName + "_" + columnName;
-        if (columnAliasName.length > 29)
+        if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
             return aliasName  + "_" + abbreviate(columnName, 2);
 
         return columnAliasName;

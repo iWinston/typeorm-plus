@@ -9,6 +9,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {abbreviate} from "../../util/StringUtils";
+import {OracleDriver} from "../../driver/oracle/OracleDriver";
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -307,7 +308,7 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected buildColumnAlias(aliasName: string, columnName: string): string {
         const columnAliasName = aliasName + "_" + columnName;
-        if (columnAliasName.length > 29)
+        if (columnAliasName.length > 29 && this.driver instanceof OracleDriver)
             return aliasName  + "_" + abbreviate(columnName, 2);
 
         return columnAliasName;

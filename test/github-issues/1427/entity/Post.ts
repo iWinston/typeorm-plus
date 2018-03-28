@@ -6,7 +6,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({type: "varchar"})
+    @Column({type: "decimal", precision: 10, scale: 6})
     qty: number;
 
 }

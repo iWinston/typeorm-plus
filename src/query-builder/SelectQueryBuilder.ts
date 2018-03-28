@@ -1894,7 +1894,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected buildColumnAlias(aliasName: string, columnName: string): string {
         const columnAliasName = aliasName + "_" + columnName;
-        if (columnAliasName.length > 29)
+        if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
             return aliasName  + "_" + abbreviate(columnName, 2);
 
         return columnAliasName;
