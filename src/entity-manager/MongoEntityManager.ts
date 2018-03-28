@@ -185,7 +185,8 @@ export class MongoEntityManager extends EntityManager {
         const result = new InsertResult();
         if (entity instanceof Array) {
             result.raw = await this.insertMany(target, entity);
-            result.raw.insertedIds.forEach((insertedId: any) => {
+            Object.keys(result.raw.insertedIds).forEach((key: any) => {
+                let insertedId = result.raw.insertedIds[key];
                 result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
                 result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
             });
@@ -213,7 +214,7 @@ export class MongoEntityManager extends EntityManager {
 
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), partialEntity);
+            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
         }
 
         return new UpdateResult();

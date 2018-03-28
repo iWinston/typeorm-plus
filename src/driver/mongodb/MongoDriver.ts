@@ -174,10 +174,10 @@ export class MongoDriver implements Driver {
                 maxStalenessSeconds: this.options.maxStalenessSeconds,
                 loggerLevel: this.options.loggerLevel,
                 logger: this.options.logger
-            }, (err: any, dbConnection: any) => {
+            }, (err: any, client: any) => {
                 if (err) return fail(err);
 
-                this.queryRunner = new MongoQueryRunner(this.connection, dbConnection);
+                this.queryRunner = new MongoQueryRunner(this.connection, client);
                 Object.assign(this.queryRunner, { manager: this.connection.manager });
                 ok();
             });

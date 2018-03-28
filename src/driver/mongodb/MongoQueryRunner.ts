@@ -360,7 +360,7 @@ export class MongoQueryRunner implements QueryRunner {
      * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
-        await this.databaseConnection.dropDatabase();
+        await this.databaseConnection.db(this.connection.driver.database!).dropDatabase();
     }
 
     /**
@@ -741,6 +741,7 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async clearTable(collectionName: string): Promise<void> {
         await this.databaseConnection
+            .db(this.connection.driver.database!)
             .dropCollection(collectionName);
     }
 
@@ -799,7 +800,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Gets collection from the database with a given name.
      */
     protected getCollection(collectionName: string): Collection {
-        return this.databaseConnection.collection(collectionName);
+        return this.databaseConnection.db(this.connection.driver.database!).collection(collectionName);
     }
 
 }
