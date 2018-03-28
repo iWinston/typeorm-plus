@@ -125,12 +125,20 @@ export class OracleDriver implements Driver {
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = [
+        "number",
+        "float",
+        "timestamp",
+        "timestamp with time zone",
+        "timestamp with local time zone"
+    ];
 
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [];
+    withScaleColumnTypes: ColumnType[] = [
+        "number"
+    ];
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -163,7 +171,11 @@ export class OracleDriver implements Driver {
         "varchar": { length: 255 },
         "varchar2": { length: 255 },
         "nvarchar2": { length: 255 },
-        "raw": { length: 2000 }
+        "raw": { length: 2000 },
+        "float": { precision: 126 },
+        "timestamp": { precision: 6 },
+        "timestamp with time zone": { precision: 6 },
+        "timestamp with local time zone": { precision: 6 }
     };
 
     // -------------------------------------------------------------------------
@@ -331,7 +343,7 @@ export class OracleDriver implements Driver {
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp with local time zone") {
-            return DateUtils.mixedDateToDate(value, true, true);
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -360,7 +372,6 @@ export class OracleDriver implements Driver {
             value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === Date
-            || columnMetadata.type === "datetime"
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp with local time zone") {
@@ -386,8 +397,13 @@ export class OracleDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number|string, precision?: number, scale?: number, isArray?: boolean }): string {
-        if (column.type === Number) {
+        if (column.type === Number || column.type === Boolean || column.type === "numeric"
+            || column.type === "dec" || column.type === "decimal" || column.type === "int"
+            || column.type === "integer" || column.type === "smallint") {
             return "number";
+
+        } else if (column.type === "real" || column.type === "double precision") {
+            return "float";
 
         } else if (column.type === String || column.type === "varchar") {
             return "varchar2";
@@ -398,12 +414,7 @@ export class OracleDriver implements Driver {
         } else if ((column.type as any) === Buffer) {
             return "blob";
 
-        } else if (column.type === Boolean) {
-            column.precision = 1;
-            return "number";
-
         } else if (column.type === "uuid") {
-            column.length = 36;
             return "varchar2";
 
         } else if (column.type === "simple-array") {
@@ -454,11 +465,19 @@ export class OracleDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();
-
-        return "";
+        switch (column.type) {
+            case String:
+            case "varchar":
+            case "varchar2":
+            case "nvarchar2":
+                return "255";
+            case "raw":
+                return "2000";
+            case "uuid":
+                return "36";
+            default:
+                return "";
+        }
     }
 
     createFullType(column: TableColumn): string {
@@ -466,14 +485,12 @@ export class OracleDriver implements Driver {
 
         if (column.length) {
             type += "(" + column.length + ")";
+
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
+
         } else if (column.precision !== null && column.precision !== undefined) {
             type += "(" + column.precision + ")";
-        } else if (column.scale !== null && column.scale !== undefined) {
-            type += "(" + column.scale + ")";
-        } else if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type += "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.type === "timestamp with time zone") {
@@ -550,13 +567,15 @@ export class OracleDriver implements Driver {
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
                 || this.normalizeDefault(columnMetadata) !== tableColumn.default
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated)
-                || !this.compareColumnLengths(tableColumn, columnMetadata);
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
     }
 
@@ -661,23 +680,6 @@ export class OracleDriver implements Driver {
             pool.close((err: any) => err ? fail(err) : ok());
             pool = undefined;
         });
-    }
-
-    /**
-     * Compare column lengths only if the datatype supports it.
-     */
-    protected compareColumnLengths(tableColumn: TableColumn, columnMetadata: ColumnMetadata): boolean {
-        const normalizedColumn = this.normalizeType(columnMetadata) as ColumnType;
-        if (this.withLengthColumnTypes.indexOf(normalizedColumn) !== -1) {
-            let metadataLength = this.getColumnLength(columnMetadata);
-
-            // if we found something to compare with then do it, else skip it
-            // use use case insensitive comparison to catch "MAX" vs "Max" case
-            if (metadataLength !== null && metadataLength !== undefined)
-                return tableColumn.length.toString().toLowerCase() === metadataLength.toLowerCase();
-        }
-
-        return true;
     }
 
 }

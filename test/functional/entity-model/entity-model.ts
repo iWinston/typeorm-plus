@@ -30,7 +30,7 @@ describe("entity-model", () => {
         loadedPost!.text.should.be.eql("Huge discussion how good or bad ActiveRecord is.");
     }));
 
-    it("should reload given entity successfully", () => Promise.all(connections.map(async connection => {
+    it("should reload given entity successfully", () => PromiseUtils.runInSequence(connections, async connection => {
         await connection.synchronize(true);
         Post.useConnection(connection);
         Category.useConnection(connection);
@@ -67,6 +67,6 @@ describe("entity-model", () => {
             name: "Persistence and Entity"
         });
 
-    })));
+    }));
 
 });

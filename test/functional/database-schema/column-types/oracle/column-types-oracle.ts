@@ -91,7 +91,6 @@ describe("database schema > column types > oracle", () => {
 
         table!.findColumnByName("id")!.type.should.be.equal("number");
         table!.findColumnByName("name")!.type.should.be.equal("varchar2");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("number")!.type.should.be.equal("number");
         table!.findColumnByName("numeric")!.type.should.be.equal("number");
         table!.findColumnByName("float")!.type.should.be.equal("float");
@@ -103,13 +102,9 @@ describe("database schema > column types > oracle", () => {
         table!.findColumnByName("smallint")!.type.should.be.equal("number");
         table!.findColumnByName("doublePrecision")!.type.should.be.equal("float");
         table!.findColumnByName("char")!.type.should.be.equal("char");
-        table!.findColumnByName("char")!.length!.should.be.equal("1");
         table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        table!.findColumnByName("nchar")!.length!.should.be.equal("1");
         table!.findColumnByName("varchar2")!.type.should.be.equal("varchar2");
-        table!.findColumnByName("varchar2")!.length!.should.be.equal("255");
         table!.findColumnByName("nvarchar2")!.type.should.be.equal("nvarchar2");
-        table!.findColumnByName("nvarchar2")!.length!.should.be.equal("255");
         table!.findColumnByName("long")!.type.should.be.equal("long");
         table!.findColumnByName("raw")!.type.should.be.equal("raw");
         table!.findColumnByName("date")!.type.should.be.equal("date");
@@ -222,7 +217,6 @@ describe("database schema > column types > oracle", () => {
 
         table!.findColumnByName("id")!.type.should.be.equal("number");
         table!.findColumnByName("name")!.type.should.be.equal("varchar2");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("boolean")!.type.should.be.equal("number");
         table!.findColumnByName("blob")!.type.should.be.equal("blob");
         table!.findColumnByName("datetime")!.type.should.be.equal("timestamp");

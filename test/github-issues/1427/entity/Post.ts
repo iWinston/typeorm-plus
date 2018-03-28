@@ -6,7 +6,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({type: "double"})
+    @Column({type: "float"})
     qty: number;
 
 }

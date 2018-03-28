@@ -14,9 +14,7 @@ export class DateUtils {
         if (!mixedDate)
             return mixedDate;
 
-        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
-
-        return date;
+        return typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
     }
 
     /**

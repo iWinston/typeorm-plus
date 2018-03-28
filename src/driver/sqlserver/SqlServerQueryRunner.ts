@@ -1471,14 +1471,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         if (length === "-1") {
                             tableColumn.length = "MAX";
                         } else {
-                            tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
+                            tableColumn.length = length && !this.isDefaultColumnLength(table, tableColumn, length) ? length.toString() : "";
                         }
                     }
 
                     if (tableColumn.type === "decimal" || tableColumn.type === "numeric") {
-                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["NUMERIC_PRECISION"]))
+                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["NUMERIC_PRECISION"]))
                             tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["NUMERIC_SCALE"]))
+                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["NUMERIC_SCALE"]))
                             tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 
@@ -1502,7 +1502,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation["COLLATION_NAME"] ? undefined : dbColumn["COLLATION_NAME"];
 
                     if (tableColumn.type === "datetime2" || tableColumn.type === "time" || tableColumn.type === "datetimeoffset") {
-                        tableColumn.precision = !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["DATETIME_PRECISION"]) ? dbColumn["DATETIME_PRECISION"] : undefined;
+                        tableColumn.precision = !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["DATETIME_PRECISION"]) ? dbColumn["DATETIME_PRECISION"] : undefined;
                     }
 
                     return tableColumn;

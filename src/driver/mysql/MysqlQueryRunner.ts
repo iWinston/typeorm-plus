@@ -1143,13 +1143,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // check only columns that have length property
                     if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
                         const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"];
-                        tableColumn.length = length && !this.isDefaultColumnLength(tableColumn.type, length) ? length.toString() : "";
+                        tableColumn.length = length && !this.isDefaultColumnLength(table, tableColumn, length) ? length.toString() : "";
                     }
 
                     if (tableColumn.type === "decimal" || tableColumn.type === "double" || tableColumn.type === "float") {
-                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(tableColumn.type, dbColumn["NUMERIC_PRECISION"]))
+                        if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["NUMERIC_PRECISION"]))
                             tableColumn.precision = dbColumn["NUMERIC_PRECISION"];
-                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(tableColumn.type, dbColumn["NUMERIC_SCALE"]))
+                        if (dbColumn["NUMERIC_SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["NUMERIC_SCALE"]))
                             tableColumn.scale = dbColumn["NUMERIC_SCALE"];
                     }
 

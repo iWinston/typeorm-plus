@@ -15,7 +15,7 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
-import {PromiseUtils} from "../../index";
+import {ColumnType, PromiseUtils} from "../../index";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -533,9 +533,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
-            || this.connection.driver.createFullType(oldColumn) !== this.connection.driver.createFullType(newColumn)) {
-
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn);
@@ -620,8 +618,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name;
             }
 
-            if (newColumn.default !== oldColumn.default || newColumn.isNullable !== oldColumn.isNullable) {
-
+            if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = "";
                 let defaultDown: string = "";
                 let nullableUp:  string = "";
@@ -1113,27 +1110,22 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     if (tableColumn.type.indexOf("(") !== -1)
                         tableColumn.type = tableColumn.type.replace(/\([0-9]*\)/, "");
 
-                    tableColumn.length = dbColumn["CHAR_COL_DECL_LENGTH"] ? dbColumn["CHAR_COL_DECL_LENGTH"].toString() : "";
-                    if (tableColumn.type === "raw") {
-                        tableColumn.length = dbColumn["DATA_LENGTH"].toString();
-                    } else if (tableColumn.type === "clob" || tableColumn.type === "nclob") {
-                        tableColumn.length = "";
+                    // check only columns that have length property
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
+                        const length = tableColumn.type === "raw" ? dbColumn["DATA_LENGTH"] : dbColumn["CHAR_COL_DECL_LENGTH"];
+                        tableColumn.length = length && !this.isDefaultColumnLength(table, tableColumn, length) ? length.toString() : "";
                     }
 
-                    if (tableColumn.type === "number"
-                        || tableColumn.type === "numeric"
-                        || tableColumn.type === "dec"
-                        || tableColumn.type === "decimal"
-                        || tableColumn.type === "float") {
-                        if (dbColumn["DATA_PRECISION"] !== null)
+                    if (tableColumn.type === "number" || tableColumn.type === "float") {
+                        if (dbColumn["DATA_PRECISION"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["DATA_PRECISION"]))
                             tableColumn.precision = dbColumn["DATA_PRECISION"];
-                        if (dbColumn["DATA_SCALE"] !== null)
+                        if (dbColumn["DATA_SCALE"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["DATA_SCALE"]))
                             tableColumn.scale = dbColumn["DATA_SCALE"];
 
                     } else if ((tableColumn.type === "timestamp"
                         || tableColumn.type === "timestamp with time zone"
                         || tableColumn.type === "timestamp with local time zone") && dbColumn["DATA_SCALE"] !== null) {
-                        tableColumn.precision = dbColumn["DATA_SCALE"];
+                        tableColumn.precision = !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["DATA_SCALE"]) ? dbColumn["DATA_SCALE"] : undefined;
                     }
 
                     tableColumn.default = dbColumn["DATA_DEFAULT"] !== null

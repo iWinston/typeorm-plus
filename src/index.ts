@@ -68,6 +68,7 @@ export * from "./decorator/tree/TreeChildren";
 export * from "./decorator/tree/Tree";
 export * from "./decorator/Index";
 export * from "./decorator/Unique";
+export * from "./decorator/Check";
 export * from "./decorator/Generated";
 export * from "./decorator/EntityRepository";
 export * from "./find-options/FindOneOptions";

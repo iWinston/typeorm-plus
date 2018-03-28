@@ -238,32 +238,59 @@ export abstract class BaseQueryRunner {
             || oldColumn.enum !== newColumn.enum;
     }
 
-    protected isDefaultColumnLength(columnType: string, length: string): boolean {
+    /**
+     * Checks if column length is by default.
+     */
+    protected isDefaultColumnLength(table: Table, column: TableColumn, length: string): boolean {
+        // check if length is specified in metadata
+        const metadata = this.connection.getMetadata(table.name);
+        const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+        if (columnMetadata!.length)
+            return false;
+
         if (this.connection.driver.dataTypeDefaults
-            && this.connection.driver.dataTypeDefaults[columnType]
-            && this.connection.driver.dataTypeDefaults[columnType].length) {
-            return this.connection.driver.dataTypeDefaults[columnType].length!.toString() === length.toString();
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].length) {
+            return this.connection.driver.dataTypeDefaults[column.type].length!.toString() === length.toString();
         }
 
         return false;
     }
 
-    protected isDefaultColumnPrecision(columnType: string, precision: number): boolean {
+    /**
+     * Checks if column precision is by default.
+     */
+    protected isDefaultColumnPrecision(table: Table, column: TableColumn, precision: number): boolean {
+        // check if precision is specified in metadata
+        const metadata = this.connection.getMetadata(table.name);
+        const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+        if (columnMetadata!.precision !== null && columnMetadata!.precision !== undefined)
+            return false;
+
         if (this.connection.driver.dataTypeDefaults
-            && this.connection.driver.dataTypeDefaults[columnType]
-            && this.connection.driver.dataTypeDefaults[columnType].precision !== null
-            && this.connection.driver.dataTypeDefaults[columnType].precision !== undefined)
-            return this.connection.driver.dataTypeDefaults[columnType].precision === precision;
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].precision !== null
+            && this.connection.driver.dataTypeDefaults[column.type].precision !== undefined)
+            return this.connection.driver.dataTypeDefaults[column.type].precision === precision;
 
         return false;
     }
 
-    protected isDefaultColumnScale(columnType: string, scale: number): boolean {
+    /**
+     * Checks if column scale is by default.
+     */
+    protected isDefaultColumnScale(table: Table, column: TableColumn, scale: number): boolean {
+        // check if scale is specified in metadata
+        const metadata = this.connection.getMetadata(table.name);
+        const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+        if (columnMetadata!.scale !== null && columnMetadata!.scale !== undefined)
+            return false;
+
         if (this.connection.driver.dataTypeDefaults
-            && this.connection.driver.dataTypeDefaults[columnType]
-            && this.connection.driver.dataTypeDefaults[columnType].scale !== null
-            && this.connection.driver.dataTypeDefaults[columnType].scale !== undefined)
-            return this.connection.driver.dataTypeDefaults[columnType].scale === scale;
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].scale !== null
+            && this.connection.driver.dataTypeDefaults[column.type].scale !== undefined)
+            return this.connection.driver.dataTypeDefaults[column.type].scale === scale;
 
         return false;
     }
