@@ -1,23 +1,16 @@
 import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src";
+import {Any, Between, Connection, Equal, In, IsNull, LessThan, Like, MoreThan, Not} from "../../../../src";
 import {Post} from "./entity/Post";
-import {Not} from "../../../../src/find-options/operator/Not";
-import {LessThan} from "../../../../src/find-options/operator/LessThan";
-import {MoreThan} from "../../../../src/find-options/operator/MoreThan";
-import {Equal} from "../../../../src/find-options/operator/Equal";
-import {Like} from "../../../../src/find-options/operator/Like";
-import {Between} from "../../../../src/find-options/operator/Between";
-import {In} from "../../../../src/find-options/operator/In";
-import {Any} from "../../../../src/find-options/operator/Any";
-import {IsNull} from "../../../../src/find-options/operator/IsNull";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
+import {Raw} from "../../../../src/find-options/operator/Raw";
 
 describe("repository > find options > operators", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -382,6 +375,46 @@ describe("repository > find options > operators", () => {
             title: Not(IsNull())
         });
         loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+
+    })));
+
+    it("raw", () => Promise.all(connections.map(async connection => {
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "About #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "About #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+
+        // check operator
+        const loadedPosts = await connection.getRepository(Post).find({
+            likes: Raw("12")
+        });
+        loadedPosts.should.be.eql([{ id: 1, likes: 12, title: "About #1" }]);
+
+    })));
+
+    it("raw (function)", () => Promise.all(connections.map(async connection => {
+
+        // insert some fake data
+        const post1 = new Post();
+        post1.title = "About #1";
+        post1.likes = 12;
+        await connection.manager.save(post1);
+        const post2 = new Post();
+        post2.title = "About #2";
+        post2.likes = 3;
+        await connection.manager.save(post2);
+
+        // check operator
+        const loadedPosts = await connection.getRepository(Post).find({
+            likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
+        });
+        loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
 
     })));
 

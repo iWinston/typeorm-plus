@@ -108,6 +108,12 @@ export class FindOperator<T> {
                 return `${aliasPath} = ANY(${parameters[0]})`;
             case "isNull":
                 return `${aliasPath} IS NULL`;
+            case "raw":
+                if (this.value instanceof Function) {
+                    return this.value(aliasPath);
+                } else {
+                    return `${aliasPath} = ${this.value}`;
+                }
         }
 
         return "";
