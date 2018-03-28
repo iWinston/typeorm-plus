@@ -643,6 +643,52 @@ export class EntityManager {
     }
 
     /**
+     * Increments some column by provided value of the entities matched given conditions.
+     */
+    async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
+                            conditions: DeepPartial<Entity>,
+                            propertyPath: string,
+                            value: number): Promise<void> {
+
+        const metadata = this.connection.getMetadata(entityClass);
+        const column = metadata.findColumnWithPropertyPath(propertyPath);
+        if (!column)
+            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+
+        await this
+            .createQueryBuilder(entityClass, "entity")
+            .update(entityClass)
+            .set({
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + Number(value)
+            })
+            .where(conditions)
+            .execute();
+    }
+
+    /**
+     * Decrements some column by provided value of the entities matched given conditions.
+     */
+    async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
+                            conditions: DeepPartial<Entity>,
+                            propertyPath: string,
+                            value: number): Promise<void> {
+
+        const metadata = this.connection.getMetadata(entityClass);
+        const column = metadata.findColumnWithPropertyPath(propertyPath);
+        if (!column)
+            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+
+        await this
+            .createQueryBuilder(entityClass, "entity")
+            .update(entityClass)
+            .set({
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + Number(value)
+            })
+            .where(conditions)
+            .execute();
+    }
+
+    /**
      * Gets repository for the given entity class or name.
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
