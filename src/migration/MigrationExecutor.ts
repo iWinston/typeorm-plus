@@ -94,7 +94,7 @@ export class MigrationExecutor {
         this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
         this.connection.logger.logSchemaBuild(`${allMigrations.length} migrations were found in the source code.`);
         if (lastTimeExecutedMigration)
-            this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
+            this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
         this.connection.logger.logSchemaBuild(`${pendingMigrations.length} migrations are new migrations that needs to be executed.`);
 
         // start transaction if its not started yet
@@ -172,7 +172,7 @@ export class MigrationExecutor {
 
         // log information about migration execution
         this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
-        this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp * 1000).toString()}.`);
+        this.connection.logger.logSchemaBuild(`${lastTimeExecutedMigration.name} is the last executed migration. It was executed on ${new Date(lastTimeExecutedMigration.timestamp).toString()}.`);
         this.connection.logger.logSchemaBuild(`Now reverting it...`);
 
         // start transaction if its not started yet
@@ -226,6 +226,7 @@ export class MigrationExecutor {
                             name: "id",
                             type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.migrationId}),
                             isGenerated: true,
+                            generationStrategy: "increment",
                             isPrimary: true,
                             isNullable: false
                         },
@@ -257,7 +258,7 @@ export class MigrationExecutor {
             .getRawMany();
 
         return migrationsRaw.map(migrationRaw => {
-            return new Migration(parseInt(migrationRaw["timestamp"]), migrationRaw["name"]);
+            return new Migration(parseInt(migrationRaw["id"]), parseInt(migrationRaw["timestamp"]), migrationRaw["name"]);
         });
     }
 
@@ -271,7 +272,7 @@ export class MigrationExecutor {
             if (!migrationTimestamp)
                 throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a UNIX timestamp appended. `);
 
-            return new Migration(migrationTimestamp, migrationClassName, migration);
+            return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
         });
 
         // sort them by timestamp
@@ -290,7 +291,7 @@ export class MigrationExecutor {
      * Finds the latest migration (sorts by id) in the given array of migrations.
      */
     protected getLatestExecutedMigration(migrations: Migration[]): Migration|undefined {
-        const sortedMigrations = migrations.map(migration => migration).sort((a, b) => (a.id - b.id) * -1);
+        const sortedMigrations = migrations.map(migration => migration).sort((a, b) => ((a.id || 0) - (b.id || 0)) * -1);
         return sortedMigrations.length > 0 ? sortedMigrations[0] : undefined;
     }
 

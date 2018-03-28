@@ -42,7 +42,7 @@ export class MigrationRunCommand {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["schema"]
+                logging: ["query", "error", "schema"]
             });
             connection = await createConnection(connectionOptions);
 

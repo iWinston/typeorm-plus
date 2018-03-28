@@ -18,6 +18,11 @@ export class MigrationRevertCommand {
                 default: "default",
                 describe: "Name of the connection on which run a query."
             })
+            .option("transaction", {
+                alias: "t",
+                default: "default",
+                describe: "Indicates if transaction should be used or not for migration revert. Enabled by default."
+            })
             .option("f", {
                 alias: "config",
                 default: "ormconfig",
@@ -36,10 +41,13 @@ export class MigrationRevertCommand {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["schema"]
+                logging: ["query", "error", "schema"]
             });
             connection = await createConnection(connectionOptions);
-            await connection.undoLastMigration();
+            const options = {
+                transaction: argv["t"] === "false" ? false : true
+            };
+            await connection.undoLastMigration(options);
             await connection.close();
 
         } catch (err) {
