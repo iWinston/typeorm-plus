@@ -32,6 +32,7 @@ import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {abbreviate} from "../util/StringUtils";
+import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1263,6 +1264,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return this;
     }
 
+    /**
+     * Sets extra options that can be used to configure how query builder works.
+     */
+    setOption(option: SelectQueryBuilderOption): this {
+        this.expressionMap.options.push(option);
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -1698,6 +1707,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .skip(undefined)
             .take(undefined)
             .select(countSql)
+            .setOption("disable-global-order")
             .loadRawResults(queryRunner);
 
         if (!results || !results[0] || !results[0]["cnt"])
