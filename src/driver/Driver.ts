@@ -48,6 +48,11 @@ export interface Driver {
     dataTypeDefaults: DataTypeDefaults;
 
     /**
+     * Gets list of spatial column data types.
+     */
+    spatialTypes: ColumnType[];
+
+    /**
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[];

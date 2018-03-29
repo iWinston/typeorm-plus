@@ -136,6 +136,7 @@ export type SimpleColumnType =
     |"circle" // postgres
     |"path" // postgres
     |"polygon" // postgres, mysql
+    |"geography" // mssql
     |"geometry" // mysql
     |"linestring" // mysql
     |"multipoint" // mysql

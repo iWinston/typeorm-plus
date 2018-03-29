@@ -6,7 +6,7 @@ import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
 
-describe("database schema > column types > mssql", () => {
+describe.skip("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
     let connections: Connection[];
     before(async () => {
@@ -61,6 +61,9 @@ describe("database schema > column types > mssql", () => {
         post.timeObj = new Date();
         post.time = "15:30:00";
         post.datetimeoffset = new Date();
+        post.geometry1 = "LINESTRING (100 100, 20 180, 180 180)";
+        post.geometry2 = "POLYGON ((0 0, 150 0, 150 150, 0 150, 0 0))";
+        post.geometry3 = "GEOMETRYCOLLECTION (POINT (4 0), LINESTRING (4 2, 5 3), POLYGON ((0 0, 3 0, 3 3, 0 3, 0 0), (1 1, 1 2, 2 2, 2 1, 1 1)))";
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
         await postRepository.save(post);
@@ -97,6 +100,9 @@ describe("database schema > column types > mssql", () => {
         // loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
         // loadedPost.datetime2.getTime().should.be.equal(post.datetime2.getTime());
         // loadedPost.datetimeoffset.getTime().should.be.equal(post.datetimeoffset.getTime());
+        loadedPost.geometry1.should.be.equal(post.geometry1);
+        loadedPost.geometry2.should.be.equal(post.geometry2);
+        loadedPost.geometry3.should.be.equal(post.geometry3);
         loadedPost.smalldatetime.getTime().should.be.equal(post.smalldatetime.getTime());
         loadedPost.timeObj.should.be.equal(DateUtils.mixedTimeToString(post.timeObj));
         loadedPost.time.should.be.equal(post.time);
@@ -140,6 +146,7 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("time")!.type.should.be.equal("time");
         table!.findColumnByName("timeObj")!.type.should.be.equal("time");
         table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
+        table!.findColumnByName("geometry1")!.type.should.be.equal("geometry");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("ntext");
 

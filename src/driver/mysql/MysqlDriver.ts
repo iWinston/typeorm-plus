@@ -118,6 +118,9 @@ export class MysqlDriver implements Driver {
         "geometrycollection"
     ];
 
+    /**
+     * Gets list of spatial column data types.
+     */
     spatialTypes: ColumnType[] = [
         "geometry",
         "point",

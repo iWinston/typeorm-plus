@@ -111,7 +111,17 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"
+        "xml",
+        "geometry",
+        "geography"
+    ];
+
+    /**
+     * Gets list of spatial column data types.
+     */
+    spatialTypes: ColumnType[] = [
+        "geometry",
+        "geography"
     ];
 
     /**
