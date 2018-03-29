@@ -1652,8 +1652,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
+            let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
+            if (this.connection.driver instanceof MysqlDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                selectionPath = `AsText(${selectionPath})`;
+            }
             return {
-                selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
+                selection: selectionPath,
                 aliasName: selection && selection.aliasName ? selection.aliasName : this.buildColumnAlias(aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),

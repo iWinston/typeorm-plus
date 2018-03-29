@@ -416,7 +416,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         //     value = new ArrayParameter(value);
 
                         this.expressionMap.nativeParameters[paramName] = value;
-                        expression += this.connection.driver.createParameter(paramName, parametersCount);
+                        if (this.connection.driver instanceof MysqlDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                            expression += `GeomFromText(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                        } else {
+                            expression += this.connection.driver.createParameter(paramName, parametersCount);
+                        }
                         parametersCount++;
                     }
 

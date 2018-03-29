@@ -108,7 +108,25 @@ export class MysqlDriver implements Driver {
         "enum",
         "json",
         "binary",
-        "bit"
+        "geometry",
+        "point",
+        "linestring",
+        "polygon",
+        "multipoint",
+        "multilinestring",
+        "multipolygon",
+        "geometrycollection"
+    ];
+
+    spatialTypes: ColumnType[] = [
+        "geometry",
+        "point",
+        "linestring",
+        "polygon",
+        "multipoint",
+        "multilinestring",
+        "multipolygon",
+        "geometrycollection"
     ];
 
     /**

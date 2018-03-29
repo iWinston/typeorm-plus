@@ -129,13 +129,19 @@ export type SimpleColumnType =
     |"year" // mysql
 
     // geometric types
-    |"point" // postgres
+    |"point" // postgres, mysql
     |"line" // postgres
     |"lseg" // postgres
     |"box" // postgres
     |"circle" // postgres
     |"path" // postgres
-    |"polygon" // postgres
+    |"polygon" // postgres, mysql
+    |"geometry" // mysql
+    |"linestring" // mysql
+    |"multipoint" // mysql
+    |"multilinestring" // mysql
+    |"multipolygon" // mysql
+    |"geometrycollection" // mysql
 
     // other types
     |"enum" // mysql, postgres

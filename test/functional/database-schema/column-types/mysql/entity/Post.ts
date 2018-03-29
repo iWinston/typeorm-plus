@@ -6,11 +6,12 @@ import {FruitEnum} from "../enum/FruitEnum";
 @Entity()
 export class Post {
 
+    // -------------------------------------------------------------------------
+    // Numeric Types
+    // -------------------------------------------------------------------------
+
     @PrimaryColumn()
     id: number;
-
-    @Column()
-    name: string;
 
     @Column("int")
     int: number;
@@ -36,6 +37,48 @@ export class Post {
     @Column("decimal")
     decimal: string;
 
+    // -------------------------------------------------------------------------
+    // String Types
+    // -------------------------------------------------------------------------
+
+    @Column("char")
+    char: string;
+
+    @Column("varchar")
+    varchar: string;
+
+    @Column("text")
+    text: string;
+
+    @Column("tinytext")
+    tinytext: string;
+
+    @Column("mediumtext")
+    mediumtext: string;
+
+    @Column("longtext")
+    longtext: string;
+
+    // -------------------------------------------------------------------------
+    // LOB Types
+    // -------------------------------------------------------------------------
+
+    @Column("blob")
+    blob: Buffer;
+
+    @Column("tinyblob")
+    tinyblob: Buffer;
+
+    @Column("mediumblob")
+    mediumblob: Buffer;
+
+    @Column("longblob")
+    longblob: Buffer;
+
+    // -------------------------------------------------------------------------
+    // Date Types
+    // -------------------------------------------------------------------------
+
     @Column("date")
     date: string;
 
@@ -51,35 +94,37 @@ export class Post {
     @Column("year")
     year: number;
 
-    @Column("char")
-    char: string;
+    // -------------------------------------------------------------------------
+    // Spatial Types
+    // -------------------------------------------------------------------------
 
-    @Column("varchar")
-    varchar: string;
+    @Column("geometry")
+    geometry: string;
 
-    @Column("blob")
-    blob: Buffer;
+    @Column("point")
+    point: string;
 
-    @Column("text")
-    text: string;
+    @Column("linestring")
+    linestring: string;
 
-    @Column("tinyblob")
-    tinyblob: Buffer;
+    @Column("polygon")
+    polygon: string;
 
-    @Column("tinytext")
-    tinytext: string;
+    @Column("multipoint")
+    multipoint: string;
 
-    @Column("mediumblob")
-    mediumblob: Buffer;
+    @Column("multilinestring")
+    multilinestring: string;
 
-    @Column("mediumtext")
-    mediumtext: string;
+    @Column("multipolygon")
+    multipolygon: string;
 
-    @Column("longblob")
-    longblob: Buffer;
+    @Column("geometrycollection")
+    geometrycollection: string;
 
-    @Column("longtext")
-    longtext: string;
+    // -------------------------------------------------------------------------
+    // Other Types
+    // -------------------------------------------------------------------------
 
     @Column("enum", { enum: ["A", "B", "C"] })
     enum: string;
