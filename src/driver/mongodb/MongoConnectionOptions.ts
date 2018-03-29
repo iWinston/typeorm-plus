@@ -245,4 +245,8 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      */
     readonly loggerLevel?: "error"|"warn"|"info"|"debug";
 
+    /**
+     * Specifies the list of authentication mechanisms the server accepts.
+     */
+    readonly authMechanism?: string;
 }
