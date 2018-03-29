@@ -1871,12 +1871,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected async loadRawResults(queryRunner: QueryRunner) {
         const [sql, parameters] = this.getQueryAndParameters();
+        const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters);
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
             savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
                 identifier: this.expressionMap.cacheId,
-                query: this.getSql(),
+                query: queryId,
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
             }, queryRunner);
             if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
@@ -1888,7 +1889,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
             await this.connection.queryResultCache.storeInCache({
                 identifier: this.expressionMap.cacheId,
-                query: this.getSql(),
+                query: queryId,
                 time: new Date().getTime(),
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
                 result: JSON.stringify(results)

@@ -9,7 +9,7 @@ import {
 import {Connection} from "../../../../src/connection/Connection";
 import {User} from "./entity/User";
 
-describe("query builder > cache", () => {
+describe.only("query builder > cache", () => {
     
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
