@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Account} from "./entity/Post";
+import {Account} from "./entity/Account";
 import {PromiseUtils} from "../../../src";
 
 describe("github issues > #1805 bigint PK incorrectly returning as a number (expecting a string)", () => {

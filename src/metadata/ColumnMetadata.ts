@@ -123,6 +123,17 @@ export class ColumnMetadata {
     scale?: number;
 
     /**
+     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
+     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
+     */
+    zerofill: boolean = false;
+
+    /**
+     * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
+     */
+    unsigned: boolean = false;
+
+    /**
      * Array of possible enumerated values.
      */
     enum?: any[];
@@ -294,6 +305,12 @@ export class ColumnMetadata {
             this.default = options.args.options.default;
         if (options.args.options.scale !== null && options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
+        if (options.args.options.zerofill) {
+            this.zerofill = options.args.options.zerofill;
+            this.unsigned = true; // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
+        }
+        if (options.args.options.unsigned)
+            this.unsigned = options.args.options.unsigned;
         if (options.args.options.precision !== null && options.args.options.precision !== undefined)
             this.precision = options.args.options.precision;
         if (options.args.options.enum) {

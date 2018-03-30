@@ -232,6 +232,8 @@ export abstract class BaseQueryRunner {
             || oldColumn.collation !== newColumn.collation
             || oldColumn.precision !== newColumn.precision
             || oldColumn.scale !== newColumn.scale
+            || oldColumn.zerofill !== newColumn.zerofill
+            || oldColumn.unsigned !== newColumn.unsigned
             || (checkDefault && oldColumn.default !== newColumn.default)
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)

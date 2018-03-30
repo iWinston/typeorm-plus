@@ -25,6 +25,7 @@ import {InitializedRelationError} from "../error/InitializedRelationError";
 // todo: MetadataArgsStorage: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
 // todo: MetadataArgsStorage: check for duplicate targets too since this check has been removed too
 // todo: check if relation decorator contains primary: true and nullable: true
+// todo: check column length, precision. scale
 
 /**
  * Validates built entity metadatas.

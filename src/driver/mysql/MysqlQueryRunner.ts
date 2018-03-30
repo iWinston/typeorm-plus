@@ -1132,6 +1132,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => dbPrimaryKey["COLUMN_NAME"] === tableColumn.name);
+                    tableColumn.zerofill = dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1;
+                    tableColumn.unsigned = tableColumn.zerofill ? true : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1;
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
@@ -1364,6 +1366,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c = this.connection.driver.createFullType(column);
         } else {
             c = "`" + column.name + "` " + this.connection.driver.createFullType(column);
+        }
+        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column.
+        if (column.zerofill) {
+            c += " ZEROFILL";
+        } else if (column.unsigned) {
+            c += " UNSIGNED";
         }
         if (column.enum)
             c += " (" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";

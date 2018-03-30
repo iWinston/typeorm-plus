@@ -88,6 +88,17 @@ export class TableColumn {
     scale?: number;
 
     /**
+     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
+     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
+     */
+    zerofill?: boolean;
+
+    /**
+     * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
+     */
+    unsigned?: boolean;
+
+    /**
      * Array of possible enumerated values.
      */
     enum?: any[];
@@ -105,6 +116,8 @@ export class TableColumn {
             this.collation = options.collation;
             this.precision = options.precision;
             this.scale = options.scale;
+            this.zerofill = options.zerofill;
+            this.unsigned = this.zerofill ? true : options.unsigned;
             this.default = options.default;
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
@@ -133,6 +146,8 @@ export class TableColumn {
             collation: this.collation,
             precision: this.precision,
             scale: this.scale,
+            zerofill: this.zerofill,
+            unsigned: this.unsigned,
             enum: this.enum,
             default: this.default,
             isNullable: this.isNullable,

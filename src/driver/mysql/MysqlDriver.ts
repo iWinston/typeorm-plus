@@ -155,12 +155,26 @@ export class MysqlDriver implements Driver {
     ];
 
     /**
-     * Gets list of column data types that support scale by a driver.
+     * Gets list of column data types that supports scale by a driver.
      */
     withScaleColumnTypes: ColumnType[] = [
         "decimal",
         "float",
         "double",
+    ];
+
+    /**
+     * Gets list of column data types that supports UNSIGNED and ZEROFILL attributes.
+     */
+    unsignedAndZerofillTypes: ColumnType[] = [
+        "int",
+        "smallint",
+        "tinyint",
+        "mediumint",
+        "bigint",
+        "decimal",
+        "float",
+        "double"
     ];
 
     /**
@@ -583,6 +597,8 @@ export class MysqlDriver implements Driver {
             // console.log("length:", tableColumn.length, columnMetadata.length);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            // console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
+            // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
@@ -597,6 +613,8 @@ export class MysqlDriver implements Driver {
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
+                || tableColumn.zerofill !== columnMetadata.zerofill
+                || tableColumn.unsigned !== columnMetadata.unsigned
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary

@@ -12,6 +12,8 @@ export class TableUtils {
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,
             scale: columnMetadata.scale,
+            zerofill: columnMetadata.zerofill,
+            unsigned: columnMetadata.unsigned,
             default: driver.normalizeDefault(columnMetadata),
             comment: columnMetadata.comment,
             isGenerated: columnMetadata.isGenerated,

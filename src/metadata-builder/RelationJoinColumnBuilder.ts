@@ -145,6 +145,8 @@ export class RelationJoinColumnBuilder {
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,
                             scale: referencedColumn.scale,
+                            zerofill: referencedColumn.zerofill,
+                            unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             primary: relation.isPrimary,
                             nullable: relation.isNullable
