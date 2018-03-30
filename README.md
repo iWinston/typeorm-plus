@@ -598,6 +598,7 @@ Now let's create a new photo to save it in the database:
 
 ```typescript
 import {createConnection} from "typeorm";
+import {Photo} from "./entity/Photo";
 
 createConnection(/*...*/).then(connection => {
 
