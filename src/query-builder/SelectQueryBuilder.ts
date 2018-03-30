@@ -1653,8 +1653,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
             let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
-            if (this.connection.driver instanceof MysqlDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                selectionPath = `AsText(${selectionPath})`;
+            if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                if (this.connection.driver instanceof MysqlDriver)
+                    selectionPath = `AsText(${selectionPath})`;
+
+                if (this.connection.driver instanceof SqlServerDriver)
+                    selectionPath = `${selectionPath}.ToString()`;
             }
             return {
                 selection: selectionPath,

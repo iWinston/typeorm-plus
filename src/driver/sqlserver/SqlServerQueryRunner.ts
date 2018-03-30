@@ -1912,10 +1912,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return this.driver.mssql.Image;
             case "udt":
                 return this.driver.mssql.UDT;
-            case "geography":
-                return this.driver.mssql.Geography;
-            case "geometry":
-                return this.driver.mssql.Geometry;
         }
     }
 

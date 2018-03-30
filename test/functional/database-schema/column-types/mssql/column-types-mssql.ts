@@ -6,7 +6,7 @@ import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
 
-describe.skip("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
+describe("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
     let connections: Connection[];
     before(async () => {
