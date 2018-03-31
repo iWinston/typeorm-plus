@@ -1365,7 +1365,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (skipName) {
             c = this.connection.driver.createFullType(column);
         } else {
-            c = "`" + column.name + "` " + this.connection.driver.createFullType(column);
+            c = `\`${column.name}\` ${this.connection.driver.createFullType(column)}`;
         }
         // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column.
         if (column.zerofill) {
@@ -1374,11 +1374,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " UNSIGNED";
         }
         if (column.enum)
-            c += " (" + column.enum.map(value => "'" + value + "'").join(", ") +  ")";
+            c += ` (${column.enum.map(value => "'" + value + "'").join(", ")})`;
         if (column.charset)
-            c += " CHARACTER SET " + column.charset;
+            c += ` CHARACTER SET "${column.charset}"`;
         if (column.collation)
-            c += " COLLATE " + column.collation;
+            c += ` COLLATE "${column.collation}"`;
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isNullable === true)
@@ -1388,9 +1388,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
-            c += " COMMENT '" + column.comment + "'";
+            c += ` COMMENT '${column.comment}'`;
         if (column.default !== undefined && column.default !== null)
-            c += " DEFAULT " + column.default;
+            c += ` DEFAULT ${column.default}`;
 
         return c;
     }
