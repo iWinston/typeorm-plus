@@ -7,7 +7,7 @@ const chalk = require("chalk");
  */
 export class MigrationCreateCommand {
 
-    command = "migrations:create";
+    command = "migration:create";
     describe = "Creates a new migration file.";
 
     builder(yargs: any) {

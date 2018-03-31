@@ -24,6 +24,8 @@ import {InitializedRelationError} from "../error/InitializedRelationError";
 // todo: MetadataArgsStorage: check on build for duplicate names, since naming checking was removed from MetadataStorage
 // todo: MetadataArgsStorage: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
 // todo: MetadataArgsStorage: check for duplicate targets too since this check has been removed too
+// todo: check if relation decorator contains primary: true and nullable: true
+// todo: check column length, precision. scale
 
 /**
  * Validates built entity metadatas.
@@ -83,11 +85,11 @@ export class EntityMetadataValidator {
             });
         }
 
-       /* if (driver instanceof MysqlDriver) {
+        if (driver instanceof MysqlDriver) {
             const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
             if (generatedColumns.length > 1)
                 throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
-        }*/
+        }
 
         // for mysql we are able to not define a default selected database, instead all entities can have their database
         // defined in their decorators. To make everything work either all entities must have database define and we

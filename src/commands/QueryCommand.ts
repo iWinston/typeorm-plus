@@ -44,7 +44,7 @@ export class QueryCommand {
             connection = await createConnection(connectionOptions);
 
             // create a query runner and execute query using it
-            queryRunner = await connection.createQueryRunner("master");
+            queryRunner = connection.createQueryRunner("master");
             console.log(chalk.green("Running query: ") + PlatformTools.highlightSql(argv._[1]));
             const queryResult = await queryRunner.query(argv._[1]);
             console.log(chalk.green("Query has been executed. Result: "));

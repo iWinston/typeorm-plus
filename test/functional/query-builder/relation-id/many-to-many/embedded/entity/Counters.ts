@@ -16,10 +16,10 @@ export class Counters {
     favorites: number;
 
     @ManyToMany(type => Category, category => category.posts)
-    @JoinTable()
+    @JoinTable({ name: "counter_categories" })
     categories: Category[];
 
-    @Column(() => Subcounters)
+    @Column(() => Subcounters, { prefix: "subcnt" })
     subcounters: Subcounters;
 
     categoryIds: number[];

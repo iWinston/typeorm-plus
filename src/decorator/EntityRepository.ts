@@ -1,17 +1,17 @@
-import {getMetadataArgsStorage} from "../index";
+import {getMetadataArgsStorage} from "../";
 import {EntityRepositoryMetadataArgs} from "../metadata-args/EntityRepositoryMetadataArgs";
 
 /**
  * Used to declare a class as a custom repository.
- * Custom repository can either manage some specific entity, either just be generic.
- * Custom repository can extend AbstractRepository or regular Repository or TreeRepository.
+ * Custom repository can manage some specific entity or just be generic.
+ * Custom repository optionally can extend AbstractRepository, Repository or TreeRepository.
  */
 export function EntityRepository(entity?: Function): Function {
     return function (target: Function) {
-        const args: EntityRepositoryMetadataArgs = {
+
+        getMetadataArgsStorage().entityRepositories.push({
             target: target,
             entity: entity,
-        };
-        getMetadataArgsStorage().entityRepositories.push(args);
+        } as EntityRepositoryMetadataArgs);
     };
 }

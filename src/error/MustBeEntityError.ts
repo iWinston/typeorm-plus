@@ -6,8 +6,8 @@ export class MustBeEntityError extends Error {
 
     constructor(operation: string, wrongValue: any) {
         super();
+        Object.setPrototypeOf(this, MustBeEntityError.prototype);
         this.message = `Cannot ${operation}, given value must be an entity, instead "${wrongValue}" is given.`;
-        this.stack = new Error().stack;
     }
 
 }

@@ -6,10 +6,10 @@ export class NoNeedToReleaseEntityManagerError extends Error {
 
     constructor() {
         super();
+        Object.setPrototypeOf(this, NoNeedToReleaseEntityManagerError.prototype);
         this.message = `Entity manager is not using single database connection and cannot be released. ` +
             `Only entity managers created by connection#createEntityManagerWithSingleDatabaseConnection ` +
             `methods have a single database connection and they should be released.`;
-        this.stack = new Error().stack;
     }
 
 }

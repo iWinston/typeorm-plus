@@ -2,6 +2,10 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 
 export class OrmUtils {
 
+    // -------------------------------------------------------------------------
+    // Public methods
+    // -------------------------------------------------------------------------
+
     /**
      * Chunks array into peaces.
      */
@@ -140,6 +144,20 @@ export class OrmUtils {
             return object;
         }, {} as ObjectLiteral);
     }
+
+    /**
+     * Compares two arrays.
+     */
+    static isArraysEqual(arr1: any[], arr2: any[]): boolean {
+        if (arr1.length !== arr2.length) return false;
+        return arr1.every(element => {
+            return arr2.indexOf(element) !== -1;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Private methods
+    // -------------------------------------------------------------------------
 
     private static compare2Objects(leftChain: any, rightChain: any, x: any, y: any) {
         let p;

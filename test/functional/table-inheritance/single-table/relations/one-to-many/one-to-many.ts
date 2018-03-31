@@ -78,6 +78,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
             .createQueryBuilder(Student, "student")
             .leftJoinAndSelect("student.faculties", "faculty")
             .where("student.name = :name", { name: "Alice" })
+            .orderBy("student.id, faculty.id")
             .getOne();
 
         loadedStudent!.should.have.all.keys("id", "name", "faculties");
@@ -91,6 +92,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
             .createQueryBuilder(Teacher, "teacher")
                 .leftJoinAndSelect("teacher.specializations", "specialization")
                 .where("teacher.name = :name", { name: "Mr. Garrison" })
+                .orderBy("teacher.id, specialization.id")
                 .getOne();
 
         loadedTeacher!.should.have.all.keys("id", "name", "specializations", "salary");
@@ -105,6 +107,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
             .createQueryBuilder(Accountant, "accountant")
             .leftJoinAndSelect("accountant.departments", "department")
             .where("accountant.name = :name", { name: "Mr. Burns" })
+            .orderBy("accountant.id, department.id")
             .getOne();
 
         loadedAccountant!.should.have.all.keys("id", "name", "departments", "salary");

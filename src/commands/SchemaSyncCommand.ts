@@ -38,7 +38,7 @@ export class SchemaSyncCommand {
                 logging: ["query", "schema"]
             });
             connection = await createConnection(connectionOptions);
-            await connection.synchronize(false);
+            await connection.synchronize();
             await connection.close();
 
             console.log(chalk.green("Schema syncronization finished successfully."));

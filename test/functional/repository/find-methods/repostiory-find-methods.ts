@@ -5,6 +5,7 @@ import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {User} from "./model/User";
 import {EntityNotFoundError} from "../../../../src/error/EntityNotFoundError";
+import {EntitySchema} from "../../../../src";
 
 describe("repository > find methods", () => {
 
@@ -16,11 +17,11 @@ describe("repository > find methods", () => {
         const resourceDir = __dirname + "/";
         userSchema = require(resourceDir + "schema/user.json");
     }
+    const UserEntity = new EntitySchema<any>(userSchema);
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post],
-        entitySchemas: [userSchema],
+        entities: [Post, UserEntity],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

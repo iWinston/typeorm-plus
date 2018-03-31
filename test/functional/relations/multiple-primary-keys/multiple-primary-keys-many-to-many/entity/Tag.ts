@@ -41,7 +41,7 @@ export class Tag {
     })
     categoriesWithOptions: Category[];
 
-    @ManyToMany(type => Category, category => category.tagsWithNonPrimaryColumns)
+    @ManyToMany(type => Category, category => category.tagsWithNonPKColumns)
     @JoinTable({
         name: "tag_categories_non_primary",
         joinColumns: [{
@@ -62,6 +62,6 @@ export class Tag {
             referencedColumnName: "description"
         }]
     })
-    categoriesWithNonPrimaryColumns: Category[];
+    categoriesWithNonPKColumns: Category[];
 
 }

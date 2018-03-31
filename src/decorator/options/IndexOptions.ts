@@ -1,5 +1,5 @@
 /**
- * Describes all composite index's options.
+ * Describes all index options.
  */
 export interface IndexOptions {
 
@@ -7,6 +7,11 @@ export interface IndexOptions {
      * Indicates if this composite index must be unique or not.
      */
     unique?: boolean;
+
+    /**
+     * Index filter condition.
+     */
+    where?: string;
 
     /**
      * If true, the index only references documents with the specified field.

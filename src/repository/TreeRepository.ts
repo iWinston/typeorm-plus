@@ -121,15 +121,15 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 .createQueryBuilder(alias)
                 .where(qb => {
                     const subQuery = qb.subQuery()
-                        .select(this.metadata.materializedPathColumn!.propertyPath, "path")
+                        .select(`${this.metadata.targetName}.${this.metadata.materializedPathColumn!.propertyPath}`, "path")
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
                     qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
-                        return this.metadata.materializedPathColumn!.propertyPath + " LIKE " + subQuery.getQuery() + " || '%'";
+                        return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE ${subQuery.getQuery()} || '%'`;
                     } else {
-                        return this.metadata.materializedPathColumn!.propertyPath + " LIKE CONCAT(" + subQuery.getQuery() + ", '%')";
+                        return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE CONCAT(${subQuery.getQuery()}, '%')`;
                     }
                 });
         }
@@ -176,17 +176,17 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     createAncestorsQueryBuilder(alias: string, closureTableAlias: string, entity: Entity): SelectQueryBuilder<Entity> {
 
         // create shortcuts for better readability
-        const escape = (alias: string) => this.manager.connection.driver.escape(alias);
+        // const escape = (alias: string) => this.manager.connection.driver.escape(alias);
 
         if (this.metadata.treeType === "closure-table") {
             const joinCondition = this.metadata.closureJunctionTable.ancestorColumns.map(column => {
-                return escape(closureTableAlias) + "." + escape(column.propertyPath) + " = " + escape(alias) + "." + escape(column.referencedColumn!.propertyPath);
+                return closureTableAlias + "." + column.propertyPath + " = " + alias + "." + column.referencedColumn!.propertyPath;
             }).join(" AND ");
 
             const parameters: ObjectLiteral = {};
             const whereCondition = this.metadata.closureJunctionTable.descendantColumns.map(column => {
                 parameters[column.referencedColumn!.propertyName] = column.referencedColumn!.getEntityValue(entity);
-                return escape(closureTableAlias) + "." + escape(column.propertyPath) + " = :" + column.referencedColumn!.propertyName;
+                return closureTableAlias + "." + column.propertyPath + " = :" + column.referencedColumn!.propertyName;
             }).join(" AND ");
 
             return this
@@ -213,21 +213,21 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
 
         } else if (this.metadata.treeType === "materialized-path") {
-            // example: SELECT * FROM category WHERE (SELECT mpath FROM `category` WHERE id = 2) LIKE CONCAT(mpath, '%');
+            // example: SELECT * FROM category category WHERE (SELECT mpath FROM `category` WHERE id = 2) LIKE CONCAT(category.mpath, '%');
             return this
                 .createQueryBuilder(alias)
                 .where(qb => {
                     const subQuery = qb.subQuery()
-                        .select(this.metadata.materializedPathColumn!.propertyPath, "path")
+                        .select(`${this.metadata.targetName}.${this.metadata.materializedPathColumn!.propertyPath}`, "path")
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
                     qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
-                        return subQuery.getQuery() + " LIKE " + this.metadata.materializedPathColumn!.propertyPath + " || '%'";
+                        return `${subQuery.getQuery()} LIKE ${alias}.${this.metadata.materializedPathColumn!.propertyPath} || '%'`;
 
                     } else {
-                        return subQuery.getQuery() + " LIKE CONCAT(" + this.metadata.materializedPathColumn!.propertyPath + ", '%')";
+                        return `${subQuery.getQuery()} LIKE CONCAT(${alias}.${this.metadata.materializedPathColumn!.propertyPath}, '%')`;
                     }
                 });
         }

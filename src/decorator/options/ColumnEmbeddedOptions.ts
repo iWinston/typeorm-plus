@@ -1,5 +1,5 @@
 /**
- * Column options specific to all column types.
+ * Column options specific to embedded column.
  */
 export interface ColumnEmbeddedOptions {
 

@@ -185,7 +185,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
         expect(loadedPost3!.image).to.be.null;
     })));
 
-    it("should set entity relation of a multiple entities", () => Promise.all(connections.map(async connection => {
+    it("should raise error when setting entity relation of a multiple entities", () => Promise.all(connections.map(async connection => {
 
         const image1 = new Image();
         image1.url = "image #1";
@@ -211,34 +211,26 @@ describe("query builder > relational query builder > set operation > one-to-one 
         post3.title = "post #3";
         await connection.manager.save(post3);
 
-        await connection
-            .createQueryBuilder()
-            .relation(Post, "image")
-            .of([{ id: 1 }, { id: 3 }])
-            .set({ id: 3 });
+        let error: null | Error = null;
+        try {
+            await connection
+                .createQueryBuilder()
+                .relation(Post, "image")
+                .of([{ id: 1 }, { id: 3 }])
+                .set({ id: 3 });
+        } catch (e) {
+            error = e;
+        }
+
+        expect(error).to.be.instanceof(Error);
 
         let loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.eql({ id: 3, url: "image #3" });
+        expect(loadedPost1!.image).to.be.null;
 
         let loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
         expect(loadedPost2!.image).to.be.null;
 
         let loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
-        expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" });
-
-        await connection
-            .createQueryBuilder()
-            .relation(Post, "image")
-            .of([{ id: 1 }, { id: 3 }])
-            .set(null);
-
-        loadedPost1 = await connection.manager.findOne(Post, 1, { relations: ["image"] });
-        expect(loadedPost1!.image).to.be.null;
-
-        loadedPost2 = await connection.manager.findOne(Post, 2, { relations: ["image"] });
-        expect(loadedPost2!.image).to.be.null;
-
-        loadedPost3 = await connection.manager.findOne(Post, 3, { relations: ["image"] });
         expect(loadedPost3!.image).to.be.null;
     })));
 

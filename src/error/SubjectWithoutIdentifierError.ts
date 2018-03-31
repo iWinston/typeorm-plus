@@ -10,9 +10,9 @@ export class SubjectWithoutIdentifierError extends Error {
 
     constructor(subject: Subject) {
         super();
+        Object.setPrototypeOf(this, SubjectWithoutIdentifierError.prototype);
         this.message = `Internal error. Subject ${subject.metadata.targetName} must have an identifier to perform operation. ` +
             `Please report a github issue if you face this error.`;
-        this.stack = new Error().stack;
     }
 
 }

@@ -15,6 +15,9 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import {OrderByCondition} from "../find-options/OrderByCondition";
+import {LimitOnUpdateNotSupportedError} from "../error/LimitOnUpdateNotSupportedError";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -39,6 +42,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     getQuery(): string {
         let sql = this.createUpdateExpression();
+        sql += this.createOrderByExpression();
+        sql += this.createLimitExpression();
         return sql.trim();
     }
 
@@ -240,6 +245,71 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Sets ORDER BY condition in the query builder.
+     * If you had previously ORDER BY expression defined,
+     * calling this function will override previously set ORDER BY conditions.
+     *
+     * Calling order by without order set will remove all previously set order bys.
+     */
+    orderBy(): this;
+
+    /**
+     * Sets ORDER BY condition in the query builder.
+     * If you had previously ORDER BY expression defined,
+     * calling this function will override previously set ORDER BY conditions.
+     */
+    orderBy(sort: string, order?: "ASC"|"DESC", nulls?: "NULLS FIRST"|"NULLS LAST"): this;
+
+    /**
+     * Sets ORDER BY condition in the query builder.
+     * If you had previously ORDER BY expression defined,
+     * calling this function will override previously set ORDER BY conditions.
+     */
+    orderBy(order: OrderByCondition): this;
+
+    /**
+     * Sets ORDER BY condition in the query builder.
+     * If you had previously ORDER BY expression defined,
+     * calling this function will override previously set ORDER BY conditions.
+     */
+    orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (sort) {
+            if (sort instanceof Object) {
+                this.expressionMap.orderBys = sort as OrderByCondition;
+            } else {
+                if (nulls) {
+                    this.expressionMap.orderBys = { [sort as string]: { order, nulls } };
+                } else {
+                    this.expressionMap.orderBys = { [sort as string]: order };
+                }
+            }
+        } else {
+            this.expressionMap.orderBys = {};
+        }
+        return this;
+    }
+
+    /**
+     * Adds ORDER BY condition in the query builder.
+     */
+    addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (nulls) {
+            this.expressionMap.orderBys[sort] = { order, nulls };
+        } else {
+            this.expressionMap.orderBys[sort] = order;
+        }
+        return this;
+    }
+
+    /**
+     * Sets LIMIT - maximum number of rows to be selected.
+     */
+    limit(limit?: number): this {
+        this.expressionMap.limit = limit;
+        return this;
+    }
+
+    /**
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
@@ -282,13 +352,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected createUpdateExpression() {
         const valuesSet = this.getValueSet();
-        // console.log("valuesSet", valuesSet);
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
+                                this.connection.driver instanceof OracleDriver ||
                                 this.connection.driver instanceof AbstractSqliteDriver ||
                                 this.connection.driver instanceof WebsqlDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
@@ -297,7 +367,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 // todo: make this and other query builder to work with properly with tables without metadata
                 const columns = metadata.findColumnsWithPropertyPath(propertyPath);
                 columns.forEach(column => {
-                    const paramName = "_updated_" + column.databaseName;
+                    const paramName = "upd_" + column.databaseName;
 
                     //
                     let value = column.getEntityValue(valuesSet);
@@ -318,6 +388,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }
 
                         if (this.connection.driver instanceof MysqlDriver ||
+                            this.connection.driver instanceof OracleDriver ||
                             this.connection.driver instanceof AbstractSqliteDriver ||
                             this.connection.driver instanceof WebsqlDriver) {
                             newParameters[paramName] = value;
@@ -350,6 +421,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     //     value = new ArrayParameter(value);
 
                     if (this.connection.driver instanceof MysqlDriver ||
+                        this.connection.driver instanceof OracleDriver ||
                         this.connection.driver instanceof AbstractSqliteDriver ||
                         this.connection.driver instanceof WebsqlDriver) {
                         newParameters[key] = value;
@@ -366,6 +438,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // we re-write parameters this way because we want our "UPDATE ... SET" parameters to be first in the list of "nativeParameters"
         // because some drivers like mysql depend on order of parameters
         if (this.connection.driver instanceof MysqlDriver ||
+            this.connection.driver instanceof OracleDriver ||
             this.connection.driver instanceof AbstractSqliteDriver ||
             this.connection.driver instanceof WebsqlDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
@@ -376,7 +449,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const returningExpression = this.createReturningExpression();
 
         // generate and return sql update query
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver)) {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
@@ -385,6 +458,42 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         } else {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
+    }
+
+    /**
+     * Creates "ORDER BY" part of SQL query.
+     */
+    protected createOrderByExpression() {
+        const orderBys = this.expressionMap.orderBys;
+        if (Object.keys(orderBys).length > 0)
+            return " ORDER BY " + Object.keys(orderBys)
+                    .map(columnName => {
+                        if (typeof orderBys[columnName] === "string") {
+                            return this.replacePropertyNames(columnName) + " " + orderBys[columnName];
+                        } else {
+                            return this.replacePropertyNames(columnName) + " " + (orderBys[columnName] as any).order + " " + (orderBys[columnName] as any).nulls;
+                        }
+                    })
+                    .join(", ");
+
+        return "";
+    }
+
+    /**
+     * Creates "LIMIT" parts of SQL query.
+     */
+    protected createLimitExpression(): string {
+        let limit: number|undefined = this.expressionMap.limit;
+
+        if (limit) {
+            if (this.connection.driver instanceof MysqlDriver) {
+                return " LIMIT " + limit;
+            } else {
+                throw new LimitOnUpdateNotSupportedError();
+            }
+        }
+
+        return "";
     }
 
     /**

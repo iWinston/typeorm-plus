@@ -1,7 +1,7 @@
 import {PrimaryGeneratedColumnType} from "../../driver/types/ColumnTypes";
 
 /**
- * Describes all column's options.
+ * Describes all options for PrimaryGeneratedColumn decorator with numeric generation strategy.
  */
 export interface PrimaryGeneratedColumnNumericOptions {
 

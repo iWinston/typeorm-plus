@@ -86,20 +86,20 @@ question.categories = [category1, category2];
 await connection.manager.save(question);
 ```
 
-As you can see in this example we did not called `save` for `category1` and `category2`.
+As you can see in this example we did not call `save` for `category1` and `category2`.
 They will be automatically inserted, because we set `cascade` to true.
 
 Keep in mind - great power comes with great responsibility.
-Cascades may seem a good and easy way to work with relations, 
+Cascades may seem like a good and easy way to work with relations,
 but they may also bring bugs and security issues when some undesired object is being saved into the database. 
 Also, they provide a less explicit way of saving new objects into the database.
 
 ## `@JoinColumn` options
 
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key, 
-but also allows to customize join column name and referenced column name. 
+but also allows you to customize join column name and referenced column name.
 
-When we set `@JoinColumn` it creates a column in the database automatically named `propertyName + referencedColumnName`.
+When we set `@JoinColumn`, it automtically creates a column in the database named `propertyName + referencedColumnName`.
 For example:
 
 ```typescript
@@ -117,7 +117,7 @@ If you want to change this name in the database you can specify a custom join co
 category: Category;
 ```
 
-Join columns are always a reference to some columns (using a foreign key).
+Join columns are always a reference to some other columns (using a foreign key).
 By default your relation always refers to the primary column of the related entity.
 If you want to create relation with other columns of the related entity -
 you can specify them in `@JoinColumn` as well:
@@ -129,7 +129,7 @@ category: Category;
 ```
 
 The relation now refers to `name` of the `Category` entity, instead of `id`.
-Column name for such relation will become `categoryName`
+Column name for that relation will become `categoryName`
 
 ## `@JoinTable` options
 
@@ -154,5 +154,5 @@ You can also change the name of the generated "junction" table.
 categories: Category[];
 ```
 
-If destination table has composite primary keys, 
-then array of properties must be send to `@JoinTable`.
+If the destination table has composite primary keys,
+then an array of properties must be sent to `@JoinTable`.

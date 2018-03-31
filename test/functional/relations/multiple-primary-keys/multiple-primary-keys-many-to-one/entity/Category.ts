@@ -1,12 +1,12 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
-import {Index} from "../../../../../../src/decorator/Index";
 import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
 import {Post} from "./Post";
+import {Unique} from "../../../../../../src";
 
 @Entity()
-@Index(["code", "version", "description"], { unique: true })
+@Unique(["code", "version", "description"])
 export class Category {
 
     @PrimaryColumn()
@@ -27,13 +27,13 @@ export class Category {
     @OneToMany(type => Post, post => post.category)
     posts: Post[];
 
-    @OneToMany(type => Post, post => post.categoryWithEmptyJoinColumn)
-    postsWithEmptyJoinColumn: Post[];
+    @OneToMany(type => Post, post => post.categoryWithJoinColumn)
+    postsWithJoinColumn: Post[];
 
     @OneToMany(type => Post, post => post.categoryWithOptions)
     postsWithOptions: Post[];
 
-    @OneToMany(type => Post, post => post.categoryWithNonPrimaryColumns)
-    postsWithNonPrimaryColumns: Post[];
+    @OneToMany(type => Post, post => post.categoryWithNonPKColumns)
+    postsWithNonPKColumns: Post[];
 
 }

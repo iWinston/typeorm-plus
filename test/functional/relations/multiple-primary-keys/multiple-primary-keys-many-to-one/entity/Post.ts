@@ -19,7 +19,7 @@ export class Post {
 
     @ManyToOne(type => Category)
     @JoinColumn()
-    categoryWithEmptyJoinColumn: Category;
+    categoryWithJoinColumn: Category;
 
     @ManyToOne(type => Category)
     @JoinColumn([
@@ -34,6 +34,6 @@ export class Post {
         { name: "category_version", referencedColumnName: "version" },
         { name: "category_description", referencedColumnName: "description" }
     ])
-    categoryWithNonPrimaryColumns: Category;
+    categoryWithNonPKColumns: Category;
 
 }

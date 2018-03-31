@@ -7,7 +7,7 @@ import {TileEntity} from "./TileEntity";
 @Entity("activity")
 export class ActivityEntity {
     @PrimaryGeneratedColumn({type: "bigint"})
-    id: number;
+    id: string;
 
     @Column({type: "datetime"})
     endDate: Date;

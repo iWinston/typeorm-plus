@@ -14,18 +14,7 @@ export class DateUtils {
         if (!mixedDate)
             return mixedDate;
 
-        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
-        // if (!storedInLocal) {
-
-        // else if it was not stored in local timezone, means it was stored in UTC
-        // because driver hydrates it with timezone applied why we need to add timezone hours to match a local timezone
-
-        const correctedDate = new Date();
-        correctedDate.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-        correctedDate.setUTCHours(date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
-        return correctedDate;
-        // }
-        // return date;
+        return typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
     }
 
     /**
@@ -120,7 +109,7 @@ export class DateUtils {
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
                 this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatMilliseconds(value.getUTCMilliseconds());
+                this.formatMilliseconds(value.getMilliseconds());
         }
 
         return value;
@@ -174,6 +163,14 @@ export class DateUtils {
         return value;
     }
 
+    static simpleJsonToString(value: any): string {
+        return JSON.stringify(value);
+    }
+
+    static stringToSimpleJson(value: string) {
+        return JSON.parse(value);
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
@@ -192,10 +189,13 @@ export class DateUtils {
      * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
      */
     private static formatMilliseconds(value: number): string {
-        if (value < 100)
+        if (value < 10) {
+            return "00" + value;
+        } else if (value < 100) {
             return "0" + value;
-
-        return String(value);
+        } else {
+            return String(value);
+        }
     }
 
 }

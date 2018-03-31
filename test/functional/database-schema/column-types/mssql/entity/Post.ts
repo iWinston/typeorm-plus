@@ -114,10 +114,25 @@ export class Post {
     datetimeoffset: Date;
 
     // -------------------------------------------------------------------------
-    // TypeOrm Specific Type
+    // Spatial Types
+    // -------------------------------------------------------------------------
+
+    @Column("geometry")
+    geometry1: string;
+
+    @Column("geometry")
+    geometry2: string;
+
+    @Column("geometry")
+    geometry3: string;
+
+    // -------------------------------------------------------------------------
+    // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
     simpleArray: string[];
 
+    @Column("simple-json")
+    simpleJson: { param: string };
 }

@@ -24,15 +24,16 @@ export class EntitySchemaTransformer {
     /**
      * Transforms entity schema into new metadata args storage object.
      */
-    transform(schemas: EntitySchema[]): MetadataArgsStorage {
+    transform(schemas: EntitySchema<any>[]): MetadataArgsStorage {
         const metadataArgsStorage = new MetadataArgsStorage();
 
-        schemas.forEach(schema => {
+        schemas.forEach(entitySchema => {
+            const options = entitySchema.options;
 
             // add table metadata args from the schema
-            const table = schema.table || {} as any;
+            const table = options.table || {} as any;
             const tableMetadata: TableMetadataArgs = {
-                target: schema.target || schema.name,
+                target: options.target || options.name,
                 name: table.name,
                 type: table.type || "regular",
                 orderBy: table.orderBy
@@ -40,8 +41,8 @@ export class EntitySchemaTransformer {
             metadataArgsStorage.tables.push(tableMetadata);
 
             // add columns metadata args from the schema
-            Object.keys(schema.columns).forEach(columnName => {
-                const tableColumn = schema.columns[columnName];
+            Object.keys(options.columns).forEach(columnName => {
+                const tableColumn = options.columns[columnName]!;
                 let mode: ColumnMode = "regular";
                 if (tableColumn.createDate)
                     mode = "createDate";
@@ -53,14 +54,16 @@ export class EntitySchemaTransformer {
                     mode = "treeChildrenCount";
                 if (tableColumn.treeLevel)
                     mode = "treeLevel";
+                if (tableColumn.objectId)
+                    mode = "objectId";
 
                 const columnAgrs: ColumnMetadataArgs = {
-                    target: schema.target || schema.name,
+                    target: options.target || options.name,
                     mode: mode,
                     propertyName: columnName,
                     options: {
                         type: tableColumn.type,
-                        name: tableColumn.name,
+                        name: tableColumn.objectId ? "_id" : tableColumn.name,
                         length: tableColumn.length,
                         primary: tableColumn.primary,
                         unique: tableColumn.unique,
@@ -75,7 +78,7 @@ export class EntitySchemaTransformer {
 
                 if (tableColumn.generated) {
                     const generationArgs: GeneratedMetadataArgs = {
-                        target: schema.target || schema.name,
+                        target: options.target || options.name,
                         propertyName: columnName,
                         strategy: typeof tableColumn.generated === "string" ? tableColumn.generated : "increment"
                     };
@@ -84,11 +87,11 @@ export class EntitySchemaTransformer {
             });
 
             // add relation metadata args from the schema
-            if (schema.relations) {
-                Object.keys(schema.relations).forEach(relationName => {
-                    const relationSchema = schema.relations![relationName];
+            if (options.relations) {
+                Object.keys(options.relations).forEach(relationName => {
+                    const relationSchema = options.relations![relationName]!;
                     const relation: RelationMetadataArgs = {
-                        target: schema.target || schema.name,
+                        target: options.target || options.name,
                         propertyName: relationName,
                         relationType: relationSchema.type,
                         isLazy: relationSchema.isLazy || false,
@@ -97,6 +100,7 @@ export class EntitySchemaTransformer {
                         isTreeParent: relationSchema.isTreeParent,
                         isTreeChildren: relationSchema.isTreeChildren,
                         options: {
+                            eager: relationSchema.isEager || false,
                             cascade: relationSchema.cascade,
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete
@@ -109,13 +113,13 @@ export class EntitySchemaTransformer {
                     if (relationSchema.joinColumn) {
                         if (typeof relationSchema.joinColumn === "boolean") {
                             const joinColumn: JoinColumnMetadataArgs = {
-                                target: schema.target || schema.name,
+                                target: options.target || options.name,
                                 propertyName: relationName
                             };
                             metadataArgsStorage.joinColumns.push(joinColumn);
                         } else {
                             const joinColumn: JoinColumnMetadataArgs = {
-                                target: schema.target || schema.name,
+                                target: options.target || options.name,
                                 propertyName: relationName,
                                 name: relationSchema.joinColumn.name,
                                 referencedColumnName: relationSchema.joinColumn.referencedColumnName
@@ -128,13 +132,13 @@ export class EntitySchemaTransformer {
                     if (relationSchema.joinTable) {
                         if (typeof relationSchema.joinTable === "boolean") {
                             const joinTable: JoinTableMetadataArgs = {
-                                target: schema.target || schema.name,
+                                target: options.target || options.name,
                                 propertyName: relationName
                             };
                             metadataArgsStorage.joinTables.push(joinTable);
                         } else {
                             const joinTable: JoinTableMetadataArgs = {
-                                target: schema.target || schema.name,
+                                target: options.target || options.name,
                                 propertyName: relationName,
                                 name: relationSchema.joinTable.name,
                                 joinColumns: ((relationSchema.joinTable as JoinTableOptions).joinColumn ? [(relationSchema.joinTable as JoinTableOptions).joinColumn!] : (relationSchema.joinTable as JoinTableMultipleColumnsOptions).joinColumns) as any,
@@ -147,19 +151,20 @@ export class EntitySchemaTransformer {
             }
 
             // add relation metadata args from the schema
-            if (schema.indices) {
-                Object.keys(schema.indices).forEach(indexName => {
-                    const tableIndex = schema.indices![indexName];
+            if (options.indices) {
+                Object.keys(options.indices).forEach(indexName => {
+                    const tableIndex = options.indices![indexName];
                     const indexAgrs: IndexMetadataArgs = {
-                        target: schema.target || schema.name,
+                        target: options.target || options.name,
                         name: indexName,
-                        unique: tableIndex.unique,
+                        unique: tableIndex.unique === true ? true : false,
+                        synchronize: tableIndex.synchronize === false ? false : true,
                         sparse: tableIndex.sparse,
                         columns: tableIndex.columns
                     };
-                    metadataArgsStorage.indices.push(indexAgrs);                        
+                    metadataArgsStorage.indices.push(indexAgrs);
                 });
-            }    
+            }
 
         });
 

@@ -8,6 +8,7 @@ export class MissingJoinTableError extends Error {
 
     constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
         super();
+        Object.setPrototypeOf(this, MissingJoinTableError.prototype);
 
         if (relation.inverseRelation) {
             this.message = `JoinTable is missing on both sides of ${entityMetadata.name}#${relation.propertyName} and ` +

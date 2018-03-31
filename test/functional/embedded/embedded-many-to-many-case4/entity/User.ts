@@ -3,10 +3,8 @@ import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
 import {Post} from "./Post";
 import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Index} from "../../../../../src/decorator/Index";
 
 @Entity()
-@Index(["id", "personId"])
 export class User {
 
     @PrimaryColumn()

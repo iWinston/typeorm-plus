@@ -10,6 +10,12 @@ export class Migration {
     // -------------------------------------------------------------------------
 
     /**
+     * Migration id.
+     * Indicates order of the executed migrations.
+     */
+    id: number|undefined;
+
+    /**
      * Timestamp of the migration.
      */
     timestamp: number;
@@ -28,7 +34,8 @@ export class Migration {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(timestamp: number, name: string, instance?: MigrationInterface) {
+    constructor(id: number|undefined, timestamp: number, name: string, instance?: MigrationInterface) {
+        this.id = id;
         this.timestamp = timestamp;
         this.name = name;
         this.instance = instance;

@@ -14,11 +14,10 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MssqlParameter} from "./MssqlParameter";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {SqlServerConnectionCredentialsOptions} from "./SqlServerConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -112,7 +111,17 @@ export class SqlServerDriver implements Driver {
         "table",
         "timestamp",
         "uniqueidentifier",
-        "xml"        
+        "xml",
+        "geometry",
+        "geography"
+    ];
+
+    /**
+     * Gets list of spatial column data types.
+     */
+    spatialTypes: ColumnType[] = [
+        "geometry",
+        "geography"
     ];
 
     /**
@@ -126,7 +135,26 @@ export class SqlServerDriver implements Driver {
         "binary",
         "varbinary"
     ];
-    
+
+    /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [
+        "decimal",
+        "numeric",
+        "time",
+        "datetime2",
+        "datetimeoffset"
+    ];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [
+        "decimal",
+        "numeric"
+    ];
+
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
@@ -138,6 +166,7 @@ export class SqlServerDriver implements Driver {
         updateDateDefault: "getdate()",
         version: "int",
         treeLevel: "int",
+        migrationId: "int",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",
@@ -153,8 +182,17 @@ export class SqlServerDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        varchar: { length: 255 },
-        nvarchar: { length: 255 }
+        "char": { length: 1 },
+        "nchar": { length: 1 },
+        "varchar": { length: 1 },
+        "nvarchar": { length: 1 },
+        "binary": { length: 1 },
+        "varbinary": { length: 1 },
+        "decimal": { precision: 18, scale: 0 },
+        "numeric": { precision: 18, scale: 0 },
+        "time": { precision: 7 },
+        "datetime2": { precision: 7 },
+        "datetimeoffset": { precision: 7 }
     };
 
     // -------------------------------------------------------------------------
@@ -246,19 +284,27 @@ export class SqlServerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
-            if (value instanceof Array) {
+            let value: any;
+            let isArray = false;
+            if (key.substr(0, 4) === ":...") {
+                isArray = true;
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
+            if (isArray) {
                 return value.map((v: any) => {
                     escapedParameters.push(v);
                     return "@" + (escapedParameters.length - 1);
                 }).join(", ");
+
             } else if (value instanceof Function) {
                 return value();
 
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
                 escapedParameters.push(value);
                 return "@" + (escapedParameters.length - 1);
             }
@@ -271,6 +317,25 @@ export class SqlServerDriver implements Driver {
      */
     escape(columnName: string): string {
         return `"${columnName}"`;
+    }
+
+    /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        let fullName = tableName;
+        if (schema)
+            fullName = schema + "." + tableName;
+        if (database) {
+            if (!schema) {
+                fullName = database + ".." + tableName;
+            } else {
+                fullName = database + "." + fullName;
+            }
+        }
+
+        return fullName;
     }
 
     /**
@@ -295,14 +360,17 @@ export class SqlServerDriver implements Driver {
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true, false);
+            return DateUtils.mixedDateToDate(value, false, false);
 
         } else if (columnMetadata.type === "datetime2"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.mixedDateToDate(value, true, true);
+            return DateUtils.mixedDateToDate(value, false, true);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -312,31 +380,34 @@ export class SqlServerDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
 
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "datetime2"
             || columnMetadata.type === "smalldatetime"
             || columnMetadata.type === "datetimeoffset") {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -344,8 +415,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
-        if (column.type === Number) {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
+        if (column.type === Number || column.type === "integer") {
             return "int";
 
         } else if (column.type === String) {
@@ -363,17 +434,11 @@ export class SqlServerDriver implements Driver {
         } else if (column.type === "uuid") {
             return "uniqueidentifier";
 
-        } else if (column.type === "simple-array") {
+        } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "ntext";
-
-        } else if (column.type === "integer") {
-            return "int";
 
         } else if (column.type === "dec") {
             return "decimal";
-
-        } else if (column.type === "float" && (column.precision && (column.precision! >= 1 && column.precision! < 25))) {
-            return "real";
 
         } else if (column.type === "double precision") {
             return "float";
@@ -386,21 +451,23 @@ export class SqlServerDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
-        if (typeof column.default === "number") {
-            return "" + column.default;
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
 
-        } else if (typeof column.default === "boolean") {
-            return column.default === true ? "1" : "0";
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
 
-        } else if (typeof column.default === "function") {
-            return "(" + column.default() + ")";
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
 
-        } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+        } else if (typeof defaultValue === "function") {
+            return "(" + defaultValue() + ")";
+
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
 
         } else {
-            return column.default;
+            return defaultValue;
         }
     }
 
@@ -408,37 +475,37 @@ export class SqlServerDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique;
+        return column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
     }
 
     /**
-     * Calculates column length taking into account the default length values.
+     * Returns default column lengths, which is required on column creation.
      */
-    getColumnLength(column: ColumnMetadata): string {
-        
+    getColumnLength(column: ColumnMetadata|TableColumn): string {
         if (column.length)
-            return column.length;
+            return column.length.toString();
 
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+        if (column.type === "varchar" || column.type === "nvarchar" || column.type === String)
+            return "255";
 
         return "";
     }
 
+    /**
+     * Creates column type definition including length, precision and scale
+     */
     createFullType(column: TableColumn): string {
         let type = column.type;
 
-        if (column.length) {
-            type += "(" + column.length + ")";
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-        } else if (column.precision && column.type !== "real") {
-            type +=  "(" + column.precision + ")";
-        } else if (column.scale) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
+        // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
+        if (this.getColumnLength(column)) {
+            type += `(${this.getColumnLength(column)})`;
+
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
+            type += `(${column.precision},${column.scale})`;
+
+        } else if (column.precision !== null && column.precision !== undefined) {
+            type +=  `(${column.precision})`;
         }
 
         if (column.isArray)
@@ -486,6 +553,30 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
+            if (!tableColumn)
+                return false; // we don't need new columns, we only need exist and changed
+
+            return  tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
+                // || tableColumn.comment !== columnMetadata.comment || // todo
+                || (!tableColumn.isGenerated && !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isGenerated !== columnMetadata.isGenerated;
+        });
+    }
+
+    /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
@@ -524,13 +615,13 @@ export class SqlServerDriver implements Driver {
         if (column.length) {
             return new MssqlParameter(value, normalizedType as any, column.length as any);
 
-        } else if (column.precision && column.scale) {
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.precision, column.scale);
 
-        } else if (column.precision) {
+        } else if (column.precision !== null && column.precision !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.precision);
 
-        } else if (column.scale) {
+        } else if (column.scale !== null && column.scale !== undefined) {
             return new MssqlParameter(value, normalizedType as any, column.scale);
         }
 
@@ -607,11 +698,39 @@ export class SqlServerDriver implements Driver {
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
         return new Promise<void>((ok, fail) => {
-            const connection = new this.mssql.ConnectionPool(connectionOptions).connect((err: any) => {
+            const pool = new this.mssql.ConnectionPool(connectionOptions);
+
+            const { logger } = this.connection;
+            /*
+              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+              cause the hosting app to crash.
+             */
+            pool.on("error", (error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
+
+            const connection = pool.connect((err: any) => {
                 if (err) return fail(err);
                 ok(connection);
             });
         });
+    }
+
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     */
+    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+        if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
+
+            // we need to cut out "((x))" where x number generated by mssql
+            columnMetadataValue = columnMetadataValue.replace(/\(\([0-9.]*\)\)$/g, "$1");
+            databaseValue = databaseValue.replace(/\(\(([0-9.]*?)\)\)$/g, "$1");
+
+            // we need to cut out "(" because in mssql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^\(|\)$/g, "");
+            databaseValue = databaseValue.replace(/^\(|\)$/g, "");
+        }
+
+        return columnMetadataValue === databaseValue;
     }
 
 }

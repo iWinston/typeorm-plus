@@ -49,6 +49,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                     mode: "virtual",
                     propertyName: primaryColumn.propertyName + "_ancestor", // todo: naming strategy
                     options: {
+                        primary: true,
                         length: primaryColumn.length,
                         type: primaryColumn.type
                     }
@@ -64,6 +65,7 @@ export class ClosureJunctionEntityMetadataBuilder {
                     mode: "virtual",
                     propertyName: primaryColumn.propertyName + "_descendant",
                     options: {
+                        primary: true,
                         length: primaryColumn.length,
                         type: primaryColumn.type,
                     }

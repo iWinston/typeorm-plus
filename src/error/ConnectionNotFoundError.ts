@@ -6,8 +6,8 @@ export class ConnectionNotFoundError extends Error {
 
     constructor(name: string) {
         super();
+        Object.setPrototypeOf(this, ConnectionNotFoundError.prototype);
         this.message = `Connection "${name}" was not found.`;
-        this.stack = new Error().stack;
     }
 
 }

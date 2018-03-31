@@ -50,6 +50,7 @@ import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {RemoveOptions} from "../repository/RemoveOptions";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {EntityMetadata} from "../metadata/EntityMetadata";
+import {EntitySchema} from "../index";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -85,7 +86,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds entities that match given find options or conditions.
      */
-    async find<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async find<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
@@ -104,7 +105,7 @@ export class MongoEntityManager extends EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    async findAndCount<Entity>(entityClassOrName: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
+    async findAndCount<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[ Entity[], number ]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
@@ -126,7 +127,7 @@ export class MongoEntityManager extends EntityManager {
      * Finds entities by ids.
      * Optionally find options can be applied.
      */
-    async findByIds<Entity>(entityClassOrName: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async findByIds<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
@@ -152,7 +153,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|string,
+    async findOne<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string,
                           optionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
@@ -179,12 +180,13 @@ export class MongoEntityManager extends EntityManager {
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      * You can execute bulk inserts using this method.
      */
-    async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<InsertResult> {
+    async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<InsertResult> {
         // todo: convert entity to its database name
         const result = new InsertResult();
         if (entity instanceof Array) {
             result.raw = await this.insertMany(target, entity);
-            result.raw.insertedIds.forEach((insertedId: any) => {
+            Object.keys(result.raw.insertedIds).forEach((key: any) => {
+                let insertedId = result.raw.insertedIds[key];
                 result.generatedMaps.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
                 result.identifiers.push(this.connection.driver.createGeneratedMap(this.connection.getMetadata(target), insertedId)!);
             });
@@ -204,7 +206,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
-    async update<Entity>(target: ObjectType<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+    async update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
         if (criteria instanceof Array) {
             await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.update(target, criteriaItem, partialEntity);
@@ -212,7 +214,7 @@ export class MongoEntityManager extends EntityManager {
 
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), partialEntity);
+            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
         }
 
         return new UpdateResult();
@@ -224,7 +226,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    async delete<Entity>(target: ObjectType<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+    async delete<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|DeepPartial<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
         if (criteria instanceof Array) {
             await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.delete(target, criteriaItem);
@@ -244,7 +246,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    createCursor<Entity>(entityClassOrName: ObjectType<Entity>|string, query?: ObjectLiteral): Cursor<Entity> {
+    createCursor<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query?: ObjectLiteral): Cursor<Entity> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.cursor(metadata.tableName, query);
     }
@@ -253,7 +255,7 @@ export class MongoEntityManager extends EntityManager {
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      * This returns modified version of cursor that transforms each result into Entity model.
      */
-    createEntityCursor<Entity>(entityClassOrName: ObjectType<Entity>|string, query?: ObjectLiteral): Cursor<Entity> {
+    createEntityCursor<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query?: ObjectLiteral): Cursor<Entity> {
 
         const metadata = this.connection.getMetadata(entityClassOrName);
         const cursor = this.createCursor(entityClassOrName, query);
@@ -301,7 +303,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Execute an aggregation framework pipeline against the collection.
      */
-    aggregate<Entity>(entityClassOrName: ObjectType<Entity>|string, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<Entity> {
+    aggregate<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<Entity> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.aggregate(metadata.tableName, pipeline, options);
     }
@@ -309,7 +311,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    bulkWrite<Entity>(entityClassOrName: ObjectType<Entity>|string, operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    bulkWrite<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.bulkWrite(metadata.tableName, operations, options);
     }
@@ -317,7 +319,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Count number of matching documents in the db to a query.
      */
-    count<Entity>(entityClassOrName: ObjectType<Entity>|string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
+    count<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.count(metadata.tableName, query, options);
     }
@@ -325,7 +327,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Creates an index on the db and collection.
      */
-    createCollectionIndex<Entity>(entityClassOrName: ObjectType<Entity>|string, fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
+    createCollectionIndex<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, fieldOrSpec: string|any, options?: MongodbIndexOptions): Promise<string> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.createCollectionIndex(metadata.tableName, fieldOrSpec, options);
     }
@@ -335,7 +337,7 @@ export class MongoEntityManager extends EntityManager {
      * Earlier version of MongoDB will throw a command not supported error.
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      */
-    createCollectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|string, indexSpecs: ObjectLiteral[]): Promise<void> {
+    createCollectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, indexSpecs: ObjectLiteral[]): Promise<void> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.createCollectionIndexes(metadata.tableName, indexSpecs);
     }
@@ -343,7 +345,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Delete multiple documents on MongoDB.
      */
-    deleteMany<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+    deleteMany<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.deleteMany(metadata.tableName, query, options);
     }
@@ -351,7 +353,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Delete a document on MongoDB.
      */
-    deleteOne<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
+    deleteOne<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.deleteOne(metadata.tableName, query, options);
     }
@@ -359,7 +361,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
-    distinct<Entity>(entityClassOrName: ObjectType<Entity>|string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference|string }): Promise<any> {
+    distinct<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference|string }): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.distinct(metadata.tableName, key, query, options);
     }
@@ -367,7 +369,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Drops an index from this collection.
      */
-    dropCollectionIndex<Entity>(entityClassOrName: ObjectType<Entity>|string, indexName: string, options?: CollectionOptions): Promise<any> {
+    dropCollectionIndex<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, indexName: string, options?: CollectionOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.dropCollectionIndex(metadata.tableName, indexName, options);
     }
@@ -375,7 +377,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Drops all indexes from the collection.
      */
-    dropCollectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|string): Promise<any> {
+    dropCollectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.dropCollectionIndexes(metadata.tableName);
     }
@@ -383,7 +385,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    findOneAndDelete<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
+    findOneAndDelete<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.findOneAndDelete(metadata.tableName, query, options);
     }
@@ -391,7 +393,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    findOneAndReplace<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
+    findOneAndReplace<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.findOneAndReplace(metadata.tableName, query, replacement, options);
     }
@@ -399,7 +401,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    findOneAndUpdate<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
+    findOneAndUpdate<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.findOneAndUpdate(metadata.tableName, query, update, options);
     }
@@ -407,7 +409,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Execute a geo search using a geo haystack index on a collection.
      */
-    geoHaystackSearch<Entity>(entityClassOrName: ObjectType<Entity>|string, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
+    geoHaystackSearch<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.geoHaystackSearch(metadata.tableName, x, y, options);
     }
@@ -415,7 +417,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Execute the geoNear command to search for items in the collection.
      */
-    geoNear<Entity>(entityClassOrName: ObjectType<Entity>|string, x: number, y: number, options?: GeoNearOptions): Promise<any> {
+    geoNear<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, x: number, y: number, options?: GeoNearOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.geoNear(metadata.tableName, x, y, options);
     }
@@ -423,7 +425,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Run a group command across a collection.
      */
-    group<Entity>(entityClassOrName: ObjectType<Entity>|string, keys: Object|Array<any>|Function|Code, condition: Object, initial: Object, reduce: Function|Code, finalize: Function|Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
+    group<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, keys: Object|Array<any>|Function|Code, condition: Object, initial: Object, reduce: Function|Code, finalize: Function|Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.group(metadata.tableName, keys, condition, initial, reduce, finalize, command, options);
     }
@@ -431,7 +433,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Retrieve all the indexes on the collection.
      */
-    collectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|string): Promise<any> {
+    collectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.collectionIndexes(metadata.tableName);
     }
@@ -439,7 +441,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Retrieve all the indexes on the collection.
      */
-    collectionIndexExists<Entity>(entityClassOrName: ObjectType<Entity>|string, indexes: string|string[]): Promise<boolean> {
+    collectionIndexExists<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, indexes: string|string[]): Promise<boolean> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.collectionIndexExists(metadata.tableName, indexes);
     }
@@ -447,7 +449,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Retrieves this collections index info.
      */
-    collectionIndexInformation<Entity>(entityClassOrName: ObjectType<Entity>|string, options?: { full: boolean }): Promise<any> {
+    collectionIndexInformation<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: { full: boolean }): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.collectionIndexInformation(metadata.tableName, options);
     }
@@ -455,7 +457,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
-    initializeOrderedBulkOp<Entity>(entityClassOrName: ObjectType<Entity>|string, options?: CollectionOptions): OrderedBulkOperation {
+    initializeOrderedBulkOp<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: CollectionOptions): OrderedBulkOperation {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.initializeOrderedBulkOp(metadata.tableName, options);
     }
@@ -463,7 +465,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
-    initializeUnorderedBulkOp<Entity>(entityClassOrName: ObjectType<Entity>|string, options?: CollectionOptions): UnorderedBulkOperation {
+    initializeUnorderedBulkOp<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: CollectionOptions): UnorderedBulkOperation {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.initializeUnorderedBulkOp(metadata.tableName, options);
     }
@@ -471,7 +473,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Inserts an array of documents into MongoDB.
      */
-    insertMany<Entity>(entityClassOrName: ObjectType<Entity>|string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
+    insertMany<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.insertMany(metadata.tableName, docs, options);
     }
@@ -479,7 +481,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Inserts a single document into MongoDB.
      */
-    insertOne<Entity>(entityClassOrName: ObjectType<Entity>|string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
+    insertOne<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.insertOne(metadata.tableName, doc, options);
     }
@@ -487,7 +489,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Returns if the collection is a capped collection.
      */
-    isCapped<Entity>(entityClassOrName: ObjectType<Entity>|string): Promise<any> {
+    isCapped<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.isCapped(metadata.tableName);
     }
@@ -495,7 +497,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|string, options?: { batchSize?: number, readPreference?: ReadPreference|string }): CommandCursor {
+    listCollectionIndexes<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: { batchSize?: number, readPreference?: ReadPreference|string }): CommandCursor {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.listCollectionIndexes(metadata.tableName, options);
     }
@@ -503,7 +505,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
      */
-    mapReduce<Entity>(entityClassOrName: ObjectType<Entity>|string, map: Function|string, reduce: Function|string, options?: MapReduceOptions): Promise<any> {
+    mapReduce<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, map: Function|string, reduce: Function|string, options?: MapReduceOptions): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.mapReduce(metadata.tableName, map, reduce, options);
     }
@@ -512,7 +514,7 @@ export class MongoEntityManager extends EntityManager {
      * Return N number of parallel cursors for a collection allowing parallel reading of entire collection.
      * There are no ordering guarantees for returned results.
      */
-    parallelCollectionScan<Entity>(entityClassOrName: ObjectType<Entity>|string, options?: ParallelCollectionScanOptions): Promise<Cursor<Entity>[]> {
+    parallelCollectionScan<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: ParallelCollectionScanOptions): Promise<Cursor<Entity>[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.parallelCollectionScan(metadata.tableName, options);
     }
@@ -520,7 +522,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    reIndex<Entity>(entityClassOrName: ObjectType<Entity>|string): Promise<any> {
+    reIndex<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.reIndex(metadata.tableName);
     }
@@ -528,7 +530,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    rename<Entity>(entityClassOrName: ObjectType<Entity>|string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    rename<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.rename(metadata.tableName, newName, options);
     }
@@ -536,7 +538,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Replace a document on MongoDB.
      */
-    replaceOne<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
+    replaceOne<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.replaceOne(metadata.tableName, query, doc, options);
     }
@@ -544,7 +546,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Get all the collection statistics.
      */
-    stats<Entity>(entityClassOrName: ObjectType<Entity>|string, options?: { scale: number }): Promise<CollStats> {
+    stats<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: { scale: number }): Promise<CollStats> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.stats(metadata.tableName, options);
     }
@@ -552,7 +554,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Update multiple documents on MongoDB.
      */
-    updateMany<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
+    updateMany<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.updateMany(metadata.tableName, query, update, options);
     }
@@ -560,7 +562,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Update a single document on MongoDB.
      */
-    updateOne<Entity>(entityClassOrName: ObjectType<Entity>|string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
+    updateOne<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.updateOne(metadata.tableName, query, update, options);
     }

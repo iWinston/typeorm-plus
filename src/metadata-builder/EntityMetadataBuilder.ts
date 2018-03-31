@@ -14,6 +14,10 @@ import {ClosureJunctionEntityMetadataBuilder} from "./ClosureJunctionEntityMetad
 import {RelationJoinColumnBuilder} from "./RelationJoinColumnBuilder";
 import {Connection} from "../connection/Connection";
 import {EntityListenerMetadata} from "../metadata/EntityListenerMetadata";
+import {UniqueMetadata} from "../metadata/UniqueMetadata";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {CheckMetadata} from "../metadata/CheckMetadata";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -106,10 +110,34 @@ export class EntityMetadataBuilder {
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
                 entityMetadata.relations.filter(relation => relation.isOneToOne || relation.isManyToOne).forEach(relation => {
                     const joinColumns = this.metadataArgsStorage.filterJoinColumns(relation.target, relation.propertyName);
-                    const foreignKey = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
+                    const { foreignKey, uniqueConstraint } = this.relationJoinColumnBuilder.build(joinColumns, relation); // create a foreign key based on its metadata args
                     if (foreignKey) {
                         relation.registerForeignKeys(foreignKey); // push it to the relation and thus register there a join column
                         entityMetadata.foreignKeys.push(foreignKey);
+                    }
+                    if (uniqueConstraint) {
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver) {
+                            const index = new IndexMetadata({
+                                entityMetadata: uniqueConstraint.entityMetadata,
+                                columns: uniqueConstraint.columns,
+                                args: {
+                                    target: uniqueConstraint.target!,
+                                    name: uniqueConstraint.name,
+                                    unique: true,
+                                    synchronize: true
+                                }
+                            });
+
+                            if (this.connection.driver instanceof SqlServerDriver) {
+                                index.where = index.columns.map(column => {
+                                    return `${this.connection.driver.escape(column.databaseName)} IS NOT NULL`;
+                                }).join(" AND ");
+                            }
+
+                            entityMetadata.indices.push(index);
+                        } else {
+                            entityMetadata.uniques.push(uniqueConstraint);
+                        }
                     }
                 });
 
@@ -162,6 +190,16 @@ export class EntityMetadataBuilder {
         // build all indices (need to do it after relations and their join columns are built)
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.indices.forEach(index => index.build(this.connection.namingStrategy));
+        });
+
+        // build all unique constraints (need to do it after relations and their join columns are built)
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.uniques.forEach(unique => unique.build(this.connection.namingStrategy));
+        });
+
+        // build all check constraints
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.checks.forEach(check => check.build(this.connection.namingStrategy));
         });
 
         // add lazy initializer for entity relations
@@ -318,7 +356,7 @@ export class EntityMetadataBuilder {
                     options: /*tree.column || */ {
                         name: "mpath",
                         type: "varchar",
-                        nullable: false,
+                        nullable: true,
                         default: ""
                     }
                 }
@@ -389,6 +427,31 @@ export class EntityMetadataBuilder {
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
+        entityMetadata.checks = this.metadataArgsStorage.filterChecks(entityMetadata.inheritanceTree).map(args => {
+            return new CheckMetadata({ entityMetadata, args });
+        });
+
+        // Mysql stores unique constraints as unique indices.
+        if (this.connection.driver instanceof MysqlDriver) {
+            const indices = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+                return new IndexMetadata({
+                    entityMetadata: entityMetadata,
+                    args: {
+                        target: args.target,
+                        name: args.name,
+                        columns: args.columns,
+                        unique: true,
+                        synchronize: true
+                    }
+                });
+            });
+            entityMetadata.ownIndices.push(...indices);
+
+        } else {
+            entityMetadata.uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+                return new UniqueMetadata({ entityMetadata, args });
+            });
+        }
     }
 
     /**

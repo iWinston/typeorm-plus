@@ -1,10 +1,11 @@
 import {JoinOptions} from "./JoinOptions";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import {FindConditions} from "./FindConditions";
 
 /**
  * Defines a special criteria to find specific entity.
  */
-export interface FindOneOptions<Entity> {
+export interface FindOneOptions<Entity = any> {
 
     /**
      * Specifies what columns should be retrieved.
@@ -14,7 +15,7 @@ export interface FindOneOptions<Entity> {
     /**
      * Simple condition that should be applied to match entities.
      */
-    where?: Partial<Entity>|ObjectLiteral|string;
+    where?: FindConditions<Entity>|ObjectLiteral|string;
 
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
@@ -41,5 +42,11 @@ export interface FindOneOptions<Entity> {
      * If array of strings is given then loads only relation ids of the given properties.
      */
     loadRelationIds?: boolean|{ relations?: string[], disableMixedMap?: boolean }; // todo: extract options into separate interface, reuse
+
+    /**
+     * Indicates if eager relations should be loaded or not.
+     * By default they are loaded when find methods are used.
+     */
+    loadEagerRelations?: boolean;
 
 }

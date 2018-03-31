@@ -5,7 +5,6 @@ import {Index} from "../../../../src/decorator/Index";
 import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {Tag} from "./Tag";
 
-@Index(["tag", "c", "b", "a"])
 @Index(["a", "b", "c", "tag"])
 @Index(["b", "tag", "c"])
 @Index(["c", "a"])

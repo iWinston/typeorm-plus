@@ -23,20 +23,20 @@
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
 that can run in NodeJS, Browser, Cordova, PhoneGap and Ionic platforms 
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7).
-Its goal to always support latest JavaScript features and provide features
-that help you to develop any kind of applications that use databases - from
+Its goal is to always support the latest JavaScript features and provide additional features
+that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large scale enterprise applications
 with multiple databases.
 
 TypeORM supports both Active Record and Data Mapper patterns, 
-unlike all other JavaScript ORMs currently exist, 
+unlike all other JavaScript ORMs currently in existance, 
 which means you can write high quality, loosely coupled, scalable,
 maintainable applications the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
  [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
-Some of TypeORM features:
+Some TypeORM features:
 
 * supports both DataMapper and ActiveRecord (your choice)
 * entities and columns
@@ -116,7 +116,7 @@ const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" }
 await repository.remove(timber);
 ```
 
-Alternatively, if you prefer to use `ActiveRecord` implementation, you can use it as well:
+Alternatively, if you prefer to use the `ActiveRecord` implementation, you can use it as well:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, BaseEntity} from "typeorm";
@@ -158,7 +158,7 @@ await timber.remove();
 ## Installation
 
 
-1. Install npm package:
+1. Install the npm package:
 
     `npm install typeorm --save`
 
@@ -174,7 +174,7 @@ await timber.remove();
 
     `npm install @types/node --save`
 
-4. Install database driver:
+4. Install a database driver:
 
     * for **MySQL** or **MariaDB**
     
@@ -200,16 +200,16 @@ await timber.remove();
     
         `npm install oracledb --save`
     
-    Install only one of them, depending on what database you use.
+    Install only *one* of them, depending on which database you use.
     
     To make the Oracle driver work, you need to follow the installation instructions from 
     [their](https://github.com/oracle/node-oracledb) site.
     Oracle support is experimental at the moment and isn't bug-free.
-    Expect to see more stable Oracle support in a near future.
+    Expect to see more stable Oracle support in the near future.
 
 ##### TypeScript configuration
 
-Also make sure you are using TypeScript compiler version **2.3** or greater, 
+Also, make sure you are using TypeScript compiler version **2.3** or greater, 
 and you have enabled the following settings in `tsconfig.json`:
 
 ```json
@@ -222,8 +222,8 @@ You may also need to enable `es6` in the `lib` section of compiler options, or i
 ## Quick Start
 
 The quickest way to get started with TypeORM is to use its CLI commands to generate a starter project.
-Quick start works only if you are using TypeORM in NodeJS application. 
-If you are using other platforms, proceed to [step-by-step guide](#step-by-step-guide).
+Quick start works only if you are using TypeORM in a NodeJS application. 
+If you are using other platforms, proceed to the [step-by-step guide](#step-by-step-guide).
 
 First, install TypeORM globally:
 
@@ -231,17 +231,17 @@ First, install TypeORM globally:
 npm install typeorm -g
 ```
 
-Then go to the directory where you want to create a new project and run:
+Then go to the directory where you want to create a new project and run the command:
 
 ```
 typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-It can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`,
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`,
 `websql`, `mongodb`.
 
-This command will generate you a new project in `MyProject` directory with following files:
+This command will generate a new project in the `MyProject` directory with the following files:
 
 ```
 MyProject
@@ -257,16 +257,16 @@ MyProject
 └── tsconfig.json    // TypeScript compiler options
 ```
 
-> You can also run `typeorm init` on exist node project, but be careful - it may override some files you may already have.
+> You can also run `typeorm init` on an existing node project, but be careful - it may override some files you already have.
 
-Next step is to install new project dependencies:
+The next step is to install new project dependencies:
 
 ```
 cd MyProject
 npm install
 ```
 
-While installation in the progress edit `ormconfig.json` file and put your own database connection configuration options in there:
+While installation is in progress, edit the `ormconfig.json` file and put your own database connection configuration options in there:
 
 ```json
 {
@@ -290,35 +290,36 @@ While installation in the progress edit `ormconfig.json` file and put your own d
 }
 ```
 
-Particularly most of the time you'll only need to configure 
+Particularly, most of the time you'll only need to configure 
 `host`, `username`, `password`, `database` and maybe `port` options.
 
-Once you finish with configuration and all node modules are installed you can run your application:
+Once you finish with configuration and all node modules are installed, you can run your application:
 
 ```
 npm start
 ```
 
-That's it, your application should successfully run now and insert a new user into the database.
+That's it, your application should successfully run and insert a new user into the database.
 You can continue to work with this project and integrate other modules you need and start 
 creating more entities. 
 
-> You can generate even more advanced project with express installed by running
+> You can generate an even more advanced project with express installed by running
 `typeorm init --name MyProject --database mysql --express` command.
 
 ## Step-by-Step Guide
 
 What are you expecting from ORM?
-First of all you are expecting it will create a database tables for you
-and find / insert / update / delete your data without pain and having to write lot of hardly maintainable SQL queries.
-This guide will show you how to setup TypeORM from scratch and make it to do what you are expecting from ORM.
+First of all, you are expecting it will create database tables for you
+and find / insert / update / delete your data without the pain of
+having to write lots of hardly maintainable SQL queries.
+This guide will show you how to setup TypeORM from scratch and make it do what you are expecting from an ORM.
 
 ### Create a model
 
-Working with database starts from creating a tables. 
+Working with a database starts from creating tables. 
 How do you tell TypeORM to create a database table?
-Answer is - thought the models. 
-Your models in your app - are your database tables.
+The answer is - through the models. 
+Your models in your app are your database tables.
 
 For example, you have a `Photo` model:
 
@@ -333,14 +334,14 @@ export class Photo {
 ```
 
 And you want to store photos in your database.
-To store things in the database first you need a database table.
-And database tables are created from your models.
-Not all models, but only those you defined as *entities*. 
+To store things in the database, first you need a database table,
+and database tables are created from your models.
+Not all models, but only those you define as *entities*.
         
 ### Create an entity
 
-*Entity* is your model decorated by `@Entity` decorator.
-Database table will be created for such model.
+*Entity* is your model decorated by an `@Entity` decorator.
+A database table will be created for such models.
 You work with entities everywhere with TypeORM.
 You can load/insert/update/remove and perform other operations with them.
 
@@ -360,13 +361,13 @@ export class Photo {
 }
 ```
 
-Now database table will be created for `Photo` entity and we'll be able to work with it anywhere in our app.
+Now, a database table will be created for the `Photo` entity and we'll be able to work with it anywhere in our app.
 We have created a database table, however what table can exist without columns?
 Let's create a few columns in our database table.
         
 ### Adding table columns
 
-To add database columns you simply need to decorate entity's properties you want to make a columns
+To add database columns, you simply need to decorate an entity's properties you want to make into a column
 with a `@Column` decorator.
 
 ```typescript
@@ -398,17 +399,16 @@ export class Photo {
 Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
-But you can use any column type your database support by implicitly specify a column type into `@Column` decorator.
+But you can use any column type your database supports by implicitly specifying a column type into the `@Column` decorator.
 
-We generated a database table with columns.
-But there is one thing left.
-Each database table must have a column with primary key. 
+We generated a database table with columns, but there is one thing left.
+Each database table must have a column with a primary key.
 
 ### Creating a primary column
 
-Each entity **must** have at least one primary column.
-This is requirement and you can't avoid it. 
-To make a column a primary you need to use `@PrimaryColumn` decorator.
+Each entity **must** have at least one primary key column.
+This is a requirement and you can't avoid it.
+To make a column a primary key, you need to use `@PrimaryColumn` decorator.
 
 ```typescript
 import {Entity, Column, PrimaryColumn} from "typeorm";
@@ -439,7 +439,7 @@ export class Photo {
 ### Creating an auto generated column
 
 Now, let's say you want your id column to be auto-generated (this is known as auto-increment / sequence / serial / generated identity column).
-To do that you need to change `@PrimaryColumn` decorator to `@PrimaryGeneratedColumn` decorator:
+To do that, you need to change the `@PrimaryColumn` decorator to a `@PrimaryGeneratedColumn` decorator:
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -503,8 +503,8 @@ export class Photo {
 ```
 
 Column types are database-specific.
-You can set any column type your database support.
-More information on supported column types you can find [here](./docs/entities.md#column-types).
+You can set any column type your database supports.
+More information on supported column types can be found [here](./docs/entities.md#column-types).
 
 ### Creating a connection to the database
 
@@ -598,6 +598,7 @@ Now let's create a new photo to save it in the database:
 
 ```typescript
 import {createConnection} from "typeorm";
+import {Photo} from "./entity/Photo";
 
 createConnection(/*...*/).then(connection => {
 
@@ -618,8 +619,8 @@ createConnection(/*...*/).then(connection => {
 ```
 
 Once your entity is saved it will get a newly generated id.
-`save` method returns instance of same object you pass to it.
-Its not a new copy of an object, it modifies its "id" and returns it.
+`save` method returns an instance of the same object you pass to it.
+It's not a new copy of the object, it modifies its "id" and returns it.
   
 ### Using async/await syntax
 
@@ -809,10 +810,10 @@ export class PhotoMetadata {
 }
 ```
      
-Here, we are used a new decorator called `@OneToOne`. It allows us to create a one-to-one relation between two entities. 
-`type => Photo` is a function that returns the class of the entity with which we want to make our relation. 
-We are forced to use a function that returns a class, instead of using class directly, because of the language specifics.
-We can also write it as a `() => Photo`, but we use `type => Photo` as convention to increase code readability.
+Here, we are using a new decorator called `@OneToOne`. It allows us to create a one-to-one relationship between two entities.
+`type => Photo` is a function that returns the class of the entity with which we want to make our relationship.
+We are forced to use a function that returns a class, instead of using the class directly, because of the language specifics.
+We can also write it as `() => Photo`, but we use `type => Photo` as a convention to increase code readability.
 The type variable itself does not contain anything.
 
 We also add a `@JoinColumn` decorator, which indicates that this side of the relationship will own the relationship.
@@ -947,11 +948,11 @@ createConnection(/*...*/).then(async connection => {
 }).catch(error => console.log(error));
 ```
         
-Here photos will contain an array of photos from the database, and each photo will contain its photo metadata.
+Here, photos will contain an array of photos from the database, and each photo will contain its photo metadata.
 Learn more about Find Options in [this documentation](./docs/find-options.md).
 
-Using find options is good and dead simple, but if you need more complex query you should use `QueryBuilder` instead.
-`QueryBuilder` allows to use more complex queries in an elegant way:
+Using find options is good and dead simple, but if you need a more complex query, you should use `QueryBuilder` instead.
+`QueryBuilder` allows more complex queries to be used in an elegant way:
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -971,9 +972,9 @@ createConnection(/*...*/).then(async connection => {
 }).catch(error => console.log(error));
 ```
 
-`QueryBuilder` allows to create and execute SQL query of almost any complexity.
-When you work with `QueryBuilder` think like you are creating SQL query.
-In this example "photo" and "metadata" are aliases applied to selected photos.
+`QueryBuilder` allows creation and execution of SQL queries of almost any complexity.
+When you work with `QueryBuilder`, think like you are creating an SQL query.
+In this example, "photo" and "metadata" are aliases applied to selected photos.
 You use aliases to access columns and properties of the selected data.
 
 ### Using cascades to automatically save related objects
@@ -992,7 +993,7 @@ export class Photo {
 }
 ```
 
-Using `cascade` allows us not to separately save photo and separately save metadata objects now. 
+Using `cascade` allows us not to separately save photo and separately save metadata objects now.
 Now we can simply save a photo object, and the metadata object will be saved automatically because of cascade options.
 
 ```typescript
@@ -1179,7 +1180,7 @@ photo.filename = "photo-with-bears.jpg";
 photo.albums = [album1, album2];
 await connection.manager.save(photo);
 
-// now out photo is saved and albums are attached to it
+// now our photo is saved and albums are attached to it
 // now lets load them:
 const loadedPhoto = await connection
     .getRepository(Photo)
@@ -1206,7 +1207,7 @@ const loadedPhoto = await connection
 
 ### Using QueryBuilder
 
-You can use QueryBuilder to build SQL query of almost any complexity. For example, you can do this:
+You can use QueryBuilder to build SQL queries of almost any complexity. For example, you can do this:
 
 ```typescript
 let photos = await connection

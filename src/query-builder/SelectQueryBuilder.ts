@@ -31,6 +31,8 @@ import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriv
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
+import {abbreviate} from "../util/StringUtils";
+import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -53,7 +55,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         sql += this.createOrderByExpression();
         sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
-        sql = this.createLimitOffsetOracleSpecificExpression(sql);
         sql = sql.trim();
         if (this.expressionMap.subQuery)
             sql = "(" + sql + ")";
@@ -846,6 +847,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * calling this function will override previously set ORDER BY conditions.
      */
     orderBy(sort?: string|OrderByCondition, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+        if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
+            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+
         if (sort) {
             if (sort instanceof Object) {
                 this.expressionMap.orderBys = sort as OrderByCondition;
@@ -866,6 +872,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Adds ORDER BY condition in the query builder.
      */
     addOrderBy(sort: string, order: "ASC"|"DESC" = "ASC", nulls?: "NULLS FIRST"|"NULLS LAST"): this {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new Error(`SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`);
+        if (nulls !== undefined && nulls !== "NULLS FIRST" && nulls !== "NULLS LAST")
+            throw new Error(`SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`);
+
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls };
         } else {
@@ -881,7 +892,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * then use instead take method instead.
      */
     limit(limit?: number): this {
-        this.expressionMap.limit = limit;
+        this.expressionMap.limit = this.normalizeNumber(limit);
+        if (this.expressionMap.limit !== undefined && isNaN(this.expressionMap.limit))
+            throw new Error(`Provided "limit" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -892,7 +906,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * then use instead skip method instead.
      */
     offset(offset?: number): this {
-        this.expressionMap.offset = offset;
+        this.expressionMap.offset = this.normalizeNumber(offset);
+        if (this.expressionMap.offset !== undefined && isNaN(this.expressionMap.offset))
+            throw new Error(`Provided "offset" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -900,7 +917,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets maximal number of entities to take.
      */
     take(take?: number): this {
-        this.expressionMap.take = take;
+        this.expressionMap.take = this.normalizeNumber(take);
+        if (this.expressionMap.take !== undefined && isNaN(this.expressionMap.take))
+            throw new Error(`Provided "take" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -908,7 +928,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Sets number of entities to skip.
      */
     skip(skip?: number): this {
-        this.expressionMap.skip = skip;
+        this.expressionMap.skip = this.normalizeNumber(skip);
+        if (this.expressionMap.skip !== undefined && isNaN(this.expressionMap.skip))
+            throw new Error(`Provided "skip" value is not a number. Please provide a numeric value.`);
+
         return this;
     }
 
@@ -1082,6 +1105,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 transactionStartedByUs = true;
             }
 
+            this.expressionMap.queryEntity = false;
             const results = await this.executeCountQuery(queryRunner);
 
             // close transaction if we started it
@@ -1125,7 +1149,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 transactionStartedByUs = true;
             }
 
+            this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
+            this.expressionMap.queryEntity = false;
             const count = await this.executeCountQuery(queryRunner);
             const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 
@@ -1238,6 +1264,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return this;
     }
 
+    /**
+     * Sets extra options that can be used to configure how query builder works.
+     */
+    setOption(option: SelectQueryBuilderOption): this {
+        this.expressionMap.options.push(option);
+        return this;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -1326,7 +1360,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const hasMainAlias = this.expressionMap.selects.some(select => select.selection === join.alias.name);
                     if (hasMainAlias) {
                         allSelects.push({ selection: this.escape(join.alias.name!) + ".*" });
-                        excludedSelects.push({ selection: this.escape(join.alias.name!) });
+                        const excludedSelect = this.expressionMap.selects.find(select => select.selection === join.alias.name);
+                        excludedSelects.push(excludedSelect!);
                     }
                 }
             });
@@ -1362,9 +1397,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
-        if ((this.expressionMap.limit || this.expressionMap.offset) && this.connection.driver instanceof OracleDriver)
-            return "SELECT ROWNUM " + this.escape("RN") + "," + selection + " FROM " + froms.join(", ") + lock;
-
         return "SELECT " + selection + " FROM " + froms.join(", ") + lock;
     }
 
@@ -1485,28 +1517,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Creates "LIMIT" and "OFFSET" parts of SQL query for Oracle database.
-     */
-    protected createLimitOffsetOracleSpecificExpression(sql: string): string {
-        if ((this.expressionMap.offset || this.expressionMap.limit) && this.connection.driver instanceof OracleDriver) {
-            sql = "SELECT * FROM (" + sql + ") WHERE ";
-            if (this.expressionMap.offset) {
-                sql += this.escape("RN") + " >= " + this.expressionMap.offset;
-            }
-            if (this.expressionMap.limit) {
-                sql += (this.expressionMap.offset ? " AND " : "") + this.escape("RN") + " <= " + ((this.expressionMap.offset || 0) + this.expressionMap.limit);
-            }
-        }
-        return sql;
-    }
-
-    /**
      * Creates "LIMIT" and "OFFSET" parts of SQL query.
      */
     protected createLimitOffsetExpression(): string {
-        if (this.connection.driver instanceof OracleDriver)
-            return "";
-
         // in the case if nothing is joined in the query builder we don't need to make two requests to get paginated results
         // we can use regular limit / offset, that's why we add offset and limit construction here based on skip and take values
         let offset: number|undefined = this.expressionMap.offset,
@@ -1542,6 +1555,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return " LIMIT " + limit;
             if (offset)
                 return " LIMIT -1 OFFSET " + offset;
+
+        } else if (this.connection.driver instanceof OracleDriver) {
+
+            if (limit && offset)
+                return " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+            if (limit)
+                return " FETCH NEXT " + limit + " ROWS ONLY";
+            if (offset)
+                return " OFFSET " + offset + " ROWS";
 
         } else {
             if (limit && offset)
@@ -1630,9 +1652,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         return allColumns.map(column => {
             const selection = this.expressionMap.selects.find(select => select.selection === aliasName + "." + column.propertyPath);
+            let selectionPath = this.escape(aliasName) + "." + this.escape(column.databaseName);
+            if (this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                if (this.connection.driver instanceof MysqlDriver)
+                    selectionPath = `AsText(${selectionPath})`;
+
+                if (this.connection.driver instanceof SqlServerDriver)
+                    selectionPath = `${selectionPath}.ToString()`;
+            }
             return {
-                selection: this.escape(aliasName) + "." + this.escape(column.databaseName),
-                aliasName: selection && selection.aliasName ? selection.aliasName : aliasName + "_" + column.databaseName,
+                selection: selectionPath,
+                aliasName: selection && selection.aliasName ? selection.aliasName : this.buildColumnAlias(aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
@@ -1650,7 +1680,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     protected async executeCountQuery(queryRunner: QueryRunner): Promise<number> {
-        this.expressionMap.queryEntity = false;
 
         const mainAlias = this.expressionMap.mainAlias!.name; // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata;
@@ -1686,6 +1715,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             .skip(undefined)
             .take(undefined)
             .select(countSql)
+            .setOption("disable-global-order")
             .loadRawResults(queryRunner);
 
         if (!results || !results[0] || !results[0]["cnt"])
@@ -1734,10 +1764,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             const querySelects = metadata.primaryColumns.map(primaryColumn => {
                 const distinctAlias = this.escape("distinctAlias");
-                const columnAlias = this.escape(mainAliasName + "_" + primaryColumn.databaseName);
+                const columnAlias = this.escape(this.buildColumnAlias(mainAliasName, primaryColumn.databaseName));
                 if (!orderBys[columnAlias]) // make sure we aren't overriding user-defined order in inverse direction
                     orderBys[columnAlias] = "ASC";
-                return `${distinctAlias}.${columnAlias} as "ids_${mainAliasName + "_" + primaryColumn.databaseName}"`;
+                return `${distinctAlias}.${columnAlias} as "ids_${this.buildColumnAlias(mainAliasName, primaryColumn.databaseName)}"`;
             });
 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
@@ -1763,14 +1793,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         }).join(" AND ");
                     }).join(" OR ");
                 } else {
-                    const ids = rawResults.map(result => result["ids_" + mainAliasName + "_" + metadata.primaryColumns[0].databaseName]);
+                    const ids = rawResults.map(result => result["ids_" + this.buildColumnAlias(mainAliasName, metadata.primaryColumns[0].databaseName)]);
                     const areAllNumbers = ids.every((id: any) => typeof id === "number");
                     if (areAllNumbers) {
                         // fixes #190. if all numbers then its safe to perform query without parameter
                         condition = `${mainAliasName}.${metadata.primaryColumns[0].propertyPath} IN (${ids.join(", ")})`;
                     } else {
                         parameters["ids"] = ids;
-                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:ids)";
+                        condition = mainAliasName + "." + metadata.primaryColumns[0].propertyPath + " IN (:...ids)";
                     }
                 }
                 rawResults = await this.clone()
@@ -1815,7 +1845,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     const [aliasName, propertyPath] = orderCriteria.split(".");
                     const alias = this.expressionMap.findAliasByName(aliasName);
                     const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                    return this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName);
+                    return this.escape(parentAlias) + "." + this.escape(this.buildColumnAlias(aliasName, column!.databaseName));
                 } else {
                     if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria))
                         return this.escape(parentAlias) + "." + orderCriteria;
@@ -1831,7 +1861,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const [aliasName, propertyPath] = orderCriteria.split(".");
                 const alias = this.expressionMap.findAliasByName(aliasName);
                 const column = alias.metadata.findColumnWithPropertyName(propertyPath);
-                orderByObject[this.escape(parentAlias) + "." + this.escape(aliasName + "_" + column!.databaseName)] = orderBys[orderCriteria];
+                orderByObject[this.escape(parentAlias) + "." + this.escape(this.buildColumnAlias(aliasName, column!.databaseName))] = orderBys[orderCriteria];
             } else {
                 if (this.expressionMap.selects.find(select => select.selection === orderCriteria || select.aliasName === orderCriteria)) {
                     orderByObject[this.escape(parentAlias) + "." + orderCriteria] = orderBys[orderCriteria];
@@ -1849,12 +1879,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     protected async loadRawResults(queryRunner: QueryRunner) {
         const [sql, parameters] = this.getQueryAndParameters();
+        const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters);
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         let savedQueryResultCacheOptions: QueryResultCacheOptions|undefined = undefined;
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
             savedQueryResultCacheOptions = await this.connection.queryResultCache.getFromCache({
                 identifier: this.expressionMap.cacheId,
-                query: this.getSql(),
+                query: queryId,
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000
             }, queryRunner);
             if (savedQueryResultCacheOptions && !this.connection.queryResultCache.isExpired(savedQueryResultCacheOptions))
@@ -1866,7 +1897,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (this.connection.queryResultCache && (this.expressionMap.cache || cacheOptions.alwaysEnabled)) {
             await this.connection.queryResultCache.storeInCache({
                 identifier: this.expressionMap.cacheId,
-                query: this.getSql(),
+                query: queryId,
                 time: new Date().getTime(),
                 duration: this.expressionMap.cacheDuration || cacheOptions.duration || 1000,
                 result: JSON.stringify(results)
@@ -1877,11 +1908,33 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Builds column alias from given alias name and column name,
+     * If alias length is more than 29, abbreviates column name.
+     */
+    protected buildColumnAlias(aliasName: string, columnName: string): string {
+        const columnAliasName = aliasName + "_" + columnName;
+        if (columnAliasName.length > 29 && this.connection.driver instanceof OracleDriver)
+            return aliasName  + "_" + abbreviate(columnName, 2);
+
+        return columnAliasName;
+    }
+
+    /**
      * Merges into expression map given expression map properties.
      */
     protected mergeExpressionMap(expressionMap: Partial<QueryExpressionMap>): this {
         Object.assign(this.expressionMap, expressionMap);
         return this;
+    }
+
+    /**
+     * Normalizes a give number - converts to int if possible.
+     */
+    protected normalizeNumber(num: any) {
+        if (typeof num === "number" || num === undefined || num === null)
+            return num;
+
+        return Number(num);
     }
 
     /**

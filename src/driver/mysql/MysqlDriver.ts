@@ -13,11 +13,10 @@ import {MysqlConnectionOptions} from "./MysqlConnectionOptions";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
-import {ArrayParameter} from "../../query-builder/ArrayParameter";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -87,7 +86,9 @@ export class MysqlDriver implements Driver {
         "bigint",
         "float",
         "double",
+        "dec",
         "decimal",
+        "numeric",
         "date",
         "datetime",
         "timestamp",
@@ -95,6 +96,7 @@ export class MysqlDriver implements Driver {
         "year",
         "char",
         "varchar",
+        "nvarchar",
         "blob",
         "text",
         "tinyblob",
@@ -104,22 +106,75 @@ export class MysqlDriver implements Driver {
         "longblob",
         "longtext",
         "enum",
-        "json"
+        "json",
+        "binary",
+        "geometry",
+        "point",
+        "linestring",
+        "polygon",
+        "multipoint",
+        "multilinestring",
+        "multipolygon",
+        "geometrycollection"
+    ];
+
+    /**
+     * Gets list of spatial column data types.
+     */
+    spatialTypes: ColumnType[] = [
+        "geometry",
+        "point",
+        "linestring",
+        "polygon",
+        "multipoint",
+        "multilinestring",
+        "multipolygon",
+        "geometrycollection"
     ];
 
     /**
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [
-        "int",
-        "tinyint",
-        "smallint",
-        "mediumint",
-        "bigint",
         "char",
         "varchar",
-        "blob",
-        "text"
+        "nvarchar",
+        "binary"
+    ];
+
+    /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [
+        "decimal",
+        "float",
+        "double",
+        "time",
+        "datetime",
+        "timestamp"
+    ];
+
+    /**
+     * Gets list of column data types that supports scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [
+        "decimal",
+        "float",
+        "double",
+    ];
+
+    /**
+     * Gets list of column data types that supports UNSIGNED and ZEROFILL attributes.
+     */
+    unsignedAndZerofillTypes: ColumnType[] = [
+        "int",
+        "smallint",
+        "tinyint",
+        "mediumint",
+        "bigint",
+        "decimal",
+        "float",
+        "double"
     ];
 
     /**
@@ -135,6 +190,7 @@ export class MysqlDriver implements Driver {
         updateDateDefault: "CURRENT_TIMESTAMP(6)",
         version: "int",
         treeLevel: "int",
+        migrationId: "int",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",
@@ -150,19 +206,17 @@ export class MysqlDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        varchar: { length: 255 },
-        int: { length: 11 },
-        tinyint: { length: 4 },
-        smallint: { length: 5 },
-        mediumint: { length: 9 },
-        bigint: { length: 20 },
-        year: { length: 4 }
+        "char": { length: 1 },
+        "binary": { length: 1 },
+        "decimal": { precision: 10, scale: 0 },
+        "float": { precision: 12 },
+        "double": { precision: 22 }
     };
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    
+
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as MysqlConnectionOptions;
@@ -260,15 +314,20 @@ export class MysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value = parameters[key.substr(1)];
+            let value: any;
+            if (key.substr(0, 4) === ":...") {
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
             if (value instanceof Function) {
                 return value();
 
             } else {
-                if (value instanceof ArrayParameter) value = value.value;
-                escapedParameters.push(parameters[key.substr(1)]);
+                escapedParameters.push(value);
                 return "?";
             }
         }); // todo: make replace only in value statements, otherwise problems
@@ -280,6 +339,14 @@ export class MysqlDriver implements Driver {
      */
     escape(columnName: string): string {
         return "`" + columnName + "`";
+    }
+
+    /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return database ? `${database}.${tableName}` : tableName;
     }
 
     /**
@@ -304,11 +371,14 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value, true);
+        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            return DateUtils.mixedDateToDate(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value);
         }
 
         return value;
@@ -318,30 +388,33 @@ export class MysqlDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
-
         if (value === null || value === undefined)
             return value;
-            
+
         if (columnMetadata.type === Boolean) {
-            return value ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.normalizeHydratedDate(value);
+            value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
+            value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "json") {
-            return typeof value === "string" ? JSON.parse(value) : value;
+            value = typeof value === "string" ? JSON.parse(value) : value;
 
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedTimeToString(value);
+            value = DateUtils.mixedTimeToString(value);
 
         } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.stringToSimpleArray(value);
+            value = DateUtils.stringToSimpleArray(value);
+
+        } else if (columnMetadata.type === "simple-json") {
+            value = DateUtils.stringToSimpleJson(value);
         }
+
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
 
         return value;
     }
@@ -349,11 +422,11 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
+    normalizeType(column: { type: ColumnType, length?: number|string, precision?: number|null, scale?: number }): string {
         if (column.type === Number || column.type === "integer") {
             return "int";
 
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "nvarchar") {
             return "varchar";
 
         } else if (column.type === Date) {
@@ -365,10 +438,13 @@ export class MysqlDriver implements Driver {
         } else if (column.type === Boolean) {
             return "tinyint";
 
+        } else if (column.type === "numeric" || column.type === "dec") {
+            return "decimal";
+
         } else if (column.type === "uuid") {
             return "varchar";
 
-        } else if (column.type === "simple-array") {
+        } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
         } else {
@@ -379,21 +455,23 @@ export class MysqlDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
-        if (typeof column.default === "number") {
-            return "" + column.default;
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
 
-        } else if (typeof column.default === "boolean") {
-            return column.default === true ? "1" : "0";
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
 
-        } else if (typeof column.default === "function") {
-            return column.default();
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
 
-        } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
+
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
 
         } else {
-            return column.default;
+            return defaultValue;
         }
     }
 
@@ -401,38 +479,43 @@ export class MysqlDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique || 
-            !!column.entityMetadata.indices.find(index => index.isUnique && index.columns.length === 1 && index.columns[0] === column);
+        return column.entityMetadata.indices.some(idx => idx.isUnique && idx.columns.length === 1 && idx.columns[0] === column);
     }
 
     /**
-     * Calculates column length taking into account the default length values.
+     * Returns default column lengths, which is required on column creation.
      */
-    getColumnLength(column: ColumnMetadata): string {
-        
+    getColumnLength(column: ColumnMetadata|TableColumn): string {
         if (column.length)
-            return column.length;
+            return column.length.toString();
 
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();       
+        switch (column.type) {
+            case String:
+            case "varchar":
+            case "nvarchar":
+                return "255";
+            case "uuid":
+                return "36";
+            default:
+                return "";
+        }
+    }
 
-        return "";
-    }    
-    
+    /**
+     * Creates column type definition including length, precision and scale
+     */
     createFullType(column: TableColumn): string {
         let type = column.type;
 
-        if (column.length) {
-            type += "(" + column.length + ")";
-        } else if (column.precision && column.scale) {
-            type += "(" + column.precision + "," + column.scale + ")";
-        } else if (column.precision) {
-            type +=  "(" + column.precision + ")";
-        } else if (column.scale) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
+        // used 'getColumnLength()' method, because MySQL requires column length for `varchar` and `nvarchar` data types
+        if (this.getColumnLength(column)) {
+            type += `(${this.getColumnLength(column)})`;
+
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
+            type += `(${column.precision},${column.scale})`;
+
+        } else if (column.precision !== null && column.precision !== undefined) {
+            type += `(${column.precision})`;
         }
 
         if (column.isArray)
@@ -450,12 +533,12 @@ export class MysqlDriver implements Driver {
         return new Promise<any>((ok, fail) => {
             if (this.poolCluster) {
                 this.poolCluster.getConnection("MASTER", (err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(dbConnection);
+                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
 
             } else if (this.pool) {
                 this.pool.getConnection((err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(dbConnection);
+                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
                 fail(new Error(`Connection is not established with mysql database`));
@@ -483,7 +566,6 @@ export class MysqlDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
-        // console.log("uuidMap", uuidMap);
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
@@ -497,6 +579,49 @@ export class MysqlDriver implements Driver {
         }, {} as ObjectLiteral);
 
         return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
+    }
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
+            if (!tableColumn)
+                return false; // we don't need new columns, we only need exist and changed
+
+            // console.log("table:", columnMetadata.entityMetadata.tableName);
+            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            // console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
+            // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
+            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
+            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("==========================================");
+
+            return tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
+                || tableColumn.zerofill !== columnMetadata.zerofill
+                || tableColumn.unsigned !== columnMetadata.unsigned
+                // || tableColumn.comment !== columnMetadata.comment // todo
+                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+        });
     }
 
     /**
@@ -563,8 +688,8 @@ export class MysqlDriver implements Driver {
             timezone: options.timezone,
             connectTimeout: options.connectTimeout,
             insecureAuth: options.insecureAuth,
-            supportBigNumbers: options.supportBigNumbers,
-            bigNumberStrings: options.bigNumberStrings,
+            supportBigNumbers: options.supportBigNumbers !== undefined ? options.supportBigNumbers : true,
+            bigNumberStrings: options.bigNumberStrings !== undefined ? options.bigNumberStrings : true,
             dateStrings: options.dateStrings,
             debug: options.debug,
             trace: options.trace,
@@ -600,6 +725,35 @@ export class MysqlDriver implements Driver {
                 ok(pool);
             });
         });
+    }
+
+    /**
+     * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     */
+    private prepareDbConnection(connection: any): any {
+        const { logger } = this.connection;
+        /*
+          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+          cause the hosting app to crash.
+         */
+        if (connection.listeners("error").length === 0) {
+            connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
+        }
+        return connection;
+    }
+
+    /**
+     * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     */
+    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+        if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
+            // we need to cut out "'" because in mysql we can understand returned value is a string or a function
+            // as result compare cannot understand if default is really changed or not
+            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "");
+            databaseValue = databaseValue.replace(/^'+|'+$/g, "");
+        }
+
+        return columnMetadataValue === databaseValue;
     }
 
 }

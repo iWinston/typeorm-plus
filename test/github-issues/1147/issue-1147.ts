@@ -25,7 +25,7 @@ describe("github issues > #1147 FindOptions should be able to accept custom wher
         }
         await Promise.all(promises);
 
-        const posts = await connection.manager.find(Post, { where: "title LIKE '%3'" });
+        const posts = await connection.manager.find(Post, { where: "Post.title LIKE '%3'" });
         posts.length.should.be.equal(1);
         expect(posts[0].title).to.be.equal("post 3");
     })));

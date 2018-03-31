@@ -3,13 +3,11 @@ import {createTestingConnections, closeTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../src/connection/Connection";
 import {Category} from "./entity/Category";
 
-// todo: uncomment test once closure tables functionality is back
-describe.skip("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
+describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -34,9 +32,6 @@ describe.skip("github issues > #904 Using closure tables without @TreeLevelColum
 
         c11.parentCategory = c1;
         c12.parentCategory = c1;
-
-        // todo: this case is not working:
-        // c1.childCategories = [c11, c12];
 
         await categoryRepository.save(a1);
         await categoryRepository.save(b1);

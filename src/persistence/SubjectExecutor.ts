@@ -223,6 +223,10 @@ export class SubjectExecutor {
                     bulkInsertSubjects.push(subject);
                     bulkInsertMaps.push(subject.entity!);
                 });
+            } else if (this.queryRunner.connection.driver instanceof OracleDriver) {
+                subjects.forEach(subject => {
+                    singleInsertSubjects.push(subject);
+                });
             } else {
                 subjects.forEach(subject => {
 
@@ -310,6 +314,18 @@ export class SubjectExecutor {
                     });
                 }
             }
+
+            subjects.forEach(subject => {
+                if (subject.generatedMap) {
+                    subject.metadata.columns.forEach(column => {
+                        const value = column.getEntityValue(subject.generatedMap!);
+                        if (value !== undefined && value !== null) {
+                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                        }
+                    });
+                }
+            });
         });
     }
 
@@ -352,6 +368,15 @@ export class SubjectExecutor {
 
                 const updateResult = await updateQueryBuilder.execute();
                 subject.generatedMap = updateResult.generatedMaps[0];
+                if (subject.generatedMap) {
+                    subject.metadata.columns.forEach(column => {
+                        const value = column.getEntityValue(subject.generatedMap!);
+                        if (value !== undefined && value !== null) {
+                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                        }
+                    });
+                }
 
                 // experiments, remove probably, need to implement tree tables children removal
                 // if (subject.updatedRelationMaps.length > 0) {

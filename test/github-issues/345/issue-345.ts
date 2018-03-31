@@ -32,7 +32,7 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
             .manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "category")
-            .where("category.category_id IN (:ids)", { ids: [21] })
+            .where("category.category_id IN (:...ids)", { ids: [21] })
             .getOne();
 
         expect(loadedPost).not.to.be.empty;

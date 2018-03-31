@@ -22,15 +22,15 @@ describe("uuid-mssql", () => {
         const postRepository = connection.getRepository(Post);
         const questionRepository = connection.getRepository(Question);
         const queryRunner = connection.createQueryRunner();
-        const postTableSchema = await queryRunner.getTable("post");
-        const questionTableSchema = await queryRunner.getTable("question");
+        const postTable = await queryRunner.getTable("post");
+        const questionTable = await queryRunner.getTable("question");
         await queryRunner.release();
 
         const post = new Post();
         await postRepository.save(post);
         const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.uuid).to.be.exist;
-        postTableSchema!.findColumnByName("uuid")!.type.should.be.equal("uniqueidentifier");
+        postTable!.findColumnByName("uuid")!.type.should.be.equal("uniqueidentifier");
 
         const post2 = new Post();
         post2.uuid = "FD357B8F-8838-42F6-B7A2-AE027444E895";
@@ -45,10 +45,10 @@ describe("uuid-mssql", () => {
         expect(loadedQuestion!.uuid).to.be.exist;
         expect(loadedQuestion!.uuid2).to.be.null;
         expect(loadedQuestion!.uuid3).to.be.exist;
-        questionTableSchema!.findColumnByName("id")!.type.should.be.equal("uniqueidentifier");
-        questionTableSchema!.findColumnByName("uuid")!.type.should.be.equal("uniqueidentifier");
-        questionTableSchema!.findColumnByName("uuid2")!.type.should.be.equal("uniqueidentifier");
-        questionTableSchema!.findColumnByName("uuid3")!.type.should.be.equal("uniqueidentifier");
+        questionTable!.findColumnByName("id")!.type.should.be.equal("uniqueidentifier");
+        questionTable!.findColumnByName("uuid")!.type.should.be.equal("uniqueidentifier");
+        questionTable!.findColumnByName("uuid2")!.type.should.be.equal("uniqueidentifier");
+        questionTable!.findColumnByName("uuid3")!.type.should.be.equal("uniqueidentifier");
 
         const question2 = new Question();
         question2.id = "1ECAD7F6-23EE-453E-BB44-16ECA26D5189";

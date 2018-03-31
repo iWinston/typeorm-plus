@@ -29,6 +29,11 @@ export class IndexMetadata {
     isUnique: boolean = false;
 
     /**
+     * Indicates if this index must synchronize with database index.
+     */
+    synchronize: boolean = true;
+
+    /**
      * If true, the index only references documents with the specified field.
      * These indexes use less space but behave differently in some situations (particularly sorts).
      * This option is only supported for mongodb database.
@@ -63,9 +68,9 @@ export class IndexMetadata {
     name: string;
 
     /**
-     * Gets the table name on which index is applied.
+     * Index filter condition.
      */
-    tableName: string;
+    where?: string;
 
     /**
      * Map of column names with order set.
@@ -90,7 +95,10 @@ export class IndexMetadata {
 
         if (options.args) {
             this.target = options.args.target;
+            if (options.args.synchronize !== null && options.args.synchronize !== undefined)
+                this.synchronize = options.args.synchronize;
             this.isUnique = options.args.unique;
+            this.where = options.args.where;
             this.isSparse = options.args.sparse;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
@@ -106,9 +114,12 @@ export class IndexMetadata {
      * Must be called after all entity metadata's properties map, columns and relations are built.
      */
     build(namingStrategy: NamingStrategyInterface): this {
+        if (this.synchronize === false) {
+            this.name = this.givenName!;
+            return this;
+        }
 
         const map: { [key: string]: number } = {};
-        this.tableName = this.entityMetadata.tableName;
 
         // if columns already an array of string then simply return it
         if (this.givenColumnNames) {
@@ -153,7 +164,7 @@ export class IndexMetadata {
                 updatedMap[column.databaseName] = map[key];
             return updatedMap;
         }, {} as { [key: string]: number });
-        this.name = namingStrategy.indexName(this.givenName ? this.givenName : undefined, this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
+        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
         return this;
     }
 

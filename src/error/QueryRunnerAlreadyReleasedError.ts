@@ -5,6 +5,7 @@ export class QueryRunnerAlreadyReleasedError extends Error {
 
     constructor() {
         super();
+        Object.setPrototypeOf(this, QueryRunnerAlreadyReleasedError.prototype);
         this.message = `Query runner already released. Cannot run queries anymore.`;
     }
 

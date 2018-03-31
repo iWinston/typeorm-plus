@@ -1,4 +1,4 @@
-import {importClassesFromDirectories, importJsonsFromDirectories} from "../util/DirectoryExportedClassesLoader";
+import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoader";
 import {OrmUtils} from "../util/OrmUtils";
 import {getFromContainer} from "../container";
 import {MigrationInterface} from "../migration/MigrationInterface";
@@ -49,14 +49,17 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds entity metadatas for the given classes or directories.
      */
-    buildEntityMetadatas(entities: (Function|string)[], schemas: (EntitySchema|string)[]): EntityMetadata[] {
-        const [entityClasses, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
+    buildEntityMetadatas(entities: (Function|EntitySchema<any>|string)[]): EntityMetadata[] {
+        // todo: instead we need to merge multiple metadata args storages
+
+        const [entityClassesOrSchemas, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
+        const entityClasses: Function[] = entityClassesOrSchemas.filter(entityClass => (entityClass instanceof EntitySchema) === false) as any;
+        const entitySchemas: EntitySchema<any>[] = entityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema) as any;
+
         const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(entityDirectories)];
         const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
 
-        const [entitySchemaClasses, entitySchemaDirectories] = OrmUtils.splitClassesAndStrings(schemas || []);
-        const allEntitySchemaClasses = [...entitySchemaClasses, ...importJsonsFromDirectories(entitySchemaDirectories)];
-        const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(allEntitySchemaClasses);
+        const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(entitySchemas);
         const schemaEntityMetadatas = new EntityMetadataBuilder(this.connection, metadataArgsStorageFromSchema).build();
 
         return [...decoratorEntityMetadatas, ...schemaEntityMetadatas];

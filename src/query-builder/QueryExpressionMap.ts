@@ -10,6 +10,7 @@ import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilder} from "./QueryBuilder";
+import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -196,6 +197,11 @@ export class QueryExpressionMap {
     cacheId: string;
 
     /**
+     * Options that define QueryBuilder behaviour.
+     */
+    options: SelectQueryBuilderOption[] = [];
+
+    /**
      * Property path of relation to work with.
      * Used in relational query builder.
      */
@@ -255,7 +261,7 @@ export class QueryExpressionMap {
      * otherwise it uses default entity order by if it was set.
      */
     get allOrderBys() {
-        if (!Object.keys(this.orderBys).length && this.mainAlias!.hasMetadata) {
+        if (!Object.keys(this.orderBys).length && this.mainAlias!.hasMetadata && this.options.indexOf("disable-global-order") === -1) {
             const entityOrderBy = this.mainAlias!.metadata.orderBy || {};
             return Object.keys(entityOrderBy).reduce((orderBy, key) => {
                 orderBy[this.mainAlias!.name + "." + key] = entityOrderBy[key];

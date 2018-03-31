@@ -91,7 +91,6 @@ describe("Connection", () => {
                     password: "test",
                     database: "test",
                     entities: [],
-                    entitySchemas: [],
                     dropSchema: false,
                     schemaCreate: false,
                     enabledDrivers: ["mysql"],

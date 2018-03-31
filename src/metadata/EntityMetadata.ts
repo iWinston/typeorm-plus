@@ -19,6 +19,8 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {TreeType} from "./types/TreeTypes";
 import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
+import {UniqueMetadata} from "./UniqueMetadata";
+import {CheckMetadata} from "./CheckMetadata";
 
 /**
  * Contains all entity metadata.
@@ -391,6 +393,16 @@ export class EntityMetadata {
     indices: IndexMetadata[] = [];
 
     /**
+     * Entity's unique metadatas.
+     */
+    uniques: UniqueMetadata[] = [];
+
+    /**
+     * Entity's check metadatas.
+     */
+    checks: CheckMetadata[] = [];
+
+    /**
      * Entity's own listener metadatas.
      */
     ownListeners: EntityListenerMetadata[] = [];
@@ -534,7 +546,7 @@ export class EntityMetadata {
         if (!entity)
             return undefined;
 
-        return EntityMetadata.getValueMap(entity, this.primaryColumns);
+        return EntityMetadata.getValueMap(entity, this.primaryColumns, { skipNulls: true });
     }
 
     /**
@@ -585,6 +597,23 @@ export class EntityMetadata {
      */
     findColumnWithDatabaseName(databaseName: string): ColumnMetadata|undefined {
         return this.columns.find(column => column.databaseName === databaseName);
+    }
+
+    /**
+     * Finds column with a given property path.
+     */
+    findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
+        const column = this.columns.find(column => column.propertyPath === propertyPath);
+        if (column)
+            return column;
+
+        // in the case if column with property path was not found, try to find a relation with such property path
+        // if we find relation and it has a single join column then its the column user was seeking
+        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        if (relation && relation.joinColumns.length === 1)
+            return relation.joinColumns[0];
+
+        return undefined;
     }
 
     /**
@@ -693,14 +722,16 @@ export class EntityMetadata {
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
      */
-    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[]): ObjectLiteral|undefined {
-        const map = columns.reduce((map, column) => {
-            if (column.isObjectId)
-                return Object.assign(map, column.getEntityValueMap(entity));
+    static getValueMap(entity: ObjectLiteral, columns: ColumnMetadata[], options?: { skipNulls?: boolean }): ObjectLiteral|undefined {
+        return columns.reduce((map, column) => {
+            const value = column.getEntityValueMap(entity, options);
 
-            return OrmUtils.mergeDeep(map, column.getEntityValueMap(entity));
-        }, {} as ObjectLiteral);
-        return Object.keys(map).length > 0 ? map : undefined;
+            // make sure that none of the values of the columns are not missing
+            if (map === undefined || value === null || value === undefined)
+                return undefined;
+
+            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
+        }, {} as ObjectLiteral|undefined);
     }
 
     // ---------------------------------------------------------------------
@@ -762,7 +793,7 @@ export class EntityMetadata {
     }
 
     /**
-     * Builds table path using database name and schema name and table name.
+     * Builds table path using database name, schema name and table name.
      */
     protected buildTablePath(): string {
         let tablePath = this.tableName;

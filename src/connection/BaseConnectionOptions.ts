@@ -25,28 +25,27 @@ export interface BaseConnectionOptions {
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.
      */
-    readonly entities?: (Function|string)[];
+    readonly entities?: ((Function|string|EntitySchema<any>))[];
 
     /**
      * Subscribers to be loaded for this connection.
      * Accepts both subscriber classes and directories where from subscribers need to be loaded.
      * Directories support glob patterns.
      */
-    readonly subscribers?: Function[]|string[];
-
-    /**
-     * Entity schemas to be loaded for this connection.
-     * Accepts both entity schema classes and directories where from entity schemas need to be loaded.
-     * Directories support glob patterns.
-     */
-    readonly entitySchemas?: EntitySchema[]|string[];
+    readonly subscribers?: (Function|string)[];
 
     /**
      * Migrations to be loaded for this connection.
      * Accepts both migration classes and directories where from migrations need to be loaded.
      * Directories support glob patterns.
      */
-    readonly migrations?: Function[]|string[];
+    readonly migrations?: (Function|string)[];
+
+    /**
+     * Migrations table name, in case of different name from "migrations".
+     * Accepts single string name.
+     */
+    readonly migrationsTableName?: string;
 
     /**
      * Naming strategy to be used to name tables and columns in the database.
@@ -70,7 +69,7 @@ export interface BaseConnectionOptions {
 
     /**
      * Indicates if database schema should be auto created on every application launch.
-     * Be careful with this option and don't use this in production - otherwise you can loose production data.
+     * Be careful with this option and don't use this in production - otherwise you can lose production data.
      * This option is useful during debug and development.
      * Alternative to it, you can use CLI and run schema:sync command.
      *
@@ -87,7 +86,7 @@ export interface BaseConnectionOptions {
 
     /**
      * Drops the schema each time connection is being established.
-     * Be careful with this option and don't use this in production - otherwise you'll loose all production data.
+     * Be careful with this option and don't use this in production - otherwise you'll lose all production data.
      * This option is useful during debug and development.
      */
     readonly dropSchema?: boolean;

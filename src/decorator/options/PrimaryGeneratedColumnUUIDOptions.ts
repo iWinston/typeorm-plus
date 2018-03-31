@@ -1,5 +1,5 @@
 /**
- * Describes all column's options.
+ * Describes all options for PrimaryGeneratedColumn decorator with numeric uuid strategy.
  */
 export interface PrimaryGeneratedColumnUUIDOptions {
 

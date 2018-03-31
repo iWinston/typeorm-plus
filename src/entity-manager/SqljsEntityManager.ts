@@ -45,4 +45,5 @@ export class SqljsEntityManager extends EntityManager {
     exportDatabase(): Uint8Array {
         return this.driver.export();
     }
+
  }

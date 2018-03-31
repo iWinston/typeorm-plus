@@ -19,7 +19,7 @@ feel free to ask us and community.
 * `loadAllRelationIds` method of `QueryBuilder` now accepts list of relation paths that needs to be loaded, also `disableMixedMap` option is now by default set to false, but you can enable it via new method parameter `options`
 * now `returning` and `output` statements of `InsertQueryBuilder` support array of columns as argument
 * now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
-* fixed issues with relation updation from one-to-one non-owner side
+* fixed issues with relation update from one-to-one non-owner side
 * now version column is updated on the database level, not by ORM anymore
 * now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `CURRENT_TIMESTAMP` as a default value)
 * now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` automatically update entities after execution.
@@ -29,7 +29,7 @@ If you want to disable this behavior use `queryBuilder.updateEntity(false)` meth
 This feature is convenient for users who have uuid, create/update date, version columns or columns with DEFAULT value set.
 * now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners.
 You can disable this behavior by setting `queryBuilder.callListeners(false)` method.
-* `Repository` and `EntityManager` method `.findOne` is deprecated and will be removed in next 0.3.0 version.
+* `Repository` and `EntityManager` method `.findOneById` is deprecated and will be removed in next 0.3.0 version.
 Use `findOne(id)` method instead now.
 * `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
 * `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
@@ -54,10 +54,52 @@ By default its true.
 * now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
 * `@ClosureEntity` decorator has been removed. Instead `@Entity` + `@Tree("closure-table")` must be used
 * added support for nested set and materialized path tree hierarchy patterns
+* breaking change on how array parameters work in queries - now instead of (:param) new syntax must be used (:...param).
+This fixed various issues on how real arrays must work
+* changed the way how entity schemas are created (now more type-safe), now interface EntitySchema is a class
+* added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
+composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
+* added `@Check` decorator. Accepts custom check constraint name and expression. Used only on as 
+composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'asd'")`
+* fixed `Oracle` issues, now it will be fully maintained as other drivers 
+* implemented migrations functionality in all drivers
+* CLI commands changed from `migrations:create`, `migrations:generate`, `migrations:revert` and `migrations:run` to `migration:create`, `migration:generate`, `migration:revert` and `migration:run`
+* changed the way how migrations work (more info in #1315). Now migration table contains `id` column with auto-generated keys, you need to re-create migrations table or add new column manually.
+
+## 0.1.19
+
+* fixed bug in InsertQueryBuilder
+
+## 0.1.18
+
+* fixed timestamp issues
+
+## 0.1.17
+
+* fixed issue with entity order by applied to update query builder
+
+## 0.1.16
+
+* security and bug fixes
+
+## 0.1.15
+
+* security and bug fixes
+
+## 0.1.14
+
+* optimized hydration performance ([#1672](https://github.com/typeorm/typeorm/pull/1672))
+
+## 0.1.13
+
+* added simple-json column type ([#1448](https://github.com/typeorm/typeorm/pull/1488))
+* fixed transform behaviour for timestamp columns ([#1140](https://github.com/typeorm/typeorm/issues/1140))
+* fixed issue with multi-level relations loading ([#1504](https://github.com/typeorm/typeorm/issues/1504))
 
 ## 0.1.12
 
 * EntitySubscriber now fires events on subclass entity ([#1369](https://github.com/typeorm/typeorm/issues/1369))
+* fixed error with entity schema validator being async  ([#1448](https://github.com/typeorm/typeorm/issues/1448))
 
 ## 0.1.11
 

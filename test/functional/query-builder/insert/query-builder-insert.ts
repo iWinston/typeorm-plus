@@ -6,6 +6,7 @@ import {User} from "./entity/User";
 import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 import {Photo} from "./entity/Photo";
 import {AbstractSqliteDriver} from "../../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
 
 describe("query builder > insert", () => {
     
@@ -36,16 +37,6 @@ describe("query builder > insert", () => {
             })
             .execute();
 
-        await connection.createQueryBuilder()
-            .insert()
-            .into(User)
-            .values([
-                { name: "Umed Khudoiberdiev" },
-                { name: "Bakhrom Baubekov" },
-                { name: "Bakhodur Kandikov" },
-            ])
-            .execute();
-
         await connection.getRepository(User)
             .createQueryBuilder("user")
             .insert()
@@ -56,10 +47,31 @@ describe("query builder > insert", () => {
         users.should.be.eql([
             { id: 1, name: "Alex Messer" },
             { id: 2, name: "Dima Zotov" },
-            { id: 3, name: "Umed Khudoiberdiev" },
-            { id: 4, name: "Bakhrom Baubekov" },
-            { id: 5, name: "Bakhodur Kandikov" },
-            { id: 6, name: "Muhammad Mirzoev" },
+            { id: 3, name: "Muhammad Mirzoev" }
+        ]);
+
+    })));
+
+    it("should perform bulk insertion correctly", () => Promise.all(connections.map(async connection => {
+        // it is skipped for Oracle because it does not support bulk insertion
+        if (connection.driver instanceof OracleDriver)
+            return;
+
+        await connection.createQueryBuilder()
+            .insert()
+            .into(User)
+            .values([
+                { name: "Umed Khudoiberdiev" },
+                { name: "Bakhrom Baubekov" },
+                { name: "Bakhodur Kandikov" },
+            ])
+            .execute();
+
+        const users = await connection.getRepository(User).find();
+        users.should.be.eql([
+            { id: 1, name: "Umed Khudoiberdiev" },
+            { id: 2, name: "Bakhrom Baubekov" },
+            { id: 3, name: "Bakhodur Kandikov" }
         ]);
 
     })));
@@ -81,7 +93,9 @@ describe("query builder > insert", () => {
     })));
 
     it("should be able to insert entities with different properties set even inside embeds", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof AbstractSqliteDriver) // this test is skipped for sqlite based drivers because it does not support DEFAULT values in insertions
+        // this test is skipped for sqlite based drivers because it does not support DEFAULT values in insertions,
+        // also it is skipped for Oracle because it does not support bulk insertion
+        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof OracleDriver)
             return;
 
         await connection
