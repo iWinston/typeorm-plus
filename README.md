@@ -598,6 +598,7 @@ Now let's create a new photo to save it in the database:
 
 ```typescript
 import {createConnection} from "typeorm";
+import {Photo} from "./entity/Photo";
 
 createConnection(/*...*/).then(connection => {
 
@@ -1179,7 +1180,7 @@ photo.filename = "photo-with-bears.jpg";
 photo.albums = [album1, album2];
 await connection.manager.save(photo);
 
-// now out photo is saved and albums are attached to it
+// now our photo is saved and albums are attached to it
 // now lets load them:
 const loadedPhoto = await connection
     .getRepository(Photo)

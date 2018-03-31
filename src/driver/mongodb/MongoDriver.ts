@@ -178,7 +178,8 @@ export class MongoDriver implements Driver {
                 readConcern: this.options.readConcern,
                 maxStalenessSeconds: this.options.maxStalenessSeconds,
                 loggerLevel: this.options.loggerLevel,
-                logger: this.options.logger
+                logger: this.options.logger,
+                authMechanism: this.options.authMechanism
             }, (err: any, client: any) => {
                 if (err) return fail(err);
 
