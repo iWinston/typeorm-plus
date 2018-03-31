@@ -101,6 +101,16 @@ export interface ColumnOptions {
     enum?: any[]|Object;
 
     /**
+     * Generated column expression. Supports only in MySQL.
+     */
+    asExpression?: string;
+
+    /**
+     * Generated column type. Supports only in MySQL.
+     */
+    generatedType?: "VIRTUAL"|"STORED";
+
+    /**
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */

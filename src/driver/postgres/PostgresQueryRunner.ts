@@ -919,6 +919,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Updates composite primary keys.
+     */
+    async updatePrimaryKeys(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        await Promise.resolve();
+    }
+
+    /**
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
@@ -1337,8 +1344,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     }
 
                     tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
-                    tableColumn.charset = dbColumn["character_set_name"];
-                    tableColumn.collation = dbColumn["collation_name"];
+                    if (dbColumn["character_set_name"])
+                        tableColumn.charset = dbColumn["character_set_name"];
+                    if (dbColumn["collation_name"])
+                        tableColumn.collation = dbColumn["collation_name"];
                     return tableColumn;
                 }));
 

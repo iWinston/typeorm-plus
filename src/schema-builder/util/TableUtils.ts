@@ -7,13 +7,15 @@ export class TableUtils {
     static createTableColumnOptions(columnMetadata: ColumnMetadata, driver: Driver): TableColumnOptions {
         return {
             name: columnMetadata.databaseName,
-            length: driver.getColumnLength(columnMetadata),
+            length: columnMetadata.length,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,
             scale: columnMetadata.scale,
             zerofill: columnMetadata.zerofill,
             unsigned: columnMetadata.unsigned,
+            asExpression: columnMetadata.asExpression,
+            generatedType: columnMetadata.generatedType,
             default: driver.normalizeDefault(columnMetadata),
             comment: columnMetadata.comment,
             isGenerated: columnMetadata.isGenerated,

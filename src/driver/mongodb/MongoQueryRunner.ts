@@ -618,6 +618,13 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Updates composite primary keys.
+     */
+    async updatePrimaryKeys(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {

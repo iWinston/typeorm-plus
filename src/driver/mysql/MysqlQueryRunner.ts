@@ -627,6 +627,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 if (newColumn.isPrimary === true) {
                     primaryColumns.push(newColumn);
+                    // update column in table
+                    const column = clonedTable.columns.find(column => column.name === newColumn.name);
+                    column!.isPrimary = true;
                     const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
@@ -634,6 +637,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 } else {
                     const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
                     primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
+                    // update column in table
+                    const column = clonedTable.columns.find(column => column.name === newColumn.name);
+                    column!.isPrimary = false;
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
@@ -726,7 +732,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (primaryColumns.length > 0) {
-                const columnNames = primaryColumns.map(primaryColumn => `\'${primaryColumn.name}\'`).join(", ");
+                const columnNames = primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`);
             }
@@ -796,6 +802,57 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (columnNames.find(columnName => columnName === column.name))
                 column.isPrimary = true;
         });
+        this.replaceCachedTable(table, clonedTable);
+    }
+
+    /**
+     * Updates composite primary keys.
+     */
+    async updatePrimaryKeys(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const clonedTable = table.clone();
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        // if table have generated column, we must drop AUTO_INCREMENT before changing primary constraints.
+        const generatedColumn = clonedTable.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
+        if (generatedColumn) {
+            const nonGeneratedColumn = generatedColumn.clone();
+            nonGeneratedColumn.isGenerated = false;
+            nonGeneratedColumn.generationStrategy = undefined;
+
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
+        }
+
+        // if table already have primary columns, we must drop them.
+        const primaryColumns = clonedTable.primaryColumns;
+        if (primaryColumns.length > 0) {
+            const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`);
+        }
+
+        // update columns in table.
+        clonedTable.columns
+            .filter(column => columnNames.indexOf(column.name) !== -1)
+            .forEach(column => column.isPrimary = true);
+
+        const columnNamesString = columnNames.map(columnName => `\`${columnName}\``).join(", ");
+        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNamesString})`);
+        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
+
+        // if we have generated column, and we dropped AUTO_INCREMENT property before, we must bring it back
+        if (generatedColumn) {
+            const nonGeneratedColumn = generatedColumn.clone();
+            nonGeneratedColumn.isGenerated = false;
+            nonGeneratedColumn.generationStrategy = undefined;
+
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+        }
+
+        await this.executeQueries(upQueries, downQueries);
         this.replaceCachedTable(table, clonedTable);
     }
 
@@ -1131,7 +1188,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
-                    tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => dbPrimaryKey["COLUMN_NAME"] === tableColumn.name);
+                    tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => {
+                        return this.driver.buildTableName(dbPrimaryKey["TABLE_NAME"], undefined, dbPrimaryKey["TABLE_SCHEMA"]) === tableFullName && dbPrimaryKey["COLUMN_NAME"] === tableColumn.name;
+                    });
                     tableColumn.zerofill = dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1;
                     tableColumn.unsigned = tableColumn.zerofill ? true : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1;
                     tableColumn.isGenerated = dbColumn["EXTRA"].indexOf("auto_increment") !== -1;
@@ -1139,8 +1198,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.generationStrategy = "increment";
 
                     tableColumn.comment = dbColumn["COLUMN_COMMENT"];
-                    tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
-                    tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
+                    if (dbColumn["CHARACTER_SET_NAME"])
+                        tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
+                    if (dbColumn["COLLATION_NAME"])
+                        tableColumn.collation = dbColumn["COLLATION_NAME"] === defaultCollation ? undefined : dbColumn["COLLATION_NAME"];
 
                     // check only columns that have length property
                     if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["CHARACTER_MAXIMUM_LENGTH"]) {
@@ -1367,6 +1428,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             c = `\`${column.name}\` ${this.connection.driver.createFullType(column)}`;
         }
+        if (column.asExpression)
+            c += ` AS (${column.asExpression}) ${column.generatedType ? column.generatedType : "VIRTUAL"}`;
+
         // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column.
         if (column.zerofill) {
             c += " ZEROFILL";

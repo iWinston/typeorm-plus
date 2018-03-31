@@ -139,6 +139,16 @@ export class ColumnMetadata {
     enum?: any[];
 
     /**
+     * Generated column expression. Supports only in MySQL.
+     */
+    asExpression?: string;
+
+    /**
+     * Generated column type. Supports only in MySQL.
+     */
+    generatedType?: "VIRTUAL"|"STORED";
+
+    /**
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */
@@ -322,6 +332,10 @@ export class ColumnMetadata {
             } else {
                 this.enum = options.args.options.enum;
             }
+        }
+        if (options.args.options.asExpression) {
+            this.asExpression = options.args.options.asExpression;
+            this.generatedType = options.args.options.generatedType ? options.args.options.generatedType : "VIRTUAL";
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType;
