@@ -1,25 +1,155 @@
-TypeORM是一个优秀的Node.js ORM框架，采用TypeScript编写，支持使用TypeScript或Javascript(ES5, ES6, ES7)开发。
-目标是保持支持最新的Javascript特性来帮助开发各种用到数据库的应用 - 不管是轻应用还是企业级的。
+<div align="center">
+  <a href="https://typeorm.io/">
+    <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
+  </a>
+  <br>
+  <br>
+	<a href="https://travis-ci.org/typeorm/typeorm">
+		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	</a>
+	<a href="https://badge.fury.io/js/typeorm">
+		<img src="https://badge.fury.io/js/typeorm.svg">
+	</a>
+	<a href="https://david-dm.org/typeorm/typeorm">
+		<img src="https://david-dm.org/typeorm/typeorm.svg">
+	</a>
+	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
+		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
+	</a>
+  <br>
+  <br>
+</div>
 
-TypeORM可以做到：
+TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap和Ionic平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7)一起使用。
+它的目标是始终支持最新的JavaScript特性并提供额外的特性以帮助你开发任何使用数据库的应用程序 —— 不管是只有几张表的小型应用还是拥有多数据库的大型企业应用。
 
-* 根据Models自动创建数据库Table
-* 可以透明的insert/update/delete数据库对象
-* 映射数据库table到javascript对象，映射table column到javascript对象属性
-* 提供表的一对一，多对一，一对多，多对多关系处理
-* 还有更多 ...
+不同于现有的所有其他JavaScript ORM框架，TypeORM支持Active Record和Data Mapper模式，这意味着你用最有效的方法编写高质量的、松耦合的、可扩展的、可维护的应用程序。
 
-不同于其他的JavaScript ORM，TypeORM使用的是数据映射模式，可以很轻松的创建出松耦合、可伸缩、可维护的应用。
+TypeORM受到了参考了很多其他优秀ORM的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework).
 
-TypeORM可以帮助开发者专注于业务逻辑，而不用过于担心数据存储的问题。
+TypeORM 的一些特性：
+- 支持Active Record和Data Mapper（你可以自由选择）
+- 实体和列
+- 数据库特性列类型
+- 实体管理
+- 存储库和自定义存储库
+- 清洁对象关系模型
+- 关联（关系）
+- 贪婪和延迟关系
+- 单向的，双向的和自引用的关系
+- 支持多重继承模式
+- 级联
+- 索引
+- 事务
+- 迁移和自动迁移生成
+- 连接池
+- 复制
+- 使用多个数据库连接
+- 使用多个数据库类型
+- 跨数据库和跨模式查询
+- 优雅的语法，灵活而强大的QueryBuilder
+- 左联接和内联接
+- 准确的分页连接查询
+- 查询缓存
+- 原始结果流
+- 日志
+- 监听者和订阅者（钩子）
+- 支持闭包表模式
+- 在模型或者分离的配置文件中声明模式
+- json / xml / yml / env格式的连接配置
+- 支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL / sql.js
+- 支持 MongoDB NoSQL 数据库
+- 在NodeJS / 浏览器 / Ionic / Cordova / Electron平台上工作
+- 支持 TypeScript 和 JavaScript
+- 产生出高性能、灵活、清洁和可维护的代码
+- 遵循所有可能的最佳实践
+- 命令行工具
 
-TypeORM参考了很多其他优秀ORM的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework).
+还有更多...
 
-## Note
+使用TypeORM你的模型是这样的：
 
-This documentation is not up-to-date. 
-See latest english documentation on the [website](http://typeorm.io).
-Contributions are welcomed.
+```typescript
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    firstName: string;
+
+    @Column()
+    lastName: string;
+
+    @Column()
+    age: number;
+
+}
+```
+
+你的域逻辑是这样的：
+
+```typescript
+const user = new User();
+user.firstName = "Timber";
+user.lastName = "Saw";
+user.age = 25;
+await repository.save(user);
+
+const allUsers = await repository.find();
+const firstUser = await repository.findOneById(1);
+const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" });
+
+await repository.remove(timber);
+```
+
+或者，你如果你喜欢使用“ActiveRecord”实现，你也可以使用它：
+
+```typescript
+import {Entity, PrimaryGeneratedColumn, Column, BaseEntity} from "typeorm";
+
+@Entity()
+export class User extends BaseEntity {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    firstName: string;
+
+    @Column()
+    lastName: string;
+
+    @Column()
+    age: number;
+
+}
+```
+
+你的域逻辑是这样的：
+
+```typescript
+const user = new User();
+user.firstName = "Timber";
+user.lastName = "Saw";
+user.age = 25;
+await user.save();
+
+const allUsers = await User.find();
+const firstUser = await User.findOneById(1);
+const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" });
+
+await timber.remove();
+```
+
+## 请注意
+
+这个文档可能不是最新的。 
+可以去[官网](http://typeorm.io)查看最新的英文文档。
+非常欢迎你的贡献。
 
 ## 安装
 
@@ -35,13 +165,17 @@ Contributions are welcomed.
 
     * 比如在app.ts的入口处 `require("reflect-metadata")` 
 
-3. 安装数据库驱动:
+3. 你可能需要安装node类型：
+
+    `npm install @types/node --save`
+
+4. 安装数据库驱动:
 
     * **MySQL** 或 **MariaDB**
     
         `npm install mysql --save`
     
-    * **Postgres**
+    * **PostgreSQL**
     
         `npm install pg --save`
     
@@ -52,6 +186,10 @@ Contributions are welcomed.
     * **Microsoft SQL Server**
     
         `npm install mssql --save`
+
+    * **sql.js**
+
+        `npm install sql.js --save`
     
     * **Oracle** (experimental)
     
@@ -63,7 +201,7 @@ Contributions are welcomed.
 
 #### TypeScript配置
 
-确保你的TypeScript编译器的版本大于**2.1**，并且在`tsconfig.json`开启下面设置:
+确保你的TypeScript编译器的版本大于**2.3**，并且在`tsconfig.json`开启下面设置:
 
 ```json
 "emitDecoratorMetadata": true,
@@ -72,23 +210,102 @@ Contributions are welcomed.
 
 同时需要开启编译选项里的`lib`下的`es6`或者从`@typings`安装`es6-shim`
 
-#### Node.js 版本
-
-TypeORM在Node.JS 4.0或以上版本上测试通过。
-如果在应用启动过程中出错可以尝试升级node.js到最新版本。
-
-#### 在浏览器中使用WebSQL (试用)
-
-TypeORM可以在浏览器环境中工作，并且试验性的支持WebSQL
-如果在浏览器环境中使用TypeORM需要使用 `npm i typeorm-browser` 来替代 `typeorm`.
-更多相关可以参考[这里](https://typeorm.io)和[这个例子](https://github.com/typeorm/browser-example).
-
 ## 快速开始
 
-在TypeORM中，数据库table都是从实体中创建。
-所谓*实体*其实就是用装饰器`@Entity`装饰的一个model。 
-可以直接从数据库中得到包含数据的实体对象，并且可以通过实体进行数据库表的insert/update/remove。
-来看看这个model `entity/Photo.ts`:
+开始使用TypeORM的最快方法是使用它的CLI命令生成一个初始项目。
+快速开始只有在NodeJS应用程序中使用TypeORM才可以使用。
+如果你正在使用其他平台，请看[分步指南](#分步指南)。
+
+首先全局安装TypeORM：
+
+```
+npm install typeorm -g
+```
+
+然后转到新项目的目录并运行该命令：
+
+```
+typeorm init --name MyProject --database mysql
+```
+
+`name`即项目的名称，`database`是你将使用的数据库。数据库可以是下列值之一：`mysql`、`mariadb`、`postgres`、`sqlite`、`mssql`、`oracle`，`websql`、`mongodb`。
+
+该命令将在`MyProject`目录中生成一个新项目，其中包含以下文件：
+
+```
+MyProject
+├── src              // 放你的 TypeScript 代码
+│   ├── entity       // 放实体（数据库模型）的目录
+│   │   └── User.ts  // 实体的案例
+│   ├── migration    // 迁移文件目录
+│   └── index.ts     // 应用程序入口
+├── .gitignore       // 标准git忽略文件
+├── ormconfig.json   // ORM和数据连接配置
+├── package.json     // node模块依赖
+├── README.md        // 简单的说明文件
+└── tsconfig.json    // TypeScript编译配置
+```
+
+> 你也可以在现有的node项目目录执行`typeorm init`，但是一定要小心 - 它可能会覆盖你已经有的一些文件。
+
+下一步是安装项目依赖
+
+```
+cd MyProject
+npm install
+```
+
+在安装过程中，修改 `ormconfig.json` 文件将自己的数据库连接配置选项放在其中：
+
+```json
+{
+   "type": "mysql",
+   "host": "localhost",
+   "port": 3306,
+   "username": "test",
+   "password": "test",
+   "database": "test",
+   "synchronize": true,
+   "logging": false,
+   "entities": [
+      "src/entity/**/*.ts"
+   ],
+   "migrations": [
+      "src/migration/**/*.ts"
+   ],
+   "subscribers": [
+      "src/subscriber/**/*.ts"
+   ]
+}
+```
+
+通常来说，大多数时候你只需要配置`host`，`username`，`password`，`database` 或者 `port` 选项。
+
+配置和模块安装都完成之后，就可以运行应用程序了：
+
+```
+npm start
+```
+
+就是这样，你的应用程序应该成功地运行并将一个新用户插入到数据库中。
+你可以继续这个项目，集成你需要的其他模块，并创建更多的实体。
+
+> 运行`typeorm init --name MyProject --database mysql --express`命令可以安装`express`，生成一个更高级的项目。
+
+## 分步指南
+
+你对ORM的期望是什么？
+首先，你预期它将为你创建数据库表，并查找/插入/更新/删除你的数据，而不必编写大量难以维护的SQL查询。
+本指南将向你展示如何从头开始设置TypeORM，并让它按照你所期望的ORM进行。
+
+### 创建模型
+
+与数据库一起工作从创建表开始。
+如何告诉TypeORM创建一个数据库表？
+答案是 - 通过模型。
+你的应用程序中的模型就是你的数据库中的表。
+
+例如你有一个 `Photo` 模型：
 
 ```typescript
 export class Photo {
@@ -99,10 +316,19 @@ export class Photo {
     views: number;
 }
 ```
-        
+
+你想在你的数据库中存储照片。
+要在数据库中存储东西，首先需要一个数据库表，并从模型创建数据库表。
+不是所有的模型，而仅仅是那些你定义为*实体*。
+
 ### 创建实体
 
-现在把Model变成实体:
+*实体*是你用 `@Entity` 装饰的模型。
+将为这些模型创建一个数据库表。
+使用TypeORM你将在任何地方使用实体。
+你可以使用他们加载/插入/更新/删除并执行其他操作。
+
+让我们把`Photo`模型变成一个实体：
 
 ```typescript
 import {Entity} from "typeorm";
@@ -117,12 +343,14 @@ export class Photo {
     isPublished: boolean;
 }
 ```
-        
-### 添加table列
 
-已经有了一个table，每个table都有column. 
-现在来添加列. 
-可以使用装饰器`@Column`来把model的属性变成列：
+现在，将会为 `Photo` 实体创建一个数据库表，我们能够在应用程序的任何地方使用它。
+我们已经创建了一个数据库表，然而没有列的表示不存在的。
+让我们在数据库表中创建一些列吧。
+
+### 添加数据库表列
+
+要添加数据库列，只需要将生成的实体的属性用 `@Column` 装饰。
 
 ```typescript
 import {Entity, Column} from "typeorm";
@@ -149,11 +377,17 @@ export class Photo {
     isPublished: boolean;
 }
 ```
-        
+
+现在 `id`，`name`，`description`，`filename`，`views` 和 `isPublished` 列将会被添加 `photo` 表。
+数据库中的列类型是从你使用的属性类型推断出来的，例如：`number` 将会被转成 `integer`，`string` 转为 `varchar`，`boolean` 转为 `bool`，等。
+但是你可以通过隐式在 `@Column` 装饰器传入类型将列类型指定为任何你数据库支持的类型。
+
+我们生成了一个带有列的数据库表，但是还剩下一件事。
+每个数据库表必须有一个带有主键的列。
+
 ### 创建一个主键列
 
-很好， 现在ORM马上就可以在数据库中生成这个photo表，不过还漏了一个，每个table都必须要有主键列，所以要加上它。
-可以用`@PrimaryColumn`装饰器来标记一个主键列。
+每个表都**必须**至少有一个主键列。这是一个要求，你不能避免。要使列成为主键，你需要使用 `@PrimaryColumn` 修饰符。
 
 ```typescript
 import {Entity, Column, PrimaryColumn} from "typeorm";
@@ -180,10 +414,11 @@ export class Photo {
     isPublished: boolean;
 }
 ```
-   
-### 使用 `@PrimaryGeneratedColumn` 装饰器
 
-现在photo表的id可能自动生成自动增长，不过还是有点麻烦，这个一个很常见的功能，所以有一个专门的装饰器`@PrimaryGeneratedColumn`来实现相同的功能。
+### 创建一个自动生成的列
+
+现在，假设你希望将id列自动生成(这就是所谓的自动递增/按顺序/连续的/生成唯一标识列)。
+要做到这一点，你需要将 `@PrimaryColumn` 修饰符更改为 `@PrimaryGeneratedColumn` 修饰符：
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -211,10 +446,12 @@ export class Photo {
 }
 ```
 
-### 自定义列的数据类型
+### 列数据类型
 
-接下来让我们改一下列的数据类型。默认情况下，string类型的属性会映射到数据库里varchar(255)的数据类型，number则会映射到类似于float/double这样的数据类型（取决到是什么数据库）。
-但是我们不想所有的列被限制在varchar或float之类，下面来改进：
+接下来，让我们修复数据类型。默认情况下，字符串被映射到一个varchar(255)类型（取决于数据库类型）。
+数字被映射到一个integer类型（取决于数据库类型）。
+我们不希望所有的列都是有限的varchars或整数。
+让我们设置正确的数据类型：
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
@@ -226,7 +463,7 @@ export class Photo {
     id: number;
 
     @Column({
-        length: 500
+        length: 100
     })
     name: string;
 
@@ -236,7 +473,7 @@ export class Photo {
     @Column()
     filename: string;
 
-    @Column("int")
+    @Column("double")
     views: number;
 
     @Column()
@@ -244,9 +481,13 @@ export class Photo {
 }
 ```
 
+列类型取决于数据库支持的类型。
+可以设置数据库支持的任何列类型。
+更多关于支持的列类型信息可以在这里找到[这里](./docs/entity.md#column-types)。
+
 ### 创建数据库连接
 
-现在实体已经有了，接下来创建`app.ts`并配置数据库连接：
+现在实体已经有了，让我们新建一个 `index.ts` （或 `app.ts` 不管你叫它什么）的文件，并配置数据库连接：
 
 ```typescript
 import "reflect-metadata";
@@ -254,18 +495,17 @@ import {createConnection} from "typeorm";
 import {Photo} from "./entity/Photo";
 
 createConnection({
-    driver: {
-        type: "mysql",
-        host: "localhost",
-        port: 3306,
-        username: "root",
-        password: "admin",
-        database: "test"
-    },
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     entities: [
         Photo
     ],
     synchronize: true,
+    logging: false
 }).then(connection => {
     // 这里可以写实体操作相关的代码 
 }).catch(error => console.log(error));
@@ -939,3 +1179,59 @@ let photos = await photoRepository
 并且只会得到10个结果（分页每页个数决定的），
 所得结果是以id的倒序排序的，
 Photo的albums是左联接，photo的metadata是内联接。
+
+你将在应用程序中大量使用QueryBuilder。
+了解更多QueryBuilder[这里](./docs/select-query-builder.md).
+
+## 样例
+
+看看[样例](https://github.com/typeorm/typeorm/tree/master/sample)里这些例子的用法
+
+有一些仓库，你可以克隆下来开始:
+
+* [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
+* [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
+* [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
+* [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+* [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
+* [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
+* [Example how to use TypeORM with MongoDB](https://github.com/typeorm/typeorm-typescript-mongo-example)
+* [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
+* [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
+
+## 扩展
+
+有几个扩展可以简化TypeORM的使用，并将其与其他模块集成：
+
+* [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
+* [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
+* Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+
+## 贡献 😰
+
+了解参与贡献 [这里](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)，以及如何搭建你的开发环境 [这里](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md)
+
+这个项目的存在多亏了所有的贡献者：
+
+<a href="https://github.com/typeorm/typeorm/graphs/contributors"><img src="https://opencollective.com/typeorm/contributors.svg?width=890" /></a>
+
+## 支持者 🙏
+
+感谢所有的支持者！如果你想支持者个项目并成为一个支持者[点击这里](https://opencollective.com/typeorm#backer)。
+
+<a href="https://opencollective.com/typeorm#backers" target="_blank"><img src="https://opencollective.com/typeorm/backers.svg?width=890"></a>
+
+## 赞助商 🤑
+
+成为赞助商来支持这个项目。你的logo将会放在这里。[成为赞助商](https://opencollective.com/typeorm#sponsor)
+
+<a href="https://opencollective.com/typeorm/sponsor/0/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/1/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/2/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/3/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/3/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/4/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/4/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/5/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/5/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/6/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/6/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/7/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/7/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/8/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/8/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm/sponsor/9/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/9/avatar.svg"></a>
