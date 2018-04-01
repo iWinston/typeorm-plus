@@ -1187,7 +1187,7 @@ Photo的albums是左联接，photo的metadata是内联接。
 
 看看[样例](https://github.com/typeorm/typeorm/tree/master/sample)里这些例子的用法
 
-有一些仓库，你可以克隆下来开始:
+这些仓库，你可以克隆下来帮助你开始:
 
 * [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
 * [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
@@ -1201,7 +1201,7 @@ Photo的albums是左联接，photo的metadata是内联接。
 
 ## 扩展
 
-有几个扩展可以简化TypeORM的使用，并将其与其他模块集成：
+这几个扩展可以简化TypeORM的使用，并将其与其他模块集成：
 
 * [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
