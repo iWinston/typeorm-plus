@@ -388,7 +388,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const primaryMetadataColumns = metadata.columns.filter(column => column.isPrimary);
             const primaryTableColumns = table.columns.filter(column => column.isPrimary);
             if (primaryTableColumns.length !== primaryMetadataColumns.length && primaryMetadataColumns.length > 1) {
-                await this.queryRunner.updatePrimaryKeys(table, primaryMetadataColumns.map(column => column.databaseName));
+                const changedPrimaryColumns = primaryMetadataColumns.map(primaryMetadataColumn => {
+                    return new TableColumn(TableUtils.createTableColumnOptions(primaryMetadataColumn, this.connection.driver));
+                });
+                await this.queryRunner.updatePrimaryKeys(table, changedPrimaryColumns);
             }
         });
     }

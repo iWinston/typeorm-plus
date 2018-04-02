@@ -11,7 +11,6 @@ describe("schema builder > update primary keys", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            // enabledDrivers: ["sqlite"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -32,7 +31,6 @@ describe("schema builder > update primary keys", () => {
         table!.findColumnByName("name")!.isPrimary.should.be.true;
 
         await queryRunner.release();
-        await connection.synchronize();
     })));
 
     it("should correctly update composite primary keys when table already have primary generated column", () => Promise.all(connections.map(async connection => {

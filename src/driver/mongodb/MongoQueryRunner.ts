@@ -620,7 +620,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Updates composite primary keys.
      */
-    async updatePrimaryKeys(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+    async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 

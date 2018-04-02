@@ -232,7 +232,7 @@ export interface QueryRunner {
     /**
      * Updates composite primary keys.
      */
-    updatePrimaryKeys(tableOrName: Table|string, columnNames: string[]): Promise<void>;
+    updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Drops a primary key.

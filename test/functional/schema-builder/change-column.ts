@@ -10,12 +10,13 @@ import {Post} from "./entity/Post";
 import {PostVersion} from "./entity/PostVersion";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
-describe("schema builder > change column", () => {
+describe.skip("schema builder > change column", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["oracle"],
             schemaCreate: true,
             dropSchema: true,
         });

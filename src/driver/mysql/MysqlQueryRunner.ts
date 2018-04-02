@@ -427,7 +427,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];
-        const skipColumnLevelPrimary = table.primaryColumns.length > 0;
+        const skipColumnLevelPrimary = clonedTable.primaryColumns.length > 0;
 
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN \`${column.name}\``);
@@ -435,7 +435,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // create or update primary key constraint
         if (column.isPrimary && skipColumnLevelPrimary) {
             // if we already have generated column, we must temporary drop AUTO_INCREMENT property.
-            const generatedColumn = table.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
+            const generatedColumn = clonedTable.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
             if (generatedColumn) {
                 const nonGeneratedColumn = generatedColumn.clone();
                 nonGeneratedColumn.isGenerated = false;
@@ -711,7 +711,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: string[] = [];
 
         // drop primary key constraint
-        const primaryColumns = clonedTable.primaryColumns;
         if (column.isPrimary) {
             // if table have generated column, we must drop AUTO_INCREMENT before changing primary constraints.
             const generatedColumn = clonedTable.columns.find(column => column.isGenerated && column.generationStrategy === "increment");
@@ -725,14 +724,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             // dropping primary key constraint
-            const columnNames = primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
+            const columnNames = clonedTable.primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
             upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`);
-            primaryColumns.splice(primaryColumns.indexOf(column), 1);
+
+            // update column in table
+            const tableColumn = clonedTable.findColumnByName(column.name);
+            tableColumn!.isPrimary = false;
 
             // if primary key have multiple columns, we must recreate it without dropped column
-            if (primaryColumns.length > 0) {
-                const columnNames = primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
+            if (clonedTable.primaryColumns.length > 0) {
+                const columnNames = clonedTable.primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`);
             }
@@ -808,9 +810,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Updates composite primary keys.
      */
-    async updatePrimaryKeys(tableOrName: Table|string, columnNames: string[]): Promise<void> {
+    async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const clonedTable = table.clone();
+        const columnNames = columns.map(column => column.name);
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
@@ -842,14 +845,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNamesString})`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
 
-        // if we have generated column, and we dropped AUTO_INCREMENT property before, we must bring it back
-        if (generatedColumn) {
-            const nonGeneratedColumn = generatedColumn.clone();
+        // if we already have generated column or column is changed to generated, and we dropped AUTO_INCREMENT property before, we must bring it back
+        const newOrExistGeneratedColumn = generatedColumn ? generatedColumn : columns.find(column => column.isGenerated && column.generationStrategy === "increment");
+        if (newOrExistGeneratedColumn) {
+            const nonGeneratedColumn = newOrExistGeneratedColumn.clone();
             nonGeneratedColumn.isGenerated = false;
             nonGeneratedColumn.generationStrategy = undefined;
 
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(newOrExistGeneratedColumn, true)}`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newOrExistGeneratedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`);
+
+            // if column changed to generated, we must update it in table
+            const changedGeneratedColumn = clonedTable.columns.find(column => column.name === newOrExistGeneratedColumn.name);
+            changedGeneratedColumn!.isGenerated = true;
+            changedGeneratedColumn!.generationStrategy = "increment";
         }
 
         await this.executeQueries(upQueries, downQueries);

@@ -184,8 +184,8 @@ export class SqlServerDriver implements Driver {
     dataTypeDefaults: DataTypeDefaults = {
         "char": { length: 1 },
         "nchar": { length: 1 },
-        "varchar": { length: 1 },
-        "nvarchar": { length: 1 },
+        "varchar": { length: 255 },
+        "nvarchar": { length: 255 },
         "binary": { length: 1 },
         "varbinary": { length: 1 },
         "decimal": { precision: 18, scale: 0 },
