@@ -103,6 +103,16 @@ export class TableColumn {
      */
     enum?: any[];
 
+    /**
+     * Generated column expression. Supports only in MySQL.
+     */
+    asExpression?: string;
+
+    /**
+     * Generated column type. Supports only in MySQL.
+     */
+    generatedType?: "VIRTUAL"|"STORED";
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -127,6 +137,8 @@ export class TableColumn {
             this.isArray = options.isArray || false;
             this.comment = options.comment;
             this.enum = options.enum;
+            this.asExpression = options.asExpression;
+            this.generatedType = options.generatedType;
         }
     }
 
@@ -149,6 +161,8 @@ export class TableColumn {
             zerofill: this.zerofill,
             unsigned: this.unsigned,
             enum: this.enum,
+            asExpression: this.asExpression,
+            generatedType: this.generatedType,
             default: this.default,
             isNullable: this.isNullable,
             isGenerated: this.isGenerated,

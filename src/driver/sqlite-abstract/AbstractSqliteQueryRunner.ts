@@ -432,6 +432,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     /**
+     * Updates composite primary keys.
+     */
+    async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        await Promise.resolve();
+    }
+
+    /**
      * Drops a primary key.
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {

@@ -133,6 +133,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createNewTables();
         await this.dropRemovedColumns();
         await this.addNewColumns();
+        await this.updatePrimaryKeys();
         await this.updateExistColumns();
         await this.createNewIndices();
         await this.createNewChecks();
@@ -372,6 +373,26 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
             await this.queryRunner.addColumns(table, newTableColumns);
+        });
+    }
+
+    /**
+     * Updates composite primary keys.
+     */
+    protected async updatePrimaryKeys(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const primaryMetadataColumns = metadata.columns.filter(column => column.isPrimary);
+            const primaryTableColumns = table.columns.filter(column => column.isPrimary);
+            if (primaryTableColumns.length !== primaryMetadataColumns.length && primaryMetadataColumns.length > 1) {
+                const changedPrimaryColumns = primaryMetadataColumns.map(primaryMetadataColumn => {
+                    return new TableColumn(TableUtils.createTableColumnOptions(primaryMetadataColumn, this.connection.driver));
+                });
+                await this.queryRunner.updatePrimaryKeys(table, changedPrimaryColumns);
+            }
         });
     }
 

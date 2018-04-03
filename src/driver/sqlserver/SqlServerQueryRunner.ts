@@ -866,6 +866,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 if (newColumn.isPrimary === true) {
                     primaryColumns.push(newColumn);
+                    // update column in table
+                    const column = clonedTable.columns.find(column => column.name === newColumn.name);
+                    column!.isPrimary = true;
                     const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                     const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
@@ -874,6 +877,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 } else {
                     const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
                     primaryColumns.splice(primaryColumns.indexOf(primaryColumn!), 1);
+
+                    // update column in table
+                    const column = clonedTable.columns.find(column => column.name === newColumn.name);
+                    column!.isPrimary = false;
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
@@ -940,18 +947,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const downQueries: string[] = [];
 
         // drop primary key constraint
-        const primaryColumns = clonedTable.primaryColumns;
-        if (primaryColumns.length > 0 && primaryColumns.find(primaryColumn => primaryColumn.name === column.name)) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-            const columnNames = primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
+        if (column.isPrimary) {
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
+            const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
             upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP CONSTRAINT "${pkName}"`);
             downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-            primaryColumns.splice(primaryColumns.indexOf(column), 1);
+
+            // update column in table
+            const tableColumn = clonedTable.findColumnByName(column.name);
+            tableColumn!.isPrimary = false;
 
             // if primary key have multiple columns, we must recreate it without dropped column
-            if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
-                const columnNames = primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
+            if (clonedTable.primaryColumns.length > 0) {
+                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
+                const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP CONSTRAINT "${pkName}"`);
             }
@@ -1021,6 +1030,39 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const down = this.dropPrimaryKeySql(clonedTable);
 
         await this.executeQueries(up, down);
+        this.replaceCachedTable(table, clonedTable);
+    }
+
+    /**
+     * Updates composite primary keys.
+     */
+    async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const clonedTable = table.clone();
+        const columnNames = columns.map(column => column.name);
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+
+        // if table already have primary columns, we must drop them.
+        const primaryColumns = clonedTable.primaryColumns;
+        if (primaryColumns.length > 0) {
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+            const columnNamesString = primaryColumns.map(column => `"${column.name}"`).join(", ");
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`);
+        }
+
+        // update columns in table.
+        clonedTable.columns
+            .filter(column => columnNames.indexOf(column.name) !== -1)
+            .forEach(column => column.isPrimary = true);
+
+        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, columnNames);
+        const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
+        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`);
+        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
+
+        await this.executeQueries(upQueries, downQueries);
         this.replaceCachedTable(table, clonedTable);
     }
 

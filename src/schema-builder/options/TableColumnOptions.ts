@@ -101,4 +101,14 @@ export interface TableColumnOptions {
      * Array of possible enumerated values.
      */
     enum?: any[];
+
+    /**
+     * Generated column expression. Supports only in MySQL.
+     */
+    asExpression?: string;
+
+    /**
+     * Generated column type. Supports only in MySQL.
+     */
+    generatedType?: "VIRTUAL"|"STORED";
 }
