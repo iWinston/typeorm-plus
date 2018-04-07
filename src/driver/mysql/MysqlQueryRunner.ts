@@ -847,7 +847,7 @@ export class MysqlQueryRunner implements QueryRunner {
         if (column.isNullable !== true)
             c += " NOT NULL";
         if (column.isNullable === true)
-            c += " NULL";
+            c += (column.isPrimary && !skipPrimary) ? " NOT NULL" : " NULL";
         if (column.isUnique === true)
             c += " UNIQUE";
         if (column.isGenerated && column.isPrimary && !skipPrimary)
