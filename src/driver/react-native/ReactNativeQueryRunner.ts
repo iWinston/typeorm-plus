@@ -7,9 +7,6 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 
 /**
  * Runs queries on a single sqlite database connection.
- *
- * Does not support compose primary keys with autoincrement field.
- * todo: need to throw exception for this case.
  */
 export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     
@@ -23,7 +20,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     // -------------------------------------------------------------------------
 
     constructor(driver: ReactNativeDriver) {
-        super(driver);
+        super();
         this.driver = driver;
         this.connection = driver.connection;
         this.broadcaster = new Broadcaster(this);
@@ -49,16 +46,18 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                 if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                     this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                if (result.rows.length === 0) {
-                    ok([]);
+                // return id of inserted row, if query was insert statement.
+                if (query.substr(0, 11) === "INSERT INTO") {
+                    ok(result.insertId);
                 }
-
-                let resultSet = [];
-                for (let i = 0; i < result.rows.length; i++) {
-                    resultSet.push(result.rows.item(i));
+                else {
+                    let resultSet = [];
+                    for (let i = 0; i < result.rows.length; i++) {
+                        resultSet.push(result.rows.item(i));
+                    }
+                    
+                    ok(resultSet);
                 }
-                
-                ok(resultSet);
             }, (err: any) => {
                 this.driver.connection.logger.logQueryError(err, query, parameters, this);
                 fail(new QueryFailedError(query, parameters, err));
