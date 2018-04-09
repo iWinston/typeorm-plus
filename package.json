@@ -82,6 +82,7 @@
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
+    "buffer": "^5.1.0",
     "chalk": "^2.3.2",
     "cli-highlight": "^1.2.3",
     "debug": "^3.1.0",
