@@ -65,6 +65,12 @@ export interface TableColumnOptions {
     length?: string;
 
     /**
+     * Column type's display width. Used only on some column types in MySQL.
+     * For example, INT(4) specifies an INT with a display width of four digits.
+     */
+    width?: number;
+
+    /**
      * Defines column character set.
      */
     charset?: string;

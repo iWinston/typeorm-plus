@@ -8,6 +8,7 @@ export class TableUtils {
         return {
             name: columnMetadata.databaseName,
             length: columnMetadata.length,
+            width: columnMetadata.width,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,

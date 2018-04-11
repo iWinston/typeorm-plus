@@ -232,6 +232,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.collation !== newColumn.collation
             || oldColumn.precision !== newColumn.precision
             || oldColumn.scale !== newColumn.scale
+            || oldColumn.width !== newColumn.width // MySQL only
             || oldColumn.zerofill !== newColumn.zerofill // MySQL only
             || oldColumn.unsigned !== newColumn.unsigned // MySQL only
             || oldColumn.asExpression !== newColumn.asExpression // MySQL only
@@ -257,6 +258,27 @@ export abstract class BaseQueryRunner {
             && this.connection.driver.dataTypeDefaults[column.type]
             && this.connection.driver.dataTypeDefaults[column.type].length) {
             return this.connection.driver.dataTypeDefaults[column.type].length!.toString() === length.toString();
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if column display width is by default. Used only for MySQL.
+     */
+    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.width)
+                return false;
+        }
+
+        if (this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].width) {
+            return this.connection.driver.dataTypeDefaults[column.type].width === width;
         }
 
         return false;

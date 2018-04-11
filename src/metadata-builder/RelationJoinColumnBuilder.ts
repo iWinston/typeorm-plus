@@ -141,6 +141,7 @@ export class RelationJoinColumnBuilder {
                             name: joinColumnName,
                             type: referencedColumn.type,
                             length: referencedColumn.length,
+                            width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,

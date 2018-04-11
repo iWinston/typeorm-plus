@@ -41,12 +41,7 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
 /**
  * Column types where column length is used.
  */
-export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlite
-    |"tinyint" // mysql, mssql, sqlite
-    |"smallint" // mysql, postgres, mssql, oracle, sqlite
-    |"mediumint" // mysql, sqlite
-    |"bigint" // mysql, postgres, mssql, sqlite
-    |"character varying" // postgres
+export type WithLengthColumnType = "character varying" // postgres
     |"varying character" // sqlite
     |"nvarchar" // mssql
     |"character" // mysql, postgres, sqlite
@@ -59,6 +54,12 @@ export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqli
     |"raw" // oracle
     |"binary" // mssql
     |"varbinary"; // mssql
+
+export type WithWidthColumnType = "tinyint" // mysql
+    |"smallint" // mysql
+    |"mediumint" // mysql
+    |"int" // mysql
+    |"bigint"; // mysql
 
 /**
  * Range types
@@ -172,6 +173,7 @@ export type SimpleColumnType =
  */
 export type ColumnType = WithPrecisionColumnType
     |WithLengthColumnType
+    |WithWidthColumnType
     |SimpleColumnType
     |BooleanConstructor
     |DateConstructor

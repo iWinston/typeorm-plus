@@ -23,6 +23,12 @@ export interface ColumnOptions {
     length?: string|number;
 
     /**
+     * Column type's display width. Used only on some column types in MySQL.
+     * For example, INT(4) specifies an INT with a display width of four digits.
+     */
+    width?: number;
+
+    /**
      * Indicates if column's value can be set to NULL.
      */
     nullable?: boolean;

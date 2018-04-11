@@ -60,6 +60,11 @@ export class ColumnMetadata {
     length: string = "";
 
     /**
+     * Type's display width in the database.
+     */
+    width?: number;
+
+    /**
      * Defines column character set.
      */
     charset?: string;
@@ -295,6 +300,8 @@ export class ColumnMetadata {
             this.type = options.args.options.type;
         if (options.args.options.length)
             this.length = options.args.options.length ? options.args.options.length.toString() : "";
+        if (options.args.options.width)
+            this.width = options.args.options.width;
         if (options.args.options.charset)
             this.charset = options.args.options.charset;
         if (options.args.options.collation)

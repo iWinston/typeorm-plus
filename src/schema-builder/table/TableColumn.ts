@@ -66,6 +66,12 @@ export class TableColumn {
     length: string = "";
 
     /**
+     * Column type's display width. Used only on some column types in MySQL.
+     * For example, INT(4) specifies an INT with a display width of four digits.
+     */
+    width?: number;
+
+    /**
      * Defines column character set.
      */
     charset?: string;
@@ -122,6 +128,7 @@ export class TableColumn {
             this.name = options.name;
             this.type = options.type || "";
             this.length = options.length || "";
+            this.width = options.width;
             this.charset = options.charset;
             this.collation = options.collation;
             this.precision = options.precision;
@@ -154,6 +161,7 @@ export class TableColumn {
             name: this.name,
             type: this.type,
             length: this.length,
+            width: this.width,
             charset: this.charset,
             collation: this.collation,
             precision: this.precision,

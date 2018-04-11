@@ -16,7 +16,7 @@ describe("database schema > column length > mysql", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("all types should create with correct size", () => Promise.all(connections.map(async connection => {
+    it("all types should be created with correct length", () => Promise.all(connections.map(async connection => {
 
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("post");
@@ -27,7 +27,7 @@ describe("database schema > column length > mysql", () => {
         
     })));
 
-    it("all types should update their size", () => Promise.all(connections.map(async connection => {
+    it("all types should update their length", () => Promise.all(connections.map(async connection => {
         
         let metadata = connection.getMetadata(Post);
         metadata.findColumnWithPropertyName("char")!.length = "100";
