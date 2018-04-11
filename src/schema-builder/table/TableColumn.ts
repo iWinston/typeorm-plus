@@ -25,6 +25,11 @@ export class TableColumn {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
     isNullable: boolean = false;
@@ -136,6 +141,7 @@ export class TableColumn {
             this.zerofill = options.zerofill;
             this.unsigned = this.zerofill ? true : options.unsigned;
             this.default = options.default;
+            this.onUpdate = options.onUpdate;
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
             this.generationStrategy = options.generationStrategy;
@@ -172,6 +178,7 @@ export class TableColumn {
             asExpression: this.asExpression,
             generatedType: this.generatedType,
             default: this.default,
+            onUpdate: this.onUpdate,
             isNullable: this.isNullable,
             isGenerated: this.isGenerated,
             generationStrategy: this.generationStrategy,

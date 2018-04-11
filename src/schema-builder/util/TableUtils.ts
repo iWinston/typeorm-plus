@@ -18,6 +18,7 @@ export class TableUtils {
             asExpression: columnMetadata.asExpression,
             generatedType: columnMetadata.generatedType,
             default: driver.normalizeDefault(columnMetadata),
+            onUpdate: columnMetadata.onUpdate,
             comment: columnMetadata.comment,
             isGenerated: columnMetadata.isGenerated,
             generationStrategy: columnMetadata.generationStrategy,

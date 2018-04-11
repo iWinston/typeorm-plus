@@ -237,6 +237,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.unsigned !== newColumn.unsigned // MySQL only
             || oldColumn.asExpression !== newColumn.asExpression // MySQL only
             || (checkDefault && oldColumn.default !== newColumn.default)
+            || oldColumn.onUpdate !== newColumn.onUpdate // MySQL only
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)
             || oldColumn.enum !== newColumn.enum;

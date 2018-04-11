@@ -44,6 +44,11 @@ export interface ColumnCommonOptions {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Column comment. Not supported by all database types.
      */
     comment?: string;

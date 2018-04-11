@@ -1203,6 +1203,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
                     }
 
+                    if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
+                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(10);
+                    }
+
                     if (dbColumn["GENERATION_EXPRESSION"]) {
                         tableColumn.asExpression = dbColumn["GENERATION_EXPRESSION"];
                         tableColumn.generatedType = dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1 ? "VIRTUAL" : "STORED";
@@ -1453,7 +1457,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${column.generatedType ? column.generatedType : "VIRTUAL"}`;
 
-        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column.
+        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
         if (column.zerofill) {
             c += " ZEROFILL";
         } else if (column.unsigned) {
@@ -1465,9 +1469,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` CHARACTER SET "${column.charset}"`;
         if (column.collation)
             c += ` COLLATE "${column.collation}"`;
-        if (column.isNullable !== true)
+        if (!column.isNullable)
             c += " NOT NULL";
-        if (column.isNullable === true)
+        if (column.isNullable)
             c += " NULL";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
@@ -1477,6 +1481,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` COMMENT '${column.comment}'`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
+        if (column.onUpdate)
+            c += ` ON UPDATE ${column.onUpdate}`;
 
         return c;
     }

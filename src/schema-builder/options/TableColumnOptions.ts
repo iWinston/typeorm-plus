@@ -24,6 +24,11 @@ export interface TableColumnOptions {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
     isNullable?: boolean;
