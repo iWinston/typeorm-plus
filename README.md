@@ -21,7 +21,7 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-that can run in NodeJS, Browser, Cordova, PhoneGap and Ionic platforms 
+that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic and React Native platforms 
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
@@ -69,7 +69,7 @@ Some TypeORM features:
 * connection configuration in json / xml / yml / env formats
 * supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL / sql.js
 * supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / Electron platforms
+* works in NodeJS / Browser / Ionic / Cordova / React Native / Electron platforms
 * TypeScript and JavaScript support
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
@@ -535,7 +535,7 @@ createConnection({
 We are using MySQL in this example, but you can use any other supported database. 
 To use another database, simply change the `type` in the options to the database type you are using: 
 mysql, mariadb, postgres, sqlite, mssql, oracle,
-websql, cordova or mongodb.
+websql, cordova, react-native or mongodb.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection. 
