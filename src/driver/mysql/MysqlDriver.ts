@@ -600,6 +600,8 @@ export class MysqlDriver implements Driver {
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
             // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
+            // console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
+            // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
@@ -616,6 +618,8 @@ export class MysqlDriver implements Driver {
                 || tableColumn.scale !== columnMetadata.scale
                 || tableColumn.zerofill !== columnMetadata.zerofill
                 || tableColumn.unsigned !== columnMetadata.unsigned
+                || tableColumn.asExpression !== columnMetadata.asExpression
+                || tableColumn.generatedType !== columnMetadata.generatedType
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary

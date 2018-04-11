@@ -533,7 +533,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
+            || oldColumn.type !== newColumn.type
+            || oldColumn.length !== newColumn.length
+            || oldColumn.generatedType !== newColumn.generatedType) {
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
 
@@ -1193,6 +1196,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     } else {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
+                    }
+
+                    if (dbColumn["GENERATION_EXPRESSION"]) {
+                        tableColumn.asExpression = dbColumn["GENERATION_EXPRESSION"];
+                        tableColumn.generatedType = dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1 ? "VIRTUAL" : "STORED";
                     }
 
                     tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;

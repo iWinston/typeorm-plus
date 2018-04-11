@@ -232,8 +232,9 @@ export abstract class BaseQueryRunner {
             || oldColumn.collation !== newColumn.collation
             || oldColumn.precision !== newColumn.precision
             || oldColumn.scale !== newColumn.scale
-            || oldColumn.zerofill !== newColumn.zerofill
-            || oldColumn.unsigned !== newColumn.unsigned
+            || oldColumn.zerofill !== newColumn.zerofill // MySQL only
+            || oldColumn.unsigned !== newColumn.unsigned // MySQL only
+            || oldColumn.asExpression !== newColumn.asExpression // MySQL only
             || (checkDefault && oldColumn.default !== newColumn.default)
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)

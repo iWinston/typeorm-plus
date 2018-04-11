@@ -9,14 +9,14 @@ import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {Post} from "./entity/Post";
 import {PostVersion} from "./entity/PostVersion";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
+import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 
-describe.skip("schema builder > change column", () => {
+describe("schema builder > change column", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["oracle"],
             schemaCreate: true,
             dropSchema: true,
         });
@@ -102,7 +102,8 @@ describe.skip("schema builder > change column", () => {
         idColumn.generationStrategy = "increment";
 
         // SQLite does not support AUTOINCREMENT with composite primary keys
-        if (!(connection.driver instanceof AbstractSqliteDriver))
+        // Oracle does not support both unique and primary attributes on such column
+        if (!(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof OracleDriver))
             versionColumn.isPrimary = true;
 
         await connection.synchronize();
@@ -115,7 +116,7 @@ describe.skip("schema builder > change column", () => {
         postTable!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
 
         // SQLite does not support AUTOINCREMENT with composite primary keys
-        if (!(connection.driver instanceof AbstractSqliteDriver))
+        if (!(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof OracleDriver))
             postTable!.findColumnByName("version")!.isPrimary.should.be.true;
 
         // revert changes
