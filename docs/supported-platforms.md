@@ -12,9 +12,8 @@ TypeORM was tested on Node.js version 4 and above.
 ## Browser
 
 You can use [sql.js](https://github.com/kripken/sql.js) in the browser.
-There are two ways how it can be used in browser:
 
-* **Webpack / ES2015 Module**
+**Webpack configuration**
     
     In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. Prior to TypeORM 0.1.7, the package is setup in a way that loaders like webpack will automatically use the `browser` folder. With 0.1.7 this was dropped to support Webpack usage in Node.js projects. This means, that the `NormalModuleReplacementPlugin` has to be used to insure that the correct version is loaded for browser projects. The configuration in your webpack config file, for this plugin looks like this:
 
