@@ -12,7 +12,6 @@ import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNo
 import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {WebsqlDriver} from "../driver/websql/WebsqlDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {OrderByCondition} from "../find-options/OrderByCondition";
@@ -359,8 +358,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof OracleDriver ||
-                                this.connection.driver instanceof AbstractSqliteDriver ||
-                                this.connection.driver instanceof WebsqlDriver
+                                this.connection.driver instanceof AbstractSqliteDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
@@ -389,8 +387,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                         if (this.connection.driver instanceof MysqlDriver ||
                             this.connection.driver instanceof OracleDriver ||
-                            this.connection.driver instanceof AbstractSqliteDriver ||
-                            this.connection.driver instanceof WebsqlDriver) {
+                            this.connection.driver instanceof AbstractSqliteDriver) {
                             newParameters[paramName] = value;
                         } else {
                             this.expressionMap.nativeParameters[paramName] = value;
@@ -422,8 +419,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                     if (this.connection.driver instanceof MysqlDriver ||
                         this.connection.driver instanceof OracleDriver ||
-                        this.connection.driver instanceof AbstractSqliteDriver ||
-                        this.connection.driver instanceof WebsqlDriver) {
+                        this.connection.driver instanceof AbstractSqliteDriver) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -439,8 +435,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // because some drivers like mysql depend on order of parameters
         if (this.connection.driver instanceof MysqlDriver ||
             this.connection.driver instanceof OracleDriver ||
-            this.connection.driver instanceof AbstractSqliteDriver ||
-            this.connection.driver instanceof WebsqlDriver) {
+            this.connection.driver instanceof AbstractSqliteDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 

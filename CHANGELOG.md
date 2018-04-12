@@ -66,6 +66,7 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * CLI commands changed from `migrations:create`, `migrations:generate`, `migrations:revert` and `migrations:run` to `migration:create`, `migration:generate`, `migration:revert` and `migration:run`
 * changed the way how migrations work (more info in #1315). Now migration table contains `id` column with auto-generated keys, you need to re-create migrations table or add new column manually.
 * entity schemas syntax was changed
+* dropped support for WebSql and SystemJS
 
 ## 0.1.19
 

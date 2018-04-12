@@ -67,7 +67,7 @@ Some TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL / sql.js
+* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 * supports MongoDB NoSQL database
 * works in NodeJS / Browser / Ionic / Cordova / React Native / Electron platforms
 * TypeScript and JavaScript support
@@ -238,8 +238,7 @@ typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`,
-`websql`, `mongodb`.
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`, `cordova`, `react-native`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
@@ -534,8 +533,7 @@ createConnection({
 
 We are using MySQL in this example, but you can use any other supported database. 
 To use another database, simply change the `type` in the options to the database type you are using: 
-mysql, mariadb, postgres, sqlite, mssql, oracle,
-websql, cordova, react-native or mongodb.
+mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, react-native or mongodb.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection. 

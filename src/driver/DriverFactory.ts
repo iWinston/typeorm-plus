@@ -1,6 +1,5 @@
 import {MissingDriverError} from "../error/MissingDriverError";
 import {MongoDriver} from "./mongodb/MongoDriver";
-import {WebsqlDriver} from "./websql/WebsqlDriver";
 import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
 import {OracleDriver} from "./oracle/OracleDriver";
 import {SqliteDriver} from "./sqlite/SqliteDriver";
@@ -41,8 +40,6 @@ export class DriverFactory {
                 return new OracleDriver(connection);
             case "mssql":
                 return new SqlServerDriver(connection);
-            case "websql":
-                return new WebsqlDriver(connection);
             case "mongodb":
                 return new MongoDriver(connection);
             default:
