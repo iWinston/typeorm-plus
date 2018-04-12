@@ -29,6 +29,18 @@ export class IndexMetadata {
     isUnique: boolean = false;
 
     /**
+     * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
+     * Works only in MySQL.
+     */
+    isSpatial: boolean = false;
+
+    /**
+     * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
+     * Works only in MySQL.
+     */
+    isFulltext: boolean = false;
+
+    /**
      * Indicates if this index must synchronize with database index.
      */
     synchronize: boolean = true;
@@ -97,7 +109,9 @@ export class IndexMetadata {
             this.target = options.args.target;
             if (options.args.synchronize !== null && options.args.synchronize !== undefined)
                 this.synchronize = options.args.synchronize;
-            this.isUnique = options.args.unique;
+            this.isUnique = !!options.args.unique;
+            this.isSpatial = !!options.args.spatial;
+            this.isFulltext = !!options.args.fulltext;
             this.where = options.args.where;
             this.isSparse = options.args.sparse;
             this.givenName = options.args.name;

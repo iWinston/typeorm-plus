@@ -376,8 +376,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+            let indexType = "";
+            if (index.isUnique)
+                indexType += "UNIQUE ";
+            if (index.isSpatial)
+                indexType += "SPATIAL ";
+            if (index.isFulltext)
+                indexType += "FULLTEXT ";
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`);
 
             // replace constraint name
             index.name = newIndexName;
@@ -558,8 +565,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+                    let indexType = "";
+                    if (index.isUnique)
+                        indexType += "UNIQUE ";
+                    if (index.isSpatial)
+                        indexType += "SPATIAL ";
+                    if (index.isFulltext)
+                        indexType += "FULLTEXT ";
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`);
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -1291,7 +1305,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["NON_UNIQUE"] === "0"
+                    isUnique: constraint["NON_UNIQUE"] === "0",
+                    isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
+                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT"
                 });
             });
 
@@ -1345,7 +1361,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!index.name)
                     index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
-                return `${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`;
+                let indexType = "";
+                if (index.isUnique)
+                    indexType += "UNIQUE ";
+                if (index.isSpatial)
+                    indexType += "SPATIAL ";
+                if (index.isFulltext)
+                    indexType += "FULLTEXT ";
+
+                return `${indexType}INDEX \`${index.name}\` (${columnNames})`;
             }).join(", ");
 
             sql += `, ${indicesSql}`;
@@ -1392,7 +1416,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON ${this.escapeTableName(table)}(${columns})`;
+        let indexType = "";
+        if (index.isUnique)
+            indexType += "UNIQUE ";
+        if (index.isSpatial)
+            indexType += "SPATIAL ";
+        if (index.isFulltext)
+            indexType += "FULLTEXT ";
+        return `CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapeTableName(table)}(${columns})`;
     }
 
     /**

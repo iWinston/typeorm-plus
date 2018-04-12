@@ -26,6 +26,18 @@ export class TableIndex {
     isUnique?: boolean;
 
     /**
+     * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
+     * Works only in MySQL.
+     */
+    isSpatial?: boolean;
+
+    /**
+     * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
+     * Works only in MySQL.
+     */
+    isFulltext?: boolean;
+
+    /**
      * Index filter condition.
      */
     where?: string;
@@ -38,6 +50,8 @@ export class TableIndex {
         this.name = options.name;
         this.columnNames = options.columnNames;
         this.isUnique = options.isUnique;
+        this.isSpatial = options.isSpatial;
+        this.isFulltext = options.isFulltext;
         this.where = options.where;
     }
 
@@ -53,6 +67,8 @@ export class TableIndex {
             name: this.name,
             columnNames: [...this.columnNames],
             isUnique: this.isUnique,
+            isSpatial: this.isSpatial,
+            isFulltext: this.isFulltext,
             where: this.where
         });
     }
@@ -69,6 +85,8 @@ export class TableIndex {
             name: indexMetadata.name,
             columnNames: indexMetadata.columns.map(column => column.databaseName),
             isUnique: indexMetadata.isUnique,
+            isSpatial: indexMetadata.isSpatial,
+            isFulltext: indexMetadata.isFulltext,
             where: indexMetadata.where
         });
     }

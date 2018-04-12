@@ -9,6 +9,18 @@ export interface IndexOptions {
     unique?: boolean;
 
     /**
+     * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
+     * Works only in MySQL.
+     */
+    spatial?: boolean;
+
+    /**
+     * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
+     * Works only in MySQL.
+     */
+    fulltext?: boolean;
+
+    /**
      * Index filter condition.
      */
     where?: string;

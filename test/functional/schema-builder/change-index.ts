@@ -28,7 +28,6 @@ describe("schema builder > change index", () => {
             columns: [nameColumn],
             args: {
                 target: Teacher,
-                unique: false,
                 synchronize: true
             }
         });
