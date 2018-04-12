@@ -1,6 +1,6 @@
 import {Entity, PrimaryGeneratedColumn} from "../../../../src";
 import {Column} from "../../../../src/decorator/columns/Column";
-import {Index} from "../../../../src/decorator";
+import {Index} from "../../../../src/decorator/Index";
 
 @Entity()
 @Index(["name"], { fulltext: true })
