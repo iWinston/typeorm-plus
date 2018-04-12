@@ -2,7 +2,7 @@
   "name": "typeorm",
   "private": true,
   "version": "0.2.0-alpha.46",
-  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, WebSQL, MongoDB databases.",
+  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
@@ -31,9 +31,7 @@
     "sql-server",
     "sql-server-orm",
     "oracle",
-    "oracle-orm",
-    "websql",
-    "websql-orm"
+    "oracle-orm"
   ],
   "devDependencies": {
     "@types/chai": "^4.1.2",
@@ -48,7 +46,6 @@
     "chai-as-promised": "^7.1.1",
     "del": "^3.0.0",
     "gulp": "^3.9.1",
-    "gulp-file": "^0.4.0",
     "gulp-istanbul": "^1.1.3",
     "gulp-mocha": "^5.0.0",
     "gulp-rename": "^1.2.2",
@@ -57,7 +54,6 @@
     "gulp-sourcemaps": "^2.6.4",
     "gulp-tslint": "^8.1.3",
     "gulp-typescript": "^4.0.2",
-    "gulp-uglify": "^3.0.0",
     "gulpclass": "^0.1.2",
     "husky": "^0.14.3",
     "lint-staged": "^7.0.0",

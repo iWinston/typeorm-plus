@@ -7,7 +7,7 @@
 * [Column types](#column-types)
     * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     * [Column types for `postgres`](#column-types-for-postgres)
-    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
+    * [Column types for `sqlite` / `cordova` / `react-native`](#column-types-for-sqlite--cordova--react-native)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
     * [`simple-json` column type](#simple-json-column-type)
@@ -254,7 +254,7 @@ or
 `circle`, `path`, `polygon`, `cidr`, `enum`, `inet`, `macaddr`, `bit`, `bit varying`,
  `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
 
-### Column types for `sqlite` / `websql` / `cordova`
+### Column types for `sqlite` / `cordova` / `react-native`
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,

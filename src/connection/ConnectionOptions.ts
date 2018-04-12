@@ -3,7 +3,6 @@ import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOp
 import {SqliteConnectionOptions} from "../driver/sqlite/SqliteConnectionOptions";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {OracleConnectionOptions} from "../driver/oracle/OracleConnectionOptions";
-import {WebSqlConnectionOptions} from "../driver/websql/WebSqlConnectionOptions";
 import {MongoConnectionOptions} from "../driver/mongodb/MongoConnectionOptions";
 import {CordovaConnectionOptions} from "../driver/cordova/CordovaConnectionOptions";
 import {SqljsConnectionOptions} from "../driver/sqljs/SqljsConnectionOptions";
@@ -20,7 +19,6 @@ export type ConnectionOptions =
     SqliteConnectionOptions|
     SqlServerConnectionOptions|
     OracleConnectionOptions|
-    WebSqlConnectionOptions|
     CordovaConnectionOptions|
     ReactNativeConnectionOptions|
     SqljsConnectionOptions|
