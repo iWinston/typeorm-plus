@@ -1,19 +1,13 @@
-import {Column, Entity, ManyToOne, PrimaryGeneratedColumn, Index} from "../../../../src/index";
+import {Column, Entity, ManyToOne, PrimaryColumn} from "../../../../src/index";
 import {Event} from "./Event";
 import { Role } from "./Role";
 
 @Entity()
-@Index(["eventId", "roleId"], { unique: true })
 export class EventRole {
-    @PrimaryGeneratedColumn("uuid")
-    id: string;
-
-    // @PrimaryColumn("uuid")
-    @Column("uuid")
+    @PrimaryColumn("uuid")
     eventId: string;
 
-    // @PrimaryColumn("uuid")
-    @Column("uuid")
+    @PrimaryColumn("uuid")
     roleId: string;
 
     @Column()
