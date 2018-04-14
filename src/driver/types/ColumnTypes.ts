@@ -160,10 +160,8 @@ export type SimpleColumnType =
     |"json" // mysql, postgres
     |"jsonb" // postgres
     |"varbinary" // mssql
-    |"cursor" // mssql
     |"hierarchyid" // mssql
     |"sql_variant" // mssql
-    |"table" // mssql
     |"rowid" // oracle
     |"urowid" // oracle
     |"uniqueidentifier"; // mssql
