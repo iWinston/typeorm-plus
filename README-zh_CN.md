@@ -1114,7 +1114,7 @@ export class Photo {
 记得把`Album`实体加到ConnectionOptions中:
 
 ```typescript
-const options: CreateConnectionOptions = {
+const options: ConnectionOptions = {
     // ... 其他配置
     entities: [Photo, PhotoMetadata, Author, Album]
 };
