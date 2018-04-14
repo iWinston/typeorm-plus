@@ -145,6 +145,14 @@ export type SimpleColumnType =
     |"multipolygon" // mysql
     |"geometrycollection" // mysql
 
+    // range types
+    |"int4range" // postgres
+    |"int8range" // postgres
+    |"numrange" // postgres
+    |"tsrange" // postgres
+    |"tstzrange" // postgres
+    |"daterange" // postgres
+
     // other types
     |"enum" // mysql, postgres
     |"cidr" // postgres

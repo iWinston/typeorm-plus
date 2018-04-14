@@ -246,6 +246,7 @@ describe("database schema > column types > postgres", () => {
         post.timestampWithTimeZone = new Date();
         post.time = "15:30:13.278";
         post.timeWithTimeZone = "15:30:13.27801+05";
+        post.int4range = "[2,4)";
         await postRepository.save(post);
 
         const loadedPost = (await postRepository.findOne(1))!;
@@ -260,6 +261,7 @@ describe("database schema > column types > postgres", () => {
         // loadedPost.timestampWithTimeZone.valueOf().should.be.equal(post.timestampWithTimeZone.valueOf());
         loadedPost.time.valueOf().should.be.equal(post.time.valueOf());
         loadedPost.timeWithTimeZone.valueOf().should.be.equal(post.timeWithTimeZone.valueOf());
+        loadedPost.int4range.valueOf().should.be.equal(post.int4range.valueOf());
 
         table!.findColumnByName("id")!.type.should.be.equal("integer");
         table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
@@ -284,6 +286,8 @@ describe("database schema > column types > postgres", () => {
         table!.findColumnByName("time")!.precision!.should.be.equal(3);
         table!.findColumnByName("timeWithTimeZone")!.type.should.be.equal("time with time zone");
         table!.findColumnByName("timeWithTimeZone")!.precision!.should.be.equal(5);
+        table!.findColumnByName("int4range")!.type.should.be.equal("int4range");
+        table!.findColumnByName("int4range")!.isNullable!.should.be.equal(true);
 
     })));
 
