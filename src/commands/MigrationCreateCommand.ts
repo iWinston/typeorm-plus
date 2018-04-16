@@ -1,5 +1,6 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
+import {camelCase} from "../util/StringUtils";
 const chalk = require("chalk");
 
 /**
@@ -70,7 +71,7 @@ export class MigrationCreateCommand {
     protected static getTemplate(name: string, timestamp: number): string {
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${name}${timestamp} implements MigrationInterface {
+export class ${camelCase(name)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
     }
