@@ -327,6 +327,7 @@ describe("basic-lazy-relations", () => {
     })));
 
     it("should successfully load relations within a transaction", () => Promise.all(connections.map(async connection => {
+        if (connection.driver.options.type !== "postgres") return;
         await connection.manager.transaction(async (manager) => {
             const post = manager.create(Post, {
                 title: "test post",
