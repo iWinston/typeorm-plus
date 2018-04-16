@@ -99,7 +99,7 @@
   },
   "scripts": {
     "test-ci": "gulp ci-tests",
-    "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail './build/compiled/test/**/*.js' --timeout 30000 --color",
+    "test": "mocha -r ts-node/register/type-check --typeCheck --file ./test/utils/test-setup.ts './test/**/*.ts' --timeout 30000 --color",
     "compile": "tsc",
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"
