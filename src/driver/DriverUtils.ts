@@ -58,9 +58,13 @@ export class DriverUtils {
         const usernameAndPassword = base.substr(0, lastAtSign);
         const hostAndPort = base.substr(lastAtSign + 1);
 
+        let username = usernameAndPassword;
+        let password = "";
         const firstColon = usernameAndPassword.indexOf(":");
-        const username = usernameAndPassword.substr(0, firstColon);
-        const password = usernameAndPassword.substr(firstColon + 1);
+        if (firstColon !== -1) {
+            username = usernameAndPassword.substr(0, firstColon);
+            password = usernameAndPassword.substr(firstColon + 1);
+        }
         const [host, port] = hostAndPort.split(":");
 
         return {
