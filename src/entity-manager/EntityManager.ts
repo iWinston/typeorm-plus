@@ -217,12 +217,12 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
 
         if (!plainObjectOrObjects)
-            return metadata.create();
+            return metadata.create(this.queryRunner || this.connection.createQueryRunner());
 
         if (plainObjectOrObjects instanceof Array)
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
-        const mergeIntoEntity = metadata.create();
+        const mergeIntoEntity = metadata.create(this.queryRunner || this.connection.createQueryRunner());
         this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
         return mergeIntoEntity;
     }
@@ -473,7 +473,7 @@ export class EntityManager {
      */
     async find<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name, this.queryRunner);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);

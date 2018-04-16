@@ -209,7 +209,7 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter(relation => relation.isLazy)
                     .forEach(relation => {
-                        this.connection.relationLoader.enableLazyLoad(relation, (entityMetadata.target as Function).prototype);
+                        this.connection.relationLoader.enableLazyLoad(relation, (entityMetadata.target as Function).prototype, this.connection.createQueryRunner());
                     });
             });
 

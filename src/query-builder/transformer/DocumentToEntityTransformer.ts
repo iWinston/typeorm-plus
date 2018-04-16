@@ -28,7 +28,7 @@ export class DocumentToEntityTransformer {
     }
 
     transform(document: any, metadata: EntityMetadata) {
-        const entity: any = metadata.create();
+        const entity: any = metadata.create(metadata.connection.createQueryRunner());
         let hasData = false;
 
         // handle _id property the special way
