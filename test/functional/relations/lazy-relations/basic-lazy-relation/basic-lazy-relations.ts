@@ -326,4 +326,21 @@ describe("basic-lazy-relations", () => {
         loadedPost.title.should.be.equal("post with great category");
     })));
 
+    it("should successfully load relations within a transaction", () => Promise.all(connections.map(async connection => {
+        await connection.manager.transaction(async (manager) => {
+            const post = manager.create(Post, {
+                title: "test post",
+                text: "this is a test"
+            });
+            await manager.save(post);
+            const category = manager.create(Category, {
+                name: "test category",
+                onePost: Promise.resolve(post)
+            });
+            await manager.save(category);
+            const loadedCategory = await connection.manager.findOne(Category, { where: { name: "test category" } });
+            const loadedPost = await loadedCategory!.onePost;
+            loadedPost.title.should.be.equal("test post");
+        });
+    })));
 });
