@@ -3,7 +3,6 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Connection} from "../../../../src";
 import {PostEntity} from "./entity/PostEntity";
 import {CategoryEntity} from "./entity/CategoryEntity";
-// import {expect} from "chai";
 
 describe("entity schemas > basic functionality", () => {
 
