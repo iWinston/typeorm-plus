@@ -1159,7 +1159,7 @@ After you run the application, the ORM will create a **album_photos_photo_albums
 Don't forget to register the `Album` class with your connection in the ORM:
 
 ```typescript
-const options: CreateConnectionOptions = {
+const options: ConnectionOptions = {
     // ... other options
     entities: [Photo, PhotoMetadata, Author, Album]
 };
