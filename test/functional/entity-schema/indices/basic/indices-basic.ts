@@ -1,13 +1,12 @@
 import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {EntityMetadata} from "../../../../src/metadata/EntityMetadata";
-import {IndexMetadata} from "../../../../src/metadata/IndexMetadata";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
+import {Connection} from "../../../../../src/connection/Connection";
+import {EntityMetadata} from "../../../../../src/metadata/EntityMetadata";
+import {IndexMetadata} from "../../../../../src/metadata/IndexMetadata";
 import {expect} from "chai";
-
 import {PersonSchema} from "./entity/Person";
 
-describe("indices > reading index from entity schema and updating database", () => {
+describe("entity-schema > indices > basic", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

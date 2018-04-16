@@ -3,7 +3,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe("github issues > #1377 Add support for `GENERATED ALWAYS AS` in MySQL #1377", () => {
+describe("github issues > #1377 Add support for `GENERATED ALWAYS AS` in MySQL", () => {
 
     let connections: Connection[];
     before(async () => {
@@ -16,7 +16,7 @@ describe("github issues > #1377 Add support for `GENERATED ALWAYS AS` in MySQL #
     });
     after(() => closeTestingConnections(connections));
 
-    it("should correctly synchronize schema when we explicitly state the default schema as 'public'", () => Promise.all(connections.map(async connection => {
+    it("should correctly create table with generated columns", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
         let table = await queryRunner.getTable("post");
         table!.findColumnByName("virtualFullName")!.asExpression!.should.be.equal("concat(`firstName`,' ',`lastName`)");

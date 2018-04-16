@@ -102,7 +102,7 @@ export interface EntitySchemaColumnOptions {
     /**
      * Default database value.
      */
-    default?: string;
+    default?: any;
 
     /**
      * ON UPDATE trigger. Works only for MySQL.
