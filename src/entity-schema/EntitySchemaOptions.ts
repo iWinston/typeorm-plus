@@ -1,7 +1,10 @@
-import {EntitySchemaTableOptions} from "./EntitySchemaTableOptions";
 import {EntitySchemaIndexOptions} from "./EntitySchemaIndexOptions";
 import {EntitySchemaColumnOptions} from "./EntitySchemaColumnOptions";
 import {EntitySchemaRelationOptions} from "./EntitySchemaRelationOptions";
+import {OrderByCondition} from "../find-options/OrderByCondition";
+import {TableType} from "../metadata/types/TableTypes";
+import {EntitySchemaUniqueOptions} from "./EntitySchemaUniqueOptions";
+import {EntitySchemaCheckOptions} from "./EntitySchemaCheckOptions";
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -24,9 +27,29 @@ export class EntitySchemaOptions<T> {
     name: string;
 
     /**
-     * Entity table's options.
+     * Table name.
      */
-    table?: EntitySchemaTableOptions;
+    tableName?: string;
+
+    /**
+     * Database name. Used in MySql and Sql Server.
+     */
+    database?: string;
+
+    /**
+     * Schema name. Used in Postgres and Sql Server.
+     */
+    schema?: string;
+
+    /**
+     * Table type.
+     */
+    type?: TableType;
+
+    /**
+     * Specifies a property name by which queries will perform ordering by default when fetching rows.
+     */
+    orderBy?: OrderByCondition;
 
     /**
      * Entity column's options.
@@ -45,8 +68,23 @@ export class EntitySchemaOptions<T> {
     /**
     * Entity indices options.
     */
-    indices?: {
-        [indexName: string]: EntitySchemaIndexOptions;
-    };
+    indices?: EntitySchemaIndexOptions[];
+
+    /**
+    * Entity uniques options.
+    */
+    uniques?: EntitySchemaUniqueOptions[];
+
+    /**
+    * Entity check options.
+    */
+    checks?: EntitySchemaCheckOptions[];
+
+    /**
+     * Indicates if schema synchronization is enabled or disabled for this entity.
+     * If it will be set to false then schema sync will and migrations ignore this entity.
+     * By default schema synchronization is enabled for all entities.
+     */
+    synchronize?: boolean;
 
 }

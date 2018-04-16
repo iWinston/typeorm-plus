@@ -2,13 +2,15 @@ import {JoinColumnOptions} from "../decorator/options/JoinColumnOptions";
 import {RelationType} from "../metadata/types/RelationTypes";
 import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMuplipleColumnsOptions";
 import {OnDeleteType} from "../metadata/types/OnDeleteType";
+import {OnUpdateType} from "../metadata/types/OnUpdateType";
+import {JoinTableOptions} from "../index";
 
 export interface EntitySchemaRelationOptions {
 
     /**
      * Indicates with which entity this relation is made.
      */
-    target: Function | string;
+    target: Function|string;
 
     /**
      * Type of relation. Can be one of the value of the RelationTypes class.
@@ -23,43 +25,46 @@ export interface EntitySchemaRelationOptions {
     /**
      * Indicates if this relation will be lazily loaded.
      */
-    isLazy?: boolean;
+    lazy?: boolean;
 
     /**
      * Indicates if this relation will be eagerly loaded.
      */
-    isEager?: boolean;
+    eager?: boolean;
+
+    /**
+     * Indicates if persistence is enabled for the relation.
+     * By default its enabled, but if you want to avoid any changes in the relation to be reflected in the database you can disable it.
+     * If its disabled you can only change a relation from inverse side of a relation or using relation query builder functionality.
+     * This is useful for performance optimization since its disabling avoid multiple extra queries during entity save.
+     */
+    persistence?: boolean;
+
+    /**
+     * Indicates if this relation will be a primary key.
+     * Can be used only for many-to-one and owner one-to-one relations.
+     */
+    primary?: boolean;
 
     /**
      * Join table options of this column. If set to true then it simply means that it has a join table.
      */
-    joinTable?: boolean | JoinColumnOptions | JoinTableMultipleColumnsOptions;
+    joinTable?: boolean|JoinTableOptions|JoinTableMultipleColumnsOptions;
 
     /**
      * Join column options of this column. If set to true then it simply means that it has a join column.
      */
-    joinColumn?: boolean | {
-
-        /**
-         * Name of the column.
-         */
-        name?: string;
-
-        /**
-         * Name of the column in the entity to which this column is referenced.
-         */
-        referencedColumnName?: string;
-    };
+    joinColumn?: boolean|JoinColumnOptions;
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
      */
-    isTreeParent?: boolean;
+    treeParent?: boolean;
 
     /**
      * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
      */
-    isTreeChildren?: boolean;
+    treeChildren?: boolean;
 
     /**
      * If set to true then it means that related object can be allowed to be inserted / updated / removed to the db.
@@ -81,5 +86,10 @@ export interface EntitySchemaRelationOptions {
      * Database cascade action on delete.
      */
     onDelete?: OnDeleteType;
+
+    /**
+     * Database cascade action on update.
+     */
+    onUpdate?: OnUpdateType;
 
 }

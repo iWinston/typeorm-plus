@@ -63,8 +63,8 @@ export class DbQueryResultCache implements QueryResultCache {
                 columns: [
                     {
                         name: "id",
-                        isNullable: true,
                         isPrimary: true,
+                        isNullable: false,
                         type: driver.normalizeType({type: driver.mappedDataTypes.cacheId}),
                         generationStrategy: "increment",
                         isGenerated: true

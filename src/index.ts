@@ -142,7 +142,6 @@ export {RemoveEvent} from "./subscriber/event/RemoveEvent";
 export {EntitySubscriberInterface} from "./subscriber/EntitySubscriberInterface";
 export {BaseEntity} from "./repository/BaseEntity";
 export {EntitySchema} from "./entity-schema/EntitySchema";
-export {EntitySchemaTableOptions} from "./entity-schema/EntitySchemaTableOptions";
 export {EntitySchemaColumnOptions} from "./entity-schema/EntitySchemaColumnOptions";
 export {EntitySchemaIndexOptions} from "./entity-schema/EntitySchemaIndexOptions";
 export {EntitySchemaRelationOptions} from "./entity-schema/EntitySchemaRelationOptions";

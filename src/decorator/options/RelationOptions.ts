@@ -1,11 +1,10 @@
 import {OnDeleteType} from "../../metadata/types/OnDeleteType";
+import {OnUpdateType} from "../../metadata/types/OnUpdateType";
 
 /**
  * Describes all relation's options.
  */
 export interface RelationOptions {
-
-    // todo: add an onUpdate option?
 
     /**
      * Sets cascades options for the given relation.
@@ -25,6 +24,11 @@ export interface RelationOptions {
      * Database cascade action on delete.
      */
     onDelete?: OnDeleteType;
+
+    /**
+     * Database cascade action on update.
+     */
+    onUpdate?: OnUpdateType;
 
     /**
      * Indicates if this relation will be a primary key.

@@ -19,13 +19,14 @@ export const PersonSchema = new EntitySchema<any>({
         }
     },
     relations: {},
-    indices: {
-        IDX_TEST: {
+    indices: [
+        {
+            name: "IDX_TEST",
             unique: false,
             columns: [
                 "FirstName",
                 "LastName"
             ]
         }
-    }
+    ]
 });

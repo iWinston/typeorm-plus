@@ -11,6 +11,7 @@ describe("github issues > #1898 Simple JSON breaking in @next", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
             schemaCreate: true,
+            dropSchema: true
         });
     });
     after(() => closeTestingConnections(connections));
