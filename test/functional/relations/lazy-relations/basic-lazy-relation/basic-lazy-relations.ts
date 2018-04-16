@@ -340,7 +340,7 @@ describe("basic-lazy-relations", () => {
             });
             await manager.save(category);
             const loadedCategory = await connection.manager.findOne(Category, { where: { name: "test category" } });
-            throw new Error("here");
+            if (connection) throw new Error("here");
             const loadedPost = await loadedCategory!.onePost;
             loadedPost.title.should.be.equal("test post");
         });
