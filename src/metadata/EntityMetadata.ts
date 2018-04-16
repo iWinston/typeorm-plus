@@ -21,7 +21,7 @@ import {TreeType} from "./types/TreeTypes";
 import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {CheckMetadata} from "./CheckMetadata";
-import { QueryRunner } from "..";
+import {QueryRunner} from "..";
 
 /**
  * Contains all entity metadata.
