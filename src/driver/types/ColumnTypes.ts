@@ -62,16 +62,6 @@ export type WithWidthColumnType = "tinyint" // mysql
     |"bigint"; // mysql
 
 /**
- * Range types
- */
-export type RangeColumnType = "int4range" // postgres
-    |"int8range" // postgres
-    |"numrange" // postgres
-    |"tsrange" // postgres
-    |"tstzrange" // postgres
-    |"daterange"; // postgres
-
-/**
  * All other regular column types.
  */
 export type SimpleColumnType =
@@ -145,6 +135,14 @@ export type SimpleColumnType =
     |"multipolygon" // mysql
     |"geometrycollection" // mysql
 
+    // range types
+    |"int4range" // postgres
+    |"int8range" // postgres
+    |"numrange" // postgres
+    |"tsrange" // postgres
+    |"tstzrange" // postgres
+    |"daterange" // postgres
+
     // other types
     |"enum" // mysql, postgres
     |"cidr" // postgres
@@ -176,5 +174,4 @@ export type ColumnType = WithPrecisionColumnType
     |BooleanConstructor
     |DateConstructor
     |NumberConstructor
-    |StringConstructor
-    |RangeColumnType;
+    |StringConstructor;
