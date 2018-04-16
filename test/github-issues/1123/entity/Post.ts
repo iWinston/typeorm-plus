@@ -29,7 +29,7 @@ export const PostSchema: EntitySchemaOptions<Post> = {
         author: {
             target: () => Author,
             type: "many-to-one",
-            isEager: true
+            eager: true
         }
     }
 };

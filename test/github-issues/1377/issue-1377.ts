@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {Post} from "./entity/Post";
 
 describe("github issues > #1377 Add support for `GENERATED ALWAYS AS` in MySQL #1377", () => {
 
@@ -17,8 +18,25 @@ describe("github issues > #1377 Add support for `GENERATED ALWAYS AS` in MySQL #
 
     it("should correctly synchronize schema when we explicitly state the default schema as 'public'", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
-        const table = await queryRunner.getTable("post");
-        table!.findColumnByName("virtualFullName");
+        let table = await queryRunner.getTable("post");
+        table!.findColumnByName("virtualFullName")!.asExpression!.should.be.equal("concat(`firstName`,' ',`lastName`)");
+        table!.findColumnByName("virtualFullName")!.generatedType!.should.be.equal("VIRTUAL");
+        table!.findColumnByName("storedFullName")!.asExpression!.should.be.equal("concat(`firstName`,' ',`lastName`)");
+        table!.findColumnByName("storedFullName")!.generatedType!.should.be.equal("STORED");
+
+        const metadata = connection.getMetadata(Post);
+        const virtualFullNameColumn = metadata.findColumnWithPropertyName("virtualFullName");
+        virtualFullNameColumn!.generatedType = "STORED";
+
+        const storedFullNameColumn = metadata.findColumnWithPropertyName("storedFullName");
+        storedFullNameColumn!.asExpression = "concat('Mr. ',`firstName`,' ',`lastName`)";
+        await connection.synchronize();
+
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("virtualFullName")!.generatedType!.should.be.equal("STORED");
+        table!.findColumnByName("storedFullName")!.asExpression!.should.be.equal("concat('Mr. ',`firstName`,' ',`lastName`)");
+
+        await queryRunner.release();
     })));
 
 });

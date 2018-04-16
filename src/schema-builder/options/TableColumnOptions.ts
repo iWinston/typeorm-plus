@@ -24,6 +24,11 @@ export interface TableColumnOptions {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
     isNullable?: boolean;
@@ -63,6 +68,12 @@ export interface TableColumnOptions {
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
     length?: string;
+
+    /**
+     * Column type's display width. Used only on some column types in MySQL.
+     * For example, INT(4) specifies an INT with a display width of four digits.
+     */
+    width?: number;
 
     /**
      * Defines column character set.

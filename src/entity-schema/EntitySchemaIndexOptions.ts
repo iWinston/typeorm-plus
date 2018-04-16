@@ -1,14 +1,14 @@
 export interface EntitySchemaIndexOptions {
 
     /**
-     * Index column names.
+     * Index name.
      */
-    columns?: string[];
+    name?: string;
 
     /**
-     * Indicates if this index must be unique or not.
+     * Index column names.
      */
-    unique?: boolean;
+    columns?: ((object?: any) => (any[]|{ [key: string]: number }))|string[];
 
     /**
      * Indicates if index must sync with database index.
@@ -21,5 +21,27 @@ export interface EntitySchemaIndexOptions {
      * This option is only supported for mongodb database.
      */
     sparse?: boolean;
+
+    /**
+     * Indicates if this index must be unique or not.
+     */
+    unique?: boolean;
+
+    /**
+     * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
+     * Works only in MySQL.
+     */
+    spatial?: boolean;
+
+    /**
+     * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
+     * Works only in MySQL.
+     */
+    fulltext?: boolean;
+
+    /**
+     * Index filter condition.
+     */
+    where?: string;
 
 }

@@ -3,6 +3,7 @@ import {CommandUtils} from "./CommandUtils";
 import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {camelCase} from "../util/StringUtils";
 
 const chalk = require("chalk");
 
@@ -114,7 +115,7 @@ export class MigrationGenerateCommand {
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${name}${timestamp} implements MigrationInterface {
+export class ${camelCase(name)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
 ${upSqls.join(`

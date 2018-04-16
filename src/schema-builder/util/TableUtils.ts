@@ -8,6 +8,7 @@ export class TableUtils {
         return {
             name: columnMetadata.databaseName,
             length: columnMetadata.length,
+            width: columnMetadata.width,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,
             precision: columnMetadata.precision,
@@ -17,6 +18,7 @@ export class TableUtils {
             asExpression: columnMetadata.asExpression,
             generatedType: columnMetadata.generatedType,
             default: driver.normalizeDefault(columnMetadata),
+            onUpdate: columnMetadata.onUpdate,
             comment: columnMetadata.comment,
             isGenerated: columnMetadata.isGenerated,
             generationStrategy: columnMetadata.generationStrategy,

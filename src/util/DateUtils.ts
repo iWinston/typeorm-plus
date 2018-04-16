@@ -167,8 +167,8 @@ export class DateUtils {
         return JSON.stringify(value);
     }
 
-    static stringToSimpleJson(value: string) {
-        return JSON.parse(value);
+    static stringToSimpleJson(value: any) {
+        return typeof value === "string" ? JSON.parse(value) : value;
     }
 
     // -------------------------------------------------------------------------

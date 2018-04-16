@@ -69,6 +69,7 @@ export class JunctionEntityMetadataBuilder {
                     options: {
                         name: columnName,
                         length: referencedColumn.length,
+                        width: referencedColumn.width,
                         type: referencedColumn.type,
                         precision: referencedColumn.precision,
                         scale: referencedColumn.scale,

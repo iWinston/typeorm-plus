@@ -5,8 +5,8 @@
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` connection options](#postgres-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
-* [`websql` connection options](#websql-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
+* [`react-native` connection options](#react-native-connection-options)
 * [`mssql` connection options](#mssql-connection-options)
 * [`mongodb` connection options](#mongodb-connection-options)
 * [`sql.js` connection options](#sqljs-connection-options)
@@ -20,7 +20,7 @@ Connection options is a connection configuration object you pass to `createConne
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "mariadb", "sqlite", "cordova", "oracle", "mssql", "websql", "mongodb", "sqljs". 
+ Possible values are "mysql", "postgres", "mariadb", "sqlite", "cordova", "oracle", "mssql", "mongodb", "sqljs", "react-native". 
  This option is required.
 
 * `name` - Connection name. You'll use it to get connection you need using `getConnection(name: string)` 
@@ -171,21 +171,16 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `database` - Database path. For example "./mydb.sql"
 
-## `websql` connection options
-
-* `database` - Database name
-
-* `version` - Version string of the database
-
-* `description` - Database description
-
-* `size` - The size of the database
-
 ## `cordova` connection options
 
 * `database` - Database name
 
 * `location` - Where to save the database. See [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage#opening-a-database) for options.
+
+## `react-native` connection options
+* `database` - Database name
+
+* `location` - Where to save the database. See [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage#opening-a-database) for options.
 
 ## `mssql` connection options
 

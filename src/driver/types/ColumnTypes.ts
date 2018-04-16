@@ -41,12 +41,7 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
 /**
  * Column types where column length is used.
  */
-export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlite
-    |"tinyint" // mysql, mssql, sqlite
-    |"smallint" // mysql, postgres, mssql, oracle, sqlite
-    |"mediumint" // mysql, sqlite
-    |"bigint" // mysql, postgres, mssql, sqlite
-    |"character varying" // postgres
+export type WithLengthColumnType = "character varying" // postgres
     |"varying character" // sqlite
     |"nvarchar" // mssql
     |"character" // mysql, postgres, sqlite
@@ -60,15 +55,11 @@ export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqli
     |"binary" // mssql
     |"varbinary"; // mssql
 
-/**
- * Range types
- */
-export type RangeColumnType = "int4range" // postgres
-    |"int8range" // postgres
-    |"numrange" // postgres
-    |"tsrange" // postgres
-    |"tstzrange" // postgres
-    |"daterange"; // postgres
+export type WithWidthColumnType = "tinyint" // mysql
+    |"smallint" // mysql
+    |"mediumint" // mysql
+    |"int" // mysql
+    |"bigint"; // mysql
 
 /**
  * All other regular column types.
@@ -144,6 +135,14 @@ export type SimpleColumnType =
     |"multipolygon" // mysql
     |"geometrycollection" // mysql
 
+    // range types
+    |"int4range" // postgres
+    |"int8range" // postgres
+    |"numrange" // postgres
+    |"tsrange" // postgres
+    |"tstzrange" // postgres
+    |"daterange" // postgres
+
     // other types
     |"enum" // mysql, postgres
     |"cidr" // postgres
@@ -159,10 +158,8 @@ export type SimpleColumnType =
     |"json" // mysql, postgres
     |"jsonb" // postgres
     |"varbinary" // mssql
-    |"cursor" // mssql
     |"hierarchyid" // mssql
     |"sql_variant" // mssql
-    |"table" // mssql
     |"rowid" // oracle
     |"urowid" // oracle
     |"uniqueidentifier"; // mssql
@@ -172,9 +169,9 @@ export type SimpleColumnType =
  */
 export type ColumnType = WithPrecisionColumnType
     |WithLengthColumnType
+    |WithWidthColumnType
     |SimpleColumnType
     |BooleanConstructor
     |DateConstructor
     |NumberConstructor
-    |StringConstructor
-    |RangeColumnType;
+    |StringConstructor;

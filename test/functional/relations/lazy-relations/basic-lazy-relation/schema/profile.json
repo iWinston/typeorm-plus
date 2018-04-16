@@ -20,7 +20,7 @@
       "inverseSide": "profile",
       "type": "one-to-one",
       "joinColumn": false,
-      "isLazy": true
+      "lazy": true
     }
   }
 }

@@ -26,6 +26,7 @@ import {InitializedRelationError} from "../error/InitializedRelationError";
 // todo: MetadataArgsStorage: check for duplicate targets too since this check has been removed too
 // todo: check if relation decorator contains primary: true and nullable: true
 // todo: check column length, precision. scale
+// todo: MySQL index can be unique or spatial or fulltext
 
 /**
  * Validates built entity metadatas.

@@ -1,4 +1,5 @@
 import {PlatformTools} from "../platform/PlatformTools";
+import {EntitySchema} from "../index";
 
 /**
  * Loads all exported classes from the given directory.
@@ -6,7 +7,7 @@ import {PlatformTools} from "../platform/PlatformTools";
 export function importClassesFromDirectories(directories: string[], formats = [".js", ".ts"]): Function[] {
 
     function loadFileClasses(exported: any, allLoaded: Function[]) {
-        if (typeof exported === "function") {
+        if (typeof exported === "function" || exported instanceof EntitySchema) {
             allLoaded.push(exported);
 
         } else if (Array.isArray(exported)) {

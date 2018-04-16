@@ -79,7 +79,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
      */
-    load(fileNameOrLocalStorageOrData: string | Uint8Array): Promise<any> {
+    load(fileNameOrLocalStorageOrData: string | Uint8Array, checkIfFileOrLocalStorageExists: boolean = true): Promise<any> {
         if (typeof fileNameOrLocalStorageOrData === "string") {
             // content has to be loaded
             if (PlatformTools.type === "node") {
@@ -89,15 +89,34 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     const database = PlatformTools.readFileSync(fileNameOrLocalStorageOrData);
                     return this.createDatabaseConnectionWithImport(database);
                 }
-                else {
+                else if (checkIfFileOrLocalStorageExists) {
                     throw new Error(`File ${fileNameOrLocalStorageOrData} does not exist`);
+                }
+                else {
+                    // File doesn't exist and checkIfFileOrLocalStorageExists is set to false.
+                    // Therefore open a database without importing an existing file.
+                    // File will be written on first write operation.
+                    return this.createDatabaseConnectionWithImport();
                 }
             } 
             else {
                 // browser
                 // fileNameOrLocalStorageOrData should be a local storage key
                 const localStorageContent = PlatformTools.getGlobalVariable().localStorage.getItem(fileNameOrLocalStorageOrData);
-                return this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
+                
+                if (localStorageContent != null) {
+                    // localStorage value exists.
+                    return this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
+                }
+                else if (checkIfFileOrLocalStorageExists) {
+                    throw new Error(`File ${fileNameOrLocalStorageOrData} does not exist`);
+                }
+                else {
+                    // localStorage value doesn't exist and checkIfFileOrLocalStorageExists is set to false.
+                    // Therefore open a database without importing anything.
+                    // localStorage value will be written on first write operation.
+                    return this.createDatabaseConnectionWithImport();
+                }
             }
         }
         else {
@@ -196,7 +215,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection(): Promise<any> {
         if (this.options.location) {
-            return this.load(this.options.location);
+            return this.load(this.options.location, false);
         }
 
         return this.createDatabaseConnectionWithImport(this.options.database);

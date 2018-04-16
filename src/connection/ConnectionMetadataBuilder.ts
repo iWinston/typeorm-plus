@@ -57,6 +57,12 @@ export class ConnectionMetadataBuilder {
         const entitySchemas: EntitySchema<any>[] = entityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema) as any;
 
         const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(entityDirectories)];
+        allEntityClasses.forEach(entityClass => { // if we have entity schemas loaded from directories
+            if (entityClass instanceof EntitySchema) {
+                entitySchemas.push(entityClass);
+                allEntityClasses.slice(allEntityClasses.indexOf(entityClass), 1);
+            }
+        });
         const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
 
         const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(entitySchemas);

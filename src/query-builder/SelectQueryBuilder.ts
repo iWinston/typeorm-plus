@@ -1581,25 +1581,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Creates "LOCK" part of SQL query.
      */
     protected createLockExpression(): string {
+        const driver = this.connection.driver;
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
-                if (this.connection.driver instanceof MysqlDriver) {
+                if (driver instanceof MysqlDriver) {
                     return " LOCK IN SHARE MODE";
 
-                } else if (this.connection.driver instanceof PostgresDriver) {
+                } else if (driver instanceof PostgresDriver) {
                     return " FOR SHARE";
 
-                } else if (this.connection.driver instanceof SqlServerDriver) {
+                } else if (driver instanceof OracleDriver) {
+                    return " FOR UPDATE";
+
+                } else if (driver instanceof SqlServerDriver) {
                     return "";
 
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write":
-                if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof PostgresDriver) {
+                if (driver instanceof MysqlDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
                     return " FOR UPDATE";
 
-                } else if (this.connection.driver instanceof SqlServerDriver) {
+                } else if (driver instanceof SqlServerDriver) {
                     return "";
 
                 } else {

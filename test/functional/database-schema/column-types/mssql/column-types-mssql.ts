@@ -113,7 +113,6 @@ describe("database schema > column types > mssql", () => { // https://github.com
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
         table!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
         table!.findColumnByName("smallint")!.type.should.be.equal("smallint");
@@ -129,11 +128,9 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("uniqueidentifier")!.type.should.be.equal("uniqueidentifier");
         table!.findColumnByName("char")!.type.should.be.equal("char");
         table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        table!.findColumnByName("varchar")!.length!.should.be.equal("255");
         table!.findColumnByName("text")!.type.should.be.equal("text");
         table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
         table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("nvarchar")!.length!.should.be.equal("255");
         table!.findColumnByName("ntext")!.type.should.be.equal("ntext");
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
@@ -252,7 +249,6 @@ describe("database schema > column types > mssql", () => { // https://github.com
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");

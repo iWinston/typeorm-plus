@@ -60,6 +60,11 @@ export class ColumnMetadata {
     length: string = "";
 
     /**
+     * Type's display width in the database.
+     */
+    width?: number;
+
+    /**
      * Defines column character set.
      */
     charset?: string;
@@ -109,6 +114,11 @@ export class ColumnMetadata {
      * Default database value.
      */
     default?: any;
+
+    /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
 
     /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column),
@@ -295,6 +305,8 @@ export class ColumnMetadata {
             this.type = options.args.options.type;
         if (options.args.options.length)
             this.length = options.args.options.length ? options.args.options.length.toString() : "";
+        if (options.args.options.width)
+            this.width = options.args.options.width;
         if (options.args.options.charset)
             this.charset = options.args.options.charset;
         if (options.args.options.collation)
@@ -313,6 +325,8 @@ export class ColumnMetadata {
             this.comment = options.args.options.comment;
         if (options.args.options.default !== undefined)
             this.default = options.args.options.default;
+        if (options.args.options.onUpdate)
+            this.onUpdate = options.args.options.onUpdate;
         if (options.args.options.scale !== null && options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
         if (options.args.options.zerofill) {
@@ -626,7 +640,7 @@ export class ColumnMetadata {
         // we add reference column to property path only if this column is virtual
         // because if its not virtual it means user defined a real column for this relation
         // also we don't do it if column is inside a junction table
-        if (!    this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
+        if (!this.entityMetadata.isJunction && this.isVirtual && this.referencedColumn && this.referencedColumn.propertyName !== this.propertyName)
             path += "." + this.referencedColumn.propertyName;
 
         return path;

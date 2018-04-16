@@ -697,6 +697,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
                 downQueries.push(this.dropEnumTypeSql(table, oldColumn));
 
+                // if column have default value, we must drop it to avoid issues with type casting
+                if (newColumn.default !== null && newColumn.default !== undefined) {
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
+                }
+
                 // build column types
                 const upType = `${enumNameWithoutSchema} USING "${newColumn.name}"::"text"::${enumNameWithoutSchema}`;
                 const downType = `${oldEnumNameWithoutSchema} USING "${newColumn.name}"::"text"::${oldEnumNameWithoutSchema}`;
@@ -704,6 +710,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 // update column to use new type
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`);
+
+                // if column have default value and we dropped it before, we must bring it back
+                if (newColumn.default !== null && newColumn.default !== undefined) {
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                }
 
                 // remove old ENUM
                 upQueries.push(this.dropEnumTypeSql(table, newColumn, oldEnumName));
@@ -1374,7 +1386,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                             tableColumn.generationStrategy = "uuid";
 
                         } else {
-                            tableColumn.default = dbColumn["column_default"].replace(/::character varying/, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
                         }
                     }
 

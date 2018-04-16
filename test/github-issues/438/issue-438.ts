@@ -3,7 +3,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe("github issues > #438 how can i define unsigned column? ", () => {
+describe("github issues > #438 how can i define unsigned column?", () => {
 
     let connections: Connection[];
     before(async () => {

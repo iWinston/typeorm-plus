@@ -143,6 +143,17 @@ export class MysqlDriver implements Driver {
     ];
 
     /**
+     * Gets list of column data types that support length by a driver.
+     */
+    withWidthColumnTypes: ColumnType[] = [
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "int",
+        "bigint"
+    ];
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [
@@ -211,7 +222,12 @@ export class MysqlDriver implements Driver {
         "binary": { length: 1 },
         "decimal": { precision: 10, scale: 0 },
         "float": { precision: 12 },
-        "double": { precision: 22 }
+        "double": { precision: 22 },
+        "int": { width: 11 },
+        "tinyint": { width: 4 },
+        "smallint": { width: 6 },
+        "mediumint": { width: 9 },
+        "bigint": { width: 20 }
     };
 
     // -------------------------------------------------------------------------
@@ -512,6 +528,9 @@ export class MysqlDriver implements Driver {
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`;
 
+        } else if (column.width) {
+            type += `(${column.width})`;
+
         } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += `(${column.precision},${column.scale})`;
 
@@ -596,13 +615,17 @@ export class MysqlDriver implements Driver {
             // console.log("name:", tableColumn.name, columnMetadata.databaseName);
             // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
             // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
             // console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
             // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
+            // console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
+            // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
+            // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
@@ -612,12 +635,16 @@ export class MysqlDriver implements Driver {
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
+                || tableColumn.width !== columnMetadata.width
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 || tableColumn.zerofill !== columnMetadata.zerofill
                 || tableColumn.unsigned !== columnMetadata.unsigned
+                || tableColumn.asExpression !== columnMetadata.asExpression
+                || tableColumn.generatedType !== columnMetadata.generatedType
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
+                || tableColumn.onUpdate !== columnMetadata.onUpdate
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)

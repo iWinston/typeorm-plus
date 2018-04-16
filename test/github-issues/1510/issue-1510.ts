@@ -8,9 +8,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
 
     const UserEntity = new EntitySchema<any>({
         name: "User",
-        table: {
-            name: "test_1510_users",
-        },
+        tableName: "test_1510_users",
         columns: {
             _id: {
                 type: "int",
@@ -26,9 +24,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
 
     const UserWithoutObjectIDEntity = new EntitySchema<any>({
         name: "UserWithoutObjectID",
-        table: {
-            name: "test_1510_users2",
-        },
+        tableName: "test_1510_users2",
         columns: {
             _id: {
                 type: "int",

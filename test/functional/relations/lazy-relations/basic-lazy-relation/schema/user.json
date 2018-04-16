@@ -24,7 +24,7 @@
       "inverseSide": "user",
       "type": "one-to-one",
       "joinColumn": true,
-      "isLazy": true
+      "lazy": true
     }
   }
 }

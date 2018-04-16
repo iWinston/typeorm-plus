@@ -376,8 +376,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+            let indexType = "";
+            if (index.isUnique)
+                indexType += "UNIQUE ";
+            if (index.isSpatial)
+                indexType += "SPATIAL ";
+            if (index.isFulltext)
+                indexType += "FULLTEXT ";
+            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`);
+            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`);
 
             // replace constraint name
             index.name = newIndexName;
@@ -533,7 +540,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!oldColumn)
             throw new Error(`Column "${oldColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) {
+        if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid")
+            || oldColumn.type !== newColumn.type
+            || oldColumn.length !== newColumn.length
+            || oldColumn.generatedType !== newColumn.generatedType) {
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
 
@@ -555,8 +565,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${newIndexName}\` (${columnNames})`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`);
+                    let indexType = "";
+                    if (index.isUnique)
+                        indexType += "UNIQUE ";
+                    if (index.isSpatial)
+                        indexType += "SPATIAL ";
+                    if (index.isFulltext)
+                        indexType += "FULLTEXT ";
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`);
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -1186,6 +1203,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.name = dbColumn["COLUMN_NAME"];
                     tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase();
 
+                    if (this.driver.withWidthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
+                        const width = dbColumn["COLUMN_TYPE"].substring(dbColumn["COLUMN_TYPE"].indexOf("(") + 1, dbColumn["COLUMN_TYPE"].indexOf(")"));
+                        tableColumn.width = width && !this.isDefaultColumnWidth(table, tableColumn, parseInt(width)) ? parseInt(width) : undefined;
+                    }
+
                     if (dbColumn["COLUMN_DEFAULT"] === null
                         || dbColumn["COLUMN_DEFAULT"] === undefined
                         || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
@@ -1193,6 +1215,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     } else {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP" ? dbColumn["COLUMN_DEFAULT"] : `'${dbColumn["COLUMN_DEFAULT"]}'`;
+                    }
+
+                    if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
+                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(10);
+                    }
+
+                    if (dbColumn["GENERATION_EXPRESSION"]) {
+                        tableColumn.asExpression = dbColumn["GENERATION_EXPRESSION"];
+                        tableColumn.generatedType = dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1 ? "VIRTUAL" : "STORED";
                     }
 
                     tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
@@ -1274,7 +1305,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: constraint["NON_UNIQUE"] === "0"
+                    isUnique: constraint["NON_UNIQUE"] === "0",
+                    isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
+                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT"
                 });
             });
 
@@ -1308,13 +1341,35 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }));
             });
 
+        // as MySql does not have unique constraints, we must create table indices from table uniques and mark them as unique.
+        if (table.uniques.length > 0) {
+            table.uniques.forEach(unique => {
+                const uniqueExist = table.indices.some(index => index.name === unique.name);
+                if (!uniqueExist) {
+                    table.indices.push(new TableIndex({
+                        name: unique.name,
+                        columnNames: unique.columnNames,
+                        isUnique: true
+                    }));
+                }
+            });
+        }
+
         if (table.indices.length > 0) {
             const indicesSql = table.indices.map(index => {
                 const columnNames = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
                 if (!index.name)
                     index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
-                return `${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` (${columnNames})`;
+                let indexType = "";
+                if (index.isUnique)
+                    indexType += "UNIQUE ";
+                if (index.isSpatial)
+                    indexType += "SPATIAL ";
+                if (index.isFulltext)
+                    indexType += "FULLTEXT ";
+
+                return `${indexType}INDEX \`${index.name}\` (${columnNames})`;
             }).join(", ");
 
             sql += `, ${indicesSql}`;
@@ -1361,7 +1416,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `\`${columnName}\``).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX \`${index.name}\` ON ${this.escapeTableName(table)}(${columns})`;
+        let indexType = "";
+        if (index.isUnique)
+            indexType += "UNIQUE ";
+        if (index.isSpatial)
+            indexType += "SPATIAL ";
+        if (index.isFulltext)
+            indexType += "FULLTEXT ";
+        return `CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapeTableName(table)}(${columns})`;
     }
 
     /**
@@ -1440,7 +1502,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${column.generatedType ? column.generatedType : "VIRTUAL"}`;
 
-        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column.
+        // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
         if (column.zerofill) {
             c += " ZEROFILL";
         } else if (column.unsigned) {
@@ -1452,9 +1514,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` CHARACTER SET "${column.charset}"`;
         if (column.collation)
             c += ` COLLATE "${column.collation}"`;
-        if (column.isNullable !== true)
+        if (!column.isNullable)
             c += " NOT NULL";
-        if (column.isNullable === true)
+        if (column.isNullable)
             c += " NULL";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
@@ -1464,6 +1526,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` COMMENT '${column.comment}'`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
+        if (column.onUpdate)
+            c += ` ON UPDATE ${column.onUpdate}`;
 
         return c;
     }

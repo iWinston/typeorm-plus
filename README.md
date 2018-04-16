@@ -21,7 +21,7 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-that can run in NodeJS, Browser, Cordova, PhoneGap and Ionic platforms 
+that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic and React Native platforms 
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
@@ -67,9 +67,9 @@ Some TypeORM features:
 * supports closure table pattern
 * schema declaration in models or separate configuration files
 * connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL / sql.js
+* supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 * supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / Electron platforms
+* works in NodeJS / Browser / Ionic / Cordova / React Native / Electron platforms
 * TypeScript and JavaScript support
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
@@ -238,8 +238,7 @@ typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`,
-`websql`, `mongodb`.
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`, `cordova`, `react-native`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
@@ -534,8 +533,7 @@ createConnection({
 
 We are using MySQL in this example, but you can use any other supported database. 
 To use another database, simply change the `type` in the options to the database type you are using: 
-mysql, mariadb, postgres, sqlite, mssql, oracle,
-websql, cordova or mongodb.
+mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, react-native or mongodb.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection. 
@@ -1248,6 +1246,7 @@ There are a few repositories which you can clone and start with:
 * [Example how to use TypeORM with MongoDB](https://github.com/typeorm/typeorm-typescript-mongo-example)
 * [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
 * [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
+* [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
 
 ## Extensions
 

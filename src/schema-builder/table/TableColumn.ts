@@ -25,6 +25,11 @@ export class TableColumn {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Indicates if column is NULL, or is NOT NULL in the database.
      */
     isNullable: boolean = false;
@@ -64,6 +69,12 @@ export class TableColumn {
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
      */
     length: string = "";
+
+    /**
+     * Column type's display width. Used only on some column types in MySQL.
+     * For example, INT(4) specifies an INT with a display width of four digits.
+     */
+    width?: number;
 
     /**
      * Defines column character set.
@@ -122,6 +133,7 @@ export class TableColumn {
             this.name = options.name;
             this.type = options.type || "";
             this.length = options.length || "";
+            this.width = options.width;
             this.charset = options.charset;
             this.collation = options.collation;
             this.precision = options.precision;
@@ -129,6 +141,7 @@ export class TableColumn {
             this.zerofill = options.zerofill;
             this.unsigned = this.zerofill ? true : options.unsigned;
             this.default = options.default;
+            this.onUpdate = options.onUpdate;
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
             this.generationStrategy = options.generationStrategy;
@@ -154,6 +167,7 @@ export class TableColumn {
             name: this.name,
             type: this.type,
             length: this.length,
+            width: this.width,
             charset: this.charset,
             collation: this.collation,
             precision: this.precision,
@@ -164,6 +178,7 @@ export class TableColumn {
             asExpression: this.asExpression,
             generatedType: this.generatedType,
             default: this.default,
+            onUpdate: this.onUpdate,
             isNullable: this.isNullable,
             isGenerated: this.isGenerated,
             generationStrategy: this.generationStrategy,
