@@ -132,13 +132,15 @@ export class JunctionEntityMetadataBuilder {
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: relation.entityMetadata,
                 columns: junctionColumns,
-                referencedColumns: referencedColumns
+                referencedColumns: referencedColumns,
+                onDelete: "CASCADE"
             }),
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: relation.inverseEntityMetadata,
                 columns: inverseJunctionColumns,
-                referencedColumns: inverseReferencedColumns
+                referencedColumns: inverseReferencedColumns,
+                onDelete: "CASCADE"
             }),
         ];
 
