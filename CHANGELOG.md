@@ -67,6 +67,16 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * changed the way how migrations work (more info in #1315). Now migration table contains `id` column with auto-generated keys, you need to re-create migrations table or add new column manually.
 * entity schemas syntax was changed
 * dropped support for WebSql and SystemJS
+* `@Index` decorator now accepts `synchronize` option. This option need to avoid deleting custom indices which is not created by TypeORM
+* new flag in relation options was introduced: `{ persistence: false }`. You can use it to prevent any extra queries for relations checks
+* added support for `UNSIGNED` and `ZEROFILL` column attributes in MySQL
+* added support for generated columns in MySQL
+* added support for `ON UPDATE` column option in MySQL
+* added `SPATIAL` and `FULLTEXT` index options in MySQL
+* added `hstore` and `enum` column types support in Postgres
+* added range types support in Postgres
+* TypeORM now uses `{ "supportBigNumbers": true, "bigNumberStrings": true }` options by default for `node-mysql`
+* Numeric data types in MySQL now accepts `width` option instead of `length` 
 
 ## 0.1.19
 
