@@ -1,13 +1,14 @@
-import {Column, Entity, ManyToOne, PrimaryColumn} from "../../../../src/index";
+import {Column, Entity, ManyToOne, PrimaryColumn} from "../../../../src";
 import {Event} from "./Event";
-import { Role } from "./Role";
+import {Role} from "./Role";
 
 @Entity()
 export class EventRole {
-    @PrimaryColumn("uuid")
+
+    @PrimaryColumn()
     eventId: string;
 
-    @PrimaryColumn("uuid")
+    @PrimaryColumn()
     roleId: string;
 
     @Column()
@@ -16,13 +17,13 @@ export class EventRole {
     @Column()
     compensation: string;
 
-    @ManyToOne(type => Role, role => role.id, {
-        onDelete: "CASCADE",
+    @ManyToOne(type => Role, role => role.roles, {
+        onDelete: "CASCADE"
     })
     role: Role;
 
     @ManyToOne(type => Event, event => event.roles, {
-        onDelete: "CASCADE",
+        onDelete: "CASCADE"
     })
     event: Event;
 }
