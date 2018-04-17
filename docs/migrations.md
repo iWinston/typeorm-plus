@@ -194,5 +194,217 @@ The rule of thumb for generating migrations is that you generate them after "eac
 ## Using migration API to write migrations
 
 In order to use an API to change a database schema you can use `QueryRunner`.
-`QueryRunner` API is subject to change in the next TypeORM version. 
-Expect to see documentation soon.
+
+---
+
+`getDatabases(): Promise<string[]>`
+ 
+Returns all available database names including system databases.
+
+---
+
+`getSchemas(database?: string): Promise<string[]>`
+ 
+- `database` - If database parameter specified, returns schemas of that database
+
+Returns all available schema names including system schemas. Useful for SQLServer and Postgres only.
+
+---
+
+`getTable(tableName: string): Promise<Table|undefined>`
+ 
+- `tableName` - name of a table to be loaded
+
+Loads a table by a given name from the database.
+
+---
+
+`getTables(tableNames: string[]): Promise<Table[]>`
+ 
+- `tableNames` - name of a tables to be loaded
+
+Loads a tables by a given names from the database.
+
+---
+
+`hasDatabase(database: string): Promise<boolean>`
+ 
+- `database` - name of a database to be checked
+
+Checks if database with the given name exist.
+
+---
+
+`hasSchema(schema: string): Promise<boolean>`
+ 
+- `schema` - name of a schema to be checked
+
+Checks if schema with the given name exist. Used only for SqlServer and Postgres.
+
+---
+
+`hasTable(tableOrName: Table|string): Promise<boolean>`
+ 
+- `tableOrName` - accepts a Table object or name of a table to be checked
+
+Checks if table exist.
+
+---
+
+`hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean>`
+ 
+- `tableOrName` - accepts a Table object or name of a table name
+- `columnName` - name of a column to be checked
+
+Checks if column exist in the table.
+
+---
+
+`createDatabase(database: string, ifNotExist?: boolean): Promise<void>`
+ 
+- `database` - database name
+- `ifNotExist` - skips creation if `true`, otherwise throws error if database already exist
+
+Creates a new database. 
+
+---
+
+`dropDatabase(database: string, ifExist?: boolean): Promise<void>`
+ 
+- `database` - database name
+- `ifExist` - skips deletion if `true`, otherwise throws error if database was not found
+
+Drops database.
+
+---
+
+`createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>`
+ 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+If schema path passed, it will create schema in specified database
+- `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
+
+Creates a new table schema.
+
+---
+
+`dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>`
+ 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+If schema path passed, it will drop schema in specified database
+- `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
+- `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
+Used only in Postgres.
+
+Drops a new table schema.
+
+---
+
+`createTable(table: Table, ifNotExist?: boolean, createForeignKeys?: boolean, createIndices?: boolean): Promise<void>`
+
+- `table` - Table object. 
+- `ifNotExist` - skips creation if `true`, otherwise throws error if table already exist. Default `false`
+- `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
+- `createIndices` - indicates whether indices will be created on table creation. Default `true`
+
+Creates a new table.
+
+---
+
+`dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>`
+
+- `table` - Table object or table name to be dropped
+- `ifExist` - skips dropping if `true`, otherwise throws error if table does not exist
+- `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
+- `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
+
+Drops a table.
+
+---
+
+`renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void>`
+
+- `oldTableOrName` - old Table object or name to be renamed
+- `newTableName` - new table name
+
+Renames a table.
+
+---
+
+`addColumn(table: Table|string, column: TableColumn): Promise<void>`
+
+- `table` - Table object or name
+- `column` - new column
+
+Adds a new column.
+
+---
+
+---
+
+`addColumns(table: Table|string, columns: TableColumn[]): Promise<void>`
+
+- `table` - Table object or name
+- `columns` - new columns
+
+Adds a new column.
+
+---
+
+`renameColumn(table: Table|string, oldColumnOrName: TableColumn|string, newColumnOrName: TableColumn|string): Promise<void>`
+
+- `table` - Table object or name
+- `oldColumnOrName` - old column. Accepts TableColumn object or column name
+- `newColumnOrName` - new column. Accepts TableColumn object or column name
+
+Renames a column.
+
+---
+
+`changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>`
+
+- `table` - Table object or name
+- `oldColumn` -  old column. Accepts TableColumn object or column name
+- `newColumn` -  new column. Accepts TableColumn object
+
+Changes a column in the table.
+
+---
+
+`changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>`
+
+- `table` - Table object or name
+- `changedColumns` - array of changed columns.
+  + `oldColumn` - old TableColumn object
+  + `newColumn` - new TableColumn object
+
+Changes a columns in the table.
+
+---
+
+`dropColumn(table: Table|string, column: TableColumn): Promise<void>`
+
+- `table` - Table object or name
+- `column` - TableColumn object to be dropped
+
+Drops a column in the table.
+
+---
+
+`dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>`
+
+- `table` - Table object or name
+- `columns` - array of TableColumn objects to be dropped
+
+Drops a columns in the table.
+
+---
+
+`createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void>`
+
+- `table` - Table object or name
+- `columnNames` - array of column names which will be primary
+
+Creates a new primary key.
+
+---

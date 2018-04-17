@@ -30,6 +30,8 @@
     * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
+    * [`@Unique`](#unique)
+    * [`@Check`](#check)
     * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
     * [`@EntityRepository`](#entityrepository)
 
@@ -693,6 +695,59 @@ export class User {
 ```
 
 Learn more about [indices](indices.md).
+
+#### `@Unique`
+
+This decorator allows you to create a database unique constraint for a specific column or columns.
+This decorator can be applied only to an entity itself.
+
+>Note: MySQL stores unique constraints as unique indices
+
+Examples:
+
+```typescript
+@Entity()
+@Unique(["firstName"])
+@Unique(["lastName", "middleName"])
+@Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
+export class User {
+    
+    @Column()
+    firstName: string;
+    
+    @Column()
+    lastName: string;
+    
+    @Column()
+    middleName: string;
+}
+```
+
+#### `@Check`
+
+This decorator allows you to create a database check constraint for a specific column or columns.
+This decorator can be applied only to an entity itself. 
+
+>Note: MySQL does not support check constraints.
+
+Examples:
+
+```typescript
+@Entity()
+@Check(`"firstName" <> 'John' AND "lastName" <> 'Doe'`)
+@Check(`"age" > 18`)
+export class User {
+    
+    @Column()
+    firstName: string;
+    
+    @Column()
+    lastName: string;
+    
+    @Column()
+    age: number;
+}
+```
 
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 

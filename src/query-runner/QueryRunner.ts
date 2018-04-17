@@ -72,8 +72,6 @@ export interface QueryRunner {
      */
     clearDatabase(database?: string): Promise<void>;
 
-    // todo: create clearSchema instead
-
     /**
      * Starts transaction.
      */
@@ -215,12 +213,12 @@ export interface QueryRunner {
     changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
     /**
-     * Drops the column in the table.
+     * Drops a column in the table.
      */
     dropColumn(table: Table|string, column: TableColumn): Promise<void>;
 
     /**
-     * Drops the columns in the table.
+     * Drops a columns in the table.
      */
     dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
