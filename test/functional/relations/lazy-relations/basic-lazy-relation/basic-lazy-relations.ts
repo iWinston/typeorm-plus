@@ -8,7 +8,6 @@ import {
     Category,
 } from "./entity/Category";
 import {EntitySchema} from "../../../../../src";
-import {expect} from "chai";
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -327,8 +326,7 @@ describe("basic-lazy-relations", () => {
         loadedPost.title.should.be.equal("post with great category");
     })));
 
-    it("should successfully load relations within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
-        if (connection.driver.options.type !== "postgres") return; // temporary for local testing. TODO: REMOVE BEFORE MERGE
+    it.only("should successfully load relations within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
         await connection.manager.transaction(async (manager) => {
             const post = manager.create(Post, {
                 title: "test post",
