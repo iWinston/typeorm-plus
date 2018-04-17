@@ -89,8 +89,8 @@ export class RelationLoader {
         const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
         const aliasName = relation.propertyName;
         const columns = relation.inverseRelation!.joinColumns;
-        const qb = this.connection
-            .createQueryBuilder(queryRunner)
+        const qb = (queryRunner ? queryRunner.manager : this.connection)
+            .createQueryBuilder()
             .select(aliasName)
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
 

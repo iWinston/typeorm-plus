@@ -108,7 +108,7 @@ export class EntityMetadataValidator {
         }
 
         // check if relations are all without initialized properties
-        const entityInstance = entityMetadata.create(entityMetadata.connection.createQueryRunner());
+        const entityInstance = entityMetadata.create();
         entityMetadata.relations.forEach(relation => {
             if (relation.isManyToMany || relation.isOneToMany) {
 

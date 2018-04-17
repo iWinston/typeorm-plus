@@ -486,10 +486,14 @@ export class EntityMetadata {
     /**
      * Creates a new entity.
      */
-    create(queryRunner: QueryRunner): any {
+    create(queryRunner: QueryRunner = this.connection.createQueryRunner()): any {
         // if target is set to a function (e.g. class) that can be created then create it
-        if (this.target instanceof Function)
-            return new (<any> this.target)();
+        let ret: any;
+        if (this.target instanceof Function) {
+            ret = new (<any> this.target)();
+            this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
+            return ret;
+        }
 
         // otherwise simply return a new empty object
         const newObject = {};

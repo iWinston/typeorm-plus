@@ -66,7 +66,7 @@ export class PlainObjectToNewEntityTransformer {
 
                         // if such item already exist then merge new data into it, if its not we create a new entity and merge it into the array
                         if (!objectRelatedValueEntity) {
-                            objectRelatedValueEntity = relation.inverseEntityMetadata.create(metadata.connection.createQueryRunner());
+                            objectRelatedValueEntity = relation.inverseEntityMetadata.create();
                             entityRelatedValue.push(objectRelatedValueEntity);
                         }
 
@@ -86,7 +86,7 @@ export class PlainObjectToNewEntityTransformer {
                     }
 
                     if (!entityRelatedValue) {
-                        entityRelatedValue = relation.inverseEntityMetadata.create(metadata.connection.createQueryRunner());
+                        entityRelatedValue = relation.inverseEntityMetadata.create();
                         relation.setEntityValue(entity, entityRelatedValue);
                     }
 
