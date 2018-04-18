@@ -93,7 +93,6 @@ export class RelationLoader {
             .createQueryBuilder(queryRunner)
             .select(aliasName)
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
-        qb.getMany().then(console.log);
 
         if (columns.length === 1) {
             qb.where(`${aliasName}.${columns[0].propertyPath} IN (:...${aliasName + "_" + columns[0].propertyName})`);
