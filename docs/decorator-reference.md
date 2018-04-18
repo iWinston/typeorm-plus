@@ -701,7 +701,7 @@ Learn more about [indices](indices.md).
 This decorator allows you to create a database unique constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
 
->Note: MySQL stores unique constraints as unique indices
+> Note: MySQL stores unique constraints as unique indices
 
 Examples:
 
@@ -728,7 +728,7 @@ export class User {
 This decorator allows you to create a database check constraint for a specific column or columns.
 This decorator can be applied only to an entity itself. 
 
->Note: MySQL does not support check constraints.
+> Note: MySQL does not support check constraints.
 
 Examples:
 
@@ -804,6 +804,6 @@ Learn more about [custom entity repositories](working-with-entity-manager.md).
 
 ----
 
-Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't 
+> Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't 
 documented in this reference because they are treated as experimental at the moment. 
 Expect to see their documentation in the future.

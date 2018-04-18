@@ -200,7 +200,7 @@ Example:
 ```ts
 import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class PostRefactoringTIMESTAMP implements MigrationInterface {
+export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     
     async up(queryRunner: QueryRunner): Promise<any> {
         await queryRunner.createTable(new Table({
@@ -218,7 +218,10 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
             ]
         }), true)        
         
-        await queryRunner.createIndex("question", new TableIndex({ name: "IDX_QUESTION_NAME", columnNames: ["name"] }));
+        await queryRunner.createIndex("question", new TableIndex({
+            name: "IDX_QUESTION_NAME",
+            columnNames: ["name"]
+        }));
         
         await queryRunner.createTable(new Table({
             name: "answer",
@@ -235,15 +238,17 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
             ]
         }), true);
         
-        await queryRunner.addColumn("answer", new TableColumn({ name: "questionId", type: "int" }));
-
-        const foreignKey = new TableForeignKey({
+        await queryRunner.addColumn("answer", new TableColumn({
+            name: "questionId", 
+            type: "int" 
+        }));
+        
+        await queryRunner.createForeignKey("answer", new TableForeignKey({
             columnNames: ["questionId"],
             referencedColumnNames: ["id"],
             referencedTableName: "question",
             onDelete: "CASCADE"
-        });
-        await queryRunner.createForeignKey("answer", foreignKey);
+        }));
     }
 
     async down(queryRunner: QueryRunner): Promise<any> {
