@@ -257,7 +257,7 @@ Checks if schema with the given name exist. Used only for SqlServer and Postgres
 
 ```ts
 hasTable(tableOrName: Table|string): Promise<boolean>
- ```
+```
  
 - `tableOrName` - accepts a Table object or name of a table to be checked
 
