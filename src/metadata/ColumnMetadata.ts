@@ -162,7 +162,7 @@ export class ColumnMetadata {
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */
-    hstoreType?: string;
+    hstoreType?: "object"|"string";
 
     /**
      * Indicates if this column is an array.

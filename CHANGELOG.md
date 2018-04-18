@@ -76,7 +76,10 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * added `hstore` and `enum` column types support in Postgres
 * added range types support in Postgres
 * TypeORM now uses `{ "supportBigNumbers": true, "bigNumberStrings": true }` options by default for `node-mysql`
-* Numeric data types in MySQL now accepts `width` option instead of `length` 
+* Integer data types in MySQL now accepts `width` option instead of `length` 
+* junction tables now have `onDelete: "CASCADE"` attribute on their foreign keys
+* `ancestor` and `descendant` columns in ClosureTable marked as primary keys
+* unique index now will be created for the join columns in `ManyToOne` and `OneToOne` relations
 
 ## 0.1.19
 

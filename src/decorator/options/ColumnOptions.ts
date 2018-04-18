@@ -86,7 +86,7 @@ export interface ColumnOptions {
 
     /**
      * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
+     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
      */
     zerofill?: boolean;
 
@@ -125,7 +125,7 @@ export interface ColumnOptions {
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */
-    hstoreType?: string;
+    hstoreType?: "object"|"string";
 
     /**
      * Indicates if this column is an array.
