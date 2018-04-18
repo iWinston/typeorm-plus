@@ -195,6 +195,70 @@ The rule of thumb for generating migrations is that you generate them after "eac
 
 In order to use an API to change a database schema you can use `QueryRunner`.
 
+Example:
+
+```ts
+import {MigrationInterface, QueryRunner} from "typeorm";
+
+export class PostRefactoringTIMESTAMP implements MigrationInterface {
+    
+    async up(queryRunner: QueryRunner): Promise<any> {
+        await queryRunner.createTable(new Table({
+            name: "question",
+            columns: [
+                {
+                    name: "id",
+                    type: "int",
+                    isPrimary: true
+                },
+                {
+                    name: "name",
+                    type: "varchar",
+                }
+            ]
+        }), true)        
+        
+        await queryRunner.createIndex("question", new TableIndex({ name: "IDX_QUESTION_NAME", columnNames: ["name"] }));
+        
+        await queryRunner.createTable(new Table({
+            name: "answer",
+            columns: [
+                {
+                    name: "id",
+                    type: "int",
+                    isPrimary: true
+                },
+                {
+                    name: "name",
+                    type: "varchar",
+                }
+            ]
+        }), true);
+        
+        await queryRunner.addColumn("answer", new TableColumn({ name: "questionId", type: "int" }));
+
+        const foreignKey = new TableForeignKey({
+            columnNames: ["questionId"],
+            referencedColumnNames: ["id"],
+            referencedTableName: "question",
+            onDelete: "CASCADE"
+        });
+        await queryRunner.createForeignKey("answer", foreignKey);
+    }
+
+    async down(queryRunner: QueryRunner): Promise<any> {
+        const table = await queryRunner.getTable("post");
+        const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1)
+        await queryRunner.dropForeignKey(table, foreignKey);
+        await queryRunner.dropColumn(table, "questionId");
+        await queryRunner.dropTable("answer");
+        await queryRunner.dropIndex(table, "IDX_QUESTION_NAME");
+        await queryRunner.dropTable(table);
+    }
+    
+}
+```
+
 ---
 
 ```ts 
@@ -421,11 +485,11 @@ Changes a columns in the table.
 ---
 
 ```ts 
-dropColumn(table: Table|string, column: TableColumn): Promise<void>
+dropColumn(table: Table|string, column: TableColumn|string): Promise<void>
 ```
 
 - `table` - Table object or name
-- `column` - TableColumn object to be dropped
+- `column` - TableColumn object or column name to be dropped
 
 Drops a column in the table.
 

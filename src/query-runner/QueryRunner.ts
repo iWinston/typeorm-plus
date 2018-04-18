@@ -215,7 +215,7 @@ export interface QueryRunner {
     /**
      * Drops a column in the table.
      */
-    dropColumn(table: Table|string, column: TableColumn): Promise<void>;
+    dropColumn(table: Table|string, column: TableColumn|string): Promise<void>;
 
     /**
      * Drops a columns in the table.

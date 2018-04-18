@@ -58,18 +58,19 @@ describe("query runner > create foreign key", () => {
         queryRunner.clearSqlMemory();
 
         const foreignKey = new TableForeignKey({
-            columnNames: ["id"],
+            columnNames: ["questionId"],
             referencedColumnNames: ["id"],
-            referencedTableName: "answer"
+            referencedTableName: "question",
+            onDelete: "CASCADE"
         });
-        await queryRunner.createForeignKey("question", foreignKey);
+        await queryRunner.createForeignKey("answer", foreignKey);
 
-        let table = await queryRunner.getTable("question");
+        let table = await queryRunner.getTable("answer");
         table!.foreignKeys.length.should.be.equal(1);
 
         await queryRunner.executeMemoryDownSql();
 
-        table = await queryRunner.getTable("question");
+        table = await queryRunner.getTable("answer");
         table!.foreignKeys.length.should.be.equal(0);
 
         await queryRunner.release();

@@ -720,8 +720,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
+    async dropColumn(tableOrName: Table|string, columnOrName: TableColumn|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
+        if (!column)
+            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+
         const clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];

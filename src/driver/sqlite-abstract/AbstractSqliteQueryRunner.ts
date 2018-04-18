@@ -381,8 +381,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     /**
      * Drops column in the table.
      */
-    async dropColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
-        await this.dropColumns(tableOrName, [column]);
+    async dropColumn(tableOrName: Table|string, columnOrName: TableColumn|string): Promise<void> {
+        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
+        const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
+        if (!column)
+            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+
+        await this.dropColumns(table, [column]);
     }
 
     /**
