@@ -256,20 +256,20 @@ Checks if schema with the given name exist. Used only for SqlServer and Postgres
 ---
 
 ```ts
-hasTable(tableOrName: Table|string): Promise<boolean>
+hasTable(table: Table|string): Promise<boolean>
 ```
  
-- `tableOrName` - accepts a Table object or name of a table to be checked
+- `table` - Table object or name
 
 Checks if table exist.
 
 ---
 
 ```ts 
-hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean>
+hasColumn(table: Table|string, columnName: string): Promise<boolean>
 ```
  
-- `tableOrName` - accepts a Table object or name of a table name
+- `table` - Table object or name
 - `columnName` - name of a column to be checked
 
 Checks if column exist in the table.

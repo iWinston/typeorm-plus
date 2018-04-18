@@ -143,12 +143,12 @@ export interface QueryRunner {
     /**
      * Checks if table with the given name exist.
      */
-    hasTable(tableOrName: Table|string): Promise<boolean>;
+    hasTable(table: Table|string): Promise<boolean>;
 
     /**
      * Checks if column exist in the table.
      */
-    hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean>;
+    hasColumn(table: Table|string, columnName: string): Promise<boolean>;
 
     /**
      * Creates a new database.
