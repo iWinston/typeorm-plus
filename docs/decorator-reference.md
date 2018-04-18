@@ -115,6 +115,9 @@ you specify column type and length options.
 * `onUpdate: string` - `ON UPDATE` trigger. Works only for [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
+* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
+Default value is `false`.
+* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value. 
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
 * `unique: boolean` - Marks column as unique column (creates unique constraint).
@@ -125,8 +128,8 @@ By default column is `nullable: false`.
 which represents the number of digits to the right of the decimal point and must not be greater than precision. 
 Used in some column types.
 * `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Works only for MySQL. 
+If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Works only for MySQL.
-If you specify `ZEROFILL` for a numeric column, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.

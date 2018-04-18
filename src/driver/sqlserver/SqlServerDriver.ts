@@ -79,10 +79,10 @@ export class SqlServerDriver implements Driver {
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
      */
     supportedDataTypes: ColumnType[] = [
+        "int",
         "bigint",
         "bit",
         "decimal",
-        "int",
         "money",
         "numeric",
         "smallint",
@@ -97,11 +97,11 @@ export class SqlServerDriver implements Driver {
         "smalldatetime",
         "time",
         "char",
-        "text",
         "varchar",
+        "text",
         "nchar",
-        "ntext",
         "nvarchar",
+        "ntext",
         "binary",
         "image",
         "varbinary",

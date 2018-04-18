@@ -85,6 +85,7 @@ export class PostgresDriver implements Driver {
      * @see https://www.postgresql.org/docs/9.2/static/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
+        "int",
         "int2",
         "int4",
         "int8",
