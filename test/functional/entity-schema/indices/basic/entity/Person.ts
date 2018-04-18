@@ -18,7 +18,6 @@ export const PersonSchema = new EntitySchema<any>({
             nullable: false
         }
     },
-    relations: {},
     indices: [
         {
             name: "IDX_TEST",
