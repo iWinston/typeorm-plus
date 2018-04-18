@@ -89,10 +89,11 @@ export class RelationLoader {
         const entities = entityOrEntities instanceof Array ? entityOrEntities : [entityOrEntities];
         const aliasName = relation.propertyName;
         const columns = relation.inverseRelation!.joinColumns;
-        const qb = (queryRunner ? queryRunner.manager : this.connection)
-            .createQueryBuilder()
+        const qb = this.connection
+            .createQueryBuilder(queryRunner)
             .select(aliasName)
             .from(relation.inverseRelation!.entityMetadata.target, aliasName);
+        qb.getMany().then(console.log);
 
         if (columns.length === 1) {
             qb.where(`${aliasName}.${columns[0].propertyPath} IN (:...${aliasName + "_" + columns[0].propertyName})`);
@@ -182,7 +183,7 @@ export class RelationLoader {
      * Wraps given entity and creates getters/setters for its given relation
      * to be able to lazily load data when accessing this relation.
      */
-    enableLazyLoad(relation: RelationMetadata, entity: ObjectLiteral, queryRunner: QueryRunner) {
+    enableLazyLoad(relation: RelationMetadata, entity: ObjectLiteral, queryRunner?: QueryRunner) {
         const relationLoader = this;
         const dataIndex = "__" + relation.propertyName + "__"; // in what property of the entity loaded data will be stored
         const promiseIndex = "__promise_" + relation.propertyName + "__"; // in what property of the entity loading promise will be stored

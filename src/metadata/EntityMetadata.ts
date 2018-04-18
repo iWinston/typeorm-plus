@@ -486,7 +486,7 @@ export class EntityMetadata {
     /**
      * Creates a new entity.
      */
-    create(queryRunner: QueryRunner = this.connection.createQueryRunner()): any {
+    create(queryRunner?: QueryRunner): any {
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any;
         if (this.target instanceof Function) {

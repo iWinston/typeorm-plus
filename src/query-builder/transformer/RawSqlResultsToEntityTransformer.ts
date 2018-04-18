@@ -26,7 +26,7 @@ export class RawSqlResultsToEntityTransformer {
                 protected driver: Driver,
                 protected rawRelationIdResults: RelationIdLoadResult[],
                 protected rawRelationCountResults: RelationCountLoadResult[],
-                protected queryRunner: QueryRunner) {
+                protected queryRunner?: QueryRunner) {
     }
 
     // -------------------------------------------------------------------------
