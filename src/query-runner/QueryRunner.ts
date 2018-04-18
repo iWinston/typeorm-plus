@@ -245,7 +245,7 @@ export interface QueryRunner {
     /**
      * Creates new unique constraints.
      */
-    createUniqueConstraints(tableName: Table|string, uniqueConstraint: TableUnique[]): Promise<void>;
+    createUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
 
     /**
      * Drops an unique constraint.

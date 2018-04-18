@@ -296,7 +296,7 @@ If schema path passed, it will drop schema in specified database
 - `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
 Used only in Postgres.
 
-Drops a new table schema.
+Drops a table schema.
 
 ---
 
@@ -406,5 +406,42 @@ Drops a columns in the table.
 - `columnNames` - array of column names which will be primary
 
 Creates a new primary key.
+
+---
+
+`updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void>`
+
+- `table` - Table object or name
+- `columns` - array of TableColumn objects which will be updated
+
+Updates composite primary keys.
+
+---
+
+`dropPrimaryKey(tableOrName: Table|string): Promise<void>`
+
+- `table` - Table object or name
+
+Drops a primary key.
+
+---
+
+`createUniqueConstraint(tableName: Table|string, uniqueConstraint: TableUnique): Promise<void>`
+
+- `table` - Table object or name
+- `uniqueConstraint` - TableUnique object
+
+Creates new unique constraint.
+
+---
+
+```ts 
+createUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `uniqueConstraints` - array of TableUnique objects
+
+Creates new unique constraints.
 
 ---
