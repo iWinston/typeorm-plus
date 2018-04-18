@@ -225,67 +225,67 @@ export interface QueryRunner {
     /**
      * Creates a new primary key.
      */
-    createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void>;
+    createPrimaryKey(table: Table|string, columnNames: string[]): Promise<void>;
 
     /**
      * Updates composite primary keys.
      */
-    updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void>;
+    updatePrimaryKeys(table: Table|string, columns: TableColumn[]): Promise<void>;
 
     /**
      * Drops a primary key.
      */
-    dropPrimaryKey(tableOrName: Table|string): Promise<void>;
+    dropPrimaryKey(table: Table|string): Promise<void>;
 
     /**
      * Creates new unique constraint.
      */
-    createUniqueConstraint(tableName: Table|string, uniqueConstraint: TableUnique): Promise<void>;
+    createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>;
 
     /**
      * Creates new unique constraints.
      */
-    createUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
+    createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
 
     /**
      * Drops an unique constraint.
      */
-    dropUniqueConstraint(tableName: Table|string, uniqueOrName: TableUnique|string): Promise<void>;
+    dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>;
 
     /**
      * Drops an unique constraints.
      */
-    dropUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
+    dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
 
     /**
      * Creates new check constraint.
      */
-    createCheckConstraint(tableName: Table|string, checkConstraint: TableCheck): Promise<void>;
+    createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>;
 
     /**
      * Creates new check constraints.
      */
-    createCheckConstraints(tableName: Table|string, checkConstraint: TableCheck[]): Promise<void>;
+    createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>;
 
     /**
      * Drops check constraint.
      */
-    dropCheckConstraint(tableName: Table|string, checkOrName: TableCheck|string): Promise<void>;
+    dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>;
 
     /**
      * Drops check constraints.
      */
-    dropCheckConstraints(tableName: Table|string, checkConstraints: TableCheck[]): Promise<void>;
+    dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>;
 
     /**
      * Creates a new foreign key.
      */
-    createForeignKey(tableName: Table|string, foreignKey: TableForeignKey): Promise<void>;
+    createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
      * Creates a new foreign keys.
      */
-    createForeignKeys(tableName: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
+    createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
     /**
      * Drops a foreign key.
@@ -305,7 +305,7 @@ export interface QueryRunner {
     /**
      * Creates a new indices.
      */
-    createIndices(tableName: Table|string, indices: TableIndex[]): Promise<void>;
+    createIndices(table: Table|string, indices: TableIndex[]): Promise<void>;
 
     /**
      * Drops an index.

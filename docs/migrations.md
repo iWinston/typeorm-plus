@@ -256,7 +256,7 @@ Checks if schema with the given name exist. Used only for SqlServer and Postgres
 ---
 
 ```ts
- hasTable(tableOrName: Table|string): Promise<boolean>
+hasTable(tableOrName: Table|string): Promise<boolean>
  ```
  
 - `tableOrName` - accepts a Table object or name of a table to be checked
@@ -372,8 +372,6 @@ Adds a new column.
 
 ---
 
----
-
 ```ts 
 addColumns(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
@@ -445,7 +443,7 @@ Drops a columns in the table.
 ---
 
 ```ts 
-createPrimaryKey(tableOrName: Table|string, columnNames: string[]): Promise<void>
+createPrimaryKey(table: Table|string, columnNames: string[]): Promise<void>
 ```
 
 - `table` - Table object or name
@@ -456,7 +454,7 @@ Creates a new primary key.
 ---
 
 ```ts 
-updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void>
+updatePrimaryKeys(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
 - `table` - Table object or name
@@ -467,7 +465,7 @@ Updates composite primary keys.
 ---
 
 ```ts 
-dropPrimaryKey(tableOrName: Table|string): Promise<void>
+dropPrimaryKey(table: Table|string): Promise<void>
 ```
 
 - `table` - Table object or name
@@ -477,23 +475,257 @@ Drops a primary key.
 ---
 
 ```ts 
-createUniqueConstraint(tableName: Table|string, uniqueConstraint: TableUnique): Promise<void>
+createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>
 ```
 
 - `table` - Table object or name
-- `uniqueConstraint` - TableUnique object
+- `uniqueConstraint` - TableUnique object to be created
 
 Creates new unique constraint.
+
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `createIndex()` method instead.
 
 ---
 
 ```ts 
-createUniqueConstraints(tableName: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
+createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
 - `table` - Table object or name
-- `uniqueConstraints` - array of TableUnique objects
+- `uniqueConstraints` - array of TableUnique objects to be created
 
 Creates new unique constraints.
 
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `createIndices()` method instead.
+
 ---
+
+```ts
+dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>
+```
+
+- `table` - Table object or name
+- `uniqueOrName` - TableUnique object or unique constraint name to be dropped
+
+Drops an unique constraint.
+
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndex()` method instead.
+
+---
+
+```ts
+dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `uniqueConstraints` - array of TableUnique objects to be dropped
+
+Drops an unique constraints.
+
+> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndices()` method instead.
+
+---
+
+```ts
+createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>
+```
+
+- `table` - Table object or name
+- `checkConstraint` - TableCheck object
+
+Creates new check constraint.
+
+> Note: MySQL does not support check constraints.
+
+---
+
+```ts
+createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `checkConstraints` - array of TableCheck objects
+
+Creates new check constraint.
+
+> Note: MySQL does not support check constraints.
+
+---
+
+```ts
+dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>
+```
+
+- `table` - Table object or name
+- `checkOrName` - TableCheck object or check constraint name
+
+Drops check constraint.
+
+> Note: MySQL does not support check constraints.
+
+---
+
+```ts
+dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `checkConstraints` - array of TableCheck objects
+
+Drops check constraints.
+
+> Note: MySQL does not support check constraints.
+
+---
+
+```ts
+createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>
+```
+
+- `table` - Table object or name
+- `foreignKey` - TableForeignKey object
+
+Creates a new foreign key.
+
+---
+
+```ts
+createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `foreignKeys` - array of TableForeignKey objects
+
+Creates a new foreign keys.
+
+---
+
+```ts
+dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>
+```
+
+- `table` - Table object or name
+- `foreignKeyOrName` - TableForeignKey object or foreign key name
+
+Drops a foreign key.
+
+---
+
+```ts
+dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `foreignKeys` - array of TableForeignKey objects
+
+Drops a foreign keys.
+
+---
+
+```ts
+createIndex(table: Table|string, index: TableIndex): Promise<void>
+```
+
+- `table` - Table object or name
+- `index` - TableIndex object
+
+Creates a new index.
+
+---
+
+```ts
+createIndices(table: Table|string, indices: TableIndex[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `indices` - array of TableIndex objects
+
+Creates a new indices.
+
+---
+
+```ts
+dropIndex(table: Table|string, index: TableIndex|string): Promise<void>
+```
+
+- `table` - Table object or name
+- `index` - TableIndex object or index name
+
+Drops an index.
+
+---
+
+```ts
+dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>
+```
+
+- `table` - Table object or name
+- `indices` - array of TableIndex objects
+
+Drops an indices.
+
+---
+
+```ts
+clearTable(tableName: string): Promise<void>
+```
+
+- `tableName` - table name
+
+Clears all table contents.
+
+> Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+
+---
+
+```ts
+enableSqlMemory(): void
+```
+
+Enables special query runner mode in which sql queries won't be executed, instead they will be memorized into a special variable inside query runner.
+You can get memorized sql using `getMemorySql()` method.
+
+---
+
+```ts
+disableSqlMemory(): void
+```
+
+Disables special query runner mode in which sql queries won't be executed. Previously memorized sql will be flushed.
+
+---
+
+```ts
+clearSqlMemory(): void
+```
+
+Flushes all memorized sqls.
+
+---
+
+```ts
+getMemorySql(): SqlInMemory
+```
+
+- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sqls
+
+Gets sql stored in the memory. Parameters in the sql are already replaced.
+
+---
+
+```ts
+executeMemoryUpSql(): Promise<void>
+```
+
+Executes memorized up sql queries.
+
+---
+
+```ts
+executeMemoryDownSql(): Promise<void>
+```
+
+Executes memorized down sql queries.
+
+---
+
