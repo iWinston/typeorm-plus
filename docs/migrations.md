@@ -247,13 +247,13 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
     }
 
     async down(queryRunner: QueryRunner): Promise<any> {
-        const table = await queryRunner.getTable("post");
+        const table = await queryRunner.getTable("question");
         const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1)
-        await queryRunner.dropForeignKey(table, foreignKey);
-        await queryRunner.dropColumn(table, "questionId");
+        await queryRunner.dropForeignKey("question", foreignKey);
+        await queryRunner.dropColumn("question", "questionId");
         await queryRunner.dropTable("answer");
-        await queryRunner.dropIndex(table, "IDX_QUESTION_NAME");
-        await queryRunner.dropTable(table);
+        await queryRunner.dropIndex("question", "IDX_QUESTION_NAME");
+        await queryRunner.dropTable("question");
     }
     
 }
