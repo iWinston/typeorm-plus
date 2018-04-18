@@ -34,7 +34,7 @@ export class Post {
 ```
 
 And your entity worked in production for months without any changes.
-You have thousands posts in your database.
+You have thousands of posts in your database.
 
 Now you need to make a new release and rename `title` to `name`.
 What would you do? 

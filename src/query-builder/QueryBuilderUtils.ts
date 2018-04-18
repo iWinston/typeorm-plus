@@ -19,8 +19,11 @@ export class QueryBuilderUtils {
             return false;
 
         // alias and property must be represented in a special format
-        const aliasNameRegexp = /^[a-zA-Z0-9_-]+$/;
-        if (!aliasNameRegexp.test(aliasName) || !aliasNameRegexp.test(propertyName))
+        // const aliasNameRegexp = /^[a-zA-Z0-9_-]+$/;
+        // if (!aliasNameRegexp.test(aliasName) || !aliasNameRegexp.test(propertyName))
+        //     return false;
+        // make sure string is not a subquery
+        if (str.indexOf("(") !== -1 || str.indexOf(")") !== -1)
             return false;
 
         return true;
