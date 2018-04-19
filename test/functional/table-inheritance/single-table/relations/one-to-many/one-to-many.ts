@@ -14,13 +14,11 @@ import {Faculty} from "./entity/Faculty";
 import {Specialization} from "./entity/Specialization";
 import {Department} from "./entity/Department";
 
-describe.skip("table-inheritance > single-table > relations > one-to-many", () => {
+describe("table-inheritance > single-table > relations > one-to-many", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
+        entities: [__dirname + "/entity/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -80,6 +78,7 @@ describe.skip("table-inheritance > single-table > relations > one-to-many", () =
             .createQueryBuilder(Student, "student")
             .leftJoinAndSelect("student.faculties", "faculty")
             .where("student.name = :name", { name: "Alice" })
+            .orderBy("student.id, faculty.id")
             .getOne();
 
         loadedStudent!.should.have.all.keys("id", "name", "faculties");
@@ -93,6 +92,7 @@ describe.skip("table-inheritance > single-table > relations > one-to-many", () =
             .createQueryBuilder(Teacher, "teacher")
                 .leftJoinAndSelect("teacher.specializations", "specialization")
                 .where("teacher.name = :name", { name: "Mr. Garrison" })
+                .orderBy("teacher.id, specialization.id")
                 .getOne();
 
         loadedTeacher!.should.have.all.keys("id", "name", "specializations", "salary");
@@ -107,6 +107,7 @@ describe.skip("table-inheritance > single-table > relations > one-to-many", () =
             .createQueryBuilder(Accountant, "accountant")
             .leftJoinAndSelect("accountant.departments", "department")
             .where("accountant.name = :name", { name: "Mr. Burns" })
+            .orderBy("accountant.id, department.id")
             .getOne();
 
         loadedAccountant!.should.have.all.keys("id", "name", "departments", "salary");
@@ -146,7 +147,7 @@ describe.skip("table-inheritance > single-table > relations > one-to-many", () =
             .leftJoinAndSelect("person.faculties", "faculty")
             .leftJoinAndSelect("person.specializations", "specialization")
             .leftJoinAndSelect("person.departments", "department")
-            .orderBy("person.id, specialization.id, department.id")
+            .orderBy("person.id, specialization.id, department.id, faculty.id")
             .getMany();
 
         loadedPersons[0].should.have.all.keys("id", "name", "faculties");

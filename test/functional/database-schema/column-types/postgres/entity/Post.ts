@@ -36,24 +36,6 @@ export class Post {
     @Column("int8")
     int8: string;
 
-    /*@Column("serial")
-    serial: number;
-
-    @Column("serial4")
-    serial4: number;
-
-    @Column("smallserial")
-    smallserial: number;
-
-    @Column("serial2")
-    serial2: number;
-
-    @Column("bigserial")
-    bigserial: number;
-
-    @Column("serial8")
-    serial8: number;*/
-
     @Column("numeric")
     numeric: string;
 
@@ -100,6 +82,9 @@ export class Post {
 
     @Column("citext")
     citext: string;
+
+    @Column("hstore")
+    hstore: string;
 
     // -------------------------------------------------------------------------
     // Binary Data Types
@@ -150,8 +135,8 @@ export class Post {
     // Enumerated Type
     // -------------------------------------------------------------------------
 
-    /*@Column("enum", { enum: ["A", "B", "C"] })
-    enum: string;*/
+    @Column("enum", { enum: ["A", "B", "C"] })
+    enum: string;
 
     // -------------------------------------------------------------------------
     // Geometric Type
@@ -225,11 +210,36 @@ export class Post {
     @Column("json")
     json: Object;
 
+    @Column("jsonb")
+    jsonb: Object;
+
+    // -------------------------------------------------------------------------
+    // Range Type
+    // -------------------------------------------------------------------------
+
+    @Column("int4range")
+    int4range: string;
+
+    @Column("int8range")
+    int8range: string;
+
+    @Column("numrange")
+    numrange: string;
+
+    @Column("tsrange")
+    tsrange: string;
+
+    @Column("tstzrange")
+    tstzrange: string;
+
+    @Column("daterange")
+    daterange: string;
+
     // -------------------------------------------------------------------------
     // Array Type
     // -------------------------------------------------------------------------
 
-    @Column("int", { isArray: true })
+    @Column("int", { array: true })
     array: number[];
 
     // -------------------------------------------------------------------------

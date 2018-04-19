@@ -18,10 +18,10 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(() => Subcounters)
+    @Column(() => Subcounters, { prefix: "subcnt" })
     subcounters: Subcounters;
 
-    @OneToOne(type => User)
+    @OneToOne(() => User, user => user.likedPost)
     @JoinColumn()
     likedUser: User;
 

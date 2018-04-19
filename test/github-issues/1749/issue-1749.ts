@@ -18,7 +18,7 @@ describe("github issues > #1749 Can't delete tables in non-default schema", () =
         const bar = new Bar();
         const persistedBar = await connection.manager.save(bar);
 
-        await connection.manager.deleteById(Bar, persistedBar.id);
+        await connection.manager.delete(Bar, persistedBar.id);
 
     })));
 

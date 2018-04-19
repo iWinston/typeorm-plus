@@ -7,6 +7,7 @@ import {
 import {
     Category,
 } from "./entity/Category";
+import {EntitySchema} from "../../../../../src";
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -14,21 +15,20 @@ import {
  */
 describe("basic-lazy-relations", () => {
 
-    let userSchema: any, profileSchema: any;
+    let UserSchema: any, ProfileSchema: any;
     const appRoot = require("app-root-path");
     const resourceDir = appRoot + "/test/functional/relations/lazy-relations/basic-lazy-relation/";
-    userSchema = require(resourceDir + "schema/user.json");
-    profileSchema = require(resourceDir + "schema/profile.json");
+    UserSchema = new EntitySchema<any>(require(resourceDir + "schema/user.json"));
+    ProfileSchema = new EntitySchema<any>(require(resourceDir + "schema/profile.json"));
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [
             Post,
             Category,
+            UserSchema,
+            ProfileSchema
         ],
-        entitySchemas: [ userSchema, profileSchema ],
-        schemaCreate: true,
-        dropSchema: true,
         enabledDrivers: ["postgres"] // we can properly test lazy-relations only on one platform
     }));
     beforeEach(() => reloadTestingDatabases(connections));
@@ -58,19 +58,17 @@ describe("basic-lazy-relations", () => {
 
         await postRepository.save(savedPost);
 
-        savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
+        await savedPost.categories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
-        const post = (await postRepository.findOneById(1))!;
+        const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
-        post.categories.should.be.instanceOf(Promise);
-
         const categories = await post.categories;
         categories.length.should.be.equal(3);
-        categories.should.contain(savedCategory1);
-        categories.should.contain(savedCategory2);
-        categories.should.contain(savedCategory3);
+        categories.should.contain({ id: 1, name: "kids" });
+        categories.should.contain({ id: 2, name: "people" });
+        categories.should.contain({ id: 3, name: "animals" });
     })));
 
 
@@ -98,21 +96,19 @@ describe("basic-lazy-relations", () => {
 
         await postRepository.save(savedPost);
 
-        savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
+        await savedPost.twoSideCategories.should.eventually.be.eql([savedCategory1, savedCategory2, savedCategory3]);
 
-        const post = (await postRepository.findOneById(1))!;
+        const post = (await postRepository.findOne(1))!;
         post.title.should.be.equal("Hello post");
         post.text.should.be.equal("This is post about post");
 
-        post.twoSideCategories.should.be.instanceOf(Promise);
-
         const categories = await post.twoSideCategories;
         categories.length.should.be.equal(3);
-        categories.should.contain(savedCategory1);
-        categories.should.contain(savedCategory2);
-        categories.should.contain(savedCategory3);
+        categories.should.contain({ id: 1, name: "kids" });
+        categories.should.contain({ id: 2, name: "people" });
+        categories.should.contain({ id: 3, name: "animals" });
 
-        const category = (await categoryRepository.findOneById(1))!;
+        const category = (await categoryRepository.findOne(1))!;
         category.name.should.be.equal("kids");
 
         const twoSidePosts = await category.twoSidePosts;
@@ -138,13 +134,12 @@ describe("basic-lazy-relations", () => {
         newUser.profile = Promise.resolve(profile);
         await userRepository.save(newUser);
 
-        newUser.profile.should.eventually.be.eql(profile);
+        await newUser.profile.should.eventually.be.eql(profile);
 
         // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
-        const loadedUser: any = await userRepository.findOneById(1);
+        const loadedUser: any = await userRepository.findOne(1);
         loadedUser.firstName.should.be.equal("Umed");
         loadedUser.secondName.should.be.equal("San");
-        loadedUser.profile.should.be.instanceOf(Promise);
 
         const lazyLoadedProfile = await loadedUser.profile;
         lazyLoadedProfile.country.should.be.equal("Japan");

@@ -25,7 +25,7 @@ export class SimpleConsoleLogger implements Logger {
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (this.options === "all" || this.options === true || (this.options instanceof Array && this.options.indexOf("query") !== -1)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            console.log("executing query" + ": " + sql);
+            console.log("query" + ": " + sql);
         }
     }
 

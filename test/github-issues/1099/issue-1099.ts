@@ -20,7 +20,11 @@ describe("github issues > #1099 BUG - QueryBuilder MySQL skip sql is wrong", () 
             await connection.getRepository(Animal).save({name: animal});
         }
 
-        const qb = connection.getRepository(Animal).createQueryBuilder("a").leftJoinAndSelect("a.categories", "categories").skip(1);
+        const qb = connection.getRepository(Animal)
+            .createQueryBuilder("a")
+            .leftJoinAndSelect("a.categories", "categories")
+            .orderBy("a.id")
+            .skip(1);
 
         if (connection.driver instanceof MysqlDriver) {
             await qb.getManyAndCount().should.be.rejectedWith(OffsetWithoutLimitNotSupportedError);

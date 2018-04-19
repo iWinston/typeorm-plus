@@ -9,8 +9,6 @@ const del = require("del");
 const shell = require("gulp-shell");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
-const file = require("gulp-file");
-const uglify = require("gulp-uglify");
 const mocha = require("gulp-mocha");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
@@ -70,18 +68,7 @@ export class Gulpfile {
             "!./src/typeorm-model-shim.ts",
             "!./src/platform/PlatformTools.ts"
         ])
-        .pipe(gulp.dest("./build/systemjs/typeorm"))
         .pipe(gulp.dest("./build/browser/src"));
-    }
-
-    /**
-     * Creates special main file for browser build.
-     */
-    @Task()
-    browserCopyMainBrowserFile() {
-        return gulp.src("./package.json", { read: false })
-            .pipe(file("typeorm.ts", `export * from "./typeorm/index";`))
-            .pipe(gulp.dest("./build/systemjs"));
     }
 
     /**
@@ -91,30 +78,7 @@ export class Gulpfile {
     browserCopyPlatformTools() {
         return gulp.src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
-            .pipe(gulp.dest("./build/systemjs/typeorm/platform"))
             .pipe(gulp.dest("./build/browser/src/platform"));
-    }
-
-    /**
-     * Runs files compilation of browser-specific source code.
-     */
-    @MergedTask()
-    browserCompileSystemJS() {
-        const tsProject = ts.createProject("tsconfig.json", {
-            outFile: "typeorm-browser.js",
-            module: "system",
-            "lib": ["es5", "es6", "dom"],
-            typescript: require("typescript")
-        });
-        const tsResult = gulp.src(["./build/systemjs/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
-            .pipe(sourcemaps.init())
-            .pipe(tsProject());
-
-        return [
-            tsResult.js
-                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/package"))
-        ];
     }
 
     @MergedTask()
@@ -136,21 +100,10 @@ export class Gulpfile {
         ];
     }
 
-    /**
-     * Uglifys all code.
-     */
-    @Task()
-    browserUglify() {
-        return gulp.src("./build/package/typeorm-browser.js")
-            .pipe(uglify())
-            .pipe(rename("typeorm-browser.min.js"))
-            .pipe(gulp.dest("./build/package"));
-    }
-
     @Task()
     browserClearPackageDirectory(cb: Function) {
         return del([
-            "./build/systemjs/**"
+            "./build/browser/**"
         ]);
     }
 
@@ -264,9 +217,9 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyMainBrowserFile", "browserCopyPlatformTools"],
-            ["packageCompile", "browserCompile", "browserCompileSystemJS"],
-            ["packageMoveCompiledFiles", "browserUglify"],
+            ["browserCopySources", "browserCopyPlatformTools"],
+            ["packageCompile", "browserCompile"],
+            "packageMoveCompiledFiles",
             [
                 "browserClearPackageDirectory",
                 "packageClearPackageDirectory",
@@ -384,14 +337,6 @@ export class Gulpfile {
             "coveragePost",
             "coverageRemap"
         ];
-    }
-
-    /**
-     * Compiles the code and runs only mocha tests.
-     */
-    @SequenceTask()
-    mocha() {
-        return ["compile", "quickTests"];
     }
 
     // -------------------------------------------------------------------------

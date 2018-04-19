@@ -11,8 +11,6 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -169,43 +167,43 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
 
             const post1 = new Post();
             post1.title = "About BMW";
-            post1.categoriesWithNonPrimaryColumns = [category1, category2];
+            post1.categoriesWithNonPKColumns = [category1, category2];
             await connection.manager.save(post1);
 
             const post2 = new Post();
             post2.title = "About Boeing";
-            post2.categoriesWithNonPrimaryColumns = [category3];
+            post2.categoriesWithNonPKColumns = [category3];
             await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndSelect("post.categoriesWithNonPrimaryColumns", "categories")
+                .leftJoinAndSelect("post.categoriesWithNonPKColumns", "categories")
                 .orderBy("post.id, categories.code")
                 .getMany();
 
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns[0].code).to.be.equal(1);
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of cars");
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns[1].code).to.be.equal(2);
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns[1].version).to.be.equal(1);
-            expect(loadedPosts[0].categoriesWithNonPrimaryColumns[1].description).to.be.equal("category of BMW");
-            expect(loadedPosts[1].categoriesWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedPosts[1].categoriesWithNonPrimaryColumns[0].code).to.be.equal(3);
-            expect(loadedPosts[1].categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
-            expect(loadedPosts[1].categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of airplanes");
+            expect(loadedPosts[0].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedPosts[0].categoriesWithNonPKColumns[0].code).to.be.equal(1);
+            expect(loadedPosts[0].categoriesWithNonPKColumns[0].version).to.be.equal(1);
+            expect(loadedPosts[0].categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
+            expect(loadedPosts[0].categoriesWithNonPKColumns[1].code).to.be.equal(2);
+            expect(loadedPosts[0].categoriesWithNonPKColumns[1].version).to.be.equal(1);
+            expect(loadedPosts[0].categoriesWithNonPKColumns[1].description).to.be.equal("category of BMW");
+            expect(loadedPosts[1].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedPosts[1].categoriesWithNonPKColumns[0].code).to.be.equal(3);
+            expect(loadedPosts[1].categoriesWithNonPKColumns[0].version).to.be.equal(1);
+            expect(loadedPosts[1].categoriesWithNonPKColumns[0].description).to.be.equal("category of airplanes");
 
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
-                .leftJoinAndSelect("post.categoriesWithNonPrimaryColumns", "categories")
+                .leftJoinAndSelect("post.categoriesWithNonPKColumns", "categories")
                 .orderBy("categories.code")
                 .where("post.id = :id", { id: 1 })
                 .getOne();
 
-            expect(loadedPost!.categoriesWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedPost!.categoriesWithNonPrimaryColumns[0].code).to.be.equal(1);
-            expect(loadedPost!.categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
-            expect(loadedPost!.categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of cars");
+            expect(loadedPost!.categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedPost!.categoriesWithNonPKColumns[0].code).to.be.equal(1);
+            expect(loadedPost!.categoriesWithNonPKColumns[0].version).to.be.equal(1);
+            expect(loadedPost!.categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
 
         })));
 
@@ -369,45 +367,45 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             tag1.code = 1;
             tag1.title = "About BMW";
             tag1.description = "Tag about BMW";
-            tag1.categoriesWithNonPrimaryColumns = [category1, category2];
+            tag1.categoriesWithNonPKColumns = [category1, category2];
             await connection.manager.save(tag1);
 
             const tag2 = new Tag();
             tag2.code = 2;
             tag2.title = "About Boeing";
             tag2.description = "Tag about Boeing";
-            tag2.categoriesWithNonPrimaryColumns = [category3];
+            tag2.categoriesWithNonPKColumns = [category3];
             await connection.manager.save(tag2);
 
             const loadedTags = await connection.manager
                 .createQueryBuilder(Tag, "tag")
-                .leftJoinAndSelect("tag.categoriesWithNonPrimaryColumns", "categories")
+                .leftJoinAndSelect("tag.categoriesWithNonPKColumns", "categories")
                 .orderBy("tag.code, categories.code")
                 .getMany();
 
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns[0].code).to.be.equal(1);
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of cars");
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns[1].code).to.be.equal(2);
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns[1].version).to.be.equal(1);
-            expect(loadedTags[0].categoriesWithNonPrimaryColumns[1].description).to.be.equal("category of BMW");
-            expect(loadedTags[1].categoriesWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedTags[1].categoriesWithNonPrimaryColumns[0].code).to.be.equal(3);
-            expect(loadedTags[1].categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
-            expect(loadedTags[1].categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of airplanes");
+            expect(loadedTags[0].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedTags[0].categoriesWithNonPKColumns[0].code).to.be.equal(1);
+            expect(loadedTags[0].categoriesWithNonPKColumns[0].version).to.be.equal(1);
+            expect(loadedTags[0].categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
+            expect(loadedTags[0].categoriesWithNonPKColumns[1].code).to.be.equal(2);
+            expect(loadedTags[0].categoriesWithNonPKColumns[1].version).to.be.equal(1);
+            expect(loadedTags[0].categoriesWithNonPKColumns[1].description).to.be.equal("category of BMW");
+            expect(loadedTags[1].categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedTags[1].categoriesWithNonPKColumns[0].code).to.be.equal(3);
+            expect(loadedTags[1].categoriesWithNonPKColumns[0].version).to.be.equal(1);
+            expect(loadedTags[1].categoriesWithNonPKColumns[0].description).to.be.equal("category of airplanes");
 
             const loadedTag = await connection.manager
                 .createQueryBuilder(Tag, "tag")
-                .leftJoinAndSelect("tag.categoriesWithNonPrimaryColumns", "categories")
+                .leftJoinAndSelect("tag.categoriesWithNonPKColumns", "categories")
                 .orderBy("categories.code")
                 .where("tag.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedTag!.categoriesWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedTag!.categoriesWithNonPrimaryColumns[0].code).to.be.equal(1);
-            expect(loadedTag!.categoriesWithNonPrimaryColumns[0].version).to.be.equal(1);
-            expect(loadedTag!.categoriesWithNonPrimaryColumns[0].description).to.be.equal("category of cars");
+            expect(loadedTag!.categoriesWithNonPKColumns).to.not.be.empty;
+            expect(loadedTag!.categoriesWithNonPKColumns[0].code).to.be.equal(1);
+            expect(loadedTag!.categoriesWithNonPKColumns[0].version).to.be.equal(1);
+            expect(loadedTag!.categoriesWithNonPKColumns[0].description).to.be.equal("category of cars");
 
         })));
 
@@ -545,7 +543,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.description = "category of cars";
-            category1.postsWithNonPrimaryColumns = [post1, post2];
+            category1.postsWithNonPKColumns = [post1, post2];
             await connection.manager.save(category1);
 
             const category2 = new Category();
@@ -554,31 +552,31 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.description = "category of airplanes";
-            category2.postsWithNonPrimaryColumns = [post3];
+            category2.postsWithNonPKColumns = [post3];
             await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
-                .leftJoinAndSelect("category.postsWithNonPrimaryColumns", "posts")
+                .leftJoinAndSelect("category.postsWithNonPKColumns", "posts")
                 .orderBy("category.code, posts.id")
                 .getMany();
 
-            expect(loadedCategories[0].postsWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedCategories[0].postsWithNonPrimaryColumns[0].id).to.be.equal(1);
-            expect(loadedCategories[0].postsWithNonPrimaryColumns[1].id).to.be.equal(2);
-            expect(loadedCategories[1].postsWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedCategories[1].postsWithNonPrimaryColumns[0].id).to.be.equal(3);
+            expect(loadedCategories[0].postsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[0].postsWithNonPKColumns[0].id).to.be.equal(1);
+            expect(loadedCategories[0].postsWithNonPKColumns[1].id).to.be.equal(2);
+            expect(loadedCategories[1].postsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[1].postsWithNonPKColumns[0].id).to.be.equal(3);
 
             const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
-                .leftJoinAndSelect("category.postsWithNonPrimaryColumns", "posts")
+                .leftJoinAndSelect("category.postsWithNonPKColumns", "posts")
                 .orderBy("posts.id")
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.postsWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedCategory!.postsWithNonPrimaryColumns[0].id).to.be.equal(1);
-            expect(loadedCategory!.postsWithNonPrimaryColumns[1].id).to.be.equal(2);
+            expect(loadedCategory!.postsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategory!.postsWithNonPKColumns[0].id).to.be.equal(1);
+            expect(loadedCategory!.postsWithNonPKColumns[1].id).to.be.equal(2);
 
         })));
 
@@ -736,7 +734,7 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category1.code = 1;
             category1.version = 1;
             category1.description = "category of cars";
-            category1.tagsWithNonPrimaryColumns = [tag1, tag2];
+            category1.tagsWithNonPKColumns = [tag1, tag2];
             await connection.manager.save(category1);
 
             const category2 = new Category();
@@ -745,34 +743,34 @@ describe("relations > multiple-primary-keys > many-to-many", () => {
             category2.code = 2;
             category2.version = 1;
             category2.description = "category of airplanes";
-            category2.tagsWithNonPrimaryColumns = [tag3];
+            category2.tagsWithNonPKColumns = [tag3];
             await connection.manager.save(category2);
 
             const loadedCategories = await connection.manager
                 .createQueryBuilder(Category, "category")
-                .leftJoinAndSelect("category.tagsWithNonPrimaryColumns", "tags")
+                .leftJoinAndSelect("category.tagsWithNonPKColumns", "tags")
                 .orderBy("category.code, tags.code")
                 .getMany();
 
-            expect(loadedCategories[0].tagsWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedCategories[0].tagsWithNonPrimaryColumns[0].title).to.be.equal("About BMW");
-            expect(loadedCategories[0].tagsWithNonPrimaryColumns[0].description).to.be.equal("Tag about BMW");
-            expect(loadedCategories[0].tagsWithNonPrimaryColumns[1].title).to.be.equal("About Audi");
-            expect(loadedCategories[0].tagsWithNonPrimaryColumns[1].description).to.be.equal("Tag about Audi");
-            expect(loadedCategories[1].tagsWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedCategories[1].tagsWithNonPrimaryColumns[0].title).to.be.equal("About Boeing");
-            expect(loadedCategories[1].tagsWithNonPrimaryColumns[0].description).to.be.equal("tag about Boeing");
+            expect(loadedCategories[0].tagsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[0].tagsWithNonPKColumns[0].title).to.be.equal("About BMW");
+            expect(loadedCategories[0].tagsWithNonPKColumns[0].description).to.be.equal("Tag about BMW");
+            expect(loadedCategories[0].tagsWithNonPKColumns[1].title).to.be.equal("About Audi");
+            expect(loadedCategories[0].tagsWithNonPKColumns[1].description).to.be.equal("Tag about Audi");
+            expect(loadedCategories[1].tagsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategories[1].tagsWithNonPKColumns[0].title).to.be.equal("About Boeing");
+            expect(loadedCategories[1].tagsWithNonPKColumns[0].description).to.be.equal("tag about Boeing");
 
             const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
-                .leftJoinAndSelect("category.tagsWithNonPrimaryColumns", "tags")
+                .leftJoinAndSelect("category.tagsWithNonPKColumns", "tags")
                 .orderBy("tags.code")
                 .where("category.code = :code", { code: 1 })
                 .getOne();
 
-            expect(loadedCategory!.tagsWithNonPrimaryColumns).to.not.be.empty;
-            expect(loadedCategory!.tagsWithNonPrimaryColumns[0].title).to.be.equal("About BMW");
-            expect(loadedCategory!.tagsWithNonPrimaryColumns[0].description).to.be.equal("Tag about BMW");
+            expect(loadedCategory!.tagsWithNonPKColumns).to.not.be.empty;
+            expect(loadedCategory!.tagsWithNonPKColumns[0].title).to.be.equal("About BMW");
+            expect(loadedCategory!.tagsWithNonPKColumns[0].description).to.be.equal("Tag about BMW");
 
         })));
 

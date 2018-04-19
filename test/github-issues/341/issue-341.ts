@@ -10,8 +10,6 @@ describe("github issues > OneToOne relation with referencedColumnName does not w
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -27,8 +25,7 @@ describe("github issues > OneToOne relation with referencedColumnName does not w
         post.category = category;
         await connection.manager.save(post);
 
-        const loadedPost = await connection
-            .manager
+        const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.category", "category")
             .getOne();

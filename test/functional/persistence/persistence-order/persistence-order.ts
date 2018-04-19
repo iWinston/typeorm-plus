@@ -21,7 +21,7 @@ describe("persistence > order of persistence execution operations", () => {
                 entities: [__dirname + "/entity/*{.js,.ts}"]
             });
             const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-            const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"], []);
+            const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
             const entityMetadataValidator = new EntityMetadataValidator();
             expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
         });
@@ -34,8 +34,6 @@ describe("persistence > order of persistence execution operations", () => {
         let connections: Connection[];
         before(async () => connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            schemaCreate: true,
-            dropSchema: true,
         }));
         beforeEach(() => reloadTestingDatabases(connections));
         after(() => closeTestingConnections(connections));

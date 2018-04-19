@@ -36,7 +36,11 @@ export class ConnectionOptionsReader {
      * Returns all connection options read from the ormconfig.
      */
     async all(): Promise<ConnectionOptions[]> {
-        return this.load();
+        const options = await this.load();
+        if (!options)
+            throw new Error(`No connection options were found in any of configurations file.`);
+
+        return options;
     }
 
     /**
@@ -52,6 +56,18 @@ export class ConnectionOptionsReader {
         return targetOptions;
     }
 
+    /**
+     * Checks if there is a TypeORM configuration file.
+     */
+    async has(name: string): Promise<boolean> {
+        const allOptions = await this.load();
+        if (!allOptions)
+            return false;
+
+        const targetOptions = allOptions.find(options => options.name === name || (name === "default" && !options.name));
+        return !!targetOptions;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -61,13 +77,13 @@ export class ConnectionOptionsReader {
      *
      * todo: get in count NODE_ENV somehow
      */
-    protected async load(): Promise<ConnectionOptions[]> {
+    protected async load(): Promise<ConnectionOptions[]|undefined> {
 
         // try to find any of following configuration formats
-        const foundFileFormat = ["env", "js", "json", "yml", "yaml", "xml"].find(format => {
+        const foundFileFormat = ["env", "js", "ts", "json", "yml", "yaml", "xml"].find(format => {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
-        
+
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
             const dotenv = PlatformTools.load("dotenv");
@@ -78,12 +94,15 @@ export class ConnectionOptionsReader {
         }
 
         // try to find connection options from any of available sources of configuration
-        let connectionOptions: ConnectionOptions|ConnectionOptions[];
+        let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION")) {
             connectionOptions = new ConnectionOptionsEnvReader().read();
 
         } else if (foundFileFormat === "js") {
             connectionOptions = PlatformTools.load(this.baseFilePath + ".js");
+
+        } else if (foundFileFormat === "ts") {
+            connectionOptions = PlatformTools.load(this.baseFilePath + ".ts");
 
         } else if (foundFileFormat === "json") {
             connectionOptions = PlatformTools.load(this.baseFilePath + ".json");
@@ -96,13 +115,14 @@ export class ConnectionOptionsReader {
 
         } else if (foundFileFormat === "xml") {
             connectionOptions = await new ConnectionOptionsXmlReader().read(this.baseFilePath + ".xml");
-
-        } else {
-            throw new Error(`No connection options were found in any of configurations file.`);
         }
 
         // normalize and return connection options
-        return this.normalizeConnectionOptions(connectionOptions);
+        if (connectionOptions) {
+            return this.normalizeConnectionOptions(connectionOptions);
+        }
+
+        return undefined;
     }
 
     /**
@@ -144,7 +164,10 @@ export class ConnectionOptionsReader {
 
             // make database path file in sqlite relative to package.json
             if (options.type === "sqlite") {
-                if (typeof options.database === "string" && options.database.substr(0, 1) !== "/" && options.database !== ":memory:") {
+                if (typeof options.database === "string" &&
+                    options.database.substr(0, 1) !== "/" &&  // unix absolute
+                    options.database.substr(1, 2) !== ":\\" && // windows absolute
+                    options.database !== ":memory:") {
                     Object.assign(options, {
                         database: this.baseDirectory + "/" + options.database
                     });

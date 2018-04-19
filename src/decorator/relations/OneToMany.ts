@@ -1,15 +1,11 @@
-import {getMetadataArgsStorage} from "../../index";
-import {ObjectType} from "../../common/ObjectType";
+import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
-import {RelationOptions} from "../options/RelationOptions";
-
-// todo: make decorators which use inverse side string separate
 
 /**
  * One-to-many relation allows to create type of relation when Entity2 can have multiple instances of Entity1.
  * Entity1 have only one Entity2. Entity1 is an owner of the relationship, and storages Entity2 id on its own side.
  */
-export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>, inverseSide: string|((object: T) => any), options?: { cascadeInsert?: boolean, cascadeUpdate?: boolean, lazy?: boolean, eager?: boolean }): Function {
+export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>, inverseSide: string|((object: T) => any), options?: RelationOptions): Function {
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 
@@ -21,7 +17,7 @@ export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>, invers
                 isLazy = true;
         }
 
-        const args: RelationMetadataArgs = {
+        getMetadataArgsStorage().relations.push({
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,
@@ -30,8 +26,6 @@ export function OneToMany<T>(typeFunction: (type?: any) => ObjectType<T>, invers
             type: typeFunction,
             inverseSideProperty: inverseSide,
             options: options
-        };
-        getMetadataArgsStorage().relations.push(args);
+        } as RelationMetadataArgs);
     };
 }
-

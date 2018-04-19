@@ -4,6 +4,9 @@ import {Connection} from "../../src/connection/Connection";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
+import {PromiseUtils} from "../../src/util/PromiseUtils";
+import {PostgresDriver} from "../../src/driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../../src/driver/sqlserver/SqlServerDriver";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -28,6 +31,12 @@ export type TestingConnectionOptions = ConnectionOptions & {
 export interface TestingOptions {
 
     /**
+     * Dirname of the test directory.
+     * If specified, entities will be loaded from that directory.
+     */
+    __dirname?: string;
+
+    /**
      * Connection name to be overridden.
      * This can be used to create multiple connections with single connection configuration.
      */
@@ -41,17 +50,12 @@ export interface TestingOptions {
     /**
      * Entities needs to be included in the connection for the given test suite.
      */
-    entities?: string[]|Function[];
+    entities?: (string|Function|EntitySchema<any>)[];
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
     subscribers?: string[]|Function[];
-
-    /**
-     * Entity schemas needs to be included in the connection for the given test suite.
-     */
-    entitySchemas?: string[]|EntitySchema[];
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -62,6 +66,11 @@ export interface TestingOptions {
      * Indicates if schema should be dropped on connection setup.
      */
     dropSchema?: boolean;
+
+    /**
+     * Enables or disables logging.
+     */
+    logging?: boolean;
 
     /**
      * Schema name used for postgres driver.
@@ -77,7 +86,7 @@ export interface TestingOptions {
     /**
      * Schema name used for postgres driver.
      */
-    cache?: boolean|{
+    cache?: boolean | {
 
         /**
          * Type of caching.
@@ -86,7 +95,7 @@ export interface TestingOptions {
          * - "mongodb" means cached values will be stored in mongodb database. You must provide mongodb connection options.
          * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
          */
-        type?: "database"|"redis";
+        type?: "database" | "redis";
 
         /**
          * Used to provide mongodb / redis connection options.
@@ -124,7 +133,6 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
-        entitySchemas: options.entitySchemas ? options.entitySchemas : [],
         dropSchema: options.dropSchema ? options.dropSchema : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
         enabledDrivers: [driverType],
@@ -187,8 +195,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
-                entitySchemas: options && options.entitySchemas ? options.entitySchemas : [],
-                dropSchema: options && (options.entities || options.entitySchemas) ? options.dropSchema : false,
+                dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
             });
             if (options && options.driverSpecific)
@@ -197,6 +204,10 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.synchronize = options.schemaCreate;
             if (options && options.schema)
                 newOptions.schema = options.schema;
+            if (options && options.logging !== undefined)
+                newOptions.logging = options.logging;
+            if (options && options.__dirname)
+                newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
             return newOptions;
@@ -208,7 +219,40 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
  * and given options that can override some of its configuration for the test-specific use case.
  */
 export async function createTestingConnections(options?: TestingOptions): Promise<Connection[]> {
-    return createConnections(setupTestingConnections(options));
+    const connections = await createConnections(setupTestingConnections(options));
+    await Promise.all(connections.map(async connection => {
+        // create new databases
+        const databases: string[] = [];
+        connection.entityMetadatas.forEach(metadata => {
+            if (metadata.database && databases.indexOf(metadata.database) === -1)
+                databases.push(metadata.database);
+        });
+
+        const queryRunner = connection.createQueryRunner();
+        await PromiseUtils.runInSequence(databases, database => queryRunner.createDatabase(database, true));
+
+        // create new schemas
+        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
+            const schemaPaths: string[] = [];
+            connection.entityMetadatas
+                .filter(entityMetadata => !!entityMetadata.schemaPath)
+                .forEach(entityMetadata => {
+                    const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
+                    if (!existSchemaPath)
+                        schemaPaths.push(entityMetadata.schemaPath!);
+                });
+
+            const schema = connection.driver.options.schema;
+            if (schema && schemaPaths.indexOf(schema) === -1)
+                schemaPaths.push(schema);
+
+            await PromiseUtils.runInSequence(schemaPaths, schemaPath => queryRunner.createSchema(schemaPath, true));
+        }
+
+        await queryRunner.release();
+    }));
+
+    return connections;
 }
 
 /**

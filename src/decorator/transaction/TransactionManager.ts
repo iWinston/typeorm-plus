@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../index";
+import {getMetadataArgsStorage} from "../../";
 import {TransactionEntityMetadataArgs} from "../../metadata-args/TransactionEntityMetadataArgs";
 
 /**
@@ -6,11 +6,11 @@ import {TransactionEntityMetadataArgs} from "../../metadata-args/TransactionEnti
  */
 export function TransactionManager(): Function {
     return function (object: Object, methodName: string, index: number) {
-        const args: TransactionEntityMetadataArgs = {
+
+        getMetadataArgsStorage().transactionEntityManagers.push({
             target: object.constructor,
             methodName: methodName,
             index: index,
-        };
-        getMetadataArgsStorage().transactionEntityManagers.push(args);
+        } as TransactionEntityMetadataArgs);
     };
 }

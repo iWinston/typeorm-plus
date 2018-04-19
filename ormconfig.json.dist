@@ -72,7 +72,6 @@
     "skip": false,
     "name": "sqljs",
     "type": "sqljs",
-    "logging": false,
-    "autoSave": false
-  },
+    "logging": false
+  }
 ]

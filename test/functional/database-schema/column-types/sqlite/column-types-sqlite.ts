@@ -11,8 +11,6 @@ describe("database schema > column types > sqlite", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
-            schemaCreate: true,
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -60,7 +58,7 @@ describe("database schema > column types > sqlite", () => {
         post.simpleJson = { param: "VALUE" };
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
         loadedPost.int.should.be.equal(post.int);
@@ -144,7 +142,7 @@ describe("database schema > column types > sqlite", () => {
         post.datetime.setMilliseconds(0);
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
         loadedPost.boolean.should.be.equal(post.boolean);

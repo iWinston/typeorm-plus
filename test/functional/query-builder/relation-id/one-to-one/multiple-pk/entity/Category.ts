@@ -1,14 +1,12 @@
 import {Entity} from "../../../../../../../src/decorator/entity/Entity";
 import {Column} from "../../../../../../../src/decorator/columns/Column";
 import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Index} from "../../../../../../../src/decorator/Index";
 import {Post} from "./Post";
 import {Image} from "./Image";
 import {OneToOne} from "../../../../../../../src/decorator/relations/OneToOne";
 import {JoinColumn} from "../../../../../../../src/decorator/relations/JoinColumn";
 
 @Entity()
-@Index(["id", "code"])
 export class Category {
 
     @PrimaryColumn()

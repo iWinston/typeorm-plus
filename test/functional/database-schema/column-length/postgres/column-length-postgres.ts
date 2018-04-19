@@ -4,15 +4,13 @@ import {Post} from "./entity/Post";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 
-describe("database schema > column length > mssql", () => {
+describe("database schema > column length > postgres", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres"],
-            schemaCreate: true,
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

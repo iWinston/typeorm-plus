@@ -1,10 +1,12 @@
-import {ClosureEntity} from "../../../../src/decorator/entity/ClosureEntity";
 import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {TreeParent} from "../../../../src/decorator/tree/TreeParent";
 import {TreeChildren} from "../../../../src/decorator/tree/TreeChildren";
+import {Entity} from "../../../../src/decorator/entity/Entity";
+import {Tree} from "../../../../src/decorator/tree/Tree";
 
-@ClosureEntity()
+@Entity("sample22_category")
+@Tree("closure-table")
 export class Category {
 
     @PrimaryGeneratedColumn()
@@ -13,10 +15,10 @@ export class Category {
     @Column()
     name: string;
     
-    @TreeParent({ cascadeInsert: true, cascadeUpdate: true })
+    @TreeParent()
     parentCategory: Category;
 
-    @TreeChildren({ cascadeInsert: true, cascadeUpdate: true })
+    @TreeChildren({ cascade: true })
     childCategories: Category[];
 
 }

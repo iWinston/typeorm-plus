@@ -19,17 +19,17 @@ describe("github issues > #1034 Issue using setter with promises", () => {
         const users: User[] = [];
 
         const user: User = new User();
-        user.setId(1);
+        user.setId("1");
 
         const circle: Circle = new Circle();
-        circle.setId(1);
+        circle.setId("1");
 
         // Entities persistance
         await connection.manager.save(user);
         await connection.manager.save(circle);
 
         users.push(user);
-        const circleFromDB = await connection.manager.findOneById(Circle, circle.getId());
+        const circleFromDB = await connection.manager.findOne(Circle, circle.getId());
         expect(circleFromDB).is.not.undefined;
 
         // Setting users with setter

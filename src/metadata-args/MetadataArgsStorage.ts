@@ -17,6 +17,9 @@ import {TransactionEntityMetadataArgs} from "./TransactionEntityMetadataArgs";
 import {TransactionRepositoryMetadataArgs} from "./TransactionRepositoryMetadataArgs";
 import {MetadataUtils} from "../metadata-builder/MetadataUtils";
 import {GeneratedMetadataArgs} from "./GeneratedMetadataArgs";
+import {TreeMetadataArgs} from "./TreeMetadataArgs";
+import {UniqueMetadataArgs} from "./UniqueMetadataArgs";
+import {CheckMetadataArgs} from "./CheckMetadataArgs";
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -30,12 +33,15 @@ export class MetadataArgsStorage {
     // -------------------------------------------------------------------------
 
     readonly tables: TableMetadataArgs[] = [];
+    readonly trees: TreeMetadataArgs[] = [];
     readonly entityRepositories: EntityRepositoryMetadataArgs[] = [];
     readonly transactionEntityManagers: TransactionEntityMetadataArgs[] = [];
     readonly transactionRepositories: TransactionRepositoryMetadataArgs[] = [];
     readonly namingStrategies: NamingStrategyMetadataArgs[] = [];
     readonly entitySubscribers: EntitySubscriberMetadataArgs[] = [];
     readonly indices: IndexMetadataArgs[] = [];
+    readonly uniques: UniqueMetadataArgs[] = [];
+    readonly checks: CheckMetadataArgs[] = [];
     readonly columns: ColumnMetadataArgs[] = [];
     readonly generations: GeneratedMetadataArgs[] = [];
     readonly relations: RelationMetadataArgs[] = [];
@@ -72,6 +78,12 @@ export class MetadataArgsStorage {
         });
     }
 
+    findTree(target: (Function|string)|(Function|string)[]): TreeMetadataArgs|undefined {
+        return this.trees.find(tree => {
+            return (target instanceof Array ? target.indexOf(tree.target) !== -1 : tree.target === target);
+        });
+    }
+
     filterRelations(target: Function|string): RelationMetadataArgs[];
     filterRelations(target: (Function|string)[]): RelationMetadataArgs[];
     filterRelations(target: (Function|string)|(Function|string)[]): RelationMetadataArgs[] {
@@ -96,6 +108,22 @@ export class MetadataArgsStorage {
         // todo: implement parent-entity overrides?
         return this.indices.filter(index => {
             return target instanceof Array ? target.indexOf(index.target) !== -1 : index.target === target;
+        });
+    }
+
+    filterUniques(target: Function|string): UniqueMetadataArgs[];
+    filterUniques(target: (Function|string)[]): UniqueMetadataArgs[];
+    filterUniques(target: (Function|string)|(Function|string)[]): UniqueMetadataArgs[] {
+        return this.uniques.filter(unique => {
+            return target instanceof Array ? target.indexOf(unique.target) !== -1 : unique.target === target;
+        });
+    }
+
+    filterChecks(target: Function|string): CheckMetadataArgs[];
+    filterChecks(target: (Function|string)[]): CheckMetadataArgs[];
+    filterChecks(target: (Function|string)|(Function|string)[]): CheckMetadataArgs[] {
+        return this.checks.filter(check => {
+            return target instanceof Array ? target.indexOf(check.target) !== -1 : check.target === target;
         });
     }
 
@@ -136,16 +164,16 @@ export class MetadataArgsStorage {
         return this.filterByTarget(this.namingStrategies, target);
     }
 
-    filterTransactionEntityManagers(target: Function|string): TransactionEntityMetadataArgs[];
-    filterTransactionEntityManagers(target: (Function|string)[]): TransactionEntityMetadataArgs[];
-    filterTransactionEntityManagers(target: (Function|string)|(Function|string)[]): TransactionEntityMetadataArgs[] {
-        return this.filterByTarget(this.transactionEntityManagers, target);
+    filterTransactionEntityManagers(target: Function|string, propertyName: string): TransactionEntityMetadataArgs[] {
+        return this.transactionEntityManagers.filter(transactionEm => {
+            return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
+        });
     }
     
-    filterTransactionRepository(target: Function|string): TransactionRepositoryMetadataArgs[];
-    filterTransactionRepository(target: (Function|string)[]): TransactionRepositoryMetadataArgs[];
-    filterTransactionRepository(target: (Function|string)|(Function|string)[]): TransactionRepositoryMetadataArgs[] {
-        return this.filterByTarget(this.transactionRepositories, target);
+    filterTransactionRepository(target: Function|string, propertyName: string): TransactionRepositoryMetadataArgs[] {
+        return this.transactionRepositories.filter(transactionEm => {
+            return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
+        });
     }
 
     filterSingleTableChildren(target: Function|string): TableMetadataArgs[] {
@@ -153,7 +181,7 @@ export class MetadataArgsStorage {
             return table.target instanceof Function
                 && target instanceof Function
                 && MetadataUtils.isInherited(table.target, target)
-                && table.type === "single-table-child";
+                && table.type === "entity-child";
         });
     }
 

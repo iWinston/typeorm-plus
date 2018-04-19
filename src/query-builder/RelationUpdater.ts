@@ -1,6 +1,7 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
@@ -116,12 +117,23 @@ export class RelationUpdater {
 
             if (!bulkInserted.length) return;
 
-            await this.queryBuilder
-                .createQueryBuilder()
-                .insert()
-                .into(junctionMetadata.tableName)
-                .values(bulkInserted)
-                .execute();
+            if (this.queryBuilder.connection.driver instanceof  OracleDriver) {
+                await Promise.all(bulkInserted.map(value => {
+                    return this.queryBuilder
+                        .createQueryBuilder()
+                        .insert()
+                        .into(junctionMetadata.tableName)
+                        .values(value)
+                        .execute();
+                }));
+            } else {
+                await this.queryBuilder
+                    .createQueryBuilder()
+                    .insert()
+                    .into(junctionMetadata.tableName)
+                    .values(bulkInserted)
+                    .execute();
+            }
         }
     }
 

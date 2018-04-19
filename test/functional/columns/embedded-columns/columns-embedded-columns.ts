@@ -11,7 +11,7 @@ describe("columns > embedded columns", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"]
+        entities: [__dirname + "/entity/*{.js,.ts}"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -88,15 +88,15 @@ describe("columns > embedded columns", () => {
             "countersComments",
             "countersFavorites",
 
-            "countersInformationDescription",
-            "countersTestDataDescription",
+            "countersInfoDescr",
+            "countersTestDataDescr",
 
             "testCountersLikes",
             "testCountersComments",
             "testCountersFavorites",
 
-            "testCountersInformationDescription",
-            "testCountersTestDataDescription",
+            "testCountersInfoDescr",
+            "testCountersTestDataDescr",
         ]);
     })));
 });

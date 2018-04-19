@@ -3,11 +3,9 @@ import {Entity} from "../../../../../../../src/decorator/entity/Entity";
 import {Column} from "../../../../../../../src/decorator/columns/Column";
 import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
 import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Index} from "../../../../../../../src/decorator/Index";
 import {Category} from "./Category";
 
 @Entity()
-@Index(["id", "authorId"])
 export class Post {
 
     @PrimaryColumn()

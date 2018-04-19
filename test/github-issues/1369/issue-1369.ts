@@ -22,7 +22,7 @@ describe("github issues > #1369 EntitySubscriber not firing events on abstract c
         entity.position = "Regional Manager";
         await connection.manager.save(entity);
 
-        const foundEntity = await connection.manager.findOneById(ConcreteEntity, 1);
+        const foundEntity = await connection.manager.findOne(ConcreteEntity, 1);
         expect(foundEntity).to.not.be.undefined;
 
         const assertObject = Object.assign({}, foundEntity);

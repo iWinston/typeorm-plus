@@ -30,6 +30,8 @@
     * [`@EventSubscriber`](#eventsubscriber)
 * [Other decorators](#other-decorators)
     * [`@Index`](#index)
+    * [`@Unique`](#unique)
+    * [`@Check`](#check)
     * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
     * [`@EntityRepository`](#entityrepository)
 
@@ -109,8 +111,13 @@ By default the column name is generated from the name of the property.
 You can change it by specifying your own name.
 * `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type 
 you specify column type and length options.
+* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+* `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
+* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
+Default value is `false`.
+* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value. 
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
 * `unique: boolean` - Marks column as unique column (creates unique constraint).
@@ -120,11 +127,18 @@ By default column is `nullable: false`.
 * `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), 
 which represents the number of digits to the right of the decimal point and must not be greater than precision. 
 Used in some column types.
+* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. 
+If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
+* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
+* `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+* `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 * `array: boolean` - Used for postgres column types which can be array (for example int[]).
+* `transformer: ValueTransformer` - Specifies a value transformer that is to be used to (un)marshal this column when reading or writing to the database.
 
 Learn more about [entity columns](entities.md#entity-columns).
 
@@ -694,6 +708,59 @@ export class User {
 
 Learn more about [indices](indices.md).
 
+#### `@Unique`
+
+This decorator allows you to create a database unique constraint for a specific column or columns.
+This decorator can be applied only to an entity itself.
+
+Examples:
+
+```typescript
+@Entity()
+@Unique(["firstName"])
+@Unique(["lastName", "middleName"])
+@Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
+export class User {
+    
+    @Column()
+    firstName: string;
+    
+    @Column()
+    lastName: string;
+    
+    @Column()
+    middleName: string;
+}
+```
+
+> Note: MySQL stores unique constraints as unique indices
+
+#### `@Check`
+
+This decorator allows you to create a database check constraint for a specific column or columns.
+This decorator can be applied only to an entity itself. 
+
+Examples:
+
+```typescript
+@Entity()
+@Check(`"firstName" <> 'John' AND "lastName" <> 'Doe'`)
+@Check(`"age" > 18`)
+export class User {
+    
+    @Column()
+    firstName: string;
+    
+    @Column()
+    lastName: string;
+    
+    @Column()
+    age: number;
+}
+```
+
+> Note: MySQL does not support check constraints.
+
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 
 `@Transaction` is used on a method and wraps all its execution into a single database transaction.
@@ -723,7 +790,7 @@ save(@QueryParam("name") name: string, @TransactionRepository() userRepository: 
 }
 ``` 
 
-Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
+> Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
 Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
 
 Learn more about [transactions](transactions.md).
@@ -749,6 +816,6 @@ Learn more about [custom entity repositories](working-with-entity-manager.md).
 
 ----
 
-Note: some decorators (like `@ClosureEntity`, `@SingleEntityChild`, `@ClassEntityChild`, `@DiscriminatorColumn`, etc.) aren't 
+> Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't 
 documented in this reference because they are treated as experimental at the moment. 
 Expect to see their documentation in the future.

@@ -8,6 +8,8 @@ import {ColumnType} from "../driver/types/ColumnTypes";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {NoConnectionOptionError} from "../error/NoConnectionOptionError";
+import {InitializedRelationError} from "../error/InitializedRelationError";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -22,6 +24,9 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 // todo: MetadataArgsStorage: check on build for duplicate names, since naming checking was removed from MetadataStorage
 // todo: MetadataArgsStorage: duplicate name checking for: table, relation, column, index, naming strategy, join tables/columns?
 // todo: MetadataArgsStorage: check for duplicate targets too since this check has been removed too
+// todo: check if relation decorator contains primary: true and nullable: true
+// todo: check column length, precision. scale
+// todo: MySQL index can be unique or spatial or fulltext
 
 /**
  * Validates built entity metadatas.
@@ -47,12 +52,12 @@ export class EntityMetadataValidator {
     validate(entityMetadata: EntityMetadata, allEntityMetadatas: EntityMetadata[], driver: Driver) {
 
         // check if table metadata has an id
-        if (!entityMetadata.isClassTableChild && !entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
+        if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata);
 
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
-        if (entityMetadata.inheritanceType === "single-table") {
+        if (entityMetadata.inheritancePattern === "STI") {
             if (!entityMetadata.discriminatorColumn)
                 throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put @DiscriminatorColumn decorator?`);
 
@@ -81,16 +86,19 @@ export class EntityMetadataValidator {
             });
         }
 
-       /* if (driver instanceof MysqlDriver) {
+        if (driver instanceof MysqlDriver) {
             const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
             if (generatedColumns.length > 1)
                 throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
-        }*/
+        }
 
+        // for mysql we are able to not define a default selected database, instead all entities can have their database
+        // defined in their decorators. To make everything work either all entities must have database define and we
+        // can live without database set in the connection options, either database in the connection options must be set
         if (driver instanceof MysqlDriver) {
             const metadatasWithDatabase = allEntityMetadatas.filter(metadata => metadata.database);
             if (metadatasWithDatabase.length === 0 && !driver.database)
-                throw new Error(`Database not specified`);
+                throw new NoConnectionOptionError("database");
         }
 
         if (driver instanceof SqlServerDriver) {
@@ -98,6 +106,22 @@ export class EntityMetadataValidator {
             if (charsetColumns.length > 1)
                 throw new Error(`Character set specifying is not supported in Sql Server`);
         }
+
+        // check if relations are all without initialized properties
+        const entityInstance = entityMetadata.create();
+        entityMetadata.relations.forEach(relation => {
+            if (relation.isManyToMany || relation.isOneToMany) {
+
+                // we skip relations for which persistence is disabled since initialization in them cannot harm somehow
+                if (relation.persistenceEnabled === false)
+                    return;
+
+                // get entity relation value and check if its an array
+                const relationInitializedValue = relation.getEntityValue(entityInstance);
+                if (relationInitializedValue instanceof Array)
+                    throw new InitializedRelationError(relation);
+            }
+        });
 
         // validate relations
         entityMetadata.relations.forEach(relation => {

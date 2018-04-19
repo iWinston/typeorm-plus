@@ -21,7 +21,29 @@ export interface IndexMetadataArgs {
     /**
      * Indicates if index must be unique or not.
      */
-    unique: boolean;
+    unique?: boolean;
+
+    /**
+     * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
+     * Works only in MySQL.
+     */
+    spatial?: boolean;
+
+    /**
+     * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
+     * Works only in MySQL.
+     */
+    fulltext?: boolean;
+
+    /**
+     * Index filter condition.
+     */
+    where?: string;
+
+    /**
+     * Indicates if index must sync with database index.
+     */
+    synchronize?: boolean;
 
     /**
      * If true, the index only references documents with the specified field.

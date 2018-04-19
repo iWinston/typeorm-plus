@@ -1,15 +1,21 @@
-import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {Table} from "./schema/Table";
-import {TableColumn} from "./schema/TableColumn";
-import {TableForeignKey} from "./schema/TableForeignKey";
-import {TableIndex} from "./schema/TableIndex";
+import {Table} from "./table/Table";
+import {TableColumn} from "./table/TableColumn";
+import {TableForeignKey} from "./table/TableForeignKey";
+import {TableIndex} from "./table/TableIndex";
 import {QueryRunner} from "../query-runner/QueryRunner";
-import {TablePrimaryKey} from "./schema/TablePrimaryKey";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {SchemaBuilder} from "./SchemaBuilder";
+import {SqlInMemory} from "../driver/SqlInMemory";
+import {TableUtils} from "./util/TableUtils";
+import {TableColumnOptions} from "./options/TableColumnOptions";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {TableUnique} from "./table/TableUnique";
+import {TableCheck} from "./table/TableCheck";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -36,11 +42,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected queryRunner: QueryRunner;
 
-    /**
-     * All synchronized tables in the database.
-     */
-    protected tables: Table[];
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -56,11 +57,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        this.queryRunner = await this.connection.createQueryRunner("master");
-        await this.createNewDatabases();
+        this.queryRunner = this.connection.createQueryRunner("master");
         await this.queryRunner.startTransaction();
         try {
-            this.tables = await this.loadTableSchemas();
+            const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            await this.queryRunner.getTables(tablePaths);
             await this.executeSchemaSyncOperationsInProperOrder();
 
             // if cache is enabled then perform cache-synchronization as well
@@ -84,11 +85,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Returns sql queries to be executed by schema builder.
      */
-    async log(): Promise<(string|{ up: string, down: string })[]> {
-        this.queryRunner = await this.connection.createQueryRunner("master");
+    async log(): Promise<SqlInMemory> {
+        this.queryRunner = this.connection.createQueryRunner("master");
         try {
-            await this.createNewDatabases();
-            this.tables = await this.loadTableSchemas();
+            const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            await this.queryRunner.getTables(tablePaths);
             this.queryRunner.enableSqlMemory();
             await this.executeSchemaSyncOperationsInProperOrder();
 
@@ -112,31 +113,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     // -------------------------------------------------------------------------
 
     /**
-     * Loads all tables from the database.
-     */
-    protected loadTableSchemas(): Promise<Table[]> {
-        const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
-        return this.queryRunner.getTables(tablePaths);
-    }
-
-    /**
      * Returns only entities that should be synced in the database.
      */
     protected get entityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => !metadata.skipSync && metadata.tableType !== "single-table-child");
-    }
-
-    /**
-     * Creates new databases if they are not exists.
-     */
-    protected async createNewDatabases(): Promise<void> {
-        const databases: string[] = [];
-        this.connection.entityMetadatas.forEach(metadata => {
-            if (metadata.database && databases.indexOf(metadata.database) === -1)
-                databases.push(metadata.database);
-        });
-
-        await Promise.all(databases.map(database => this.queryRunner.createDatabase(database!)));
+        return this.connection.entityMetadatas.filter(metadata => metadata.synchronize && metadata.tableType !== "entity-child");
     }
 
     /**
@@ -144,24 +124,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
-        const schemaPaths: string[] = [];
-        this.connection.entityMetadatas
-            .filter(entityMetadata => !!entityMetadata.schemaPath)
-            .forEach(entityMetadata => {
-                const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
-                if (!existSchemaPath)
-                    schemaPaths.push(entityMetadata.schemaPath!);
-            });
-        await this.queryRunner.createSchema(schemaPaths);
-
         await this.dropOldForeignKeys();
-        // await this.dropOldPrimaryKeys(); // todo: need to drop primary column because column updates are not possible
+        await this.dropOldIndices();
+        await this.dropOldChecks();
+        await this.dropCompositeUniqueConstraints();
+        // await this.renameTables();
+        await this.renameColumns();
         await this.createNewTables();
         await this.dropRemovedColumns();
         await this.addNewColumns();
-        await this.updateExistColumns();
         await this.updatePrimaryKeys();
-        await this.createIndices(); // we need to create indices before foreign keys because foreign keys rely on unique indices
+        await this.updateExistColumns();
+        await this.createNewIndices();
+        await this.createNewChecks();
+        await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
     }
 
@@ -171,24 +147,159 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async dropOldForeignKeys(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
 
-            const table = this.tables.find(table => table.name === metadata.tableName);
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(tableForeignKey => {
-                return !metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
+                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
+                return !metadataFK
+                    || metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete
+                    || metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate;
             });
             if (tableForeignKeysToDrop.length === 0)
                 return;
 
             this.connection.logger.logSchemaBuild(`dropping old foreign keys of ${table.name}: ${tableForeignKeysToDrop.map(dbForeignKey => dbForeignKey.name).join(", ")}`);
 
-            // remove foreign keys from the table
-            table.removeForeignKeys(tableForeignKeysToDrop);
-
             // drop foreign keys from the database
             await this.queryRunner.dropForeignKeys(table, tableForeignKeysToDrop);
+        });
+    }
+
+    /**
+     * Rename tables
+     */
+    protected async renameTables(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            // const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+
+        });
+    }
+
+    /**
+     * Renames columns.
+     * Works if only one column per table was changed.
+     * Changes only column name. If something besides name was changed, these changes will be ignored.
+     */
+    protected async renameColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            if (metadata.columns.length !== table.columns.length)
+                return;
+
+            const renamedMetadataColumns = metadata.columns.filter(column => {
+                return !table.columns.find(tableColumn => {
+                    return tableColumn.name === column.databaseName
+                        && tableColumn.type === this.connection.driver.normalizeType(column)
+                        && tableColumn.isNullable === column.isNullable
+                        && tableColumn.isUnique === this.connection.driver.normalizeIsUnique(column);
+                });
+            });
+
+            if (renamedMetadataColumns.length === 0 || renamedMetadataColumns.length > 1)
+                return;
+
+            const renamedTableColumns = table.columns.filter(tableColumn => {
+                return !metadata.columns.find(column => {
+                    return column.databaseName === tableColumn.name
+                        && this.connection.driver.normalizeType(column) === tableColumn.type
+                        && column.isNullable === tableColumn.isNullable
+                        && this.connection.driver.normalizeIsUnique(column) === tableColumn.isUnique;
+                });
+            });
+
+            if (renamedTableColumns.length === 0 || renamedTableColumns.length > 1)
+                return;
+
+            const renamedColumn = renamedTableColumns[0].clone();
+            renamedColumn.name = renamedMetadataColumns[0].databaseName;
+
+            this.connection.logger.logSchemaBuild(`renaming column "${renamedTableColumns[0].name}" in to "${renamedColumn.name}"`);
+            await this.queryRunner.renameColumn(table, renamedTableColumns[0], renamedColumn);
+        });
+    }
+
+    protected async dropOldIndices(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const dropQueries = table.indices
+                .filter(tableIndex => {
+                    const indexMetadata = metadata.indices.find(index => index.name === tableIndex.name);
+                    if (indexMetadata) {
+                        if (indexMetadata.synchronize === false)
+                            return false;
+
+                        if (indexMetadata.isUnique !== tableIndex.isUnique)
+                            return true;
+
+                        if (indexMetadata.isSpatial !== tableIndex.isSpatial)
+                            return true;
+
+                        if (indexMetadata.isFulltext !== tableIndex.isFulltext)
+                            return true;
+
+                        if (indexMetadata.columns.length !== tableIndex.columnNames.length)
+                            return true;
+
+                        return !indexMetadata.columns.every(column => tableIndex.columnNames.indexOf(column.databaseName) !== -1);
+                    }
+
+                    return true;
+                })
+                .map(async tableIndex => {
+                    this.connection.logger.logSchemaBuild(`dropping an index: "${tableIndex.name}" from table ${table.name}`);
+                    await this.queryRunner.dropIndex(table, tableIndex);
+                });
+
+            await Promise.all(dropQueries);
+        });
+    }
+
+    protected async dropOldChecks(): Promise<void> {
+        // Mysql does not support check constraints
+        if (this.connection.driver instanceof MysqlDriver)
+            return;
+
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const oldChecks = table.checks.filter(tableCheck => {
+                return !metadata.checks.find(checkMetadata => checkMetadata.name === tableCheck.name);
+            });
+
+            if (oldChecks.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`dropping old check constraint: ${oldChecks.map(check => `"${check.name}"`).join(", ")} from table "${table.name}"`);
+            await this.queryRunner.dropCheckConstraints(table, oldChecks);
+        });
+    }
+
+    protected async dropCompositeUniqueConstraints(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const compositeUniques = table.uniques.filter(tableUnique => {
+                return tableUnique.columnNames.length > 1 && !metadata.uniques.find(uniqueMetadata => uniqueMetadata.name === tableUnique.name);
+            });
+
+            if (compositeUniques.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
+            await this.queryRunner.dropUniqueConstraints(table, compositeUniques);
         });
     }
 
@@ -200,27 +311,22 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createNewTables(): Promise<void> {
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
             // check if table does not exist yet
-            const existTableSchema = this.tables.find(table => {
-                if (table.name !== metadata.tableName)
-                    return false;
+            const existTable = this.queryRunner.loadedTables.find(table => {
+                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
+                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
+                const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
 
-                if (metadata.schema && table.schema !== metadata.schema)
-                    return false;
-
-                if (metadata.database && table.database !== metadata.database)
-                    return false;
-
-                return true;
+                return table.name === fullTableName;
             });
-            if (existTableSchema)
+            if (existTable)
                 return;
 
-            this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tableName}`);
+            this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tablePath}`);
 
             // create a new table and sync it in the database
-            const table = new Table(metadata.tableName, this.metadataColumnsToTableColumns(metadata.columns), true, metadata.engine, metadata.database, metadata.schema);
-            this.tables.push(table);
-            await this.queryRunner.createTable(table);
+            const table = Table.create(metadata, this.connection.driver);
+            await this.queryRunner.createTable(table, false, false);
+            this.queryRunner.loadedTables.push(table);
         });
     }
 
@@ -228,9 +334,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Drops all columns that exist in the table, but does not exist in the metadata (left old).
      * We drop their keys too, since it should be safe.
      */
-    protected dropRemovedColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.tables.find(table => table.name === metadata.tableName);
+    protected async dropRemovedColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table) return;
 
             // find columns that exist in the database but does not exist in the metadata
@@ -240,21 +346,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (droppedTableColumns.length === 0)
                 return;
 
-            // drop all foreign keys that has column to be removed in its columns
-            await Promise.all(droppedTableColumns.map(droppedTableColumn => {
-                return this.dropColumnReferencedForeignKeys(metadata.tableName, droppedTableColumn.name);
-            }));
-
-            // drop all indices that point to this column
-            await Promise.all(droppedTableColumns.map(droppedTableColumn => {
-                return this.dropColumnReferencedIndices(metadata.tableName, droppedTableColumn.name);
-            }));
-
             this.connection.logger.logSchemaBuild(`columns dropped in ${table.name}: ` + droppedTableColumns.map(column => column.name).join(", "));
-
-            // remove columns from the table and primary keys of it if its used in the primary keys
-            table.removeColumns(droppedTableColumns);
-            table.removePrimaryKeysOfColumns(droppedTableColumns);
 
             // drop columns from the database
             await this.queryRunner.dropColumns(table, droppedTableColumns);
@@ -265,9 +357,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Adds columns from metadata which does not exist in the table.
      * Columns are created without keys.
      */
-    protected addNewColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.tables.find(table => table.name === metadata.tableName);
+    protected async addNewColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
@@ -278,12 +370,35 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (newColumnMetadatas.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
-
             // create columns in the database
-            const newTableColumns = this.metadataColumnsToTableColumns(newColumnMetadatas);
+            const newTableColumnOptions = this.metadataColumnsToTableColumnOptions(newColumnMetadatas);
+            const newTableColumns = newTableColumnOptions.map(option => new TableColumn(option));
+
+            if (newTableColumns.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`new columns added: ` + newColumnMetadatas.map(column => column.databaseName).join(", "));
             await this.queryRunner.addColumns(table, newTableColumns);
-            table.addColumns(newTableColumns);
+        });
+    }
+
+    /**
+     * Updates composite primary keys.
+     */
+    protected async updatePrimaryKeys(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const primaryMetadataColumns = metadata.columns.filter(column => column.isPrimary);
+            const primaryTableColumns = table.columns.filter(column => column.isPrimary);
+            if (primaryTableColumns.length !== primaryMetadataColumns.length && primaryMetadataColumns.length > 1) {
+                const changedPrimaryColumns = primaryMetadataColumns.map(primaryMetadataColumn => {
+                    return new TableColumn(TableUtils.createTableColumnOptions(primaryMetadataColumn, this.connection.driver));
+                });
+                await this.queryRunner.updatePrimaryKeys(table, changedPrimaryColumns);
+            }
         });
     }
 
@@ -291,89 +406,118 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Update all exist columns which metadata has changed.
      * Still don't create keys. Also we don't touch foreign keys of the changed columns.
      */
-    protected updateExistColumns() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.tables.find(table => table.name === metadata.tableName);
+    protected async updateExistColumns(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
-            const updatedTableColumns = table.findChangedColumns(this.connection.driver, metadata.columns);
-            if (updatedTableColumns.length === 0)
+            const changedColumns = this.connection.driver.findChangedColumns(table.columns, metadata.columns);
+            if (changedColumns.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`columns changed in ${table.name}. updating: ` + updatedTableColumns.map(column => column.name).join(", "));
-
             // drop all foreign keys that point to this column
-            const dropRelatedForeignKeysPromises = updatedTableColumns
-                .filter(changedTableColumn => !!metadata.columns.find(columnMetadata => columnMetadata.databaseName === changedTableColumn.name))
-                .map(changedTableColumn => this.dropColumnReferencedForeignKeys(metadata.tableName, changedTableColumn.name));
+            await PromiseUtils.runInSequence(changedColumns, changedColumn => this.dropColumnReferencedForeignKeys(metadata.tablePath, changedColumn.databaseName));
 
-            // wait until all related foreign keys are dropped
-            await Promise.all(dropRelatedForeignKeysPromises);
+            // drop all composite indices related to this column
+            await PromiseUtils.runInSequence(changedColumns, changedColumn => this.dropColumnCompositeIndices(metadata.tablePath, changedColumn.databaseName));
 
-            // drop all indices that point to this column
-            const dropRelatedIndicesPromises = updatedTableColumns
-                .filter(changedTableColumn => !!metadata.columns.find(columnMetadata => columnMetadata.databaseName === changedTableColumn.name))
-                .map(changedTableColumn => this.dropColumnReferencedIndices(metadata.tableName, changedTableColumn.name));
-
-            // wait until all related indices are dropped
-            await Promise.all(dropRelatedIndicesPromises);
+            // drop all composite uniques related to this column
+            // Mysql does not support unique constraints.
+            if (!(this.connection.driver instanceof MysqlDriver)) {
+                await PromiseUtils.runInSequence(changedColumns, changedColumn => this.dropColumnCompositeUniques(metadata.tablePath, changedColumn.databaseName));
+            }
 
             // generate a map of new/old columns
-            const newAndOldTableColumns = updatedTableColumns.map(changedTableColumn => {
-                const columnMetadata = metadata.columns.find(column => column.databaseName === changedTableColumn.name);
-                const newTableColumn = TableColumn.create(columnMetadata!, 
-                    this.connection.driver.normalizeType(columnMetadata!), 
-                    this.connection.driver.normalizeDefault(columnMetadata!),
-                    this.connection.driver.getColumnLength(columnMetadata!));
-                table.replaceColumn(changedTableColumn, newTableColumn);
+            const newAndOldTableColumns = changedColumns.map(changedColumn => {
+                const oldTableColumn = table.columns.find(column => column.name === changedColumn.databaseName)!;
+                const newTableColumnOptions = TableUtils.createTableColumnOptions(changedColumn, this.connection.driver);
+                const newTableColumn = new TableColumn(newTableColumnOptions);
 
                 return {
-                    newColumn: newTableColumn,
-                    oldColumn: changedTableColumn
+                    oldColumn: oldTableColumn,
+                    newColumn: newTableColumn
                 };
             });
 
-            return this.queryRunner.changeColumns(table, newAndOldTableColumns);
+            if (newAndOldTableColumns.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`columns changed in "${table.name}". updating: ` + changedColumns.map(column => column.databaseName).join(", "));
+            await this.queryRunner.changeColumns(table, newAndOldTableColumns);
         });
     }
 
     /**
-     * Creates primary keys which does not exist in the table yet.
+     * Creates composite indices which are missing in db yet.
      */
-    protected updatePrimaryKeys() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.tables.find(table => table.name === metadata.tableName && !table.justCreated);
+    protected async createNewIndices(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
-            const metadataPrimaryColumns = metadata.columns.filter(column => column.isPrimary);
-            const addedKeys = metadataPrimaryColumns
-                .filter(primaryKey => {
-                    return !table.primaryKeys.find(dbPrimaryKey => dbPrimaryKey.columnName === primaryKey.databaseName);
-                })
-                .map(primaryKey => new TablePrimaryKey("", primaryKey.databaseName));
+            const newIndices = metadata.indices
+                .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name) && indexMetadata.synchronize === true)
+                .map(indexMetadata => TableIndex.create(indexMetadata));
 
-            const droppedKeys = table.primaryKeys.filter(primaryKeySchema => {
-                return !metadataPrimaryColumns.find(primaryKeyMetadata => primaryKeyMetadata.databaseName === primaryKeySchema.columnName);
-            });
-
-            if (addedKeys.length === 0 && droppedKeys.length === 0)
+            if (newIndices.length === 0)
                 return;
 
-            this.connection.logger.logSchemaBuild(`primary keys of ${table.name} has changed: dropped - ${droppedKeys.map(key => key.columnName).join(", ") || "nothing"}; added - ${addedKeys.map(key => key.columnName).join(", ") || "nothing"}`);
-            table.addPrimaryKeys(addedKeys);
-            table.removePrimaryKeys(droppedKeys);
-            await this.queryRunner.updatePrimaryKeys(table);
+            this.connection.logger.logSchemaBuild(`adding new indices ${newIndices.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createIndices(table, newIndices);
+        });
+    }
+
+    protected async createNewChecks(): Promise<void> {
+        // Mysql does not support check constraints
+        if (this.connection.driver instanceof MysqlDriver)
+            return;
+
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const newChecks = metadata.checks
+                .filter(checkMetadata => !table.checks.find(tableCheck => tableCheck.name === checkMetadata.name))
+                .map(checkMetadata => TableCheck.create(checkMetadata));
+
+            if (newChecks.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`adding new check constraints: ${newChecks.map(index => `"${index.name}"`).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createCheckConstraints(table, newChecks);
+        });
+    }
+
+    /**
+     * Creates composite uniques which are missing in db yet.
+     */
+    protected async createCompositeUniqueConstraints(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const compositeUniques = metadata.uniques
+                .filter(uniqueMetadata => uniqueMetadata.columns.length > 1 && !table.uniques.find(tableUnique => tableUnique.name === uniqueMetadata.name))
+                .map(uniqueMetadata => TableUnique.create(uniqueMetadata));
+
+            if (compositeUniques.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`adding new unique constraints: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createUniqueConstraints(table, compositeUniques);
         });
     }
 
     /**
      * Creates foreign keys which does not exist in the table yet.
      */
-    protected createForeignKeys() {
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.tables.find(table => table.name === metadata.tableName);
+    protected async createForeignKeys(): Promise<void> {
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
             if (!table)
                 return;
 
@@ -384,140 +528,86 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return;
 
             const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata));
-            this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")}`);
+            this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")} on table "${table.name}"`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
-            table.addForeignKeys(dbForeignKeys);
         });
-    }
-
-    /**
-     * Creates indices which are missing in db yet, and drops indices which exist in the db,
-     * but does not exist in the metadata anymore.
-     */
-    protected createIndices() {
-        // return Promise.all(this.connection.entityMetadatas.map(metadata => this.createIndices(metadata.table, metadata.indices)));
-        return PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
-            const table = this.tables.find(table => table.name === metadata.tableName);
-            if (!table)
-                return;
-
-            // drop all indices that exist in the table, but does not exist in the given composite indices
-            const dropQueries = table.indices
-                .filter(tableIndex => {
-                    const metadataIndex = metadata.indices.find(indexMetadata => indexMetadata.name === tableIndex.name);
-                    if (!metadataIndex)
-                        return true;
-                    if (metadataIndex.isUnique !== tableIndex.isUnique)
-                        return true;
-                    if (metadataIndex.columns.length !== tableIndex.columnNames.length)
-                        return true;
-                    if (metadataIndex.columns.findIndex((col, i) => col.databaseName !== tableIndex.columnNames[i]) !== -1)
-                        return true;
-                    
-                    return false;
-                })
-                .map(async tableIndex => {
-                    this.connection.logger.logSchemaBuild(`dropping an index: ${tableIndex.name}`);
-                    table.removeIndex(tableIndex);
-                    await this.queryRunner.dropIndex(metadata.tablePath, tableIndex.name);
-                });
-
-            await Promise.all(dropQueries);
-
-            // then create table indices for all composite indices we have
-            const addQueries = metadata.indices
-                .filter(indexMetadata => !table.indices.find(tableIndex => tableIndex.name === indexMetadata.name))
-                .map(async indexMetadata => {
-                    const tableIndex = TableIndex.create(indexMetadata);
-                    table.indices.push(tableIndex);
-                    this.connection.logger.logSchemaBuild(`adding new index: ${tableIndex.name}`);
-                    await this.queryRunner.createIndex(table, tableIndex);
-                });
-
-            await Promise.all(addQueries);
-        });
-    }
-
-    /**
-     * Drops all indices where given column of the given table is being used.
-     */
-    protected async dropColumnReferencedIndices(tableName: string, columnName: string): Promise<void> {
-
-        const table = this.tables.find(table => table.name === tableName);
-        if (!table)
-            return;
-
-        // find depend indices to drop them
-        const dependIndicesInTable = table.indices.filter(tableIndex => {
-            return tableIndex.tableName === tableName && !!tableIndex.columnNames.find(columnDatabaseName => columnDatabaseName === columnName);
-        });
-        if (dependIndicesInTable.length === 0)
-            return;
-
-        this.connection.logger.logSchemaBuild(`dropping related indices of ${tableName}#${columnName}: ${dependIndicesInTable.map(index => index.name).join(", ")}`);
-
-        const dropPromises = dependIndicesInTable.map(index => {
-            table.removeIndex(index);
-            return this.queryRunner.dropIndex(table, index.name);
-        });
-
-        await Promise.all(dropPromises);
     }
 
     /**
      * Drops all foreign keys where given column of the given table is being used.
      */
-    protected async dropColumnReferencedForeignKeys(tableName: string, columnName: string): Promise<void> {
-
-        const allForeignKeyMetadatas = this.connection.entityMetadatas.reduce(
-            (all, metadata) => all.concat(metadata.foreignKeys),
-            [] as ForeignKeyMetadata[]
-        );
-
-        const table = this.tables.find(table => table.name === tableName);
+    protected async dropColumnReferencedForeignKeys(tablePath: string, columnName: string): Promise<void> {
+        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
         if (!table)
             return;
 
-        // find depend foreign keys to drop them
-        const dependForeignKeys = allForeignKeyMetadatas.filter(foreignKey => {
-            if (foreignKey.tableName === tableName) {
-                return !!foreignKey.columns.find(fkColumn => {
-                    return fkColumn.databaseName === columnName;
-                });
-            } else if (foreignKey.referencedTableName === tableName) {
-                return !!foreignKey.referencedColumns.find(fkColumn => {
-                    return fkColumn.databaseName === columnName;
-                });
+        const tablesWithFK: Table[] = [];
+        const columnForeignKey = table.foreignKeys.find(foreignKey => foreignKey.columnNames.indexOf(columnName) !== -1);
+        if (columnForeignKey) {
+            const clonedTable = table.clone();
+            clonedTable.foreignKeys = [columnForeignKey];
+            tablesWithFK.push(clonedTable);
+            table.removeForeignKey(columnForeignKey);
+        }
+
+        this.queryRunner.loadedTables.forEach(loadedTable => {
+            const dependForeignKeys = loadedTable.foreignKeys.filter(foreignKey => {
+                return foreignKey.referencedTableName === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
+            });
+
+            if (dependForeignKeys.length > 0) {
+                const clonedTable = loadedTable.clone();
+                clonedTable.foreignKeys = dependForeignKeys;
+                tablesWithFK.push(clonedTable);
+                dependForeignKeys.forEach(dependForeignKey => loadedTable.removeForeignKey(dependForeignKey));
             }
-            return false;
         });
-        if (!dependForeignKeys.length)
+
+        if (tablesWithFK.length > 0) {
+            await PromiseUtils.runInSequence(tablesWithFK, tableWithFK => {
+                this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableWithFK.name}: ${tableWithFK.foreignKeys.map(foreignKey => foreignKey.name).join(", ")}`);
+                return this.queryRunner.dropForeignKeys(tableWithFK, tableWithFK.foreignKeys);
+            });
+        }
+    }
+
+    /**
+     * Drops all composite indices, related to given column.
+     */
+    protected async dropColumnCompositeIndices(tablePath: string, columnName: string): Promise<void> {
+        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
+        if (!table)
             return;
 
-        const dependForeignKeyInTable = dependForeignKeys.filter(fk => {
-            return !!table.foreignKeys.find(dbForeignKey => dbForeignKey.name === fk.name);
-        });
-        if (dependForeignKeyInTable.length === 0)
+        const relatedIndices = table.indices.filter(index => index.columnNames.length > 1 && index.columnNames.indexOf(columnName) !== -1);
+        if (relatedIndices.length === 0)
             return;
 
-        this.connection.logger.logSchemaBuild(`dropping related foreign keys of ${tableName}#${columnName}: ${dependForeignKeyInTable.map(foreignKey => foreignKey.name).join(", ")}`);
-        const tableForeignKeys = dependForeignKeyInTable.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata));
-        table.removeForeignKeys(tableForeignKeys);
-        await this.queryRunner.dropForeignKeys(table, tableForeignKeys);
+        this.connection.logger.logSchemaBuild(`dropping related indices of "${tablePath}"."${columnName}": ${relatedIndices.map(index => index.name).join(", ")}`);
+        await this.queryRunner.dropIndices(table, relatedIndices);
+    }
+
+    /**
+     * Drops all composite uniques, related to given column.
+     */
+    protected async dropColumnCompositeUniques(tablePath: string, columnName: string): Promise<void> {
+        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
+        if (!table)
+            return;
+
+        const relatedUniques = table.uniques.filter(unique => unique.columnNames.length > 1 && unique.columnNames.indexOf(columnName) !== -1);
+        if (relatedUniques.length === 0)
+            return;
+
+        this.connection.logger.logSchemaBuild(`dropping related unique constraints of "${tablePath}"."${columnName}": ${relatedUniques.map(unique => unique.name).join(", ")}`);
+        await this.queryRunner.dropUniqueConstraints(table, relatedUniques);
     }
 
     /**
      * Creates new columns from the given column metadatas.
      */
-    protected metadataColumnsToTableColumns(columns: ColumnMetadata[]): TableColumn[] {
-        return columns.map(columnMetadata => {
-            return TableColumn.create(
-                columnMetadata,
-                this.connection.driver.normalizeType(columnMetadata),
-                this.connection.driver.normalizeDefault(columnMetadata),
-                this.connection.driver.getColumnLength(columnMetadata)
-            );
-        });
+    protected metadataColumnsToTableColumnOptions(columns: ColumnMetadata[]): TableColumnOptions[] {
+        return columns.map(columnMetadata => TableUtils.createTableColumnOptions(columnMetadata, this.connection.driver));
     }
 
 }

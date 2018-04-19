@@ -33,7 +33,7 @@ describe("github issues > #1259 Can't sort by fields added with addSelect", () =
         }
         await connection.manager.save(posts);
 
-       const loadedPosts = await connection.manager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .addSelect("ts_rank_cd(to_tsvector(post.name), to_tsquery(:query))", "rank")
             .leftJoinAndSelect("post.categories", "categories")
@@ -65,7 +65,7 @@ describe("github issues > #1259 Can't sort by fields added with addSelect", () =
         }
         await connection.manager.save(posts);
 
-       const loadedPosts = await connection.manager
+        const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .addSelect("post.count * 2", "doublecount")
             .leftJoinAndSelect("post.categories", "categories")

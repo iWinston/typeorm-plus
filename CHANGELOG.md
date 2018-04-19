@@ -5,6 +5,82 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.0 (next: `npm i typeorm@next`)
+
+* completely refactored, improved and optimized persistence process and performance.
+* removed cascade remove functionality, refactored how cascades are working.
+* removed `cascadeRemove` option from relation options.
+* replaced `cascadeAll` with `cascade: true` syntax from relation options.
+* replaced `cascadeInsert` with `cascade: ["insert"]` syntax from relation options.
+* replaced `cascadeUpdate` with `cascade: ["update"]` syntax from relation options.
+* now when one-to-one or many-to-one relation is loaded and its not set (set to null) ORM returns you entity with relation set to `null` instead of `undefined property` as before.
+* now relation id can be set directly to relation, e.g. `Post { @ManyToOne(type => Tag) tag: Tag|number }` with `post.tag = 1` usage.
+* now you can disable persistence on any relation by setting `@OneToMany(type => Post, post => tag, { persistence: false })`. This can dramatically improve entity save performance.
+* `loadAllRelationIds` method of `QueryBuilder` now accepts list of relation paths that needs to be loaded, also `disableMixedMap` option is now by default set to false, but you can enable it via new method parameter `options`
+* now `returning` and `output` statements of `InsertQueryBuilder` support array of columns as argument
+* now when many-to-many and one-to-many relation set to `null` all items from that relation are removed, just like it would be set to empty array
+* fixed issues with relation update from one-to-one non-owner side
+* now version column is updated on the database level, not by ORM anymore
+* now created date and update date columns is set on the database level, not by ORM anymore (e.g. using `CURRENT_TIMESTAMP` as a default value)
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` automatically update entities after execution.
+This only happens if real entity objects are passed.
+Some databases (like mysql and sqlite) requires a separate query to perform this operation.
+If you want to disable this behavior use `queryBuilder.updateEntity(false)` method.
+This feature is convenient for users who have uuid, create/update date, version columns or columns with DEFAULT value set.
+* now `InsertQueryBuilder`, `UpdateQueryBuilder` and `DeleteQueryBuilder` call subscribers and listeners.
+You can disable this behavior by setting `queryBuilder.callListeners(false)` method.
+* `Repository` and `EntityManager` method `.findOneById` is deprecated and will be removed in next 0.3.0 version.
+Use `findOne(id)` method instead now.
+* `InsertQueryBuilder` now returns `InsertResult` which contains extended information and metadata about runned query
+* `UpdateQueryBuilder` now returns `UpdateResult` which contains extended information and metadata about runned query
+* `DeleteQueryBuilder` now returns `DeleteResult` which contains extended information and metadata about runned query
+* now insert / update / delete queries built with QueryBuilder can be wrapped into a transaction using `useTransaction(true)` method of the QueryBuilder.
+* `insert`, `update` and `delete` methods of `QueryRunner` now use `InsertQueryRunner`, `UpdateQueryRunner` and `DeleteQueryRunner` inside
+* removed deprecated `removeById`, `removeByIds` methods
+* removed `deleteById` method - use `delete(id)` method instead now
+* removed `updateById` method - use `update(id)` method instead now
+* changed `snakeCase` utility - check table names after upgrading
+* added ability to disable transaction in `save` and `remove` operations
+* added ability to disable listeners and subscribers in `save` and `remove` operations
+* added ability to save and remove objects in chunks
+* added ability to disable entity reloading after insertion and updation
+* class table inheritance functionality has been completely dropped
+* single table inheritance functionality has been fixed
+* `@SingleEntityChild` has been renamed to `@ChildEntity`
+* `@DiscriminatorValue` has been removed, instead parameter in `@ChildEntity` must be used, e.g. `@ChildEntity("value")`
+* `@DiscriminatorColumn` decorator has been removed, use `@TableInheritance` options instead now
+* `skipSync` in entity options has been renamed to `synchronize`. Now if it set to false schema synchronization for the entity will be disabled.
+By default its true.
+* now array initializations for relations are forbidden and ORM throws an error if there are entities with initialized relation arrays.
+* `@ClosureEntity` decorator has been removed. Instead `@Entity` + `@Tree("closure-table")` must be used
+* added support for nested set and materialized path tree hierarchy patterns
+* breaking change on how array parameters work in queries - now instead of (:param) new syntax must be used (:...param).
+This fixed various issues on how real arrays must work
+* changed the way how entity schemas are created (now more type-safe), now interface EntitySchema is a class
+* added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
+composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
+* added `@Check` decorator. Accepts custom check constraint name and expression. Used only on as 
+composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'asd'")`
+* fixed `Oracle` issues, now it will be fully maintained as other drivers 
+* implemented migrations functionality in all drivers
+* CLI commands changed from `migrations:create`, `migrations:generate`, `migrations:revert` and `migrations:run` to `migration:create`, `migration:generate`, `migration:revert` and `migration:run`
+* changed the way how migrations work (more info in #1315). Now migration table contains `id` column with auto-generated keys, you need to re-create migrations table or add new column manually.
+* entity schemas syntax was changed
+* dropped support for WebSql and SystemJS
+* `@Index` decorator now accepts `synchronize` option. This option need to avoid deleting custom indices which is not created by TypeORM
+* new flag in relation options was introduced: `{ persistence: false }`. You can use it to prevent any extra queries for relations checks
+* added support for `UNSIGNED` and `ZEROFILL` column attributes in MySQL
+* added support for generated columns in MySQL
+* added support for `ON UPDATE` column option in MySQL
+* added `SPATIAL` and `FULLTEXT` index options in MySQL
+* added `hstore` and `enum` column types support in Postgres
+* added range types support in Postgres
+* TypeORM now uses `{ "supportBigNumbers": true, "bigNumberStrings": true }` options by default for `node-mysql`
+* Integer data types in MySQL now accepts `width` option instead of `length` 
+* junction tables now have `onDelete: "CASCADE"` attribute on their foreign keys
+* `ancestor` and `descendant` columns in ClosureTable marked as primary keys
+* unique index now will be created for the join columns in `ManyToOne` and `OneToOne` relations
+
 ## 0.1.19
 
 * fixed bug in InsertQueryBuilder
@@ -335,7 +411,7 @@ from two sides of `@OneToOne` relationship now.
     `addParameters` now is deprecated
     * `getOne` returns `Promise<Entity|undefined>`
 * breaking changes in `Repository` and `EntityManager`:
-    * `findOne` and `findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
+    * `findOne` and .findOneById` now return `Promise<Entity|undefined>` instead of `Promise<Entity>`
 * now typeorm is compiled into `ES5` instead of `ES6` - this allows to run it on older versions of node.js
 * fixed multiple issues with dates and utc-related stuff
 * multiple bugfixes

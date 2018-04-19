@@ -1,6 +1,7 @@
 import {Connection} from "../connection/Connection";
 import {FindManyOptions} from "../find-options/FindManyOptions";
 import {ObjectType} from "../common/ObjectType";
+import { EntityNotFoundError } from "../error/EntityNotFoundError";
 import {QueryRunnerProviderAlreadyReleasedError} from "../error/QueryRunnerProviderAlreadyReleasedError";
 import {FindOneOptions} from "../find-options/FindOneOptions";
 import {DeepPartial} from "../common/DeepPartial";
@@ -11,12 +12,10 @@ import {MongoRepository} from "../repository/MongoRepository";
 import {TreeRepository} from "../repository/TreeRepository";
 import {Repository} from "../repository/Repository";
 import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
-import {SubjectBuilder} from "../persistence/SubjectBuilder";
-import {SubjectOperationExecutor} from "../persistence/SubjectOperationExecutor";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
-import {getMetadataArgsStorage} from "../index";
+import {EntitySchema, getMetadataArgsStorage, ObjectLiteral} from "../index";
 import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -26,8 +25,14 @@ import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
 import {TreeRepositoryNotSupportedError} from "../error/TreeRepositoryNotSupportedError";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {QueryPartialEntity} from "../query-builder/QueryPartialEntity";
+import {EntityPersistExecutor} from "../persistence/EntityPersistExecutor";
+import {ObjectID} from "../driver/mongodb/typings";
+import {InsertResult} from "../query-builder/result/InsertResult";
+import {UpdateResult} from "../query-builder/result/UpdateResult";
+import {DeleteResult} from "../query-builder/result/DeleteResult";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {FindConditions} from "../find-options/FindConditions";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -58,6 +63,11 @@ export class EntityManager {
      * Once created and then reused by en repositories.
      */
     protected repositories: Repository<any>[] = [];
+
+    /**
+     * Plain to object transformer used in create and merge operations.
+     */
+    protected plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -91,24 +101,25 @@ export class EntityManager {
         if (this.queryRunner && this.queryRunner.isTransactionActive)
             throw new Error(`Cannot start transaction because its already started`);
 
-        const usedQueryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-        const transactionEntityManager = this.connection.createEntityManager(usedQueryRunner);
+        // if query runner is already defined in this class, it means this entity manager was already created for a single connection
+        // if its not defined we create a new query runner - single connection where we'll execute all our operations
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
         try {
-            await usedQueryRunner.startTransaction();
-            const result = await runInTransaction(transactionEntityManager);
-            await usedQueryRunner.commitTransaction();
+            await queryRunner.startTransaction();
+            const result = await runInTransaction(queryRunner.manager);
+            await queryRunner.commitTransaction();
             return result;
 
         } catch (err) {
             try { // we throw original error even if rollback thrown an error
-                await usedQueryRunner.rollbackTransaction();
+                await queryRunner.rollbackTransaction();
             } catch (rollbackError) { }
             throw err;
 
         } finally {
             if (!this.queryRunner) // if we used a new query runner provider then release it
-                await usedQueryRunner.release();
+                await queryRunner.release();
         }
     }
 
@@ -122,7 +133,7 @@ export class EntityManager {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
+    createQueryBuilder<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|Function|string, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
@@ -132,9 +143,9 @@ export class EntityManager {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
+    createQueryBuilder<Entity>(entityClass?: ObjectType<Entity>|EntitySchema<Entity>|Function|string|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (alias) {
-            return this.connection.createQueryBuilder(entityClass as Function|string, alias, queryRunner || this.queryRunner);
+            return this.connection.createQueryBuilder(entityClass as Function|EntitySchema<Entity>|string, alias, queryRunner || this.queryRunner);
 
         } else {
             return this.connection.createQueryBuilder(entityClass as QueryRunner|undefined || this.queryRunner);
@@ -190,19 +201,19 @@ export class EntityManager {
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(entityClass: ObjectType<Entity>|string, plainObject: DeepPartial<Entity>): Entity;
+    create<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, plainObject: DeepPartial<Entity>): Entity;
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(entityClass: ObjectType<Entity>|string, plainObjects: DeepPartial<Entity>[]): Entity[];
+    create<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, plainObjects: DeepPartial<Entity>[]): Entity[];
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create<Entity>(entityClass: ObjectType<Entity>|string, plainObjectOrObjects?: DeepPartial<Entity>|DeepPartial<Entity>[]): Entity|Entity[] {
+    create<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, plainObjectOrObjects?: DeepPartial<Entity>|DeepPartial<Entity>[]): Entity|Entity[] {
         const metadata = this.connection.getMetadata(entityClass);
 
         if (!plainObjectOrObjects)
@@ -211,16 +222,17 @@ export class EntityManager {
         if (plainObjectOrObjects instanceof Array)
             return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
-        return this.merge(entityClass, metadata.create(), plainObjectOrObjects);
+        const mergeIntoEntity = metadata.create();
+        this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
+        return mergeIntoEntity;
     }
 
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(entityClass: ObjectType<Entity>|string, mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity { // todo: throw exception if entity manager is released
+    merge<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity { // todo: throw exception if entity manager is released
         const metadata = this.connection.getMetadata(entityClass);
-        const plainObjectToEntityTransformer = new PlainObjectToNewEntityTransformer();
-        entityLikes.forEach(object => plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
+        entityLikes.forEach(object => this.plainObjectToEntityTransformer.transform(mergeIntoEntity, object, metadata));
         return mergeIntoEntity;
     }
 
@@ -230,7 +242,7 @@ export class EntityManager {
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
      */
-    async preload<Entity>(entityClass: ObjectType<Entity>|string, entityLike: DeepPartial<Entity>): Promise<Entity|undefined> {
+    async preload<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, entityLike: DeepPartial<Entity>): Promise<Entity|undefined> {
         const metadata = this.connection.getMetadata(entityClass);
         const plainObjectToDatabaseEntityTransformer = new PlainObjectToDatabaseEntityTransformer(this.connection.manager);
         const transformedEntity = await plainObjectToDatabaseEntityTransformer.transform(entityLike, metadata);
@@ -244,187 +256,58 @@ export class EntityManager {
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
-
-    /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
-
-    /**
-     * Saves all given entities in the database.
-     * If entities do not exist in the database then inserts, otherwise updates.
-     */
     save<Entity>(entities: Entity[], options?: SaveOptions): Promise<Entity[]>;
 
     /**
      * Saves all given entities in the database.
      * If entities do not exist in the database then inserts, otherwise updates.
      */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|string, entities: T[], options?: SaveOptions): Promise<T[]>;
+    save<Entity>(entity: Entity, options?: SaveOptions): Promise<Entity>;
+
+    /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Saves all given entities in the database.
+     * If entities do not exist in the database then inserts, otherwise updates.
+     */
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, entity: T, options?: SaveOptions): Promise<T>;
 
     /**
      * Saves a given entity in the database.
      */
-    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
+    save<Entity, T extends DeepPartial<Entity>>(targetOrEntity: (T|T[])|ObjectType<Entity>|EntitySchema<Entity>|string, maybeEntityOrOptions?: T|T[], maybeOptions?: SaveOptions): Promise<T|T[]> {
 
-        const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
+        // normalize mixed parameters
+        let target = (arguments.length > 1 && (targetOrEntity instanceof Function || targetOrEntity instanceof EntitySchema || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: T|T[] = target ? maybeEntityOrOptions as T|T[] : targetOrEntity as T|T[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
+
+        if (target instanceof EntitySchema)
+            target = target.options.name;
 
         // if user passed empty array of entities then we don't need to do anything
         if (entity instanceof Array && entity.length === 0)
             return Promise.resolve(entity);
 
-        return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
-
-            // todo: use transaction instead if possible
-            // await this.transaction(async transactionEntityManager => {
-            //     if (options && options.data)
-            //         transactionEntityManager.data = options.data;
-            //
-            // });
-
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
-            if (options && options.data)
-                Object.assign(queryRunner.data, options.data);
-
-            try {
-                const executors: SubjectOperationExecutor[] = [];
-                if (entity instanceof Array) {
-                    await Promise.all(entity.map(async entity => {
-                        const entityTarget = target ? target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
-
-                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                        await databaseEntityLoader.persist(entity, metadata);
-
-                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
-                } else {
-                    const finalTarget = target ? target : entity.constructor;
-                    const metadata = this.connection.getMetadata(finalTarget);
-
-                    const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                    await databaseEntityLoader.persist(entity, metadata);
-
-                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
-                }
-
-                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
-                if (executorsNeedsToBeExecuted.length) {
-
-                    // start execute queries in a transaction
-                    // if transaction is already opened in this query runner then we don't touch it
-                    // if its not opened yet then we open it here, and once we finish - we close it
-                    let isTransactionStartedByItself = false;
-                    try {
-
-                        // open transaction if its not opened yet
-                        if (!queryRunner.isTransactionActive) {
-                            isTransactionStartedByItself = true;
-                            await queryRunner.startTransaction();
-                        }
-
-                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
-                            return executor.execute();
-                        }));
-
-                        // commit transaction if it was started by us
-                        if (isTransactionStartedByItself === true)
-                            await queryRunner.commitTransaction();
-
-                    } catch (error) {
-
-                        // rollback transaction if it was started by us
-                        if (isTransactionStartedByItself) {
-                            try {
-                                await queryRunner.rollbackTransaction();
-                            } catch (rollbackError) { }
-                        }
-
-                        throw error;
-                    }
-                }
-
-            } finally {
-                if (!this.queryRunner) // release it only if its created by this method
-                    await queryRunner.release();
-            }
-
-            return entity;
-        });
-    }
-
-    /**
-     * Inserts a given entity into the database.
-     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Does not modify source entity and does not execute listeners and subscribers.
-     * Executes fast and efficient INSERT query.
-     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
-     * You can execute bulk inserts using this method.
-     */
-    async insert<Entity>(target: ObjectType<Entity>|string, entity: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[], options?: SaveOptions): Promise<void> {
-        // todo: in the future create InsertResult with query result information
-        // todo: think if subscribers and listeners can be executed here as well
-
-        await this.createQueryBuilder()
-            .insert()
-            .into(target)
-            .values(entity)
-            .execute();
-    }
-
-    /**
-     * Updates entity partially. Entity can be found by a given conditions.
-     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Does not modify source entity and does not execute listeners and subscribers.
-     * Executes fast and efficient UPDATE query.
-     * Does not check if entity exist in the database.
-     */
-    async update<Entity>(target: ObjectType<Entity>|string, conditions: Partial<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        // todo: in the future create UpdateResult with query result information
-        // todo: think if subscribers and listeners can be executed here as well
-
-        await this.createQueryBuilder()
-            .update(target)
-            .set(partialEntity)
-            .where(conditions)
-            .execute();
-    }
-
-    /**
-     * Updates entity partially. Entity will be found by a given id.
-     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Does not modify source entity and does not execute listeners and subscribers.
-     * Executes fast and efficient UPDATE query.
-     * Does not check if entity exist in the database.
-     */
-    async updateById<Entity>(target: ObjectType<Entity>|string, id: any|any[], partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<void> {
-        // todo: in the future create UpdateResult with query result information
-        // todo: think if subscribers and listeners can be executed here as well
-
-        await this.createQueryBuilder()
-            .update(target)
-            .set(partialEntity)
-            .whereInIds(id)
-            .execute();
+        // execute save operation
+        return new EntityPersistExecutor(this.connection, this.queryRunner, "save", target, entity, options)
+            .execute()
+            .then(() => entity);
     }
 
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(entity: Entity): Promise<Entity>;
+    remove<Entity>(entity: Entity, options?: RemoveOptions): Promise<Entity>;
 
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(targetOrEntity: ObjectType<Entity>|string, entity: Entity, options?: RemoveOptions): Promise<Entity>;
+    remove<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, entity: Entity, options?: RemoveOptions): Promise<Entity>;
 
     /**
      * Removes a given entity from the database.
@@ -434,13 +317,14 @@ export class EntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(targetOrEntity: ObjectType<Entity>|string, entity: Entity[], options?: RemoveOptions): Promise<Entity[]>;
+    remove<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, entity: Entity[], options?: RemoveOptions): Promise<Entity[]>;
 
     /**
      * Removes a given entity from the database.
      */
     remove<Entity>(targetOrEntity: (Entity|Entity[])|Function|string, maybeEntityOrOptions?: Entity|Entity[], maybeOptions?: RemoveOptions): Promise<Entity|Entity[]> {
 
+        // normalize mixed parameters
         const target = (arguments.length > 1 && (targetOrEntity instanceof Function || typeof targetOrEntity === "string")) ? targetOrEntity as Function|string : undefined;
         const entity: Entity|Entity[] = target ? maybeEntityOrOptions as Entity|Entity[] : targetOrEntity as Entity|Entity[];
         const options = target ? maybeOptions : maybeEntityOrOptions as SaveOptions;
@@ -449,154 +333,126 @@ export class EntityManager {
         if (entity instanceof Array && entity.length === 0)
             return Promise.resolve(entity);
 
-        return Promise.resolve().then(async () => { // we MUST call "fake" resolve here to make sure all properties of lazily loaded properties are resolved.
-
-            const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
-            const transactionEntityManager = this.connection.createEntityManager(queryRunner);
-            if (options && options.data)
-                Object.assign(queryRunner.data, options.data);
-
-            try {
-                const executors: SubjectOperationExecutor[] = [];
-                if (entity instanceof Array) {
-                    await Promise.all(entity.map(async entity => {
-                        const entityTarget = target ? target : entity.constructor;
-                        const metadata = this.connection.getMetadata(entityTarget);
-
-                        const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                        await databaseEntityLoader.remove(entity, metadata);
-
-                        const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                        executors.push(executor);
-                    }));
-
-                } else {
-                    const finalTarget = target ? target : entity.constructor;
-                    const metadata = this.connection.getMetadata(finalTarget);
-
-                    const databaseEntityLoader = new SubjectBuilder(this.connection, queryRunner);
-                    await databaseEntityLoader.remove(entity, metadata);
-
-                    const executor = new SubjectOperationExecutor(this.connection, transactionEntityManager, queryRunner, databaseEntityLoader.operateSubjects);
-                    executors.push(executor);
-                }
-
-                const executorsNeedsToBeExecuted = executors.filter(executor => executor.areExecutableOperations());
-                if (executorsNeedsToBeExecuted.length) {
-
-                    // start execute queries in a transaction
-                    // if transaction is already opened in this query runner then we don't touch it
-                    // if its not opened yet then we open it here, and once we finish - we close it
-                    let isTransactionStartedByItself = false;
-                    try {
-
-                        // open transaction if its not opened yet
-                        if (!queryRunner.isTransactionActive) {
-                            isTransactionStartedByItself = true;
-                            await queryRunner.startTransaction();
-                        }
-
-                        await Promise.all(executorsNeedsToBeExecuted.map(executor => {
-                            return executor.execute();
-                        }));
-
-                        // commit transaction if it was started by us
-                        if (isTransactionStartedByItself === true)
-                            await queryRunner.commitTransaction();
-
-                    } catch (error) {
-
-                        // rollback transaction if it was started by us
-                        if (isTransactionStartedByItself) {
-                            try {
-                                await queryRunner.rollbackTransaction();
-                            } catch (rollbackError) { }
-                        }
-
-                        throw error;
-                    }
-                }
-
-            } finally {
-                if (!this.queryRunner) // release it only if its created by this method
-                    await queryRunner.release();
-            }
-
-            return entity;
-        });
+        // execute save operation
+        return new EntityPersistExecutor(this.connection, this.queryRunner, "remove", target, entity, options)
+            .execute()
+            .then(() => entity);
     }
 
     /**
-     * Deletes entities by a given conditions.
+     * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Does not modify source entity and does not execute listeners and subscribers.
-     * Executes fast and efficient DELETE query.
-     * Does not check if entity exist in the database.
+     * Executes fast and efficient INSERT query.
+     * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
+     * You can execute bulk inserts using this method.
      */
-    async delete<Entity>(targetOrEntity: ObjectType<Entity>|string, conditions: Partial<Entity>, options?: RemoveOptions): Promise<void> {
-        // todo: in the future create DeleteResult with query result information
-        // todo: think if subscribers and listeners can be executed here as well
+    async insert<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, entity: QueryPartialEntity<Entity>|(QueryPartialEntity<Entity>[]), options?: SaveOptions): Promise<InsertResult> {
 
-        await this.createQueryBuilder()
-            .delete()
-            .from(targetOrEntity)
-            .where(conditions)
+        // TODO: Oracle does not support multiple values. Need to create another nice solution.
+        if (this.connection.driver instanceof OracleDriver && entity instanceof Array) {
+            const results = await Promise.all(entity.map(entity => this.insert(target, entity)));
+            return results.reduce((mergedResult, result) => Object.assign(mergedResult, result), {} as InsertResult);
+        }
+        return this.createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(entity)
             .execute();
     }
 
     /**
-     * Deletes entities by a given entity id or ids.
+     * Updates entity partially. Entity can be found by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Does not modify source entity and does not execute listeners and subscribers.
+     * Executes fast and efficient UPDATE query.
+     * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
+     */
+    update<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, partialEntity: DeepPartial<Entity>, options?: SaveOptions): Promise<UpdateResult> {
+        
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (criteria instanceof Array && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the update method.`));
+        }
+        
+        if (typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date ||
+            criteria instanceof Array) {
+
+            return this.createQueryBuilder()
+                .update(target)
+                .set(partialEntity)
+                .whereInIds(criteria)
+                .execute();
+
+        } else {
+            return this.createQueryBuilder()
+                .update(target)
+                .set(partialEntity)
+                .where(criteria)
+                .execute();
+        }
+    }
+
+    /**
+     * Deletes entities by a given condition(s).
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
      */
-    async deleteById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any|any[], options?: RemoveOptions): Promise<void> {
-        // todo: in the future create DeleteResult with query result information
-        // todo: think if subscribers and listeners can be executed here as well
+    delete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, options?: RemoveOptions): Promise<DeleteResult> {
+        
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (criteria instanceof Array && criteria.length === 0)) {
 
-        await this.createQueryBuilder()
-            .delete()
-            .from(targetOrEntity)
-            .whereInIds(id)
-            .execute();
-    }
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+        }
+        
+        if (typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date ||
+            criteria instanceof Array) {
 
-    /**
-     * Deletes entity by a given entity id.
-     *
-     * @deprecated use deleteById method instead.
-     */
-    async removeById<Entity>(targetOrEntity: ObjectType<Entity>|string, id: any, options?: RemoveOptions): Promise<void> {
-        return this.deleteById(targetOrEntity, id, options);
-    }
+            return this.createQueryBuilder()
+                .delete()
+                .from(targetOrEntity)
+                .whereInIds(criteria)
+                .execute();
 
-    /**
-     * Deletes entity by a given entity ids.
-     *
-     * @deprecated use deleteById method instead.
-     */
-    async removeByIds<Entity>(targetOrEntity: ObjectType<Entity>|string, ids: any[], options?: RemoveOptions): Promise<void> {
-        return this.deleteById(targetOrEntity, ids, options);
+        } else {
+            return this.createQueryBuilder()
+                .delete()
+                .from(targetOrEntity)
+                .where(criteria)
+                .execute();
+        }
     }
 
     /**
      * Counts entities that match given options.
      * Useful for pagination.
      */
-    count<Entity>(entityClass: ObjectType<Entity>|string, options?: FindManyOptions<Entity>): Promise<number>;
+    count<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options?: FindManyOptions<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given conditions.
      * Useful for pagination.
      */
-    count<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>): Promise<number>;
+    count<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, conditions?: FindConditions<Entity>): Promise<number>;
 
     /**
      * Counts entities that match given find options or conditions.
      * Useful for pagination.
      */
-    async count<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<number> {
+    async count<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getCount();
@@ -605,20 +461,23 @@ export class EntityManager {
     /**
      * Finds entities that match given options.
      */
-    find<Entity>(entityClass: ObjectType<Entity>|string, options?: FindManyOptions<Entity>): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options?: FindManyOptions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given conditions.
      */
-    find<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>): Promise<Entity[]>;
+    find<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, conditions?: FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities that match given find options or conditions.
      */
-    async find<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async find<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        this.joinEagerRelations(qb, qb.alias, metadata);
+
+        if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
     }
 
@@ -627,24 +486,27 @@ export class EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>|string, options?: FindManyOptions<Entity>): Promise<[Entity[], number]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options?: FindManyOptions<Entity>): Promise<[Entity[], number]>;
 
     /**
      * Finds entities that match given conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>): Promise<[Entity[], number]>;
+    findAndCount<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, conditions?: FindConditions<Entity>): Promise<[Entity[], number]>;
 
     /**
      * Finds entities that match given find options and conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    async findAndCount<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<[Entity[], number]> {
+    async findAndCount<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
-        this.joinEagerRelations(qb, qb.alias, metadata);
+
+        if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
         return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
     }
 
@@ -652,90 +514,115 @@ export class EntityManager {
      * Finds entities with ids.
      * Optionally find options can be applied.
      */
-    findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
+    findByIds<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, ids: any[], options?: FindManyOptions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities with ids.
      * Optionally conditions can be applied.
      */
-    findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], conditions?: Partial<Entity>): Promise<Entity[]>;
+    findByIds<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, ids: any[], conditions?: FindConditions<Entity>): Promise<Entity[]>;
 
     /**
      * Finds entities with ids.
      * Optionally find options or conditions can be applied.
      */
-    async findByIds<Entity>(entityClass: ObjectType<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|Partial<Entity>): Promise<Entity[]> {
+    async findByIds<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, ids: any[], optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
 
         // if no ids passed, no need to execute a query - just return an empty array of values
         if (!ids.length)
             return Promise.resolve([]);
-
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
 
-        ids = ids.map(id => {
-            if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
-                return metadata.createEntityIdMap([id]);
-            }
-            return id;
-        });
-        this.joinEagerRelations(qb, qb.alias, metadata);
+        if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
+
         return qb.andWhereInIds(ids).getMany();
     }
 
     /**
      * Finds first entity that matches given find options.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+
+    /**
+     * Finds first entity that matches given find options.
+     */
+    findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    findOne<Entity>(entityClass: ObjectType<Entity>|string, conditions?: Partial<Entity>): Promise<Entity|undefined>;
+    findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, conditions?: FindConditions<Entity>, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
 
     /**
      * Finds first entity that matches given conditions.
      */
-    async findOne<Entity>(entityClass: ObjectType<Entity>|string, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
+    async findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+
+        let findOptions: FindOneOptions<any>|undefined = undefined;
+        if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
+            findOptions = idOrOptionsOrConditions;
+        } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions)) {
+            findOptions = maybeOptions;
+        }
+
+        let options: ObjectLiteral|undefined = undefined;
+        if (idOrOptionsOrConditions instanceof Object && !FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions))
+            options = idOrOptionsOrConditions as ObjectLiteral;
+
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
-        this.joinEagerRelations(qb, qb.alias, metadata);
-        return FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getOne();
+        let alias: string = metadata.name;
+        if (findOptions && findOptions.join) {
+            alias = findOptions.join.alias;
+
+        } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions) && maybeOptions.join) {
+            alias = maybeOptions.join.alias;
+        }
+        const qb = this.createQueryBuilder(entityClass, alias);
+
+        if (!findOptions || findOptions.loadEagerRelations !== false)
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+
+        if (findOptions)
+            FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
+
+        if (options) {
+            qb.where(options);
+
+        } else if (typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date) {
+            qb.andWhereInIds(metadata.ensureEntityIdMap(idOrOptionsOrConditions));
+        }
+
+        return qb.getOne();
     }
 
     /**
-     * Finds entity with given id.
-     * Optionally find options can be applied.
+     * Finds first entity that matches given find options or rejects the returned promise on error.
      */
-    findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, options?: FindOneOptions<Entity>): Promise<Entity|undefined>;
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, id?: string|number|Date|ObjectID, options?: FindOneOptions<Entity>): Promise<Entity>;
 
     /**
-     * Finds entity with given id.
-     * Optionally conditions can be applied.
+     * Finds first entity that matches given find options or rejects the returned promise on error.
      */
-    findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, conditions?: Partial<Entity>): Promise<Entity|undefined>;
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, options?: FindOneOptions<Entity>): Promise<Entity>;
 
     /**
-     * Finds entity with given id.
-     * Optionally find options or conditions can be applied.
+     * Finds first entity that matches given conditions or rejects the returned promise on error.
      */
-    async findOneById<Entity>(entityClass: ObjectType<Entity>|string, id: any, optionsOrConditions?: FindOneOptions<Entity>|Partial<Entity>): Promise<Entity|undefined> {
-        const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindOneOptionsAlias(optionsOrConditions) || metadata.name);
-        if (metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
-            // const columnNames = this.metadata.getEntityIdMap({  });
-            throw new Error(`You have multiple primary keys in your entity, to use findOneById with multiple primary keys please provide ` +
-                `complete object with all entity ids, like this: { firstKey: value, secondKey: value }`);
-        }
+    findOneOrFail<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, conditions?: FindConditions<Entity>, options?: FindOneOptions<Entity>): Promise<Entity>;
 
-        if (!metadata.hasMultiplePrimaryKeys && !(id instanceof Object)) {
-            id = metadata.createEntityIdMap([id]);
-        }
-
-        this.joinEagerRelations(qb, qb.alias, metadata);
-        FindOptionsUtils.applyFindOneOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
-        return qb.andWhereInIds([id]).getOne();
+    /**
+     * Finds first entity that matches given conditions or rejects the returned promise on error.
+     */
+    async findOneOrFail<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
+        return this.findOne(entityClass, idOrOptionsOrConditions as any, maybeOptions).then((value) => {
+            if (value === undefined) {
+                return Promise.reject(new EntityNotFoundError(entityClass, idOrOptionsOrConditions));
+            }
+            return Promise.resolve(value);
+        });
     }
 
     /**
@@ -744,11 +631,11 @@ export class EntityManager {
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    async clear<Entity>(entityClass: ObjectType<Entity>|string): Promise<void> {
+    async clear<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass);
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         try {
-            return await queryRunner.truncate(metadata.tablePath); // await is needed here because we are using finally
+            return await queryRunner.clearTable(metadata.tablePath); // await is needed here because we are using finally
 
         } finally {
             if (!this.queryRunner)
@@ -757,12 +644,58 @@ export class EntityManager {
     }
 
     /**
+     * Increments some column by provided value of the entities matched given conditions.
+     */
+    async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
+                            conditions: FindConditions<Entity>,
+                            propertyPath: string,
+                            value: number): Promise<void> {
+
+        const metadata = this.connection.getMetadata(entityClass);
+        const column = metadata.findColumnWithPropertyPath(propertyPath);
+        if (!column)
+            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+
+        await this
+            .createQueryBuilder(entityClass, "entity")
+            .update(entityClass)
+            .set({
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + Number(value)
+            })
+            .where(conditions)
+            .execute();
+    }
+
+    /**
+     * Decrements some column by provided value of the entities matched given conditions.
+     */
+    async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
+                            conditions: FindConditions<Entity>,
+                            propertyPath: string,
+                            value: number): Promise<void> {
+
+        const metadata = this.connection.getMetadata(entityClass);
+        const column = metadata.findColumnWithPropertyPath(propertyPath);
+        if (!column)
+            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+
+        await this
+            .createQueryBuilder(entityClass, "entity")
+            .update(entityClass)
+            .set({
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + Number(value)
+            })
+            .where(conditions)
+            .execute();
+    }
+
+    /**
      * Gets repository for the given entity class or name.
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getRepository<Entity>(target: ObjectType<Entity>|string): Repository<Entity> {
+    getRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): Repository<Entity> {
 
         // throw exception if there is no repository with this target registered
         if (!this.connection.hasMetadata(target))
@@ -786,7 +719,7 @@ export class EntityManager {
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getTreeRepository<Entity>(target: ObjectType<Entity>|string): TreeRepository<Entity> {
+    getTreeRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): TreeRepository<Entity> {
 
         // tree tables aren't supported by some drivers (mongodb)
         if (this.connection.driver.treeSupport === false)
@@ -803,18 +736,8 @@ export class EntityManager {
     /**
      * Gets mongodb repository for the given entity class.
      */
-    getMongoRepository<Entity>(entityClass: ObjectType<Entity>): MongoRepository<Entity>;
-
-    /**
-     * Gets mongodb repository for the given entity name.
-     */
-    getMongoRepository<Entity>(entityName: string): MongoRepository<Entity>;
-
-    /**
-     * Gets mongodb repository for the given entity class or name.
-     */
-    getMongoRepository<Entity>(entityClassOrName: ObjectType<Entity>|string): MongoRepository<Entity> {
-        return this.connection.getMongoRepository<Entity>(entityClassOrName as any);
+    getMongoRepository<Entity>(target: ObjectType<Entity>|EntitySchema<Entity>|string): MongoRepository<Entity> {
+        return this.connection.getMongoRepository<Entity>(target);
     }
 
     /**
@@ -858,20 +781,4 @@ export class EntityManager {
 
         return this.queryRunner.release();
     }
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Joins all eager relations recursively.
-     */
-    protected joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
-        metadata.eagerRelations.forEach(relation => {
-            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
-            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
-            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
-        });
-    }
-
 }

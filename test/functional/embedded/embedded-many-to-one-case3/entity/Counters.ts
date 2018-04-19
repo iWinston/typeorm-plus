@@ -19,7 +19,7 @@ export class Counters {
     @Column()
     favorites: number;
 
-    @Column(() => Subcounters)
+    @Column(() => Subcounters, { prefix: "subcnt" })
     subcounters: Subcounters;
 
     @ManyToOne(type => User)

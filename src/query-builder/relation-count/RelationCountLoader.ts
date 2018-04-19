@@ -52,7 +52,7 @@ export class RelationCountLoader {
                 qb.select(inverseSideTableAlias + "." + inverseSidePropertyName, "parentId")
                     .addSelect("COUNT(*)", "cnt")
                     .from(inverseSideTable, inverseSideTableAlias)
-                    .where(inverseSideTableAlias + "." + inverseSidePropertyName + " IN (:ids)")
+                    .where(inverseSideTableAlias + "." + inverseSidePropertyName + " IN (:...ids)")
                     .addGroupBy(inverseSideTableAlias + "." + inverseSidePropertyName)
                     .setParameter("ids", referenceColumnValues);
 

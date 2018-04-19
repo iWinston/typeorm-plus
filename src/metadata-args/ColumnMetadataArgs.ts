@@ -17,13 +17,6 @@ export interface ColumnMetadataArgs {
     readonly propertyName: string;
 
     /**
-     * Class's property type (reflected) to which column is applied.
-     *
-     * todo: check when this is not set, because for the entity schemas we don't set it.
-     */
-    // readonly propertyType?: string;
-
-    /**
      * Column mode in which column will work.
      *
      * todo: find name better then "mode".

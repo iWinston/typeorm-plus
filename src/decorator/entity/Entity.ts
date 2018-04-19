@@ -1,6 +1,5 @@
-import {getMetadataArgsStorage} from "../../index";
+import {EntityOptions, getMetadataArgsStorage} from "../../";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
-import {EntityOptions} from "../options/EntityOptions";
 
 /**
  * This decorator is used to mark classes that will be an entity (table or document depend on database type).
@@ -23,16 +22,15 @@ export function Entity(nameOrOptions?: string|EntityOptions, maybeOptions?: Enti
     const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
 
     return function (target: Function) {
-        const args: TableMetadataArgs = {
+        getMetadataArgsStorage().tables.push({
             target: target,
             name: name,
             type: "regular",
-            orderBy: options && options.orderBy ? options.orderBy : undefined,
-            engine: options && options.engine ? options.engine : undefined,
-            database: options && options.database ? options.database : undefined,
-            schema: options && options.schema ? options.schema : undefined,
-            skipSync: !!(options && options.skipSync === true)
-        };
-        getMetadataArgsStorage().tables.push(args);
+            orderBy: options.orderBy ? options.orderBy : undefined,
+            engine: options.engine ? options.engine : undefined,
+            database: options.database ? options.database : undefined,
+            schema: options.schema ? options.schema : undefined,
+            synchronize: options.synchronize
+        } as TableMetadataArgs);
     };
 }

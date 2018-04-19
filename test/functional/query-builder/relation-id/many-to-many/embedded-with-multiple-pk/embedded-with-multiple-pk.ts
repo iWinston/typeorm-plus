@@ -17,8 +17,6 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -71,10 +69,10 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             post1.counters.comments = 2;
             post1.counters.favorites = 3;
             post1.counters.categories = [category1, category2];
-            post1.counters.subcounters = new Subcounters();
-            post1.counters.subcounters.version = 1;
-            post1.counters.subcounters.watches = 2;
-            post1.counters.subcounters.watchedUsers = [user1, user2];
+            post1.counters.subcntrs = new Subcounters();
+            post1.counters.subcntrs.version = 1;
+            post1.counters.subcntrs.watches = 2;
+            post1.counters.subcntrs.watchedUsers = [user1, user2];
             await connection.manager.save(post1);
 
             const post2 = new Post();
@@ -86,16 +84,16 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             post2.counters.comments = 4;
             post2.counters.favorites = 5;
             post2.counters.categories = [category3, category4];
-            post2.counters.subcounters = new Subcounters();
-            post2.counters.subcounters.version = 1;
-            post2.counters.subcounters.watches = 1;
-            post2.counters.subcounters.watchedUsers = [user3];
+            post2.counters.subcntrs = new Subcounters();
+            post2.counters.subcntrs.version = 1;
+            post2.counters.subcntrs.watches = 1;
+            post2.counters.subcntrs.watchedUsers = [user3];
             await connection.manager.save(post2);
 
             const loadedPosts = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .loadRelationIdAndMap("post.counters.categoryIds", "post.counters.categories")
-                .loadRelationIdAndMap("post.counters.subcounters.watchedUserIds", "post.counters.subcounters.watchedUsers")
+                .loadRelationIdAndMap("post.counters.subcntrs.watchedUserIds", "post.counters.subcntrs.watchedUsers")
                 .orderBy("post.id")
                 .getMany();
 
@@ -112,7 +110,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                             { id: 1, name: "cars"},
                             { id: 2, name: "BMW"}
                         ],
-                        subcounters: {
+                        subcntrs: {
                             version: 1,
                             watches: 2,
                             watchedUserIds: [
@@ -136,7 +134,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                             { id: 3, name: "airplanes"},
                             { id: 4, name: "Boeing"}
                         ],
-                        subcounters: {
+                        subcntrs: {
                             version: 1,
                             watches: 1,
                             watchedUserIds: [
@@ -150,10 +148,10 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             const loadedPost = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .loadRelationIdAndMap("post.counters.categoryIds", "post.counters.categories")
-                .loadRelationIdAndMap("post.counters.subcounters.watchedUserIds", "post.counters.subcounters.watchedUsers")
+                .loadRelationIdAndMap("post.counters.subcntrs.watchedUserIds", "post.counters.subcntrs.watchedUsers")
                 .where("post.id = :id", { id: 1 })
                 .andWhere("post.counters.code = :code", { code: 111 })
-                .andWhere("post.counters.subcounters.version = :version", { version: 1 })
+                .andWhere("post.counters.subcntrs.version = :version", { version: 1 })
                 .getOne();
 
             expect(loadedPost!.should.be.eql(
@@ -169,7 +167,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                             { id: 1, name: "cars"},
                             { id: 2, name: "BMW"}
                         ],
-                        subcounters: {
+                        subcntrs: {
                             version: 1,
                             watches: 2,
                             watchedUserIds: [
@@ -196,9 +194,9 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             post1.counters.likes = 1;
             post1.counters.comments = 2;
             post1.counters.favorites = 3;
-            post1.counters.subcounters = new Subcounters();
-            post1.counters.subcounters.version = 1;
-            post1.counters.subcounters.watches = 2;
+            post1.counters.subcntrs = new Subcounters();
+            post1.counters.subcntrs.version = 1;
+            post1.counters.subcntrs.watches = 2;
             await connection.manager.save(post1);
 
             const post2 = new Post();
@@ -209,9 +207,9 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             post2.counters.likes = 3;
             post2.counters.comments = 4;
             post2.counters.favorites = 5;
-            post2.counters.subcounters = new Subcounters();
-            post2.counters.subcounters.version = 1;
-            post2.counters.subcounters.watches = 5;
+            post2.counters.subcntrs = new Subcounters();
+            post2.counters.subcntrs.version = 1;
+            post2.counters.subcntrs.watches = 5;
             await connection.manager.save(post2);
 
             const post3 = new Post();
@@ -222,9 +220,9 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             post3.counters.likes = 6;
             post3.counters.comments = 7;
             post3.counters.favorites = 8;
-            post3.counters.subcounters = new Subcounters();
-            post3.counters.subcounters.version = 2;
-            post3.counters.subcounters.watches = 10;
+            post3.counters.subcntrs = new Subcounters();
+            post3.counters.subcntrs.version = 2;
+            post3.counters.subcntrs.watches = 10;
             await connection.manager.save(post3);
 
             const post4 = new Post();
@@ -235,9 +233,9 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
             post4.counters.likes = 9;
             post4.counters.comments = 10;
             post4.counters.favorites = 11;
-            post4.counters.subcounters = new Subcounters();
-            post4.counters.subcounters.version = 3;
-            post4.counters.subcounters.watches = 10;
+            post4.counters.subcntrs = new Subcounters();
+            post4.counters.subcntrs.version = 3;
+            post4.counters.subcntrs.watches = 10;
             await connection.manager.save(post4);
 
             const category1 = new Category();
@@ -272,12 +270,12 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
 
             expect(loadedCategories[0].postIds).to.not.be.empty;
             expect(loadedCategories[0].postIds.length).to.be.equal(2);
-            expect(loadedCategories[0].postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcounters: { version: 1 }} });
-            expect(loadedCategories[0].postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcounters: { version: 1 }} });
+            expect(loadedCategories[0].postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
+            expect(loadedCategories[0].postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
             expect(loadedCategories[1].postIds).to.not.be.empty;
             expect(loadedCategories[1].postIds.length).to.be.equal(2);
-            expect(loadedCategories[1].postIds[0]).to.be.eql({ id: 3, counters: { code: 333, subcounters: { version: 2 }} });
-            expect(loadedCategories[1].postIds[1]).to.be.eql({ id: 4, counters: { code: 444, subcounters: { version: 3 }} });
+            expect(loadedCategories[1].postIds[0]).to.be.eql({ id: 3, counters: { code: 333, subcntrs: { version: 2 }} });
+            expect(loadedCategories[1].postIds[1]).to.be.eql({ id: 4, counters: { code: 444, subcntrs: { version: 3 }} });
 
             const loadedCategory = await connection.manager
                 .createQueryBuilder(Category, "category")
@@ -288,8 +286,8 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
 
             expect(loadedCategory!.postIds).to.not.be.empty;
             expect(loadedCategory!.postIds.length).to.be.equal(2);
-            expect(loadedCategory!.postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcounters: { version: 1 }} });
-            expect(loadedCategory!.postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcounters: { version: 1 }} });
+            expect(loadedCategory!.postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
+            expect(loadedCategory!.postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
 
             const loadedUsers = await connection.manager
                 .createQueryBuilder(User, "user")
@@ -299,12 +297,12 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
 
             expect(loadedUsers[0].postIds).to.not.be.empty;
             expect(loadedUsers[0].postIds.length).to.be.equal(2);
-            expect(loadedUsers[0].postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcounters: { version: 1 }} });
-            expect(loadedUsers[0].postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcounters: { version: 1 }} });
+            expect(loadedUsers[0].postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
+            expect(loadedUsers[0].postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
             expect(loadedUsers[1].postIds).to.not.be.empty;
             expect(loadedUsers[1].postIds.length).to.be.equal(2);
-            expect(loadedUsers[1].postIds[0]).to.be.eql({ id: 3, counters: { code: 333, subcounters: { version: 2 }} });
-            expect(loadedUsers[1].postIds[1]).to.be.eql({ id: 4, counters: { code: 444, subcounters: { version: 3 }} });
+            expect(loadedUsers[1].postIds[0]).to.be.eql({ id: 3, counters: { code: 333, subcntrs: { version: 2 }} });
+            expect(loadedUsers[1].postIds[1]).to.be.eql({ id: 4, counters: { code: 444, subcntrs: { version: 3 }} });
 
             const loadedUser = await connection.manager
                 .createQueryBuilder(User, "user")
@@ -315,8 +313,8 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
 
             expect(loadedUser!.postIds).to.not.be.empty;
             expect(loadedUser!.postIds.length).to.be.equal(2);
-            expect(loadedUser!.postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcounters: { version: 1 }} });
-            expect(loadedUser!.postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcounters: { version: 1 }} });
+            expect(loadedUser!.postIds[0]).to.be.eql({ id: 1, counters: { code: 111, subcntrs: { version: 1 }} });
+            expect(loadedUser!.postIds[1]).to.be.eql({ id: 2, counters: { code: 222, subcntrs: { version: 1 }} });
 
         })));
 

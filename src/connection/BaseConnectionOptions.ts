@@ -25,28 +25,21 @@ export interface BaseConnectionOptions {
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.
      */
-    readonly entities?: Function[]|string[];
+    readonly entities?: ((Function|string|EntitySchema<any>))[];
 
     /**
      * Subscribers to be loaded for this connection.
      * Accepts both subscriber classes and directories where from subscribers need to be loaded.
      * Directories support glob patterns.
      */
-    readonly subscribers?: Function[]|string[];
-
-    /**
-     * Entity schemas to be loaded for this connection.
-     * Accepts both entity schema classes and directories where from entity schemas need to be loaded.
-     * Directories support glob patterns.
-     */
-    readonly entitySchemas?: EntitySchema[]|string[];
+    readonly subscribers?: (Function|string)[];
 
     /**
      * Migrations to be loaded for this connection.
      * Accepts both migration classes and directories where from migrations need to be loaded.
      * Directories support glob patterns.
      */
-    readonly migrations?: Function[]|string[];
+    readonly migrations?: (Function|string)[];
 
     /**
      * Migrations table name, in case of different name from "migrations".

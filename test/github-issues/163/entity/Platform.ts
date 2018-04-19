@@ -22,10 +22,7 @@ export class Platform {
     })
     slug: string;
 
-    @ManyToMany(type => Game, game => game.platforms, {
-        cascadeInsert: true, // allow to insert a new game on platform save
-        cascadeUpdate: true, // allow to update an game on platform save
-    })
+    @ManyToMany(type => Game, game => game.platforms)
     games: Game[];
 
 }

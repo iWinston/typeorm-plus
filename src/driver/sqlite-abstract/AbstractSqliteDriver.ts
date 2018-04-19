@@ -1,7 +1,6 @@
 import {Driver} from "../Driver";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {AbstractSqliteQueryRunner} from "./AbstractSqliteQueryRunner";
 import {DateUtils} from "../../util/DateUtils";
 import {Connection} from "../../connection/Connection";
 import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
@@ -9,14 +8,15 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
-import {RandomGenerator} from "../../util/RandomGenerator";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
+import {OrmUtils} from "../../util/OrmUtils";
 
 /**
  * Organizes communication with sqlite DBMS.
  */
-export class AbstractSqliteDriver implements Driver {
+export abstract class AbstractSqliteDriver implements Driver {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -122,6 +122,21 @@ export class AbstractSqliteDriver implements Driver {
     ];
 
     /**
+     * Gets list of spatial column data types.
+     */
+    spatialTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [];
+
+    /**
      * Orm has special columns and we need to know what database column types should be for those types.
      * Column types are driver dependant.
      */
@@ -132,6 +147,7 @@ export class AbstractSqliteDriver implements Driver {
         updateDateDefault: "datetime('now')",
         version: "integer",
         treeLevel: "integer",
+        migrationId: "integer",
         migrationName: "varchar",
         migrationTimestamp: "bigint",
         cacheId: "int",
@@ -156,6 +172,15 @@ export class AbstractSqliteDriver implements Driver {
         this.connection = connection;
         this.options = connection.options as BaseConnectionOptions;
     }
+
+    // -------------------------------------------------------------------------
+    // Public Abstract
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a query runner used to execute database queries.
+     */
+    abstract createQueryRunner(mode: "master"|"slave"): QueryRunner;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -193,16 +218,6 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     /**
-     * Creates a query runner used to execute database queries.
-     */
-    createQueryRunner(mode: "master"|"slave" = "master") {
-        if (!this.queryRunner)
-            this.queryRunner = new AbstractSqliteQueryRunner(this);
-
-        return this.queryRunner;
-    }
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
@@ -222,10 +237,9 @@ export class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToTimeString(value);
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDatetimeString(value); // to string conversation needs because SQLite stores fate as integer number, when date came as Object
-
-        } else if (columnMetadata.isGenerated && columnMetadata.generationStrategy === "uuid" && !value) {
-            return RandomGenerator.uuid4();
+            // to string conversation needs because SQLite stores date as integer number, when date came as Object
+            // TODO: think about `toUTC` conversion
+            return DateUtils.mixedDateToUtcDatetimeString(value);
 
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
@@ -248,6 +262,19 @@ export class AbstractSqliteDriver implements Driver {
             value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+            /**
+             * Fix date conversion issue
+             *
+             * If the format of the date string is "2018-03-14 02:33:33.906", Safari (and iOS WKWebView) will convert it to an invalid date object.
+             * We need to modify the date string to "2018-03-14T02:33:33.906Z" and Safari will convert it correctly.
+             *
+             * ISO 8601
+             * https://www.w3.org/TR/NOTE-datetime
+             */
+            if (value && typeof value === "string") {
+                value = value.replace(" ", "T") + "Z";
+            }
+
             value = DateUtils.normalizeHydratedDate(value);
 
         } else if (columnMetadata.type === "date") {
@@ -273,18 +300,27 @@ export class AbstractSqliteDriver implements Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
+        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, []];
+            return [sql, builtParameters];
 
-        const builtParameters: any[] = [];
-        const keys = Object.keys(parameters).map(parameter => "(:" + parameter + "\\b)").join("|");
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            const value = parameters[key.substr(1)];
-            if (value instanceof Array) {
+            let value: any;
+            let isArray = false;
+            if (key.substr(0, 4) === ":...") {
+                isArray = true;
+                value = parameters[key.substr(4)];
+            } else {
+                value = parameters[key.substr(1)];
+            }
+
+            if (isArray) {
                 return value.map((v: any) => {
                     builtParameters.push(v);
-                    return "$" + builtParameters.length;
+                    return "?";
+                    // return "$" + builtParameters.length;
                 }).join(", ");
 
             } else if (value instanceof Function) {
@@ -292,7 +328,8 @@ export class AbstractSqliteDriver implements Driver {
 
             } else {
                 builtParameters.push(value);
-                return "$" + builtParameters.length;
+                return "?";
+                // return "$" + builtParameters.length;
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
@@ -306,9 +343,19 @@ export class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     *
+     * Returns only simple table name because all inherited drivers does not supports schema and database.
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return tableName;
+    }
+
+    /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
         if (column.type === Number || column.type === "int") {
             return "integer";
 
@@ -338,21 +385,23 @@ export class AbstractSqliteDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
-        if (typeof column.default === "number") {
-            return "" + column.default;
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
+        const defaultValue = columnMetadata.default;
 
-        } else if (typeof column.default === "boolean") {
-            return column.default === true ? "1" : "0";
+        if (typeof defaultValue === "number") {
+            return "" + defaultValue;
 
-        } else if (typeof column.default === "function") {
-            return column.default();
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "1" : "0";
 
-        } else if (typeof column.default === "string") {
-            return `'${column.default}'`;
+        } else if (typeof defaultValue === "function") {
+            return defaultValue();
+
+        } else if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
 
         } else {
-            return column.default;
+            return defaultValue;
         }
     }
 
@@ -360,22 +409,14 @@ export class AbstractSqliteDriver implements Driver {
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.isUnique;
+        return column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
     }
 
     /**
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-
-        if (column.length)
-            return column.length;
-
-        const normalizedType = this.normalizeType(column) as string;
-        if (this.dataTypeDefaults && this.dataTypeDefaults[normalizedType] && this.dataTypeDefaults[normalizedType].length)
-            return this.dataTypeDefaults[normalizedType].length!.toString();
-
-        return "";
+        return column.length ? column.length.toString() : "";
     }
 
     /**
@@ -386,14 +427,12 @@ export class AbstractSqliteDriver implements Driver {
 
         if (column.length) {
             type += "(" + column.length + ")";
-        } else if (column.precision && column.scale) {
+
+        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
-        } else if (column.precision) {
+
+        } else if (column.precision !== null && column.precision !== undefined) {
             type +=  "(" + column.precision + ")";
-        } else if (column.scale) {
-            type +=  "(" + column.scale + ")";
-        } else  if (this.dataTypeDefaults && this.dataTypeDefaults[column.type] && this.dataTypeDefaults[column.type].length) {
-            type +=  "(" + this.dataTypeDefaults[column.type].length!.toString() + ")";
         }
 
         if (column.isArray)
@@ -418,6 +457,86 @@ export class AbstractSqliteDriver implements Driver {
      */
     obtainSlaveConnection(): Promise<any> {
         return Promise.resolve();
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            let value: any;
+            if (generatedColumn.generationStrategy === "increment" && insertResult) {
+                value = insertResult;
+            // } else if (generatedColumn.generationStrategy === "uuid") {
+            //     value = insertValue[generatedColumn.databaseName];
+            }
+
+            if (!value) return map;
+            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
+        }, {} as ObjectLiteral);
+
+        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
+    }
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
+            if (!tableColumn)
+                return false; // we don't need new columns, we only need exist and changed
+
+            // console.log("table:", columnMetadata.entityMetadata.tableName);
+            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("==========================================");
+
+            return tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                || tableColumn.length !== columnMetadata.length
+                || tableColumn.precision !== columnMetadata.precision
+                || tableColumn.scale !== columnMetadata.scale
+                //  || tableColumn.comment !== columnMetadata.comment || // todo
+                || this.normalizeDefault(columnMetadata) !== tableColumn.default
+                || tableColumn.isPrimary !== columnMetadata.isPrimary
+                || tableColumn.isNullable !== columnMetadata.isNullable
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+        });
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Creates an escaped parameter.
+     */
+    createParameter(parameterName: string, index: number): string {
+        // return "$" + (index + 1);
+        return "?";
+        // return "$" + parameterName;
     }
 
     // -------------------------------------------------------------------------

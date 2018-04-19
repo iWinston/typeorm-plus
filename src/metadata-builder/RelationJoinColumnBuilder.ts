@@ -1,8 +1,10 @@
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -50,13 +52,16 @@ export class RelationJoinColumnBuilder {
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
      */
-    build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ForeignKeyMetadata|undefined {
+    build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): {
+      foreignKey: ForeignKeyMetadata|undefined,
+      uniqueConstraint: UniqueMetadata|undefined,
+    } {
         const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
         if (!referencedColumns.length)
-            return undefined; // this case is possible only for one-to-one non owning side
+            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible only for one-to-one non owning side
 
         const columns = this.collectColumns(joinColumns, relation, referencedColumns);
-        return new ForeignKeyMetadata({
+        const foreignKey = new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
             namingStrategy: this.connection.namingStrategy,
@@ -64,6 +69,25 @@ export class RelationJoinColumnBuilder {
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
         });
+
+        // Oracle does not allow both primary and unique constraints on the same column
+        if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
+            return { foreignKey, uniqueConstraint: undefined };
+
+        if (referencedColumns.length > 0 && relation.isOneToOne) {
+            const uniqueConstraint = new UniqueMetadata({
+                entityMetadata: relation.entityMetadata,
+                columns: foreignKey.columns,
+                args: {
+                    name: this.connection.namingStrategy.relationConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                    target: relation.entityMetadata.target,
+                }
+            });
+            uniqueConstraint.build(this.connection.namingStrategy);
+            return {foreignKey, uniqueConstraint};
+        }
+
+        return { foreignKey, uniqueConstraint: undefined };
     }
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -117,13 +141,16 @@ export class RelationJoinColumnBuilder {
                             name: joinColumnName,
                             type: referencedColumn.type,
                             length: referencedColumn.length,
+                            width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,
                             scale: referencedColumn.scale,
+                            zerofill: referencedColumn.zerofill,
+                            unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable,
+                            nullable: relation.isNullable
                         }
                     }
                 });

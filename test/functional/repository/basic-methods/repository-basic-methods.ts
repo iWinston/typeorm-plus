@@ -9,6 +9,7 @@ import {Question} from "./model/Question";
 import {Blog} from "./entity/Blog";
 import {Category} from "./entity/Category";
 import {DeepPartial} from "../../../../src/common/DeepPartial";
+import {EntitySchema} from "../../../../src";
 
 describe("repository > basic methods", () => {
 
@@ -20,13 +21,12 @@ describe("repository > basic methods", () => {
         const resourceDir = __dirname + "/";
         userSchema = require(resourceDir + "schema/user.json");
     }
+    const UserEntity = new EntitySchema<any>(userSchema);
+    const QuestionEntity = new EntitySchema<any>(questionSchema as any);
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post, Blog, Category],
-        entitySchemas: [userSchema, questionSchema],
-        schemaCreate: true,
-        dropSchema: true
+        entities: [Post, Blog, Category, UserEntity, QuestionEntity],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -322,6 +322,40 @@ describe("repository > basic methods", () => {
 
     });
 
+    describe("save", function () {
+        it("should update existing entity using transformers", async () => {
+            const connection = connections.find((c: Connection) => c.name === "sqlite");
+            if (!connection || (connection.options as any).skip === true) {
+                return;
+            }
+
+            const post = new Post();
+            const date = new Date("2018-01-01 01:00:00");
+            post.dateAdded = date;
+            post.title = "Post title";
+            post.id = 1;
+
+            const postRepository = connection.getRepository(Post);
+
+            await postRepository.save(post);
+
+            const dbPost = await postRepository.findOne(post.id) as Post;
+            dbPost.should.be.instanceOf(Post);
+            dbPost.dateAdded.should.be.instanceOf(Date);
+            dbPost.dateAdded.getTime().should.be.equal(date.getTime());
+
+            dbPost.title = "New title";
+            const saved = await postRepository.save(dbPost);
+
+            saved.should.be.instanceOf(Post);
+            
+            saved.id!.should.be.equal(1);
+            saved.title.should.be.equal("New title");
+            saved.dateAdded.should.be.instanceof(Date);
+            saved.dateAdded.getTime().should.be.equal(date.getTime());
+        });
+    });
+
     describe("preload also should also implement merge functionality", function() {
 
         it("if we preload entity from the plain object and merge preloaded object with plain object we'll have an object from the db with the replaced properties by a plain object's properties", () => Promise.all(connections.map(async connection => {
@@ -378,7 +412,9 @@ describe("repository > basic methods", () => {
             }
             await Promise.all(promises);
             // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
-            const result = await repository.query("SELECT MAX(blog.counter) as max from blog blog");
+            const query = `SELECT MAX(${connection.driver.escape("blog")}.${connection.driver.escape("counter")}) as ${connection.driver.escape("max")} ` +
+                ` FROM ${connection.driver.escape("blog")} ${connection.driver.escape("blog")}`;
+            const result = await repository.query(query);
             result[0].should.not.be.empty;
             result[0].max.should.not.be.empty;
         })));

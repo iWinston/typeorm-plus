@@ -6,6 +6,7 @@ export class ConnectionIsNotSetError extends Error {
 
     constructor(dbType: string) {
         super();
+        Object.setPrototypeOf(this, ConnectionIsNotSetError.prototype);
         this.message = `Connection with ${dbType} database is not established. Check connection configuration.`;
     }
 

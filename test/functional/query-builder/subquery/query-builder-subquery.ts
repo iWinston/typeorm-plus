@@ -14,8 +14,6 @@ describe("query builder > sub-query", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -161,7 +159,7 @@ describe("query builder > sub-query", () => {
 
         const posts = await connection
             .createQueryBuilder()
-            .select("usr.name", "name")
+            .select(`${connection.driver.escape("usr")}.${connection.driver.escape("name")}`, "name")
             .from("(" + userQb.getQuery() + ")", "usr")
             .setParameters(userQb.getParameters())
             .getRawMany();
@@ -182,7 +180,7 @@ describe("query builder > sub-query", () => {
 
         const posts = await connection
             .createQueryBuilder()
-            .select("usr.name", "name")
+            .select(`${connection.driver.escape("usr")}.${connection.driver.escape("name")}`, "name")
             .from(subQuery => {
                 return subQuery
                     .select("usr.name", "name")
@@ -208,7 +206,7 @@ describe("query builder > sub-query", () => {
 
         const posts = await connection
             .createQueryBuilder()
-            .select("usr.name", "name")
+            .select(`${connection.driver.escape("usr")}.${connection.driver.escape("name")}`, "name")
             .from(subQuery => {
                 return subQuery
                     .select("usr.name", "name")
@@ -237,7 +235,7 @@ describe("query builder > sub-query", () => {
                     .from(User, "usr")
                     .where("usr.registered = :registered", { registered: true });
             }, "usr")
-            .where("post.title = usr.name")
+            .where(`${connection.driver.escape("post")}.${connection.driver.escape("title")} = ${connection.driver.escape("usr")}.${connection.driver.escape("name")}`)
             .orderBy("post.id")
             .getMany();
 
@@ -309,13 +307,13 @@ describe("query builder > sub-query", () => {
         const posts = await connection
             .getRepository(Post)
             .createQueryBuilder("post")
-            .innerJoin("post.categories", "category", `category.name IN (${subQuery})`)
+            .innerJoin("post.categories", "category", `${connection.driver.escape("category")}.${connection.driver.escape("name")} IN (${subQuery})`)
             .orderBy("post.id")
             .getMany();
 
         posts.should.be.eql([
-            { id: 1, title: "Alex Messer", categories: [] },
-            { id: 2, title: "Dima Zotov", categories: [] },
+            { id: 1, title: "Alex Messer" },
+            { id: 2, title: "Dima Zotov" },
         ]);
     })));
 
@@ -333,7 +331,7 @@ describe("query builder > sub-query", () => {
             .createQueryBuilder("post")
             .innerJoin(subQuery => {
                 return subQuery.select().from("category", "category");
-            }, "category", `category.name IN (${joinConditionSubQuery})`)
+            }, "category", `${connection.driver.escape("category")}.${connection.driver.escape("name")} IN (${joinConditionSubQuery})`)
             .orderBy("post.id")
             .getMany();
 
@@ -362,7 +360,7 @@ describe("query builder > sub-query", () => {
         const posts = await connection
             .getRepository(Post)
             .createQueryBuilder("post")
-            .innerJoin("(" + joinSubQuery + ")", "category", `category.name IN (${joinConditionSubQuery})`)
+            .innerJoin("(" + joinSubQuery + ")", "category", `${connection.driver.escape("category")}.${connection.driver.escape("name")} IN (${joinConditionSubQuery})`)
             .orderBy("post.id")
             .getMany();
 

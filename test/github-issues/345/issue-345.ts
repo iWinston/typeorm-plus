@@ -10,8 +10,6 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -34,7 +32,7 @@ describe("github issues > Join query on ManyToMany relations not working", () =>
             .manager
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "category")
-            .where("category.category_id IN (:ids)", { ids: [21] })
+            .where("category.category_id IN (:...ids)", { ids: [21] })
             .getOne();
 
         expect(loadedPost).not.to.be.empty;

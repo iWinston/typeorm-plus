@@ -5,8 +5,10 @@ export class CustomRepositoryCannotInheritRepositoryError extends Error {
     name = "CustomRepositoryCannotInheritRepositoryError";
 
     constructor(repository: any) {
-        super(`Custom entity repository ${repository instanceof Function ? repository.name : repository.constructor.name} ` +
-            ` cannot inherit Repository class without entity being set in the @EntityRepository decorator.`);
+        super();
+        Object.setPrototypeOf(this, CustomRepositoryCannotInheritRepositoryError.prototype);
+        this.message = `Custom entity repository ${repository instanceof Function ? repository.name : repository.constructor.name} ` +
+            ` cannot inherit Repository class without entity being set in the @EntityRepository decorator.`;
     }
 
 }

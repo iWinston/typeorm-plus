@@ -6,14 +6,13 @@ import {Teacher} from "./entity/Teacher";
 import {Accountant} from "./entity/Accountant";
 import {Employee} from "./entity/Employee";
 import {Person} from "./entity/Person";
+import {expect} from "chai";
 
-describe.skip("table-inheritance > single-table > basic-functionality", () => {
+describe("table-inheritance > single-table > basic-functionality", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
+        entities: [__dirname + "/entity/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -64,6 +63,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedStudents = await connection.manager
             .createQueryBuilder(Student, "students")
+            .orderBy("students.id")
             .getMany();
 
         loadedStudents[0].should.have.all.keys("id", "name", "faculty");
@@ -77,6 +77,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedTeachers = await connection.manager
             .createQueryBuilder(Teacher, "teachers")
+            .orderBy("teachers.id")
             .getMany();
 
         loadedTeachers[0].should.have.all.keys("id", "name", "specialization", "salary");
@@ -92,6 +93,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         let loadedAccountants = await connection.manager
             .createQueryBuilder(Accountant, "accountants")
+            .orderBy("accountants.id")
             .getMany();
 
         loadedAccountants[0].should.have.all.keys("id", "name", "department", "salary");
@@ -173,6 +175,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         loadedStudents = await connection.manager
             .createQueryBuilder(Student, "students")
+            .orderBy("students.id")
             .getMany();
 
         loadedStudents.length.should.equal(1);
@@ -185,6 +188,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         loadedTeachers = await connection.manager
             .createQueryBuilder(Teacher, "teachers")
+            .orderBy("teachers.id")
             .getMany();
 
         loadedTeachers.length.should.equal(1);
@@ -198,6 +202,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         loadedAccountants = await connection.manager
             .createQueryBuilder(Accountant, "accountants")
+            .orderBy("accountants.id")
             .getMany();
 
         loadedAccountants.length.should.equal(1);
@@ -213,6 +218,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         const loadedEmployees = await connection.manager
             .createQueryBuilder(Employee, "employees")
+            .orderBy("employees.id")
             .getMany();
 
         loadedEmployees[0].should.have.all.keys("id", "name", "salary", "specialization");
@@ -230,6 +236,7 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
 
         const loadedPersons = await connection.manager
             .createQueryBuilder(Person, "persons")
+            .orderBy("persons.id")
             .getMany();
 
         loadedPersons[0].should.have.all.keys("id", "name", "faculty");
@@ -250,6 +257,87 @@ describe.skip("table-inheritance > single-table > basic-functionality", () => {
         (loadedPersons[2] as Accountant).department = "Bookkeeping";
         (loadedPersons[2] as Accountant).salary.should.equal(3000);
 
+    })));
+
+    it("should be able to save different child entities in bulk", () => Promise.all(connections.map(async connection => {
+
+        const student = new Student();
+        student.name = "Alice";
+        student.faculty = "Economics";
+
+        const employee = new Employee();
+        employee.name = "John";
+        employee.salary = 1000;
+
+        await connection.manager.save([student, employee]);
+
+        student.name.should.be.eql("Alice");
+        student.faculty.should.be.eql("Economics");
+        student.should.not.haveOwnProperty("department");
+        student.should.not.haveOwnProperty("specialization");
+        student.should.not.haveOwnProperty("salary");
+
+        employee.name.should.be.eql("John");
+        employee.salary.should.be.eql(1000);
+        employee.should.not.haveOwnProperty("department");
+        employee.should.not.haveOwnProperty("specialization");
+        employee.should.not.haveOwnProperty("faculty");
+    })));
+
+    it("should be able to find correct child entities when base class is used as entity metadata", () => Promise.all(connections.map(async connection => {
+
+        const student = new Student();
+        student.name = "Alice";
+        student.faculty = "Economics";
+        await connection.manager.save(student);
+
+        const employee = new Employee();
+        employee.name = "John";
+        employee.salary = 1000;
+        await connection.manager.save(employee);
+
+        const loadedEmployee1 = await connection.manager.findOne(Employee, 1);
+        expect(loadedEmployee1).to.be.empty;
+
+        const loadedEmployee2 = await connection.manager.findOne(Employee, 2);
+        loadedEmployee2!.should.be.instanceof(Employee);
+        expect(loadedEmployee2).not.to.be.empty;
+        loadedEmployee2!.id.should.be.eql(2);
+        loadedEmployee2!.name.should.be.eql("John");
+        loadedEmployee2!.salary.should.be.eql(1000);
+        loadedEmployee2!.should.not.haveOwnProperty("department");
+        loadedEmployee2!.should.not.haveOwnProperty("specialization");
+        loadedEmployee2!.should.not.haveOwnProperty("faculty");
+
+        const loadedStudent1 = await connection.manager.findOne(Student, 1);
+        loadedStudent1!.should.be.instanceof(Student);
+        loadedStudent1!.id.should.be.eql(1);
+        loadedStudent1!.name.should.be.eql("Alice");
+        loadedStudent1!.faculty.should.be.eql("Economics");
+        loadedStudent1!.should.not.haveOwnProperty("department");
+        loadedStudent1!.should.not.haveOwnProperty("specialization");
+        loadedStudent1!.should.not.haveOwnProperty("salary");
+
+        const loadedStudent2 = await connection.manager.findOne(Student, 2);
+        expect(loadedStudent2).to.be.empty;
+
+        const loadedPerson1 = await connection.manager.findOne(Person, 1);
+        loadedPerson1!.should.be.instanceof(Student);
+        loadedPerson1!.id.should.be.eql(1);
+        loadedPerson1!.name.should.be.eql("Alice");
+        (loadedPerson1! as Student).faculty.should.be.eql("Economics");
+        loadedPerson1!.should.not.haveOwnProperty("department");
+        loadedPerson1!.should.not.haveOwnProperty("specialization");
+        loadedPerson1!.should.not.haveOwnProperty("salary");
+
+        const loadedPerson2 = await connection.manager.findOne(Person, 2);
+        loadedPerson2!.should.be.instanceof(Employee);
+        loadedPerson2!.id.should.be.eql(2);
+        loadedPerson2!.name.should.be.eql("John");
+        (loadedPerson2! as Employee).salary.should.be.eql(1000);
+        loadedPerson2!.should.not.haveOwnProperty("department");
+        loadedPerson2!.should.not.haveOwnProperty("specialization");
+        loadedPerson2!.should.not.haveOwnProperty("faculty");
     })));
 
 });

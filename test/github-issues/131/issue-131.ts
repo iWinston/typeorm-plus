@@ -5,13 +5,11 @@ import {expect} from "chai";
 import {Student} from "./entity/Student";
 import {Employee} from "./entity/Employee";
 
-describe.skip("github issues > #131 Error with single table inheritance query without additional conditions", () => {
+describe("github issues > #131 Error with single table inheritance query without additional conditions", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

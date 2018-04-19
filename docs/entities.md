@@ -7,7 +7,7 @@
 * [Column types](#column-types)
     * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     * [Column types for `postgres`](#column-types-for-postgres)
-    * [Column types for `sqlite` / `websql`](#column-types-for-sqlite--websql--cordova)
+    * [Column types for `sqlite` / `cordova` / `react-native`](#column-types-for-sqlite--cordova--react-native)
     * [Column types for `mssql`](#column-types-for-mssql)
     * [`simple-array` column type](#simple-array-column-type)
     * [`simple-json` column type](#simple-json-column-type)
@@ -178,16 +178,16 @@ When you save entities using `save` it always tries to find a entity in the data
 If id/ids are found then it will update this row in the database. 
 If there is no row with the id/ids, a new row will be inserted.
  
-To find a entity by id you can use `manager.findOneById` or `repository.findOneById`. Example:
+To find a entity by id you can use `manager.findOne` or `repository.findOne`. Example:
 
 ```typescript
 // find one by id with single primary key
-const person = await connection.manager.findOneById(Person, 1);
-const person = await connection.getRepository(Person).findOneById(1);
+const person = await connection.manager.findOne(Person, 1);
+const person = await connection.getRepository(Person).findOne(1);
 
 // find one by id with composite primary keys
-const user = await connection.manager.findOneById(User, { firstName: "Umed", lastName: "Khudoiberdiev" });
-const user = await connection.getRepository(User).findOneById({ firstName: "Umed", lastName: "Khudoiberdiev" });
+const user = await connection.manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
+const user = await connection.getRepository(User).findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
 ### Special columns
@@ -238,23 +238,24 @@ or
 
 ### Column types for `mysql` / `mariadb`
 
-`int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `float`, `double`, 
-`real`, `datetime`, `time`, `timestamp`, `character`, `varchar`, `char`, `tinyblob`,
-`tinytext`, `mediumblob`, `mediumtext`, `blob`, `text`, `longblob`, `longtext`, `date`,
-`year`, `enum`, `json`
+`int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`, `dec`, `decimal`, `numeric`,
+`date`, `datetime`, `timestamp`, `time`, `year`, `char`, `varchar`, `nvarchar`, `text`, `tinytext`,
+`mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `json`, `binary`,
+`geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`, `multipolygon`,
+ `geometrycollection`
 
 ### Column types for `postgres`
 
-`int`, `int2`, `int4`, `int8`, `integer`, `smallint`, `bigint`, `float4`, `float8`,
-`numeric`, `decimal`, `real`, `double precision`, `time`, `time with time zone`,
-`time without time zone`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
-`character varying`, `character`, `varchar`, `char`, `text`, `citext`,
-`smallserial`, `serial2`, `serial`, `serial4`, `bigserial`, `serial8`, 
-`money`, `boolean`, `bool` `bytea`, `date`, `interval`, `point`, `line`, `lseg`, `box`, 
-`circle`, `path`, `polygon`, `cidr`, `inet`, `macaddr`, `bit`, `bit varying`,
- `varbit`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb` 
+`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`, 
+`float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`,
+`character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`,
+`timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
+`date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
+`enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
+`tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
+`tsrange`, `tstzrange`, `daterange`
 
-### Column types for `sqlite` / `websql` / `cordova`
+### Column types for `sqlite` / `cordova` / `react-native`
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
@@ -263,11 +264,17 @@ or
  
 ### Column types for `mssql`
 
-`int`, `tinyint`, `smallint`, `bigint`, `dec`, `decimal`, `numeric`, `float`, `dec`, `decimal`, 
-`numeric`, `real`, `datetime`, `datetime2`, `datetimeoffset`, `time`, `timestamp`, 
-`nvarchar`, `varchar`, `char`, `nchar`, `binary`, `varbinary`,
-`bit`, `smallmoney`, `money`, `text`, `ntext`, `image`, `smalldatetime`, `date`, `xml`, `varbinary`,
-`cursor`, `hierarchyid`, `sql_variant`, `table`
+`int`, `bigint`, `bit`, `decimal`, `money`, `numeric`, `smallint`, `smallmoney`, `tinyint`, `float`,
+`real`, `date`, `datetime2`, `datetime`, `datetimeoffset`, `smalldatetime`, `time`, `char`, `varchar`,
+`text`, `nchar`, `nvarchar`, `ntext`, `binary`, `image`, `varbinary`, `hierarchyid`, `sql_variant`,
+`timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`
+ 
+### Column types for `oracle`
+
+`char`, `nchar`, `nvarchar2`, `varchar2`, `long`, `raw`, `long raw`, `number`, `numeric`, `float`, `dec`,
+`decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
+`timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
+`nclob`, `rowid`, `urowid`
   
 ### `simple-array` column type
 
@@ -377,8 +384,13 @@ By default the column name is generated from the name of the property.
 You can change it by specifying your own name
 * `length: number` - Column type's length. For example if you want to create `varchar(150)` type 
 you specify column type and length options.
+* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+* `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 * `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
 By default column is `nullable: false`.
+* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
+Default value is `false`.
+* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value. 
 * `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
 * `unique: boolean` - Marks column as unique column (creates unique constraint).
@@ -388,14 +400,19 @@ By default column is `nullable: false`.
 * `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), 
 which represents the number of digits to the right of the decimal point and must not be greater than precision. 
 Used in some column types.
+* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. 
+If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
+* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
+* `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+* `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to
 marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
-* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
@@ -547,9 +564,10 @@ To learn more about closure table take a look at [this awesome presentation by B
 Example:
 
 ```typescript
-import {ClosureEntity, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
 
-@ClosureEntity()
+@Entity()
+@Tree("closure-table")
 export class Category {
 
     @PrimaryGeneratedColumn()

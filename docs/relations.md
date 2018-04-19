@@ -20,15 +20,11 @@ There are several types of relations:
 
 There are several options you can specify for relations:
 
-* `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods. If you use `QueryBuilder`, eager relations are disabled and you have to use `leftJoinAndSelect` to load the relation.
-* `cascadeInsert: boolean` - If set to true, the related object will be inserted into database if it does not exist yet.
-* `cascadeUpdate: boolean` - If set to true, the related object will be updated in the database on entity save.
-* `cascadeRemove: boolean` - If set to true, the related object will be removed from the database on entity save and without related object.
-* `cascadeAll: boolean` - Sets `cascadeInsert`, `cascadeUpdate`, `cascadeRemove` at once.
-* `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign keys should behave when referenced object is deleted.
+* `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity 
+* `cascade: boolean` - If set to true, the related object will be inserted and update in the database.
+* `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
 * `primary: boolean` - Indicates whether this relation's column will be a primary column or not.
 * `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
-It's not recommended to set it to false if you are using cascades in your relations.
 
 ## Cascades
 
@@ -70,7 +66,7 @@ export class Question {
     text: string;
     
     @ManyToMany(type => Category, category => category.questions, {
-        cascadeInsert: true
+        cascade: true
     })
     @JoinTable()
     categories: Category[];
@@ -91,24 +87,17 @@ await connection.manager.save(question);
 ```
 
 As you can see in this example we did not call `save` for `category1` and `category2`.
-They will be automatically inserted, because we set `cascadeInsert` to true.
-
-When using `cascadeUpdate`, `save` is called for each object that is in a relation with the entity being saved.
-This means that each entity in the relation will be automatically changed if they exist in the database.
-
-When using `cascadeRemove`, `remove` is called for each object missing in the relation.
-A good example of this method is the relation between `Question` and `Answer` entities.
-When you remove a `Question` which has an `answers: Answer[]` relation you want to remove all answers from the database as well.
+They will be automatically inserted, because we set `cascade` to true.
 
 Keep in mind - great power comes with great responsibility.
-Cascades may seem like a good and easy way to work with relations, 
+Cascades may seem like a good and easy way to work with relations,
 but they may also bring bugs and security issues when some undesired object is being saved into the database. 
 Also, they provide a less explicit way of saving new objects into the database.
 
 ## `@JoinColumn` options
 
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key, 
-but also allows you to customize join column name and referenced column name. 
+but also allows you to customize join column name and referenced column name.
 
 When we set `@JoinColumn`, it automtically creates a column in the database named `propertyName + referencedColumnName`.
 For example:
@@ -165,5 +154,5 @@ You can also change the name of the generated "junction" table.
 categories: Category[];
 ```
 
-If the destination table has composite primary keys, 
+If the destination table has composite primary keys,
 then an array of properties must be sent to `@JoinTable`.

@@ -9,7 +9,6 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        dropSchema: true
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -19,30 +18,26 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
         // create objects to save
         const testEntity1 = new TestEntity();
         testEntity1.name = "Entity #1";
+        await connection.manager.save(testEntity1);
 
         const testEntity2 = new TestEntity();
         testEntity2.name = "Entity #2";
+        await connection.manager.save(testEntity2);
 
         const testEntity3 = new TestEntity();
         testEntity3.name = "Entity #3";
+        await connection.manager.save(testEntity3);
 
         const testEntity4 = new TestEntity();
         testEntity4.name = "Entity #4";
-
-        // persist
-        await connection.manager.save([
-            testEntity1,
-            testEntity2,
-            testEntity3,
-            testEntity4
-        ]);
+        await connection.manager.save(testEntity4);
 
         const queryBuilder = connection.manager.createQueryBuilder(TestEntity, "testEntity");
 
         const subQuery = queryBuilder
             .subQuery()
             .from(TestEntity, "innerTestEntity")
-            .select(["id"])
+            .select(["innerTestEntity.id"])
             .where("innerTestEntity.id = :innerId", { innerId: 1 });
 
         const results = await queryBuilder

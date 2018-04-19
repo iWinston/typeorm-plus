@@ -15,7 +15,7 @@
 [ ] `postgres`
 [ ] `sqlite`
 [ ] `sqljs`
-[ ] `websql`
+[ ] `react-native`
 
 **TypeORM version:**
 

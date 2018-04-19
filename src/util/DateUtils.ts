@@ -14,9 +14,7 @@ export class DateUtils {
         if (!mixedDate)
             return mixedDate;
 
-        const date = typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
-
-        return date;
+        return typeof mixedDate === "string" ? new Date(mixedDate) : mixedDate as Date;
     }
 
     /**
@@ -111,7 +109,7 @@ export class DateUtils {
                 this.formatZerolessValue(value.getHours()) + ":" +
                 this.formatZerolessValue(value.getMinutes()) + ":" +
                 this.formatZerolessValue(value.getSeconds()) + "." +
-                this.formatMilliseconds(value.getUTCMilliseconds());
+                this.formatMilliseconds(value.getMilliseconds());
         }
 
         return value;
@@ -169,8 +167,8 @@ export class DateUtils {
         return JSON.stringify(value);
     }
 
-    static stringToSimpleJson(value: string) {
-        return JSON.parse(value);
+    static stringToSimpleJson(value: any) {
+        return typeof value === "string" ? JSON.parse(value) : value;
     }
 
     // -------------------------------------------------------------------------
@@ -191,10 +189,13 @@ export class DateUtils {
      * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
      */
     private static formatMilliseconds(value: number): string {
-        if (value < 100)
+        if (value < 10) {
+            return "00" + value;
+        } else if (value < 100) {
             return "0" + value;
-
-        return String(value);
+        } else {
+            return String(value);
+        }
     }
 
 }

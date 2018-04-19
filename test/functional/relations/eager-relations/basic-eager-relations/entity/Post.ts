@@ -20,10 +20,10 @@ export class Post {
 
     @ManyToMany(type => Category, { eager: true })
     @JoinTable()
-    primaryCategories: Category[];
+    categories1: Category[];
 
-    @ManyToMany(type => Category, category => category.secondaryPosts, { eager: true })
-    secondaryCategories: Category[];
+    @ManyToMany(type => Category, category => category.posts2, { eager: true })
+    categories2: Category[];
 
     @ManyToOne(type => User, { eager: true })
     author: User;

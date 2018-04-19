@@ -1,5 +1,5 @@
 /**
- * Describes column options.
+ * Describes join column options.
  */
 export interface JoinColumnOptions {
 

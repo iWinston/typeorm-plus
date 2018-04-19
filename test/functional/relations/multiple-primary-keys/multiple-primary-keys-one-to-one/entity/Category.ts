@@ -1,13 +1,13 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
-import {Index} from "../../../../../../src/decorator/Index";
 import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
 import {Post} from "./Post";
 import {Tag} from "./Tag";
+import {Unique} from "../../../../../../src";
 
 @Entity()
-@Index(["code", "version", "description"], { unique: true })
+@Unique(["code", "version", "description"])
 export class Category {
 
     @PrimaryColumn()
@@ -31,8 +31,8 @@ export class Category {
     @OneToOne(type => Post, post => post.categoryWithOptions)
     postWithOptions: Post;
 
-    @OneToOne(type => Post, post => post.categoryWithNonPrimaryColumns)
-    postWithNonPrimaryColumns: Post;
+    @OneToOne(type => Post, post => post.categoryWithNonPKColumns)
+    postWithNonPKColumns: Post;
 
     @OneToOne(type => Tag, tag => tag.category)
     tag: Tag;
@@ -40,7 +40,7 @@ export class Category {
     @OneToOne(type => Tag, tag => tag.categoryWithOptions)
     tagWithOptions: Tag;
 
-    @OneToOne(type => Tag, tag => tag.categoryWithNonPrimaryColumns)
-    tagWithNonPrimaryColumns: Tag;
+    @OneToOne(type => Tag, tag => tag.categoryWithNonPKColumns)
+    tagWithNonPKColumns: Tag;
 
 }

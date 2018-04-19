@@ -17,7 +17,7 @@ describe("github issues > #1504 Cannot eagerly query Entity with relation more t
 
         await connection
             .getRepository(TestEntity1)
-            .findOneById(1, { relations: [
+            .findOne(1, { relations: [
                 "Entity2",
                 "Entity2.Entity3",
                 "Entity2.Entity3.Entity4",

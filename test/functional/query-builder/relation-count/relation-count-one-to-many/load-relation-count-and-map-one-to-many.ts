@@ -11,8 +11,6 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -152,7 +150,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
         const loadedPosts = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
             .getMany();
 
         expect(loadedPosts[0]!.categoryCount).to.be.equal(2);
@@ -162,7 +160,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
         const loadedPost = await connection.manager
             .createQueryBuilder(Post, "post")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
             .where("post.id = :id", { id: 1 })
             .getOne();
 

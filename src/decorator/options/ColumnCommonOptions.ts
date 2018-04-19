@@ -44,6 +44,11 @@ export interface ColumnCommonOptions {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Column comment. Not supported by all database types.
      */
     comment?: string;
@@ -53,7 +58,7 @@ export interface ColumnCommonOptions {
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.
      */
-    isArray?: boolean;
+    array?: boolean;
 
     /**
      * Specifies a value transformer that is to be used to (un)marshal

@@ -23,6 +23,12 @@ export interface ColumnOptions {
     length?: string|number;
 
     /**
+     * Column type's display width. Used only on some column types in MySQL.
+     * For example, INT(4) specifies an INT with a display width of four digits.
+     */
+    width?: number;
+
+    /**
      * Indicates if column's value can be set to NULL.
      */
     nullable?: boolean;
@@ -46,6 +52,11 @@ export interface ColumnOptions {
     default?: any;
 
     /**
+     * ON UPDATE trigger. Works only for MySQL.
+     */
+    onUpdate?: string;
+
+    /**
      * Indicates if this column is a primary key.
      * Same can be achieved when @PrimaryColumn decorator is used.
      */
@@ -65,13 +76,24 @@ export interface ColumnOptions {
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
      * number of digits that are stored for the values.
      */
-    precision?: number;
+    precision?: number|null;
 
     /**
      * The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number;
+
+    /**
+     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
+     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
+     */
+    zerofill?: boolean;
+
+    /**
+     * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
+     */
+    unsigned?: boolean;
 
     /**
      * Defines a column character set.
@@ -90,13 +112,20 @@ export interface ColumnOptions {
     enum?: any[]|Object;
 
     /**
-     * Indicates if this column is an array.
-     * Can be simply set to true or array length can be specified.
-     * Supported only by postgres.
-     *
-     * @deprecated use array: true instead. Will be removed in 0.2.0
+     * Generated column expression. Supports only in MySQL.
      */
-    isArray?: boolean;
+    asExpression?: string;
+
+    /**
+     * Generated column type. Supports only in MySQL.
+     */
+    generatedType?: "VIRTUAL"|"STORED";
+
+    /**
+     * Return type of HSTORE column.
+     * Returns value as string or as object.
+     */
+    hstoreType?: "object"|"string";
 
     /**
      * Indicates if this column is an array.

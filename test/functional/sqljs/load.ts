@@ -38,10 +38,10 @@ describe("sqljs driver > load", () => {
 
     it("should throw an error if the file doesn't exist", () => Promise.all(connections.map(async connection => {
         const manager = getSqljsManager("sqljs");
-        const functionWithExecption = () => {
+        const functionWithException = () => {
             manager.loadDatabase("test/functional/sqljs/sqlite/test2.sqlite");
         };
 
-        expect(functionWithExecption).to.throw(/File .* does not exist/);
+        expect(functionWithException).to.throw(/File .* does not exist/);
     })));
 });

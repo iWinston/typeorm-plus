@@ -11,8 +11,9 @@ import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ColumnType} from "../types/ColumnTypes";
 import {MongoSchemaBuilder} from "../../schema-builder/MongoSchemaBuilder";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/schema/TableColumn";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
+import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Organizes communication with MongoDB.
@@ -59,9 +60,24 @@ export class MongoDriver implements Driver {
     supportedDataTypes: ColumnType[] = [];
 
     /**
+     * Gets list of spatial column data types.
+     */
+    spatialTypes: ColumnType[] = [];
+
+    /**
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support precision by a driver.
+     */
+    withPrecisionColumnTypes: ColumnType[] = [];
+
+    /**
+     * Gets list of column data types that support scale by a driver.
+     */
+    withScaleColumnTypes: ColumnType[] = [];
 
     /**
      * Mongodb does not need to have a strong defined mapped column types because they are not used in schema sync.
@@ -73,6 +89,7 @@ export class MongoDriver implements Driver {
         updateDateDefault: "",
         version: "int",
         treeLevel: "int",
+        migrationId: "int",
         migrationName: "int",
         migrationTimestamp: "int",
         cacheId: "int",
@@ -163,10 +180,11 @@ export class MongoDriver implements Driver {
                 loggerLevel: this.options.loggerLevel,
                 logger: this.options.logger,
                 authMechanism: this.options.authMechanism
-            }, (err: any, dbConnection: any) => {
+            }, (err: any, client: any) => {
                 if (err) return fail(err);
 
-                this.queryRunner = new MongoQueryRunner(this.connection, dbConnection);
+                this.queryRunner = new MongoQueryRunner(this.connection, client);
+                Object.assign(this.queryRunner, { manager: this.connection.manager });
                 ok();
             });
         });
@@ -208,7 +226,7 @@ export class MongoDriver implements Driver {
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral): [string, any[]] {
+    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
         throw new Error(`This operation is not supported by Mongodb driver.`);
     }
 
@@ -217,6 +235,14 @@ export class MongoDriver implements Driver {
      */
     escape(columnName: string): string {
         return columnName;
+    }
+
+    /**
+     * Build full table name with database name, schema name and table name.
+     * E.g. "myDB"."mySchema"."myTable"
+     */
+    buildTableName(tableName: string, schema?: string, database?: string): string {
+        return tableName;
     }
 
     /**
@@ -240,14 +266,14 @@ export class MongoDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number, scale?: number }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(column: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string {
         throw new Error(`MongoDB is schema-less, not supported by this driver.`);
     }
 
@@ -288,6 +314,42 @@ export class MongoDriver implements Driver {
      */
     obtainSlaveConnection(): Promise<any> {
         return Promise.resolve();
+    }
+
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertedId: any) {
+        return metadata.objectIdColumn!.createValueMap(insertedId);
+    }
+
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
+        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    }
+
+    /**
+     * Returns true if driver supports RETURNING / OUTPUT statement.
+     */
+    isReturningSqlSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Returns true if driver supports uuid values generation on its own.
+     */
+    isUUIDGenerationSupported(): boolean {
+        return false;
+    }
+
+    /**
+     * Creates an escaped parameter.
+     */
+    createParameter(parameterName: string, index: number): string {
+        return "";
     }
 
     // -------------------------------------------------------------------------

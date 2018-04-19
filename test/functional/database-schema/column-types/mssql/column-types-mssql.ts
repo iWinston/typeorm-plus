@@ -6,15 +6,13 @@ import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {DateUtils} from "../../../../../src/util/DateUtils";
 
-describe("database schema > column types > mssql", () => {
+describe("database schema > column types > mssql", () => { // https://github.com/tediousjs/tedious/issues/722
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
-            schemaCreate: true,
-            dropSchema: true,
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -63,11 +61,14 @@ describe("database schema > column types > mssql", () => {
         post.timeObj = new Date();
         post.time = "15:30:00";
         post.datetimeoffset = new Date();
+        post.geometry1 = "LINESTRING (100 100, 20 180, 180 180)";
+        post.geometry2 = "POLYGON ((0 0, 150 0, 150 150, 0 150, 0 0))";
+        post.geometry3 = "GEOMETRYCOLLECTION (POINT (4 0), LINESTRING (4 2, 5 3), POLYGON ((0 0, 3 0, 3 3, 0 3, 0 0), (1 1, 1 2, 2 2, 2 1, 1 1)))";
         post.simpleArray = ["A", "B", "C"];
         post.simpleJson = { param: "VALUE" };
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
         loadedPost.bit.should.be.equal(post.bit);
@@ -99,6 +100,9 @@ describe("database schema > column types > mssql", () => {
         // loadedPost.datetime.getTime().should.be.equal(post.datetime.getTime());
         // loadedPost.datetime2.getTime().should.be.equal(post.datetime2.getTime());
         // loadedPost.datetimeoffset.getTime().should.be.equal(post.datetimeoffset.getTime());
+        loadedPost.geometry1.should.be.equal(post.geometry1);
+        loadedPost.geometry2.should.be.equal(post.geometry2);
+        loadedPost.geometry3.should.be.equal(post.geometry3);
         loadedPost.smalldatetime.getTime().should.be.equal(post.smalldatetime.getTime());
         loadedPost.timeObj.should.be.equal(DateUtils.mixedTimeToString(post.timeObj));
         loadedPost.time.should.be.equal(post.time);
@@ -109,7 +113,6 @@ describe("database schema > column types > mssql", () => {
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
         table!.findColumnByName("tinyint")!.type.should.be.equal("tinyint");
         table!.findColumnByName("smallint")!.type.should.be.equal("smallint");
@@ -124,19 +127,13 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("money")!.type.should.be.equal("money");
         table!.findColumnByName("uniqueidentifier")!.type.should.be.equal("uniqueidentifier");
         table!.findColumnByName("char")!.type.should.be.equal("char");
-        table!.findColumnByName("char")!.length!.should.be.equal("1");
         table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
-        table!.findColumnByName("varchar")!.length!.should.be.equal("255");
         table!.findColumnByName("text")!.type.should.be.equal("text");
         table!.findColumnByName("nchar")!.type.should.be.equal("nchar");
-        table!.findColumnByName("nchar")!.length!.should.be.equal("1");
         table!.findColumnByName("nvarchar")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("nvarchar")!.length!.should.be.equal("255");
         table!.findColumnByName("ntext")!.type.should.be.equal("ntext");
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
-        table!.findColumnByName("binary")!.length!.should.be.equal("1");
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
-        table!.findColumnByName("varbinary")!.length!.should.be.equal("1");
         table!.findColumnByName("image")!.type.should.be.equal("image");
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("dateObj")!.type.should.be.equal("date");
@@ -146,6 +143,7 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("time")!.type.should.be.equal("time");
         table!.findColumnByName("timeObj")!.type.should.be.equal("time");
         table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
+        table!.findColumnByName("geometry1")!.type.should.be.equal("geometry");
         table!.findColumnByName("simpleArray")!.type.should.be.equal("ntext");
         table!.findColumnByName("simpleJson")!.type.should.be.equal("ntext");
 
@@ -163,7 +161,6 @@ describe("database schema > column types > mssql", () => {
         post.decimal = 50;
         post.dec = 60;
         post.numeric = 70;
-        post.float = 5.25;
         post.char = "AAA";
         post.varchar = "This is varchar";
         post.nchar = "AAA";
@@ -175,7 +172,7 @@ describe("database schema > column types > mssql", () => {
         post.datetimeoffset = new Date();
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
@@ -184,7 +181,6 @@ describe("database schema > column types > mssql", () => {
         loadedPost.decimal.should.be.equal(post.decimal);
         loadedPost.dec.should.be.equal(post.dec);
         loadedPost.numeric.should.be.equal(post.numeric);
-        loadedPost.float.should.be.equal(post.float);
         loadedPost.char.should.be.equal(post.char);
         loadedPost.varchar.should.be.equal(post.varchar);
         loadedPost.nchar.should.be.equal(post.nchar);
@@ -207,8 +203,6 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
         table!.findColumnByName("numeric")!.precision!.should.be.equal(10);
         table!.findColumnByName("numeric")!.scale!.should.be.equal(5);
-        table!.findColumnByName("float")!.type.should.be.equal("real");
-        table!.findColumnByName("float")!.precision!.should.be.equal(24);
         table!.findColumnByName("char")!.type.should.be.equal("char");
         table!.findColumnByName("char")!.length!.should.be.equal("3");
         table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
@@ -222,11 +216,11 @@ describe("database schema > column types > mssql", () => {
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
         table!.findColumnByName("varbinary")!.length!.should.be.equal("5");
         table!.findColumnByName("datetime2")!.type.should.be.equal("datetime2");
-        table!.findColumnByName("datetime2")!.precision!.should.be.equal(5);
+        table!.findColumnByName("datetime2")!.precision!.should.be.equal(4);
         table!.findColumnByName("time")!.type.should.be.equal("time");
-        table!.findColumnByName("time")!.precision!.should.be.equal(6);
+        table!.findColumnByName("time")!.precision!.should.be.equal(5);
         table!.findColumnByName("datetimeoffset")!.type.should.be.equal("datetimeoffset");
-        table!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(7);
+        table!.findColumnByName("datetimeoffset")!.precision!.should.be.equal(6);
 
     })));
 
@@ -246,7 +240,7 @@ describe("database schema > column types > mssql", () => {
         post.datetime.setMilliseconds(0); // set milliseconds to zero because the SQL Server datetime type only has a 1/300 ms (~3.33̅ ms) resolution
         await postRepository.save(post);
 
-        const loadedPost = (await postRepository.findOneById(1))!;
+        const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.id.should.be.equal(post.id);
         loadedPost.name.should.be.equal(post.name);
         loadedPost.bit.should.be.equal(post.bit);
@@ -255,10 +249,8 @@ describe("database schema > column types > mssql", () => {
 
         table!.findColumnByName("id")!.type.should.be.equal("int");
         table!.findColumnByName("name")!.type.should.be.equal("nvarchar");
-        table!.findColumnByName("name")!.length!.should.be.equal("255");
         table!.findColumnByName("bit")!.type.should.be.equal("bit");
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
-        table!.findColumnByName("binary")!.length!.should.be.equal("1");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
 
     })));

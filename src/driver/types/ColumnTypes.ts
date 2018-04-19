@@ -1,5 +1,5 @@
 /**
- * Column types where precision and scale properties are used.
+ * Column types used for @PrimaryGeneratedColumn() decorator.
  */
 export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
     |"int2" // postgres, sqlite
@@ -35,17 +35,13 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"time without time zone" // postgres
     |"timestamp" // mysql, postgres, mssql, oracle
     |"timestamp without time zone" // postgres
-    |"timestamp with time zone"; // postgres, oracle
+    |"timestamp with time zone" // postgres, oracle
+    |"timestamp with local time zone"; // oracle
 
 /**
  * Column types where column length is used.
  */
-export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlite
-    |"tinyint" // mysql, mssql, sqlite
-    |"smallint" // mysql, postgres, mssql, oracle, sqlite
-    |"mediumint" // mysql, sqlite
-    |"bigint" // mysql, postgres, mssql, sqlite
-    |"character varying" // postgres
+export type WithLengthColumnType = "character varying" // postgres
     |"varying character" // sqlite
     |"nvarchar" // mssql
     |"character" // mysql, postgres, sqlite
@@ -55,8 +51,15 @@ export type WithLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqli
     |"nchar" // mssql, oracle, sqlite
     |"varchar2" // oracle
     |"nvarchar2" // oracle, sqlite
+    |"raw" // oracle
     |"binary" // mssql
     |"varbinary"; // mssql
+
+export type WithWidthColumnType = "tinyint" // mysql
+    |"smallint" // mysql
+    |"mediumint" // mysql
+    |"int" // mysql
+    |"bigint"; // mysql
 
 /**
  * All other regular column types.
@@ -93,6 +96,7 @@ export type SimpleColumnType =
     |"text" // mysql, postgres, mssql, sqlite
     |"ntext" // mssql
     |"citext" // postgres
+    |"hstore" // postgres
     |"longblob" // mysql
     |"longtext" // mysql
     |"bytea" // postgres
@@ -105,22 +109,39 @@ export type SimpleColumnType =
     |"image" // mssql
 
     // date types
+    |"timetz"
+    |"timestamptz"
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite
-    |"interval year" // oracle
-    |"interval day" // oracle
+    |"interval year to month" // oracle
+    |"interval day to second" // oracle
     |"interval" // postgres
     |"year" // mysql
 
     // geometric types
-    |"point" // postgres
+    |"point" // postgres, mysql
     |"line" // postgres
     |"lseg" // postgres
     |"box" // postgres
     |"circle" // postgres
     |"path" // postgres
-    |"polygon" // postgres
+    |"polygon" // postgres, mysql
+    |"geography" // mssql
+    |"geometry" // mysql
+    |"linestring" // mysql
+    |"multipoint" // mysql
+    |"multilinestring" // mysql
+    |"multipolygon" // mysql
+    |"geometrycollection" // mysql
+
+    // range types
+    |"int4range" // postgres
+    |"int8range" // postgres
+    |"numrange" // postgres
+    |"tsrange" // postgres
+    |"tstzrange" // postgres
+    |"daterange" // postgres
 
     // other types
     |"enum" // mysql, postgres
@@ -137,10 +158,8 @@ export type SimpleColumnType =
     |"json" // mysql, postgres
     |"jsonb" // postgres
     |"varbinary" // mssql
-    |"cursor" // mssql
     |"hierarchyid" // mssql
     |"sql_variant" // mssql
-    |"table" // mssql
     |"rowid" // oracle
     |"urowid" // oracle
     |"uniqueidentifier"; // mssql
@@ -150,282 +169,9 @@ export type SimpleColumnType =
  */
 export type ColumnType = WithPrecisionColumnType
     |WithLengthColumnType
+    |WithWidthColumnType
     |SimpleColumnType
     |BooleanConstructor
     |DateConstructor
     |NumberConstructor
     |StringConstructor;
-
-// "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
-// "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"jsonb"|"simple_array"|"uuid";
-
-// -------------------------------------------------------------------------
-// Merged Types
-// -------------------------------------------------------------------------
-/*
-/!**
- * Column types where column length is used.
- *!/
-export type WithLengthColumnType =
-    VarcharColumnType|
-    CharColumnType|
-    IntervalColumnType|
-    BitColumnType|
-    VarbitColumnType;
-
-/!**
- * Column types where time options are used.
- *!/
-export type WithTimeColumnType =
-    TimeColumnType|
-    TimestampColumnType;
-
-/!**
- * All other column types without extra options used.
- *!/
-export type SimpleColumnType =
-    SmallintColumnType|
-    IntegerColumnType|
-    BigintColumnType|
-    DecimalColumnType|
-    RealColumnType|
-    DoublePrecisionColumnType|
-    SmallserialColumnType|
-    SerialColumnType|
-    BigserialColumnType|
-    MoneyColumnType|
-    TextColumnType|
-    ByteaColumnType|
-    DateColumnType|
-    BooleanColumnType|
-    PointColumnType|
-    LineColumnType|
-    LsegColumnType|
-    BoxColumnType|
-    CircleColumnType|
-    PathColumnType|
-    PolygonColumnType|
-    CidrColumnType|
-    InetColumnType|
-    MacaddrColumnType|
-    TsvectorColumnType|
-    TsqueryColumnType|
-    UUIDColumnType|
-    XmlColumnType|
-    JsonColumnType|
-    JsonbColumnType;
-
-/!**
- * All column types supported by a database.
- *!/
-export type AllColumnType =
-    SimpleColumnType|
-    WithLengthColumnType|
-    WithTimeColumnType|
-    NumericColumnType|
-    EnumColumnType;
-
-
-/!**
- * All data types that column can be.
- *!/
-export type ColumnType =
-    "tinyint"|
-    "smallint"|
-    "int2"|
-    "mediumint"|
-    "integer"|
-    "int"|
-    "int4"|
-    "bigint"|
-    "int8"|
-    "decimal"|
-    "numeric"|
-    "real"|
-    "float4"|
-    "float"|
-    "double"|
-    "double precision"|
-    "numeric"|
-    "decimal"|
-    "string"|"text"|"number"|"integer"|"int"|"smallint"|"bigint"|"float"|"double"|
-                         "decimal"|"date"|"time"|"datetime"|"boolean"|"json"|"jsonb"|"simple_array"|"uuid";*/
-/*
-
-/!**
- * All data types that column can be.
- *!/
-export class ColumnTypes {
-
-    /!**
-     * SQL VARCHAR type. Your class's property type should be a "string".
-     *!/
-    static STRING: ColumnType = "string";
-
-    /!**
-     * SQL CLOB type. Your class's property type should be a "string".
-     *!/
-    static TEXT: ColumnType = "text";
-
-    /!**
-     * SQL FLOAT type. Your class's property type should be a "number".
-     *!/
-    static NUMBER: ColumnType = "number";
-
-    /!**
-     * SQL INT type. Your class's property type should be a "number".
-     *!/
-    static INTEGER: ColumnType = "integer";
-
-    /!**
-     * SQL INT type. Your class's property type should be a "number".
-     *!/
-    static INT: ColumnType = "int";
-
-    /!**
-     * SQL SMALLINT type. Your class's property type should be a "number".
-     *!/
-    static SMALLINT: ColumnType = "smallint";
-
-    /!**
-     * SQL BIGINT type. Your class's property type should be a "number".
-     *!/
-    static BIGINT: ColumnType = "bigint";
-
-    /!**
-     * SQL FLOAT type. Your class's property type should be a "number".
-     *!/
-    static FLOAT: ColumnType = "float";
-
-    /!**
-     * SQL FLOAT type. Your class's property type should be a "number".
-     *!/
-    static DOUBLE: ColumnType = "double";
-
-    /!**
-     * SQL DECIMAL type. Your class's property type should be a "string".
-     *!/
-    static DECIMAL: ColumnType = "decimal";
-
-    /!**
-     * SQL DATETIME type. Your class's property type should be a "Date" object.
-     *!/
-    static DATE: ColumnType = "date";
-
-    /!**
-     * SQL TIME type. Your class's property type should be a "Date" object.
-     *!/
-    static TIME: ColumnType = "time";
-
-    /!**
-     * SQL DATETIME/TIMESTAMP type. Your class's property type should be a "Date" object.
-     *!/
-    static DATETIME: ColumnType = "datetime";
-
-    /!**
-     * SQL BOOLEAN type. Your class's property type should be a "boolean".
-     *!/
-    static BOOLEAN: ColumnType = "boolean";
-
-    /!**
-     * SQL CLOB type. Your class's property type should be any Object.
-     *!/
-    static JSON: ColumnType = "json";
-
-    /!**
-     * Postgres jsonb type. Your class's property type should be any Object.
-     *!/
-    static JSONB: ColumnType = "jsonb";
-
-    /!**
-     * SQL CLOB type. Your class's property type should be array of string. Note: value in this column should not contain
-     * a comma (",") since this symbol is used to create a string from the array, using .join(",") operator.
-     *!/
-    static SIMPLE_ARRAY: ColumnType = "simple_array";
-
-    /!**
-     * UUID type. Serialized to a string in typescript or javascript
-     *!/
-    static UUID: ColumnType = "uuid";
-
-    /!**
-     * Checks if given type in a string format is supported by ORM.
-     *!/
-    static isTypeSupported(type: string) {
-        return this.supportedTypes.indexOf(<ColumnType> type) !== -1;
-    }
-
-    /!**
-     * Returns list of all supported types by the ORM.
-     *!/
-    static get supportedTypes() {
-        return [
-            this.STRING,
-            this.TEXT,
-            this.NUMBER,
-            this.INTEGER,
-            this.INT,
-            this.SMALLINT,
-            this.BIGINT,
-            this.FLOAT,
-            this.DOUBLE,
-            this.DECIMAL,
-            this.DATE,
-            this.TIME,
-            this.DATETIME,
-            this.BOOLEAN,
-            this.JSON,
-            this.JSONB,
-            this.SIMPLE_ARRAY,
-            this.UUID
-        ];
-    }
-
-    /!**
-     * Tries to guess a column type from the given function.
-     *!/
-    static determineTypeFromFunction(type: Function): ColumnType|undefined {
-        if (type instanceof Date) {
-            return ColumnTypes.DATETIME;
-
-        } else if (type instanceof Function) {
-            const typeName = (<any>type).name.toLowerCase();
-            switch (typeName) {
-                case "number":
-                    return ColumnTypes.NUMBER;
-                case "boolean":
-                    return ColumnTypes.BOOLEAN;
-                case "string":
-                    return ColumnTypes.STRING;
-                case "date":
-                    return ColumnTypes.DATETIME;
-                case "object":
-                    return ColumnTypes.JSON;
-            }
-
-        } else if (type instanceof Object) {
-            return ColumnTypes.JSON;
-
-        }
-
-        return undefined;
-    }
-
-    static typeToString(type: Function): string {
-        return (type as any).name.toLowerCase();
-    }
-
-    /!**
-     * Checks if column type is numeric.
-     *!/
-    static isNumeric(type: ColumnType) {
-        return  type === ColumnTypes.NUMBER ||
-                type === ColumnTypes.INT ||
-                type === ColumnTypes.INTEGER ||
-                type === ColumnTypes.BIGINT ||
-                type === ColumnTypes.SMALLINT ||
-                type === ColumnTypes.DOUBLE ||
-                type === ColumnTypes.FLOAT;
-    }
-
-}*/

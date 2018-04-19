@@ -1,10 +1,10 @@
 import {MissingDriverError} from "../error/MissingDriverError";
 import {MongoDriver} from "./mongodb/MongoDriver";
-import {WebsqlDriver} from "./websql/WebsqlDriver";
 import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
 import {OracleDriver} from "./oracle/OracleDriver";
 import {SqliteDriver} from "./sqlite/SqliteDriver";
 import {CordovaDriver} from "./cordova/CordovaDriver";
+import {ReactNativeDriver} from "./react-native/ReactNativeDriver";
 import {SqljsDriver} from "./sqljs/SqljsDriver";
 import {MysqlDriver} from "./mysql/MysqlDriver";
 import {PostgresDriver} from "./postgres/PostgresDriver";
@@ -32,14 +32,14 @@ export class DriverFactory {
                 return new SqliteDriver(connection);
             case "cordova":
                 return new CordovaDriver(connection);
+            case "react-native":
+                return new ReactNativeDriver(connection);
             case "sqljs":
                 return new SqljsDriver(connection);
             case "oracle":
                 return new OracleDriver(connection);
             case "mssql":
                 return new SqlServerDriver(connection);
-            case "websql":
-                return new WebsqlDriver(connection);
             case "mongodb":
                 return new MongoDriver(connection);
             default:

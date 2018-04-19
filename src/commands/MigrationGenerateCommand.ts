@@ -3,6 +3,8 @@ import {CommandUtils} from "./CommandUtils";
 import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {camelCase} from "../util/StringUtils";
+
 const chalk = require("chalk");
 
 /**
@@ -10,7 +12,7 @@ const chalk = require("chalk");
  */
 export class MigrationGenerateCommand {
 
-    command = "migrations:generate";
+    command = "migration:generate";
     describe = "Generates a new migration file with sql needs to be executed to update schema.";
 
     builder(yargs: any) {
@@ -61,24 +63,24 @@ export class MigrationGenerateCommand {
                 logging: false
             });
             connection = await createConnection(connectionOptions);
-            const sqlQueries = await connection.driver.createSchemaBuilder().log();
+            const sqlInMemory = await connection.driver.createSchemaBuilder().log();
             const upSqls: string[] = [], downSqls: string[] = [];
 
             // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
             // we are using simple quoted string instead of template string syntax
             if (connection.driver instanceof MysqlDriver) {
-                sqlQueries.forEach(query => {
-                    const queryString = typeof query === "string" ? query : query.up;
-                    upSqls.push("        await queryRunner.query(\"" + queryString.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
-                    if (typeof query !== "string" && query.down)
-                        downSqls.push("        await queryRunner.query(\"" + query.down.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.upQueries.forEach(query => {
+                    upSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                });
+                sqlInMemory.downQueries.forEach(query => {
+                    downSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
             } else {
-                sqlQueries.forEach(query => {
-                    const queryString = typeof query === "string" ? query : query.up;
-                    upSqls.push("        await queryRunner.query(`" + queryString.replace(new RegExp("`", "g"), "\\`") + "`);");
-                    if (typeof query !== "string" && query.down)
-                        downSqls.push("        await queryRunner.query(`" + query.down.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.upQueries.forEach(query => {
+                    upSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                });
+                sqlInMemory.downQueries.forEach(query => {
+                    downSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
 
@@ -113,7 +115,7 @@ export class MigrationGenerateCommand {
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${name}${timestamp} implements MigrationInterface {
+export class ${camelCase(name)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
 ${upSqls.join(`

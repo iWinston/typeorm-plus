@@ -2,6 +2,7 @@ import {ColumnMetadata} from "./ColumnMetadata";
 import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {OnDeleteType} from "./types/OnDeleteType";
+import {OnUpdateType} from "./types/OnUpdateType";
 
 /**
  * Contains all information about entity's foreign key.
@@ -38,14 +39,14 @@ export class ForeignKeyMetadata {
     onDelete?: OnDeleteType;
 
     /**
-     * Gets the table name to which this foreign key is applied.
+     * What to do with a relation on update of the row containing a foreign key.
      */
-    tableName: string;
+    onUpdate?: OnUpdateType;
 
     /**
      * Gets the table name to which this foreign key is referenced.
      */
-    referencedTableName: string;
+    referencedTablePath: string;
 
     /**
      * Gets foreign key name.
@@ -72,13 +73,15 @@ export class ForeignKeyMetadata {
         namingStrategy?: NamingStrategyInterface,
         columns: ColumnMetadata[],
         referencedColumns: ColumnMetadata[],
-        onDelete?: OnDeleteType
+        onDelete?: OnDeleteType,
+        onUpdate?: OnUpdateType
     }) {
         this.entityMetadata = options.entityMetadata;
         this.referencedEntityMetadata = options.referencedEntityMetadata;
         this.columns = options.columns;
         this.referencedColumns = options.referencedColumns;
         this.onDelete = options.onDelete;
+        this.onUpdate = options.onUpdate;
         if (options.namingStrategy)
             this.build(options.namingStrategy);
     }
@@ -94,9 +97,8 @@ export class ForeignKeyMetadata {
     build(namingStrategy: NamingStrategyInterface) {
         this.columnNames = this.columns.map(column => column.databaseName);
         this.referencedColumnNames = this.referencedColumns.map(column => column.databaseName);
-        this.tableName = this.entityMetadata.tableName;
-        this.referencedTableName = this.referencedEntityMetadata.tableName;
-        this.name = namingStrategy.foreignKeyName(this.tableName, this.columnNames, this.referencedEntityMetadata.tableName, this.referencedColumnNames);
+        this.referencedTablePath = this.referencedEntityMetadata.tablePath;
+        this.name = namingStrategy.foreignKeyName(this.entityMetadata.tablePath, this.columnNames);
     }
 
 }

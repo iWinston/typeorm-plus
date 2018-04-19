@@ -136,7 +136,7 @@ export class PlatformTools {
 
 /**
  * These classes are needed for stream operations or
- * in the mongodb driver. both aren't supported in the browser
+ * in the mongodb driver. Both aren't supported in the browser.
  */
 export class EventEmitter {}
 
@@ -145,3 +145,13 @@ export class Readable {}
 export class Writable {}
 
 export interface ReadStream {}
+
+/**
+ * This loads a polyfill to enable Buffers in the browser.
+ */
+interface Window {
+    Buffer: any;
+}
+
+declare var window: Window;
+window.Buffer = require("buffer/").Buffer;

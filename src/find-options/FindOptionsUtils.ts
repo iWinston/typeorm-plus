@@ -26,9 +26,11 @@ export class FindOptionsUtils {
                     possibleOptions.relations instanceof Array ||
                     possibleOptions.join instanceof Object ||
                     possibleOptions.order instanceof Object ||
-                    (possibleOptions.cache instanceof Object ||
+                    possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
-                    typeof possibleOptions.cache === "number")
+                    typeof possibleOptions.cache === "number" ||
+                    possibleOptions.loadRelationIds instanceof Object ||
+                    typeof possibleOptions.loadRelationIds === "boolean"
                 );
     }
 
@@ -49,34 +51,11 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static extractFindOneOptionsAlias(object: any): string|undefined {
-        if (this.isFindOneOptions(object) && object.join)
-            return object.join.alias;
-
-        return undefined;
-    }
-
-    /**
-     * Checks if given object is really instance of FindOptions interface.
-     */
     static extractFindManyOptionsAlias(object: any): string|undefined {
         if (this.isFindManyOptions(object) && object.join)
             return object.join.alias;
 
         return undefined;
-    }
-
-    /**
-     * Applies give find one options to the given query builder.
-     */
-    static applyFindOneOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
-        if (this.isFindOneOptions(options))
-            return this.applyOptionsToQueryBuilder(qb, options);
-
-        if (options)
-            return qb.where(options);
-
-        return qb;
     }
 
     /**
@@ -190,6 +169,13 @@ export class FindOptionsUtils {
             }
         }
 
+        if (options.loadRelationIds === true) {
+            qb.loadAllRelationIds();
+
+        } else if (options.loadRelationIds instanceof Object) {
+            qb.loadAllRelationIds(options.loadRelationIds as any);
+        }
+
         return qb;
     }
 
@@ -221,12 +207,26 @@ export class FindOptionsUtils {
             const selection = alias + "." + relation;
             qb.leftJoinAndSelect(selection, alias + "_" + relation);
 
+            // join the eager relations of the found relation
+            const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
+            if (relMetadata) {
+                this.joinEagerRelations(qb, alias + "_" + relation, relMetadata.inverseEntityMetadata);
+            }
+
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
             allRelations.splice(allRelations.indexOf(prefix ? prefix + "." + relation : relation), 1);
 
             // try to find sub-relations
             const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
             this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, prefix ? prefix + "." + relation : relation);
+        });
+    }
+
+    public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
+        metadata.eagerRelations.forEach(relation => {
+            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
+            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
     }
 

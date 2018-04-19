@@ -8,7 +8,7 @@ export class Post {
     @Column()
     title: string;
 
-    @Column(() => Counters)
+    @Column(() => Counters, { prefix: "cnt" })
     counters: Counters;
 
 }

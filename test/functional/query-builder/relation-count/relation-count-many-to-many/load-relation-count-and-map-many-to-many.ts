@@ -11,8 +11,6 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -99,6 +97,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
         await connection.manager.save(post2);
 
         const post3 = new Post();
+
         post3.title = "about Audi";
         await connection.manager.save(post3);
 
@@ -170,8 +169,8 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
-            .loadRelationCountAndMap("categories.imageCount", "categories.images")
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("categories.imageCount", "categories.images", "ic")
             .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
             .addOrderBy("post.id, categories.id")
             .getMany();
@@ -189,8 +188,8 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
             .createQueryBuilder(Post, "post")
             .leftJoinAndSelect("post.categories", "categories")
             .loadRelationCountAndMap("post.categoryCount", "post.categories")
-            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "removedCategories", qb => qb.andWhere("removedCategories.isRemoved = :isRemoved", { isRemoved: true }))
-            .loadRelationCountAndMap("categories.imageCount", "categories.images")
+            .loadRelationCountAndMap("post.removedCategoryCount", "post.categories", "rc", qb => qb.andWhere("rc.isRemoved = :isRemoved", { isRemoved: true }))
+            .loadRelationCountAndMap("categories.imageCount", "categories.images", "ic")
             .loadRelationCountAndMap("categories.removedImageCount", "categories.images", "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
             .where("post.id = :id", { id: 1 })
             .addOrderBy("post.id, categories.id")

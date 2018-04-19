@@ -50,4 +50,6 @@ export class PostWithOptions {
     @Column("time with time zone", { precision: 5 })
     timeWithTimeZone: string;
 
+    @Column("int4range", { nullable: true })
+    int4range: string;
 }

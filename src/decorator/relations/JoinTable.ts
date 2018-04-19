@@ -1,5 +1,4 @@
-import {getMetadataArgsStorage} from "../../index";
-import {JoinTableOptions} from "../options/JoinTableOptions";
+import {getMetadataArgsStorage, JoinTableOptions} from "../../";
 import {JoinTableMetadataArgs} from "../../metadata-args/JoinTableMetadataArgs";
 import {JoinTableMultipleColumnsOptions} from "../options/JoinTableMuplipleColumnsOptions";
 
@@ -28,7 +27,7 @@ export function JoinTable(options: JoinTableMultipleColumnsOptions): Function;
 export function JoinTable(options?: JoinTableOptions|JoinTableMultipleColumnsOptions): Function {
     return function (object: Object, propertyName: string) {
         options = options || {} as JoinTableOptions|JoinTableMultipleColumnsOptions;
-        const args: JoinTableMetadataArgs = {
+        getMetadataArgsStorage().joinTables.push({
             target: object.constructor,
             propertyName: propertyName,
             name: options.name,
@@ -36,8 +35,6 @@ export function JoinTable(options?: JoinTableOptions|JoinTableMultipleColumnsOpt
             inverseJoinColumns: (options && (options as JoinTableOptions).inverseJoinColumn ? [(options as JoinTableOptions).inverseJoinColumn!] : (options as JoinTableMultipleColumnsOptions).inverseJoinColumns) as any,
             schema: options && options.schema ? options.schema : undefined,
             database: options && options.database ? options.database : undefined,
-        };
-        getMetadataArgsStorage().joinTables.push(args);
+        } as JoinTableMetadataArgs);
     };
 }
-
