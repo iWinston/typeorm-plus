@@ -112,7 +112,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 })
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "title" != 'About #1'
@@ -128,7 +128,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "likes" < 10
@@ -144,7 +144,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "likes" > 10
@@ -160,7 +160,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "title" = 'About #2'
@@ -176,7 +176,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
@@ -192,7 +192,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
@@ -208,7 +208,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
@@ -224,7 +224,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query (Postgres notation): 
+will execute following query (Postgres notation): 
 
 ```sql
 SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
@@ -240,7 +240,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE "title" IS NULL
@@ -256,7 +256,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE 1 + "likes" = 4
@@ -276,7 +276,7 @@ const loadedPosts = await connection.getRepository(Post).find({
 });
 ```
 
-Query: 
+will execute following query: 
 
 ```sql
 SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')
