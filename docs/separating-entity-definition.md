@@ -7,7 +7,7 @@ which are called "entity schemas" in TypeORM.
 Simple definition example:
 
 ```ts
-import {EntitySchema} from "../../../../../src";
+import {EntitySchema} from "typeorm";
 
 export const CategoryEntity = new EntitySchema({
     name: "category",
@@ -27,7 +27,7 @@ export const CategoryEntity = new EntitySchema({
 Example with relations:
 
 ```ts
-import {EntitySchema} from "../../../../../src";
+import {EntitySchema} from "typeorm";
 
 export const PostEntity = new EntitySchema({
     name: "post",
@@ -56,7 +56,7 @@ export const PostEntity = new EntitySchema({
 Complex example:
 
 ```ts
-import {EntitySchema} from "../../../../../src/index";
+import {EntitySchema} from "typeorm";
 
 export const PersonSchema = new EntitySchema({
     name: "person",
@@ -109,8 +109,7 @@ export const PersonSchema = new EntitySchema({
 If you want to make your entity typesafe, you can define a model and specify it in definition:
 
 ```ts
-import {EntitySchema} from "../../../../../src";
-import {Category} from "../model/Category";
+import {EntitySchema} from "typeorm";
 
 export interface Category {
     id: number;
