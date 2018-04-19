@@ -4,6 +4,6 @@ import {FindOperator} from "../FindOperator";
  * Find Options Operator.
  * Example: { someField: Raw([...]) }
  */
-export function Raw<T>(value: string|((columnAlias?: string) => string)): any { // TODO: make this typecheck
-    return new FindOperator<T>("raw", value as any, false);
+export function Raw<T>(value: string|((columnAlias?: string) => string)) {
+    return new FindOperator("raw", value as any, false);
 }
