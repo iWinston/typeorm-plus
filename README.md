@@ -1243,15 +1243,18 @@ There are a few repositories which you can clone and start with:
 * [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
 * [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 * [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
-* [Example how to use TypeORM with MongoDB](https://github.com/typeorm/typeorm-typescript-mongo-example)
+* [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
 * [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
 * [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 * [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
+* [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
+* [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 
 ## Extensions
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
+* [TypeORM + GraphQL framework](http://vesper-framework.com)
 * [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 * Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
