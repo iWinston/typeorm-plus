@@ -502,7 +502,7 @@ export class EntityManager {
      */
     async findAndCount<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name, this.queryRunner);
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
@@ -532,7 +532,7 @@ export class EntityManager {
         if (!ids.length)
             return Promise.resolve([]);
         const metadata = this.connection.getMetadata(entityClass);
-        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name, this.queryRunner);
+        const qb = this.createQueryBuilder(entityClass, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
         FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
@@ -580,7 +580,7 @@ export class EntityManager {
         } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions) && maybeOptions.join) {
             alias = maybeOptions.join.alias;
         }
-        const qb = this.createQueryBuilder(entityClass, alias, this.queryRunner);
+        const qb = this.createQueryBuilder(entityClass, alias);
 
         if (!findOptions || findOptions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
