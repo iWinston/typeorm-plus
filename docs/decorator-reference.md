@@ -713,8 +713,6 @@ Learn more about [indices](indices.md).
 This decorator allows you to create a database unique constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
 
-> Note: MySQL stores unique constraints as unique indices
-
 Examples:
 
 ```typescript
@@ -735,12 +733,12 @@ export class User {
 }
 ```
 
+> Note: MySQL stores unique constraints as unique indices
+
 #### `@Check`
 
 This decorator allows you to create a database check constraint for a specific column or columns.
 This decorator can be applied only to an entity itself. 
-
-> Note: MySQL does not support check constraints.
 
 Examples:
 
@@ -760,6 +758,8 @@ export class User {
     age: number;
 }
 ```
+
+> Note: MySQL does not support check constraints.
 
 #### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
 

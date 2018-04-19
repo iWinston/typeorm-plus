@@ -106,7 +106,7 @@ export const PersonSchema = new EntitySchema({
 });
 ```
 
-If you want to make your entity typesafe, you can define a model and specify it in definition:
+If you want to make your entity typesafe, you can define a model and specify it in schema definition:
 
 ```ts
 import {EntitySchema} from "typeorm";

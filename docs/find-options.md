@@ -1,5 +1,10 @@
 # Find Options
 
+* [Basic options](#basic-options)
+* [Advanced options](#advanced-options)
+
+## Basic options
+
 All repository and manager `find` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
 * `select` - indicates which properties of the main object must be selected
@@ -92,3 +97,89 @@ userRepository.find({
     cache: true
 });
 ```
+
+## Advanced options
+
+TypeORM provides a lot of built-in operators that can be used to create more complex comparisons:
+
+* `Not`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    title: Not("About #1")
+})
+```
+
+* `LessThan`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: LessThan(10)
+});
+```
+
+* `MoreThan`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: MoreThan(10)
+});
+```
+
+* `Equal`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    title: Equal("About #2")
+});
+```
+
+* `Like`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    title: Like("%out #%")
+});
+```
+
+* `Between`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: Between(1, 10)
+});
+```
+
+* `In`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    title: In(["About #2", "About #3"])
+});
+```
+
+* `Any`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    title: Any(["About #2", "About #3"])
+});
+```
+
+* `IsNull`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    title: IsNull()
+});
+```
+
+* `Raw`
+
+```ts
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
+});
+```
+
+Also you can combine these operators with `Not` operator: `Not(LessThan(10))`, `Not(Equal("About #2"))`, etc.
