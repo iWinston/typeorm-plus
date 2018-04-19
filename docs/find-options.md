@@ -105,81 +105,179 @@ TypeORM provides a lot of built-in operators that can be used to create more com
 * `Not`
 
 ```ts
+import {Not} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     title: Not("About #1")
 })
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "title" != 'About #1'
+```
+
 * `LessThan`
 
 ```ts
+import {LessThan} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     likes: LessThan(10)
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" < 10
+```
+
 * `MoreThan`
 
 ```ts
+import {MoreThan} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     likes: MoreThan(10)
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" > 10
+```
+
 * `Equal`
 
 ```ts
+import {Equal} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     title: Equal("About #2")
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "title" = 'About #2'
+```
+
 * `Like`
 
 ```ts
+import {Like} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     title: Like("%out #%")
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "title" LIKE '%out #%'
+```
+
 * `Between`
 
 ```ts
+import {Between} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     likes: Between(1, 10)
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
+```
+
 * `In`
 
 ```ts
+import {In} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     title: In(["About #2", "About #3"])
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
+```
+
 * `Any`
 
 ```ts
+import {Any} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     title: Any(["About #2", "About #3"])
 });
 ```
 
+Query (Postgres notation): 
+
+```sql
+SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
+```
+
 * `IsNull`
 
 ```ts
+import {IsNull} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
     title: IsNull()
 });
 ```
 
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE "title" IS NULL
+```
+
 * `Raw`
 
 ```ts
+import {Raw} from "typeorm";
+
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
+    likes: Raw( "1 + likes = 4")
 });
 ```
 
-Also you can combine these operators with `Not` operator: `Not(LessThan(10))`, `Not(Equal("About #2"))`, etc.
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE 1 + "likes" = 4
+```
+
+> Note: beware with `Raw` operator. It executes pure SQL from supplied expression and should not contain a user input,
+ otherwise it will lead to SQL-injection.
+
+Also you can combine these operators with `Not` operator:
+
+```ts
+import {Not, MoreThan, Equal} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: Not(MoreThan(10)),
+    title: Not(Equal("About #2"))
+});
+```
+
+Query: 
+
+```sql
+SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')
+```
