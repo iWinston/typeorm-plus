@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://typeorm.io/">
+  <a href="http://typeorm.io/">
     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
   </a>
   <br>
@@ -20,7 +20,7 @@
   <br>
 </div>
 
-TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap和Ionic平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7)一起使用。
+TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap、Ionic、React Native和Electron平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7)一起使用。
 它的目标是始终支持最新的JavaScript特性并提供额外的特性以帮助你开发任何使用数据库的应用程序 —— 不管是只有几张表的小型应用还是拥有多数据库的大型企业应用。
 
 不同于现有的所有其他JavaScript ORM框架，TypeORM支持Active Record和Data Mapper模式，这意味着你用最有效的方法编写高质量的、松耦合的、可扩展的、可维护的应用程序。
@@ -32,7 +32,7 @@ TypeORM 的一些特性：
 - 实体和列
 - 数据库特性列类型
 - 实体管理
-- 存储库和自定义存储库
+- 存储库和自定义存储库
 - 清洁对象关系模型
 - 关联（关系）
 - 贪婪和延迟关系
@@ -57,9 +57,9 @@ TypeORM 的一些特性：
 - 支持闭包表模式
 - 在模型或者分离的配置文件中声明模式
 - json / xml / yml / env格式的连接配置
-- 支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / WebSQL / sql.js
+- 支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 - 支持 MongoDB NoSQL 数据库
-- 在NodeJS / 浏览器 / Ionic / Cordova / Electron平台上工作
+- 在NodeJS / 浏览器 / Ionic / Cordova / React Native / Electron平台上工作
 - 支持 TypeScript 和 JavaScript
 - 产生出高性能、灵活、清洁和可维护的代码
 - 遵循所有可能的最佳实践
@@ -228,7 +228,7 @@ npm install typeorm -g
 typeorm init --name MyProject --database mysql
 ```
 
-`name`即项目的名称，`database`是你将使用的数据库。数据库可以是下列值之一：`mysql`、`mariadb`、`postgres`、`sqlite`、`mssql`、`oracle`，`websql`、`mongodb`。
+`name`即项目的名称，`database`是你将使用的数据库。数据库可以是下列值之一：`mysql`、`mariadb`、`postgres`、`sqlite`、`mssql`、`oracle`、`mongodb`、`cordova`、`react-native`。
 
 该命令将在`MyProject`目录中生成一个新项目，其中包含以下文件：
 
@@ -511,9 +511,8 @@ createConnection({
 }).catch(error => console.log(error));
 ```
 
-在例子里使用的是mysql，你也可以选择其他数据库，只需要简单修改driver选项里的数据库的类型就可以了，比如： 
-mysql, mariadb, postgres, sqlite, mssql or oracle.
-同样可以修改host, port, username, password 以及database等设置.
+在例子里使用的是mysql，你也可以选择其他数据库，只需要简单修改driver选项里的数据库的类型就可以了，比如：mysql、mariadb、postgres、sqlite、mssql、oracle、cordova、react-native或mongodb
+同样可以修改host, port, username, password 以及database等设置。
 
 把Photo实体加到数据连接的实体列表中，所有需要在这个连接下使用的实体都必须加到这个列表中。
 
@@ -1185,14 +1184,18 @@ Photo的albums是左联接，photo的metadata是内联接。
 * [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
 * [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 * [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
-* [Example how to use TypeORM with MongoDB](https://github.com/typeorm/typeorm-typescript-mongo-example)
+* [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
 * [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
 * [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
+* [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
++* [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
++* [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 
 ## 扩展
 
 这几个扩展可以简化TypeORM的使用，并将其与其他模块集成：
 
+* [TypeORM + GraphQL framework](http://vesper-framework.com)
 * [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 * Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
