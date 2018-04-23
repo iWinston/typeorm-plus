@@ -131,22 +131,22 @@ export interface QueryRunner {
     getTables(tableNames: string[]): Promise<Table[]>;
 
     /**
-     * Checks if database with the given name exist.
+     * Checks if a database with the given name exist.
      */
     hasDatabase(database: string): Promise<boolean>;
 
     /**
-     * Checks if schema with the given name exist.
+     * Checks if a schema with the given name exist.
      */
     hasSchema(schema: string): Promise<boolean>;
 
     /**
-     * Checks if table with the given name exist.
+     * Checks if a table with the given name exist.
      */
     hasTable(table: Table|string): Promise<boolean>;
 
     /**
-     * Checks if column exist in the table.
+     * Checks if a column exist in the table.
      */
     hasColumn(table: Table|string, columnName: string): Promise<boolean>;
 
@@ -193,7 +193,7 @@ export interface QueryRunner {
     addColumn(table: Table|string, column: TableColumn): Promise<void>;
 
     /**
-     * Adds a new columns.
+     * Adds new columns.
      */
     addColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
@@ -208,7 +208,7 @@ export interface QueryRunner {
     changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>;
 
     /**
-     * Changes a columns in the table.
+     * Changes columns in the table.
      */
     changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>;
 
@@ -218,7 +218,7 @@ export interface QueryRunner {
     dropColumn(table: Table|string, column: TableColumn|string): Promise<void>;
 
     /**
-     * Drops a columns in the table.
+     * Drops columns in the table.
      */
     dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
 
@@ -238,7 +238,7 @@ export interface QueryRunner {
     dropPrimaryKey(table: Table|string): Promise<void>;
 
     /**
-     * Creates new unique constraint.
+     * Creates a new unique constraint.
      */
     createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>;
 
@@ -253,12 +253,12 @@ export interface QueryRunner {
     dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>;
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>;
 
     /**
-     * Creates new check constraint.
+     * Creates a new check constraint.
      */
     createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>;
 
@@ -268,7 +268,7 @@ export interface QueryRunner {
     createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>;
 
     /**
-     * Drops check constraint.
+     * Drops a check constraint.
      */
     dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>;
 
@@ -283,7 +283,7 @@ export interface QueryRunner {
     createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>;
 
     /**
-     * Creates a new foreign keys.
+     * Creates new foreign keys.
      */
     createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
@@ -293,7 +293,7 @@ export interface QueryRunner {
     dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>;
 
     /**
-     * Drops a foreign keys.
+     * Drops foreign keys.
      */
     dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>;
 
@@ -303,7 +303,7 @@ export interface QueryRunner {
     createIndex(table: Table|string, index: TableIndex): Promise<void>;
 
     /**
-     * Creates a new indices.
+     * Creates new indices.
      */
     createIndices(table: Table|string, indices: TableIndex[]): Promise<void>;
 
@@ -313,7 +313,7 @@ export interface QueryRunner {
     dropIndex(table: Table|string, index: TableIndex|string): Promise<void>;
 
     /**
-     * Drops an indices.
+     * Drops indices.
      */
     dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>;
 
