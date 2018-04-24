@@ -2,11 +2,12 @@ import {Connection} from "../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {User} from "./entity/User";
 
-describe("github issues > #2006 Columns are being set to null after saving the entity", () => {
+describe("github issues > #2005", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["sqlite"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

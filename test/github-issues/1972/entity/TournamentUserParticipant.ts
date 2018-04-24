@@ -1,7 +1,6 @@
-import { ChildEntity, OneToOne, JoinColumn } from "../../../../src/index";
-
-import { TournamentParticipant } from "./TournamentParticipant";
-import { User } from "./User";
+import {ChildEntity, JoinColumn, OneToOne} from "../../../../src/index";
+import {TournamentParticipant} from "./TournamentParticipant";
+import {User} from "./User";
 
 @ChildEntity()
 export class TournamentUserParticipant extends TournamentParticipant {
@@ -18,4 +17,5 @@ export class TournamentUserParticipant extends TournamentParticipant {
             this.user = tournamentUserParticipant.user;
         }
     }
+
 }

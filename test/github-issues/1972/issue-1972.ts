@@ -1,18 +1,15 @@
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {Connection} from "../../../src";
 import {assert} from "chai";
-
-import { User } from "./entity/User";
-import { TournamentUserParticipant } from "./entity/TournamentUserParticipant";
-import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant";
+import {User} from "./entity/User";
+import {TournamentUserParticipant} from "./entity/TournamentUserParticipant";
+import {TournamentSquadParticipant} from "./entity/TournamentSquadParticipant";
 
 describe("github issues > #1972 STI problem - empty columns", () => {
     let connections: Connection[];
 
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
     }));
     
     beforeEach(() => reloadTestingDatabases(connections));
@@ -30,10 +27,12 @@ describe("github issues > #1972 STI problem - empty columns", () => {
         const tournamentUserParticipant = new TournamentUserParticipant({
             user,
         });
+        console.log(tournamentUserParticipant);
         await connection.manager.save(tournamentUserParticipant);
 
         // find user participant in the DB
         const result = await connection.manager.findOne(TournamentUserParticipant);
+        console.log(result);
 
         if (result) {
             assert(result.user instanceof User);

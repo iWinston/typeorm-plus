@@ -76,6 +76,15 @@ export class EntityMetadataBuilder {
         // compute parent entity metadatas for table inheritance
         entityMetadatas.forEach(entityMetadata => this.computeParentEntityMetadata(entityMetadatas, entityMetadata));
 
+        // after all metadatas created we set child entity metadatas for table inheritance
+        entityMetadatas.forEach(metadata => {
+            metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
+                return metadata.target instanceof Function
+                    && childMetadata.target instanceof Function
+                    && MetadataUtils.isInherited(childMetadata.target, metadata.target);
+            });
+        });
+
         // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
         entityMetadatas
             .filter(entityMetadata => entityMetadata.tableType !== "entity-child")
@@ -157,10 +166,14 @@ export class EntityMetadataBuilder {
                     entityMetadatas.push(junctionEntityMetadata);
                 });
 
-                // update entity metadata depend properties
+        });
+
+        // update entity metadata depend properties
+        entityMetadatas
+            .forEach(entityMetadata => {
                 entityMetadata.relationsWithJoinColumns = entityMetadata.relations.filter(relation => relation.isWithJoinColumn);
                 entityMetadata.hasNonNullableRelations = entityMetadata.relationsWithJoinColumns.some(relation => !relation.isNullable || relation.isPrimary);
-        });
+            });
 
         // generate closure junction tables for all closure tables
         entityMetadatas
@@ -172,15 +185,6 @@ export class EntityMetadataBuilder {
                 this.computeInverseProperties(closureJunctionEntityMetadata, entityMetadatas);
                 entityMetadatas.push(closureJunctionEntityMetadata);
             });
-
-        // after all metadatas created we set child entity metadatas for table inheritance
-        entityMetadatas.forEach(metadata => {
-            metadata.childEntityMetadatas = entityMetadatas.filter(childMetadata => {
-                return metadata.target instanceof Function
-                    && childMetadata.target instanceof Function
-                    && MetadataUtils.isInherited(childMetadata.target, metadata.target);
-            });
-        });
 
         // generate keys for tables with single-table inheritance
         entityMetadatas

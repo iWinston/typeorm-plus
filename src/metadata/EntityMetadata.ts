@@ -780,6 +780,8 @@ export class EntityMetadata {
         this.hasMultiplePrimaryKeys = this.primaryColumns.length > 1;
         this.hasUUIDGeneratedColumns = this.columns.filter(column => column.isGenerated || column.generationStrategy === "uuid").length > 0;
         this.propertiesMap = this.createPropertiesMap();
+        if (this.childEntityMetadatas)
+            this.childEntityMetadatas.forEach(entityMetadata => entityMetadata.registerColumn(column));
     }
 
     /**
