@@ -5,6 +5,11 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.1
+
+* fixed bug with STI
+* fixed bug with lazy relations inside transactions
+
 ## 0.2.0
 
 * completely refactored, improved and optimized persistence process and performance.
