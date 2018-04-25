@@ -8,6 +8,7 @@ feel free to ask us and community.
 ## 0.2.2
 
 * fixing bugs with STI
+* fixed bug in mysql schema synchronization
 
 ## 0.2.1
 
