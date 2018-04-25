@@ -22,6 +22,7 @@ export class RelationLoader {
      * Loads relation data for the given entity and its relation.
      */
     load(relation: RelationMetadata, entityOrEntities: ObjectLiteral|ObjectLiteral[], queryRunner?: QueryRunner): Promise<any[]> { // todo: check all places where it uses non array
+        if (queryRunner && queryRunner.isReleased) queryRunner = undefined; // get new one if already closed
         if (relation.isManyToOne || relation.isOneToOneOwner) {
             return this.loadManyToOneOrOneToOneOwner(relation, entityOrEntities, queryRunner);
 
