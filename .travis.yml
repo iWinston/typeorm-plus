@@ -15,10 +15,10 @@ before_script:
   - sudo service mysql stop
   - sudo service postgresql stop
   - docker-compose up -d
-  - npm run setup:config
+  - cp ormconfig.travis.json ormconfig.json
 
 script:
-  - npm run test-ci
+  - npm test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
