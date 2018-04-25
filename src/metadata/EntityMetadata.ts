@@ -774,6 +774,9 @@ export class EntityMetadata {
      * Registers a new column in the entity and recomputes all depend properties.
      */
     registerColumn(column: ColumnMetadata) {
+        if (this.ownColumns.indexOf(column) !== -1)
+            return;
+
         this.ownColumns.push(column);
         this.columns = this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), this.ownColumns);
         this.primaryColumns = this.columns.filter(column => column.isPrimary);
