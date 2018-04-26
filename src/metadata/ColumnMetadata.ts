@@ -9,6 +9,7 @@ import {OrmUtils} from "../util/OrmUtils";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
+import {FindOperator} from "../find-options/FindOperator";
 
 /**
  * This metadata contains all information about entity's column.
@@ -541,10 +542,10 @@ export class ColumnMetadata {
             if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity = this.relationMetadata.getEntityValue(embeddedObject);
-                    if (relatedEntity && relatedEntity instanceof Object) {
+                    if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof FindOperator)) {
                         value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
 
-                    } else if (embeddedObject[this.propertyName] && embeddedObject[this.propertyName] instanceof Object) {
+                    } else if (embeddedObject[this.propertyName] && embeddedObject[this.propertyName] instanceof Object && !(embeddedObject[this.propertyName] instanceof FindOperator)) {
                         value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(embeddedObject[this.propertyName]));
 
                     } else {
@@ -563,10 +564,10 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(entity);
-                if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof Function)) {
+                if (relatedEntity && relatedEntity instanceof Object && !(relatedEntity instanceof FindOperator) && !(relatedEntity instanceof Function)) {
                     value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(relatedEntity));
 
-                } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof Function)) {
+                } else if (entity[this.propertyName] && entity[this.propertyName] instanceof Object && !(entity[this.propertyName] instanceof FindOperator) && !(entity[this.propertyName] instanceof Function)) {
                     value = this.referencedColumn.getEntityValue(PromiseUtils.extractValue(entity[this.propertyName]));
 
                 } else {

@@ -5,6 +5,11 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.3
+
+* fixed bug with selecting default values after persistence when initialized properties defined
+* fixed bug with find operators used on relational columns (#2031)
+
 ## 0.2.2
 
 * fixing bugs with STI
