@@ -3,7 +3,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {User} from "./entity/User";
 import {Photo} from "./entity/Photo";
 
-describe.only("github issues > #2031 Advanced find options with FKs", () => {
+describe("github issues > #2031 Advanced find options with FKs", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
