@@ -9,6 +9,7 @@ feel free to ask us and community.
 
 * fixed bug with selecting default values after persistence when initialized properties defined
 * fixed bug with find operators used on relational columns (#2031)
+* fixed bug with DEFAULT as functions in mssql (#1991)
 
 ## 0.2.2
 
