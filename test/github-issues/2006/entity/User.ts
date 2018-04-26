@@ -11,10 +11,9 @@ export class User {
 
     @Column({
         type: "tinyint",
-        // This makes token set to be null
         default: 0,
+        width: 1
     })
-    anotherBool: boolean;
-
+    dnd: boolean = false;
 
 }

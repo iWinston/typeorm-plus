@@ -6,7 +6,8 @@ describe("github issues > #2006 Columns are being set to null after saving the e
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"]
+        entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
