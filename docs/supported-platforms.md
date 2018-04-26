@@ -15,16 +15,16 @@ You can use [sql.js](https://github.com/kripken/sql.js) in the browser.
 
 **Webpack configuration**
     
-    In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. Prior to TypeORM 0.1.7, the package is setup in a way that loaders like webpack will automatically use the `browser` folder. With 0.1.7 this was dropped to support Webpack usage in Node.js projects. This means, that the `NormalModuleReplacementPlugin` has to be used to insure that the correct version is loaded for browser projects. The configuration in your webpack config file, for this plugin looks like this:
+In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. Prior to TypeORM 0.1.7, the package is setup in a way that loaders like webpack will automatically use the `browser` folder. With 0.1.7 this was dropped to support Webpack usage in Node.js projects. This means, that the `NormalModuleReplacementPlugin` has to be used to insure that the correct version is loaded for browser projects. The configuration in your webpack config file, for this plugin looks like this:
 
-    ```js
-    plugins: [
-        ..., // any existing plugins that you already have
-        new webpack.NormalModuleReplacementPlugin(/typeorm$/, function (result) {
-            result.request = result.request.replace(/typeorm/, "typeorm/browser");
-        })
-    ]
-    ```
+```js
+plugins: [
+    ..., // any existing plugins that you already have
+    new webpack.NormalModuleReplacementPlugin(/typeorm$/, function (result) {
+        result.request = result.request.replace(/typeorm/, "typeorm/browser");
+    })
+]
+```
 
 **Example of configuration**
 
