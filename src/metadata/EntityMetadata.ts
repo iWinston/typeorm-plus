@@ -109,13 +109,13 @@ export class EntityMetadata {
 
     /**
      * Entity table path. Contains database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     tablePath: string;
 
     /**
      * Entity schema path. Contains database name and schema name.
-     * E.g. "myDB"."mySchema"
+     * E.g. myDB.mySchema
      */
     schemaPath?: string;
 
