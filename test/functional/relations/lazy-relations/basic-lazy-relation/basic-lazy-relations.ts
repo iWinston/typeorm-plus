@@ -343,4 +343,22 @@ describe("basic-lazy-relations", () => {
             loadedPost.title.should.be.equal("post with great category");
         });
     })));
+
+    it("should successfully load relations outside a transaction with entity generated within a transaction", () => Promise.all(connections.filter((connection) => (new Set(["mysql", "sqlite", "postgres"])).has(connection.options.type)).map(async connection => {
+        const loadedCategory = await connection.manager.transaction(async (manager) => {
+            const category = new Category();
+            category.name = "category of great post";
+            await manager.save(category);
+    
+            const post = new Post();
+            post.title = "post with great category";
+            post.text = "post with great category and great text";
+            post.oneCategory = Promise.resolve(category);
+            await manager.save(post);
+
+            return await manager.findOne(Category, { where: { name: "category of great post" } });
+        });
+        const loadedPost = await loadedCategory!.onePost;
+        loadedPost.title.should.be.equal("post with great category");
+    })));
 });
