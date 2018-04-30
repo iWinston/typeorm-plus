@@ -92,7 +92,7 @@ export class MigrationGenerateCommand {
                 console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
 
             } else {
-                console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migrations:create" command`));
+                console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
             }
             await connection.close();
 

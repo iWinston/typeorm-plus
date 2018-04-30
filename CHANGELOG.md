@@ -5,6 +5,14 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.4
+
+* fixed bug with relation id loader queries not working with self-referencing relations
+* fixed issues with zerofill and unsigned options not available in column options (#2049)
+* fixed issue with lazy relation loader (#2029)
+* fixed issue with closure table not properly escaped when using custom schema (#2043)
+* fixed issue #2053
+
 ## 0.2.3
 
 * fixed bug with selecting default values after persistence when initialized properties defined
