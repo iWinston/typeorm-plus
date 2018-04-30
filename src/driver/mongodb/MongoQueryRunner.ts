@@ -448,13 +448,6 @@ export class MongoQueryRunner implements QueryRunner {
     }*/
 
     /**
-     * Inserts rows into the closure table.
-     */
-    async insertIntoClosureTable(collectionName: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
-        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
-    }
-
-    /**
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {

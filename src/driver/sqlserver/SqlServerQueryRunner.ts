@@ -285,29 +285,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Inserts rows into the closure table.
-     */
-    async insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number> {
-        let sql = "";
-        if (hasLevel) {
-            sql = `INSERT INTO ${this.escapeTableName(tablePath)}("ancestor", "descendant", "level") ` +
-                `SELECT "ancestor", "${newEntityId}", "level" + 1 FROM ${this.escapeTableName(tablePath)} WHERE "descendant" = ${parentId} ` +
-                `UNION ALL SELECT "${newEntityId}", "${newEntityId}", 1`;
-        } else {
-            sql = `INSERT INTO ${this.escapeTableName(tablePath)}("ancestor", "descendant") ` +
-                `SELECT "ancestor", "${newEntityId}" FROM ${this.escapeTableName(tablePath)} WHERE "descendant" = ${parentId} ` +
-                `UNION ALL SELECT "${newEntityId}", "${newEntityId}"`;
-        }
-        await this.query(sql);
-        if (hasLevel) {
-            const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.escapeTableName(tablePath)} WHERE descendant = ${parentId}`);
-            return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
-        } else {
-            return -1;
-        }
-    }
-
-    /**
      * Returns all available database names including system databases.
      */
     async getDatabases(): Promise<string[]> {

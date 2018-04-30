@@ -100,13 +100,6 @@ export interface QueryRunner {
     stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream>;
 
     /**
-     * Inserts new values into closure table.
-     *
-     * @deprecated todo: move to ClosureQueryBuilder
-     */
-    insertIntoClosureTable(tablePath: string, newEntityId: any, parentId: any, hasLevel: boolean): Promise<number>;
-
-    /**
      * Returns all available database names including system databases.
      */
     getDatabases(): Promise<string[]>;
