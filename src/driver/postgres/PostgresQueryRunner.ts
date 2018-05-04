@@ -1440,7 +1440,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     name: constraint["constraint_name"],
                     columnNames: indices.map(i => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
-                    where: constraint["condition"]
+                    where: constraint["condition"],
+                    isSpatial: false,
+                    isFulltext: false
                 });
             });
 
