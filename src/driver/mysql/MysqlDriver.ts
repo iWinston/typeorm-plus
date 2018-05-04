@@ -222,6 +222,7 @@ export class MysqlDriver implements Driver {
         "varchar": { length: 255 },
         "char": { length: 1 },
         "binary": { length: 1 },
+        "varbinary": { length: 255 },
         "decimal": { precision: 10, scale: 0 },
         "float": { precision: 12 },
         "double": { precision: 22 },
@@ -515,6 +516,8 @@ export class MysqlDriver implements Driver {
                 return "255";
             case "uuid":
                 return "36";
+            case "varbinary":
+                return "255";
             default:
                 return "";
         }
@@ -526,7 +529,7 @@ export class MysqlDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type;
 
-        // used 'getColumnLength()' method, because MySQL requires column length for `varchar` and `nvarchar` data types
+        // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`;
 
