@@ -8,6 +8,9 @@ feel free to ask us and community.
 ## 0.2.5
 
 * added support for enum arrays in postgres
+* fixed issue with lazy relations (#1953)
+* fixed issue with migration file generator using a wrong class name (#2070)
+* fixed issue with unhandled promise rejection warning on postgres connection (#2067)
 
 ## 0.2.4
 
