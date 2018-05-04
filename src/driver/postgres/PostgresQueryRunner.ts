@@ -1750,6 +1750,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
         if (column.type === "enum") {
             c += " " + this.buildEnumName(table, column, false);
+            if (column.isArray)
+                c += " array";
 
         } else if (!column.isGenerated || column.type === "uuid") {
             c += " " + this.connection.driver.createFullType(column);

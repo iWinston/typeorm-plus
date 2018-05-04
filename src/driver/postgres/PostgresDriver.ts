@@ -437,6 +437,10 @@ export class PostgresDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value);
         }
 
+        // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
+        if (columnMetadata.enum && columnMetadata.isArray)
+            value = (value as string).substr(1).substr(0, (value as string).length - 2).split(",");
+
         if (columnMetadata.transformer)
             value = columnMetadata.transformer.from(value);
 
