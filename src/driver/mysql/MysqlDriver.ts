@@ -108,6 +108,7 @@ export class MysqlDriver implements Driver {
         "enum",
         "json",
         "binary",
+        "varbinary",
         "geometry",
         "point",
         "linestring",
@@ -139,7 +140,8 @@ export class MysqlDriver implements Driver {
         "char",
         "varchar",
         "nvarchar",
-        "binary"
+        "binary",
+        "varbinary"
     ];
 
     /**
