@@ -196,7 +196,7 @@ await timber.remove();
     
         `npm install sql.js --save`
     
-    * for **Oracle** (experimental)
+    * for **Oracle**
     
         `npm install oracledb --save`
     
@@ -204,8 +204,10 @@ await timber.remove();
     
     To make the Oracle driver work, you need to follow the installation instructions from 
     [their](https://github.com/oracle/node-oracledb) site.
-    Oracle support is experimental at the moment and isn't bug-free.
-    Expect to see more stable Oracle support in the near future.
+
+    * for **MongoDB** (experimental)
+
+        `npm install mongodb --save`
 
 ##### TypeScript configuration
 
