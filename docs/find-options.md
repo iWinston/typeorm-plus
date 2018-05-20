@@ -40,6 +40,11 @@ userRepository.find({
 ```typescript
 userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } });
 ```
+Querying a column from an embedded entity should be done with respect to the hierarchy in which it was defined. Example: 
+
+```typescript
+userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
+```
 
 * `order` - selection order.
 
