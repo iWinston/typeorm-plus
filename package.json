@@ -77,6 +77,7 @@
     "typescript": "^2.8.1"
   },
   "dependencies": {
+    "8": "0.0.1",
     "app-root-path": "^2.0.1",
     "buffer": "^5.1.0",
     "chalk": "^2.3.2",
@@ -101,7 +102,8 @@
     "test-ci": "gulp ci-tests",
     "test": "tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 30000  ./build/compiled/test",
     "compile": "tsc",
-    "package": "gulp package"
+    "package": "gulp package",
+    "debug": "npm test -- inspect --grep='github issues > #2116'"
   },
   "bin": {
     "typeorm": "./cli.js"
