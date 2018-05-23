@@ -93,6 +93,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         loadedPost.binary.toString().should.be.equal(post.binary.toString());
         loadedPost.varbinary.toString().should.be.equal(post.varbinary.toString());
         loadedPost.image.toString().should.be.equal(post.image.toString());
+        loadedPost.rowversion.should.not.be.null;
+        loadedPost.rowversion.should.not.be.undefined;
         loadedPost.dateObj.should.be.equal(DateUtils.mixedDateToDateString(post.dateObj));
         loadedPost.date.should.be.equal(post.date);
         // commented because mssql inserted milliseconds are not always equal to what we say it to insert
