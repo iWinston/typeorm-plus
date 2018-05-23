@@ -162,7 +162,8 @@ export type SimpleColumnType =
     |"sql_variant" // mssql
     |"rowid" // oracle
     |"urowid" // oracle
-    |"uniqueidentifier"; // mssql
+    |"uniqueidentifier" // mssql
+    |"rowversion"; //mssql
 
 /**
  * Any column type column can be.

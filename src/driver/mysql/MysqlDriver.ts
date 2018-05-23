@@ -107,6 +107,7 @@ export class MysqlDriver implements Driver {
         "longtext",
         "enum",
         "json",
+        "rowversion",
         "binary",
         "varbinary",
         "geometry",
