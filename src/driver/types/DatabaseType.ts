@@ -11,4 +11,5 @@ export type DatabaseType =
     "sqljs"|
     "oracle"|
     "mssql"|
-    "mongodb";
+    "mongodb"|
+    "expo";
