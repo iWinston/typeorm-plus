@@ -20,7 +20,7 @@
   <br>
 </div>
 
-TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap、Ionic、React Native和Electron平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7)一起使用。
+TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在NodeJS、浏览器、Cordova、PhoneGap、Ionic、React Native、Expo和Electron平台上，可以与TypeScript和JavaScript (ES5, ES6, ES7)一起使用。
 它的目标是始终支持最新的JavaScript特性并提供额外的特性以帮助你开发任何使用数据库的应用程序 —— 不管是只有几张表的小型应用还是拥有多数据库的大型企业应用。
 
 不同于现有的所有其他JavaScript ORM框架，TypeORM支持Active Record和Data Mapper模式，这意味着你用最有效的方法编写高质量的、松耦合的、可扩展的、可维护的应用程序。
@@ -59,7 +59,7 @@ TypeORM 的一些特性：
 - json / xml / yml / env格式的连接配置
 - 支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 - 支持 MongoDB NoSQL 数据库
-- 在NodeJS / 浏览器 / Ionic / Cordova / React Native / Electron平台上工作
+- 在NodeJS / 浏览器 / Ionic / Cordova / React Native / Expo / Electron平台上工作
 - 支持 TypeScript 和 JavaScript
 - 产生出高性能、灵活、清晰和可维护的代码
 - 遵循所有可能的最佳实践
@@ -228,7 +228,7 @@ npm install typeorm -g
 typeorm init --name MyProject --database mysql
 ```
 
-`name`即项目的名称，`database`是你将使用的数据库。数据库可以是下列值之一：`mysql`、`mariadb`、`postgres`、`sqlite`、`mssql`、`oracle`、`mongodb`、`cordova`、`react-native`。
+`name`即项目的名称，`database`是你将使用的数据库。数据库可以是下列值之一：`mysql`、`mariadb`、`postgres`、`sqlite`、`mssql`、`oracle`、`mongodb`、`cordova`、`react-native`、`expo`。
 
 该命令将在`MyProject`目录中生成一个新项目，其中包含以下文件：
 
@@ -511,7 +511,7 @@ createConnection({
 }).catch(error => console.log(error));
 ```
 
-在例子里使用的是mysql，你也可以选择其他数据库，只需要简单修改driver选项里的数据库的类型就可以了，比如：mysql、mariadb、postgres、sqlite、mssql、oracle、cordova、react-native或mongodb
+在例子里使用的是mysql，你也可以选择其他数据库，只需要简单修改driver选项里的数据库的类型就可以了，比如：mysql、mariadb、postgres、sqlite、mssql、oracle、cordova、react-native、expo或mongodb
 同样可以修改host, port, username, password 以及database等设置。
 
 把Photo实体加到数据连接的实体列表中，所有需要在这个连接下使用的实体都必须加到这个列表中。

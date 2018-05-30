@@ -16,6 +16,7 @@
 [ ] `sqlite`
 [ ] `sqljs`
 [ ] `react-native`
+[ ] `expo`
 
 **TypeORM version:**
 
