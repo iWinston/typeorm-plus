@@ -5,6 +5,10 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.7
+
+* added support for rowversion type for mssql (#2198)
+
 ## 0.2.6
 
 * fixed wrong aggregate and count methods signature in mongodb
