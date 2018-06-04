@@ -1,5 +1,7 @@
-import { expect } from "chai";
 import "reflect-metadata";
+
+import { expect } from "chai";
+
 import { Connection } from "../../../src/connection/Connection";
 import {
   closeTestingConnections,
@@ -7,6 +9,7 @@ import {
   reloadTestingDatabases
 } from "../../utils/test-utils";
 import { Bar } from "./entity/Bar";
+import { Foo } from "./entity/Foo";
 
 describe("github issues > #2251 - Unexpected behavior when passing duplicate entities to repository.save()", () => {
   let connections: Connection[];
@@ -40,7 +43,41 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
         bars = await repo.find();
 
         expect(bars.length).to.equal(2);
+      })
+    ));
 
+  it("should handle cascade updates", () =>
+    Promise.all(
+      connections.map(async connection => {
+        const barRepo = connection.getRepository(Bar);
+        const fooRepo = connection.getRepository(Foo);
+
+        await fooRepo.save({
+          bars: [{ description: "test2a" }, { description: "test2b" }]
+        });
+
+        await fooRepo.save({
+          id: 1,
+          bars: [
+            { id: 1, description: "test2a-1" },
+            { description: "test2c" },
+            { id: 1, description: "test2a-2" }
+          ]
+        });
+
+        const bars = await barRepo.find();
+
+        // We saved two bars originally. The above save should update the description of one,
+        // remove the reference of another and insert a 3rd.
+        expect(bars.length).to.equal(3);
+        
+        const bar = await barRepo.findOne(1);
+
+        expect(bar).not.to.be.empty;
+
+        // Did not observe the same behavior with unwanted inserts. Current behavior is
+        // that the first duplicate goes through and the rest are ignored.
+        expect(bar!.description).to.equal("test2a-1");
       })
     ));
 });
