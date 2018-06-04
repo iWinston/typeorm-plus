@@ -27,9 +27,9 @@ userRepository.find({
     join: {
         alias: "user",
         leftJoinAndSelect: {
-            "profile": "user.profile",
-            "photo": "user.photos",
-            "video": "user.videos"
+            profile: "user.profile",
+            photo: "user.photos",
+            video: "user.videos"
         }
     }
 });
@@ -51,8 +51,8 @@ userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
 ```typescript
 userRepository.find({ 
     order: {
-        "name": "ASC",
-        "id": "DESC"
+        name: "ASC",
+        id: "DESC"
     }
 });
 ```
@@ -94,8 +94,8 @@ userRepository.find({
         lastName: "Saw" 
     },
     order: {
-        "name": "ASC",
-        "id": "DESC"
+        name: "ASC",
+        id: "DESC"
     },
     skip: 5,
     take: 10,
