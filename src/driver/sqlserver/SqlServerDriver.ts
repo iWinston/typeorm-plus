@@ -111,7 +111,8 @@ export class SqlServerDriver implements Driver {
         "uniqueidentifier",
         "xml",
         "geometry",
-        "geography"
+        "geography",
+        "rowversion"
     ];
 
     /**
