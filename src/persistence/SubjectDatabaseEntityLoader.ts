@@ -91,16 +91,15 @@ export class SubjectDatabaseEntityLoader {
                 .findByIds(allIds, findOptions);
 
             // now when we have entities we need to find subject of each entity
-            // and insert that entity into database entity of the found subject
+            // and insert that entity into database entity of the found subjects
             entities.forEach(entity => {
-                const subject = this.findByPersistEntityLike(subjectGroup.target, entity);
-                if (subject) {
-                    subject.databaseEntity = entity;
-                    if (!subject.identifier)
-                        subject.identifier = subject.metadata.hasAllPrimaryKeys(entity) ? subject.metadata.getEntityIdMap(entity) : undefined;
-                }
+                const subjects = this.findByPersistEntityLike(subjectGroup.target, entity);
+                subjects.forEach(subject => {
+                  subject.databaseEntity = entity;
+                  if (!subject.identifier)
+                      subject.identifier = subject.metadata.hasAllPrimaryKeys(entity) ? subject.metadata.getEntityIdMap(entity) : undefined;
+                });
             });
-
         });
 
         await Promise.all(promises);
@@ -111,11 +110,13 @@ export class SubjectDatabaseEntityLoader {
     // ---------------------------------------------------------------------
 
     /**
-     * Finds subject where entity like given subject's entity.
+     * Finds subjects where entity like given subject's entity.
      * Comparision made by entity id.
+     * Multiple subjects may be returned if duplicates are present in the subject array.
+     * This will likely result in the same row being updated multiple times during a transaction.
      */
-    protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject|undefined {
-        return this.subjects.find(subject => {
+    protected findByPersistEntityLike(entityTarget: Function|string, entity: ObjectLiteral): Subject[] {
+        return this.subjects.filter(subject => {
             if (!subject.entity)
                 return false;
 
