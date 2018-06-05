@@ -155,6 +155,17 @@ await repository.delete({ firstName: "Timber" });
 const count = await repository.count({ firstName: "Timber" });
 ```
 
+* `increment` - Increments some column by provided value of entities that match given options.
+
+```typescript
+await manager.increment(User, { firstName: "Timber" }, "age", 3);
+```
+
+* `decrement` - Decrements some column by provided value that match given options.
+```typescript
+await manager.count(User, { firstName: "Timber" }, "age", 3);
+```
+
 * `find` - Finds entities that match given options.
 
 ```typescript
