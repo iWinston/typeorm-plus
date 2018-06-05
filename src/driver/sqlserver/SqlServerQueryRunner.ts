@@ -1936,7 +1936,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             case "udt":
                 return this.driver.mssql.UDT;
             case "rowversion":
-                return this.driver.mssql.RowVersion
+                return this.driver.mssql.RowVersion;
         }
     }
 
