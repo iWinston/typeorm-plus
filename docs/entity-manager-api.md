@@ -19,7 +19,7 @@ Learn more [Transactions](./transactions.md).
 ```typescript
 await manager.transaction(async manager => {
     // NOTE: you must perform all database operations using the given manager instance
-    // its a special instance of EntityManager working with this transaction
+    // it's a special instance of EntityManager working with this transaction
     // and don't forget to await things here
 });
 ```

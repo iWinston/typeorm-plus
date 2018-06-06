@@ -60,4 +60,4 @@ TypeORM is able to on React Native apps using the [react-native-sqlite-storage](
 
 In the next releases we are planning to support NativeScript platform as well.
 
-Please feel free to join a community and help us with new features and supporting a new platforms!
+Please feel free to join a community and help us with new features and supporting a new platform!

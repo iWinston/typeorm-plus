@@ -188,7 +188,7 @@ typeorm migration:revert
 ```
 
 This command will undo only the last executed migration.
-You can execute this command multiple times to revert mutliple migrations.
+You can execute this command multiple times to revert multiple migrations.
 Learn more about [Migrations](./migrations.md).
 
 ## Sync database schema

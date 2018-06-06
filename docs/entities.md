@@ -17,7 +17,7 @@
 ## What is Entity?
 
 Entity is a class that maps to a database table (or collection when using MongoDB).
-You can create a entity by defining a new class and mark it with `@Entity()`:
+You can create an entity by defining a new class and mark it with `@Entity()`:
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -195,15 +195,15 @@ const user = await connection.getRepository(User).findOne({ firstName: "Timber",
 There are several special column types with additional functionality available:
 
 * `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
-You don't need set this column - it will be automatically set.
+You don't need to set this column - it will be automatically set.
 
 * `@UpdateDateColumn` is a special column that is automatically set to the entity's update time 
 each time you call `save` of entity manager or repository.
-You don't need set this column - it will be automatically set.
+You don't need to set this column - it will be automatically set.
 
 * `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
 each time you call `save` of entity manager or repository.
-You don't need set this column - it will be automatically set.
+You don't need to set this column - it will be automatically set.
 
 ## Column types
 
