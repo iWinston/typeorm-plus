@@ -188,7 +188,7 @@ someUnique: string;
 Following in sequelize:
 
 ```javascript
-fieldWithUnderscores: { type: Sequelize.STRING, field: 'field_with_underscores' },
+fieldWithUnderscores: { type: Sequelize.STRING, field: "field_with_underscores" },
 ```
 
 Translates to this in TypeORM:
@@ -266,7 +266,7 @@ const employee = await Employee.preload({ id: 1, name: "John Doe" });
 To access properties in sequelize you do the following:
 
 ```typescript
-console.log(employee.get('name'));
+console.log(employee.get("name"));
 ```
 
 In TypeORM you simply do:
