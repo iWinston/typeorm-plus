@@ -16,4 +16,4 @@ If you want community support, or simply want to chat with friendly TypeORM enth
 
 The TypeORM core team is always ready to provide professional commercial support.
 We are ready to work with any team in any part of the world.
-[Please contact us](mail to:support@typeorm.io).
+[Please contact us](mailto:support@typeorm.io).
