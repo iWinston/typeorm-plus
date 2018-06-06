@@ -163,7 +163,7 @@ export type SimpleColumnType =
     |"rowid" // oracle
     |"urowid" // oracle
     |"uniqueidentifier" // mssql
-    |"rowversion"; //mssql
+    |"rowversion"; // mssql
 
 /**
  * Any column type column can be.
