@@ -3,7 +3,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import {Post} from "./entity/Post";
 
-describe.only("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Postgres", () => {
+describe("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Postgres", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
