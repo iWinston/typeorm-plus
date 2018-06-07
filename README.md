@@ -22,7 +22,7 @@
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
 that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native and Electron platforms
-and can be used with TypeScript and JavaScript (ES5, ES6, ES7).
+and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large scale enterprise applications
@@ -196,7 +196,7 @@ await timber.remove();
     
         `npm install sql.js --save`
     
-    * for **Oracle** (experimental)
+    * for **Oracle**
     
         `npm install oracledb --save`
     
@@ -204,8 +204,10 @@ await timber.remove();
     
     To make the Oracle driver work, you need to follow the installation instructions from 
     [their](https://github.com/oracle/node-oracledb) site.
-    Oracle support is experimental at the moment and isn't bug-free.
-    Expect to see more stable Oracle support in the near future.
+
+    * for **MongoDB** (experimental)
+
+        `npm install mongodb --save`
 
 ##### TypeScript configuration
 
@@ -622,7 +624,7 @@ It's not a new copy of the object, it modifies its "id" and returns it.
   
 ### Using async/await syntax
 
-Let's take advantage of the latest ES7 features and use async/await syntax instead:
+Let's take advantage of the latest ES8 (ES2017) features and use async/await syntax instead:
 
 ```typescript
 import {createConnection} from "typeorm";

@@ -5,6 +5,21 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.7
+
+* added support for rowversion type for mssql (#2198)
+
+## 0.2.6
+
+* fixed wrong aggregate and count methods signature in mongodb
+
+## 0.2.5
+
+* added support for enum arrays in postgres
+* fixed issue with lazy relations (#1953)
+* fixed issue with migration file generator using a wrong class name (#2070)
+* fixed issue with unhandled promise rejection warning on postgres connection (#2067)
+
 ## 0.2.4
 
 * fixed bug with relation id loader queries not working with self-referencing relations

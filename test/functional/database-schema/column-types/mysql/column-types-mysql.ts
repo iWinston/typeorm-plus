@@ -48,6 +48,8 @@ describe("database schema > column types > mysql", () => {
         post.timestamp.setMilliseconds(0); // set milliseconds to zero, because if datetime type specified without precision, milliseconds won't save in database
         post.time = "15:30:00";
         post.year = 2017;
+        post.binary = new Buffer("A");
+        post.varbinary = new Buffer("B");
         post.blob = new Buffer("This is blob");
         post.tinyblob = new Buffer("This is tinyblob");
         post.mediumblob = new Buffer("This is mediumblob");
@@ -88,6 +90,8 @@ describe("database schema > column types > mysql", () => {
         loadedPost.timestamp.getTime().should.be.equal(post.timestamp.getTime());
         loadedPost.time.should.be.equal(post.time);
         loadedPost.year.should.be.equal(post.year);
+        loadedPost.binary.toString().should.be.equal(post.binary.toString());
+        loadedPost.varbinary.toString().should.be.equal(post.varbinary.toString());
         loadedPost.blob.toString().should.be.equal(post.blob.toString());
         loadedPost.tinyblob.toString().should.be.equal(post.tinyblob.toString());
         loadedPost.mediumblob.toString().should.be.equal(post.mediumblob.toString());
@@ -128,6 +132,8 @@ describe("database schema > column types > mysql", () => {
         table!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
         table!.findColumnByName("time")!.type.should.be.equal("time");
         table!.findColumnByName("year")!.type.should.be.equal("year");
+        table!.findColumnByName("binary")!.type.should.be.equal("binary");
+        table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
         table!.findColumnByName("blob")!.type.should.be.equal("blob");
         table!.findColumnByName("tinyblob")!.type.should.be.equal("tinyblob");
         table!.findColumnByName("mediumblob")!.type.should.be.equal("mediumblob");

@@ -73,7 +73,7 @@ There are several ways how you can create a `Query Builder`:
     
     const user = await getConnection()
         .createQueryBuilder()
-        .select()
+        .select("user")
         .from(User, "user")
         .where("user.id = :id", { id: 1 })
         .getOne();
@@ -110,7 +110,7 @@ There are 5 different `QueryBuilder` types available:
     
     const user = await getConnection()
         .createQueryBuilder()
-        .select()
+        .select("user")
         .from(User, "user")
         .where("user.id = :id", { id: 1 })
         .getOne();
@@ -220,7 +220,7 @@ We use aliases everywhere, except when we work with selected data.
 
 ```typescript
 createQueryBuilder()
-    .select()
+    .select("user")
     .from(User, "user")
 ```
 
@@ -235,7 +235,7 @@ Later we use this alias to access the table:
 
 ```typescript
 createQueryBuilder()
-    .select()
+    .select("user")
     .from(User, "user")
     .where("user.name = :name", { name: "Timber" })
 ```

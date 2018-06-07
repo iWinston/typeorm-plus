@@ -115,7 +115,7 @@ export class MigrationGenerateCommand {
     protected static getTemplate(name: string, timestamp: number, upSqls: string[], downSqls: string[]): string {
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${camelCase(name)}${timestamp} implements MigrationInterface {
+export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
 ${upSqls.join(`

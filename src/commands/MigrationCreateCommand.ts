@@ -71,7 +71,7 @@ export class MigrationCreateCommand {
     protected static getTemplate(name: string, timestamp: number): string {
         return `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class ${camelCase(name)}${timestamp} implements MigrationInterface {
+export class ${camelCase(name, true)}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
     }

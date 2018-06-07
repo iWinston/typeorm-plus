@@ -301,7 +301,15 @@ export abstract class AbstractSqliteDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+        const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+            // Mapping boolean values to their numeric representation
+            if (typeof nativeParameters[key] === "boolean") {
+                return nativeParameters[key] === true ? 1 : 0;
+            }
+
+            return nativeParameters[key];
+        });
+
         if (!parameters || !Object.keys(parameters).length)
             return [sql, builtParameters];
 

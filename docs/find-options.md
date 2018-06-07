@@ -27,9 +27,9 @@ userRepository.find({
     join: {
         alias: "user",
         leftJoinAndSelect: {
-            "profile": "user.profile",
-            "photo": "user.photos",
-            "video": "user.videos"
+            profile: "user.profile",
+            photo: "user.photos",
+            video: "user.videos"
         }
     }
 });
@@ -40,14 +40,19 @@ userRepository.find({
 ```typescript
 userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } });
 ```
+Querying a column from an embedded entity should be done with respect to the hierarchy in which it was defined. Example: 
+
+```typescript
+userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
+```
 
 * `order` - selection order.
 
 ```typescript
 userRepository.find({ 
     order: {
-        "name": "ASC",
-        "id": "DESC"
+        name: "ASC",
+        id: "DESC"
     }
 });
 ```
@@ -89,8 +94,8 @@ userRepository.find({
         lastName: "Saw" 
     },
     order: {
-        "name": "ASC",
-        "id": "DESC"
+        name: "ASC",
+        id: "DESC"
     },
     skip: 5,
     take: 10,

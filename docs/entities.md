@@ -2,16 +2,16 @@
 
 * [What is Entity?](#what-is-entity)
 * [Entity columns](#entity-columns)
-    * [Primary columns](#primary-columns)
-    * [Special columns](#special-columns)
+  * [Primary columns](#primary-columns)
+  * [Special columns](#special-columns)
 * [Column types](#column-types)
-    * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-    * [Column types for `postgres`](#column-types-for-postgres)
-    * [Column types for `sqlite` / `cordova` / `react-native`](#column-types-for-sqlite--cordova--react-native)
-    * [Column types for `mssql`](#column-types-for-mssql)
-    * [`simple-array` column type](#simple-array-column-type)
-    * [`simple-json` column type](#simple-json-column-type)
-    * [Columns with generated values](#columns-with-generated-values)
+  * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+  * [Column types for `postgres`](#column-types-for-postgres)
+  * [Column types for `sqlite` / `cordova` / `react-native`](#column-types-for-sqlite--cordova--react-native)
+  * [Column types for `mssql`](#column-types-for-mssql)
+  * [`simple-array` column type](#simple-array-column-type)
+  * [`simple-json` column type](#simple-json-column-type)
+  * [Columns with generated values](#columns-with-generated-values)
 * [Column options](#column-options)
 
 ## What is Entity?
@@ -24,19 +24,19 @@ import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     firstName: string;
-    
+
     @Column()
     lastName: string;
-    
+
     @Column()
     isActive: boolean;
-    
+
 }
 ```
 
@@ -53,7 +53,7 @@ This will create following database table:
 +-------------+--------------+----------------------------+
 ```
 
-Basic entities consist of columns and relations. 
+Basic entities consist of columns and relations.
 Each entity **MUST** have a primary column (or ObjectId column if are using MongoDB).
 
 Each entity must be registered in your connection options:
@@ -98,7 +98,7 @@ Learn more about parameters @Entity in [Decorators reference](decorator-referenc
 
 ## Entity columns
 
-Since database table consist of columns your entities must consist of columns too. 
+Since database table consist of columns your entities must consist of columns too.
 Each entity class property you marked with `@Column` will be mapped to a database table column.
 
 ### Primary columns
@@ -106,54 +106,48 @@ Each entity class property you marked with `@Column` will be mapped to a databas
 Each entity must have at least one primary column.
 There are several types of primary columns:
 
-* `@PrimaryColumn()` creates a primary column which take any value of any type.
-You can specify the column type. If you don't specify a column type it will be inferred from the property type.
-Example below will create id with `int` as type which you must manually assign before save.
+* `@PrimaryColumn()` creates a primary column which take any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. Example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
 import {Entity, PrimaryColumn} from "typeorm";
 
 @Entity()
 export class User {
-    
+
     @PrimaryColumn()
     id: number;
-    
-   
+
+
 }
 ```
 
-* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value.
-It will create `int` column with `auto-increment`/`serial`/`sequence` (depend on the database).
-You don't have to manually assign its value before save - value will be automatically generated.
+* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence` (depend on the database). You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn} from "typeorm";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
-   
+
+
 }
 ```
 
-* `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`.
-Uuid is a unique string id.
-You don't have to manually assign its value before save - value will be automatically generated.
+* `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn} from "typeorm";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn("uuid")
     id: string;
-    
-   
+
+
 }
 ```
 
@@ -164,20 +158,20 @@ import {Entity, PrimaryColumn} from "typeorm";
 
 @Entity()
 export class User {
-    
+
     @PrimaryColumn()
     firstName: string;
-    
+
     @PrimaryColumn()
     lastName: string;
-    
+
 }
 ```
 
 When you save entities using `save` it always tries to find a entity in the database with the given entity id (or ids).
-If id/ids are found then it will update this row in the database. 
+If id/ids are found then it will update this row in the database.
 If there is no row with the id/ids, a new row will be inserted.
- 
+
 To find a entity by id you can use `manager.findOne` or `repository.findOne`. Example:
 
 ```typescript
@@ -194,6 +188,7 @@ const user = await connection.getRepository(User).findOne({ firstName: "Timber",
 
 There are several special column types with additional functionality available:
 
+
 * `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
 You don't need to set this column - it will be automatically set.
 
@@ -205,11 +200,12 @@ You don't need to set this column - it will be automatically set.
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
+
 ## Column types
 
 TypeORM supports all of the most commonly used database-supported column types.
 Column types are database-type specific - this provides more flexibility on how your database schema will look like.
- 
+
 You can specify column type as first parameter of `@Column`
 or in the column options of `@Column`, for example:
 
@@ -217,8 +213,8 @@ or in the column options of `@Column`, for example:
 @Column("int")
 ```
 
-or 
- 
+or
+
 ```typescript
 @Column({ type: "int" })
 ```
@@ -230,8 +226,8 @@ For example:
 @Column("varchar", { length: 200 })
 ```
 
-or 
- 
+or
+
 ```typescript
 @Column({ type: "int", length: 200 })
 ```
@@ -246,7 +242,7 @@ or
 
 ### Column types for `postgres`
 
-`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`, 
+`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`,
 `float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`,
 `character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`,
 `timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
@@ -259,23 +255,23 @@ or
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
-`character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, 
+`character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`,
 `blob`, `text`, `clob`, `date`
- 
+
 ### Column types for `mssql`
 
 `int`, `bigint`, `bit`, `decimal`, `money`, `numeric`, `smallint`, `smallmoney`, `tinyint`, `float`,
 `real`, `date`, `datetime2`, `datetime`, `datetimeoffset`, `smalldatetime`, `time`, `char`, `varchar`,
 `text`, `nchar`, `nvarchar`, `ntext`, `binary`, `image`, `varbinary`, `hierarchyid`, `sql_variant`,
-`timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`
- 
+`timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`, `rowversion`
+
 ### Column types for `oracle`
 
 `char`, `nchar`, `nvarchar2`, `varchar2`, `long`, `raw`, `long raw`, `number`, `numeric`, `float`, `dec`,
 `decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
 `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
 `nclob`, `rowid`, `urowid`
-  
+
 ### `simple-array` column type
 
 There is a special column type called `simple-array` which can store primitive array values in a single string column.
@@ -284,15 +280,16 @@ All values are separated by a comma. For example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
- 
+
     @Column("simple-array")
     names: string[];
-    
+
 }
 ```
+
 ```typescript
 const user = new User();
 user.names = [
@@ -304,7 +301,7 @@ user.names = [
 ```
 
 Will be stored in a single database column as `Alexander,Alex,Sasha,Shurik` value.
-When you'll load data from the database, the names will be returned as an array of names, 
+When you'll load data from the database, the names will be returned as an array of names,
 just like you stored them.
 
 Note you **MUST NOT** have any comma in values you write.
@@ -320,15 +317,16 @@ For example:
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
- 
+
     @Column("simple-json")
     profile: { name: string, nickname: string };
-    
+
 }
 ```
+
 ```typescript
 const user = new User();
 user.profile = { name: "John", nickname: "Malkovich" };
@@ -344,23 +342,23 @@ You can create column with generated value using `@Generated` decorator. For exa
 ```typescript
 @Entity()
 export class User {
-    
+
     @PrimaryColumn()
     id: number;
- 
+
     @Column()
     @Generated("uuid")
     uuid: string;
-    
+
 }
 ```
 
 `uuid` value will be automatically generated and stored into the database.
- 
-Besides "uuid" there is also "increment" generated type, however there are some limitations 
+
+Besides "uuid" there is also "increment" generated type, however there are some limitations
 on some database platforms with this type of generation (for example some databases can only have one increment column,
-or some of them require increment to be a primary key). 
- 
+or some of them require increment to be a primary key).
+
 ## Column options
 
 Column options defines additional options for your entity columns.
@@ -379,141 +377,133 @@ name: string;
 List of available options in `ColumnOptions`:
 
 * `type: ColumnType` - Column type. One of the type listed [above](#column-types).
-* `name: string` - Column name in the database table. 
+* `name: string` - Column name in the database table.
+
 By default the column name is generated from the name of the property.
 You can change it by specifying your own name
-* `length: number` - Column type's length. For example if you want to create `varchar(150)` type 
-you specify column type and length options.
+
+* `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
 * `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 * `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. 
-By default column is `nullable: false`.
-* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
-Default value is `false`.
+* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
+* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object. Default value is `false`.
 * `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
-* `default: string` - Adds database-level column's `DEFAULT` value. 
+* `default: string` - Adds database-level column's `DEFAULT` value.
 * `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
 * `unique: boolean` - Marks column as unique column (creates unique constraint).
 * `comment: string` - Database's column comment. Not supported by all database types.
 * `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
  number of digits that are stored for the values. Used in some column types.
-* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), 
-which represents the number of digits to the right of the decimal point and must not be greater than precision. 
-Used in some column types.
-* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. 
-If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
+* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
+* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
-* `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
-You can specify array of values or specify a enum class.
+* `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 * `array: boolean` - Used for postgres column types which can be array (for example int[])
-* `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to
-marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
+* `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
 ## Entity inheritance
 
-You can reduce duplication in your code by using entity inheritance. 
+You can reduce duplication in your code by using entity inheritance.
 
 For example, you have `Photo`, `Question`, `Post` entities:
-  
+
 ```typescript
 @Entity()
 export class Photo {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
- 
+
     @Column()
     title: string;
-    
+
     @Column()
     description: string;
-    
+
     @Column()
     size: string;
-    
+
 }
 
 @Entity()
 export class Question {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
- 
+
     @Column()
     title: string;
-    
+
     @Column()
     description: string;
-    
+
     @Column()
     answersCount: number;
-    
+
 }
 
 @Entity()
 export class Post {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
- 
+
     @Column()
     title: string;
-    
+
     @Column()
     description: string;
-    
+
     @Column()
     viewCount: number;
-    
+
 }
 ```
 
-As you can see all those entities have common columns: `id`, `title`, `description`.
-To reduce duplication and produce a better abstraction we can create a base class called `Content` for them:
-
+As you can see all those entities have common columns: `id`, `title`, `description`. To reduce duplication and produce a better abstraction we can create a base class called `Content` for them:
 
 ```typescript
 export abstract class Content {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
- 
+
     @Column()
     title: string;
-    
+
     @Column()
     description: string;
-    
+
 }
 @Entity()
 export class Photo extends Content {
-    
+
     @Column()
     size: string;
-    
+
 }
 
 @Entity()
 export class Question extends Content {
-    
+
     @Column()
     answersCount: number;
-    
+
 }
 
 @Entity()
 export class Post extends Content {
-    
+
     @Column()
     viewCount: number;
-    
+
 }
 ```
 
@@ -526,8 +516,8 @@ TypeORM supports the Adjacency list and Closure table patterns of storing tree s
 
 ### Adjacency list
 
-Adjacency list is a simple model with self-referencing. 
-Benefit of this approach is simplicity, 
+Adjacency list is a simple model with self-referencing.
+Benefit of this approach is simplicity,
 drawback is you can't load a big tree at once because of join limitations.
 Example:
 
@@ -552,15 +542,14 @@ export class Category {
     @ManyToOne(type => Category, category => category.parent)
     children: Category;
 }
-     
+
 ```
 
 ### Closure table
 
-
-A closure table stores relations between parent and child in a separate table in a special way. 
-Its efficient in both reads and writes. 
-To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data). 
+A closure table stores relations between parent and child in a separate table in a special way.
+Its efficient in both reads and writes.
+To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data).
 Example:
 
 ```typescript

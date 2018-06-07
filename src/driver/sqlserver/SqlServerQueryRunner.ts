@@ -1935,6 +1935,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return this.driver.mssql.Image;
             case "udt":
                 return this.driver.mssql.UDT;
+            case "rowversion":
+                return this.driver.mssql.RowVersion;
         }
     }
 
