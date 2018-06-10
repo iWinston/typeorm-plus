@@ -325,6 +325,28 @@ export class BaseEntity {
     }
 
     /**
+     * Finds first entity that matches given options.
+     */
+    static findOneOrFail<T extends BaseEntity>(id?: string|number|Date|ObjectID, options?: FindOneOptions<T>): Promise<T>;
+
+    /**
+     * Finds first entity that matches given options.
+     */
+    static findOneOrFail<T extends BaseEntity>(options?: FindOneOptions<T>): Promise<T>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    static findOneOrFail<T extends BaseEntity>(conditions?: DeepPartial<T>, options?: FindOneOptions<T>): Promise<T>;
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    static findOneOrFail<T extends BaseEntity>(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<T>|DeepPartial<T>, maybeOptions?: FindOneOptions<T>): Promise<T> {
+        return (this as any).getRepository().findOneOrFail(optionsOrConditions as any, maybeOptions);
+    }
+
+    /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */
