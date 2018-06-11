@@ -33,6 +33,7 @@ import {UpdateResult} from "../query-builder/result/UpdateResult";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {FindConditions} from "../find-options/FindConditions";
+import {IsolationLevel} from "../driver/types/IsolationLevel";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -90,7 +91,19 @@ export class EntityManager {
      * Wraps given function execution (and all operations made there) in a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction<T>(runInTransaction: (entityManger: EntityManager) => Promise<T>): Promise<T> {
+    async transaction<T>(runInTransaction: (entityManger: EntityManager) => Promise<T>): Promise<T>;
+    async transaction<T>(isolationLevel: IsolationLevel, runInTransaction: (entityManger: EntityManager) => Promise<T>): Promise<T>;
+    async transaction<T>(
+        isolationOrRunInTransaction: IsolationLevel | ((entityManger: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManger: EntityManager) => Promise<T>
+    ): Promise<T> {
+
+        const isolation = typeof isolationOrRunInTransaction === "string" ? isolationOrRunInTransaction : undefined;
+        const runInTransaction = typeof isolationOrRunInTransaction === "function" ? isolationOrRunInTransaction : runInTransactionParam;
+
+        if (!runInTransaction) {
+            throw new Error(`Transaction method requires callback in second paramter if isolation level is supplied.`);
+        }
 
         if (this.connection.driver instanceof MongoDriver)
             throw new Error(`Transactions aren't supported by MongoDB.`);
@@ -106,7 +119,11 @@ export class EntityManager {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
         try {
-            await queryRunner.startTransaction();
+            if (isolation) {
+                await queryRunner.startTransaction(isolation);
+              } else {
+                await queryRunner.startTransaction();
+              }
             const result = await runInTransaction(queryRunner.manager);
             await queryRunner.commitTransaction();
             return result;

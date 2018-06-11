@@ -16,6 +16,7 @@ import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType, PromiseUtils} from "../../index";
+import {IsolationLevel} from "../types/IsolationLevel";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -106,7 +107,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async startTransaction(): Promise<void> {
+    async startTransaction(isolationLevel: IsolationLevel = "READ COMMITTED"): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -114,6 +115,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TransactionAlreadyStartedError();
 
         // await this.query("START TRANSACTION");
+        if (isolationLevel !== "SERIALIZABLE" && isolationLevel !== "READ COMMITTED") {
+            throw new Error(`Oracle only supports SERIALIZABLE and READ COMMITTED isolation`);
+        }
+        await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         this.isTransactionActive = true;
     }
 

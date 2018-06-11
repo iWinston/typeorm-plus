@@ -10,6 +10,7 @@ import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUnique} from "../schema-builder/table/TableUnique";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
+import {IsolationLevel} from "../driver/types/IsolationLevel";
 
 /**
  * Runs queries on a single database connection.
@@ -75,7 +76,7 @@ export interface QueryRunner {
     /**
      * Starts transaction.
      */
-    startTransaction(): Promise<void>;
+    startTransaction(isolationLevel?: IsolationLevel): Promise<void>;
 
     /**
      * Commits transaction.
