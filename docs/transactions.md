@@ -1,10 +1,9 @@
 # Transactions
 
-- [Transactions](#transactions)
-    - [Creating and using transactions](#creating-and-using-transactions)
-        - [Specifying Isolation Levels](#specifying-isolation-levels)
-    - [Transaction decorators](#transaction-decorators)
-    - [Using `QueryRunner` to create and control state of single database connection](#using-queryrunner-to-create-and-control-state-of-single-database-connection)
+- [Creating and using transactions](#creating-and-using-transactions)
+	- [Specifying Isolation Levels](#specifying-isolation-levels)
+- [Transaction decorators](#transaction-decorators)
+- [Using `QueryRunner` to create and control state of single database connection](#using-queryrunner-to-create-and-control-state-of-single-database-connection)
 
 ## Creating and using transactions
 
