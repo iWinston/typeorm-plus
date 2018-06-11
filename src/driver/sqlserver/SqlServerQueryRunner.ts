@@ -18,6 +18,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {ColumnType, PromiseUtils} from "../../index";
+import {IsolationLevel} from "../types/IsolationLevel";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -82,7 +83,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Starts transaction.
      */
-    async startTransaction(): Promise<void> {
+    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -94,14 +95,24 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
             const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
             this.databaseConnection = pool.transaction();
-            this.databaseConnection.begin((err: any) => {
+
+            const transactionCallback = (err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
                     return fail(err);
                 }
                 ok();
                 this.connection.logger.logQuery("BEGIN TRANSACTION");
-            });
+                if (isolationLevel) {
+                    this.connection.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+                }
+            };
+
+            if (isolationLevel) {
+                this.databaseConnection.begin(this.convertIsolationLevel(isolationLevel), transactionCallback);
+            } else {
+                this.databaseConnection.begin(transactionCallback);
+            }
         });
     }
 
@@ -1937,6 +1948,26 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return this.driver.mssql.UDT;
             case "rowversion":
                 return this.driver.mssql.RowVersion;
+        }
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     */
+    convertIsolationLevel(isolation: IsolationLevel) {
+        const ISOLATION_LEVEL = this.driver.mssql.ISOLATION_LEVEL;
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED;
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ;
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE;
+                
+            case "READ COMMITTED":
+            default:
+                return ISOLATION_LEVEL.READ_COMMITTED;
         }
     }
 

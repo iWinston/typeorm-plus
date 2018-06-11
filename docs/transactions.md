@@ -1,8 +1,10 @@
 # Transactions
 
-* [Creating and using transactions](#creating-and-using-transactions)
-* [Transaction decorators](#transaction-decorators)
-* [Using `QueryRunner` to create and control state of single database connection](#using-queryrunner-to-create-and-control-state-of-single-database-connection)
+- [Transactions](#transactions)
+    - [Creating and using transactions](#creating-and-using-transactions)
+        - [Specifying Isolation Levels](#specifying-isolation-levels)
+    - [Transaction decorators](#transaction-decorators)
+    - [Using `QueryRunner` to create and control state of single database connection](#using-queryrunner-to-create-and-control-state-of-single-database-connection)
 
 ## Creating and using transactions
 
@@ -45,6 +47,30 @@ If you'll use global manager (from `getManager` or manager from connection) you'
 You also cannot use classes which use global manager or connection to execute their queries.
 All operations **MUST** be executed using the provided transactional entity manager.
 
+### Specifying Isolation Levels
+
+Specifying the isolation level for the transaction can be done by supplying it as the first paramter:
+
+```typescript
+import {getManager} from "typeorm";
+
+await getManager().transaction("SERIALIZABLE", transactionalEntityManager => {
+    
+});
+```
+
+Isolation level implementations are *not* agnostic across all databases.
+
+The following database drivers support the standard isolation levels (`READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`):
+* MySQL
+* Postgres
+* SQL Server
+
+**SQlite** defaults transactions to `SERIALIZABLE`, but if *shared cache mode* is enabled, a transaction can use the `READ UNCOMMITTED` isolation level.
+
+**Oracle** only supports the `READ COMMITTED` and `SERIALIZABLE` isolation levels.
+
+
 ## Transaction decorators
 
 There are a few decorators which can help you organize your transactions - 
@@ -55,6 +81,15 @@ and `@TransactionManager` provides a transaction entity manager which must be us
 
 ```typescript
 @Transaction()
+save(@TransactionManager() manager: EntityManager, user: User) {
+    return manager.save(user);
+}
+```
+
+with isolation level:
+
+```typescript
+@Transaction({ isolation: "SERIALIZABLE" })
 save(@TransactionManager() manager: EntityManager, user: User) {
     return manager.save(user);
 }
