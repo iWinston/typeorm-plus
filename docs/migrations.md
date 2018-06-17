@@ -18,6 +18,8 @@ and apply new changes to an existing database.
 Let's say you already have a database and a post entity:
 
 ```typescript
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+
 @Entity()
 export class Post {
     
@@ -198,7 +200,7 @@ In order to use an API to change a database schema you can use `QueryRunner`.
 Example:
 
 ```ts
-import {MigrationInterface, QueryRunner} from "typeorm";
+import {MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     
