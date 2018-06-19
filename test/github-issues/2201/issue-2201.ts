@@ -4,7 +4,7 @@ import {RecordContext} from "./entity/ver2/context";
 import {Record} from "./entity/ver2/record";
 import {User} from "./entity/ver2/user";
 
-describe.only("github issues > #2201 - Create a select query when using a (custom) junction table", () => {
+describe("github issues > #2201 - Create a select query when using a (custom) junction table", () => {
 
     it("Should create only two PM columns ('order_id' and 'user_id')", async () => {
         const connections = await createTestingConnections({
@@ -30,7 +30,6 @@ describe.only("github issues > #2201 - Create a select query when using a (custo
             enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
-            logging: true
         });
         if (!connections.length) return;
 
@@ -59,7 +58,6 @@ describe.only("github issues > #2201 - Create a select query when using a (custo
             .where("record.id = :recordId", { recordId: record.id });
 
         const result = (await query.getOne())!;
-        console.log(result);
 
         result.status = "failed";
 
