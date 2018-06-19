@@ -1,50 +1,49 @@
-import { expect } from "chai";
+import {expect} from "chai";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {RecordContext} from "./entity/ver2/context";
+import {Record} from "./entity/ver2/record";
+import {User} from "./entity/ver2/user";
 
-import { Connection } from "../../../src/connection/Connection";
-import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
-
-import { User } from "./entity/ver2/user";
-import { Record } from "./entity/ver2/record";
-import { RecordContext } from "./entity/ver2/context";
-
-describe("github issues > #2201 - Create a select query when using a (custom) junction table", () => {
-    let connections: Connection[];
-
-    after(() => closeTestingConnections(connections));
+describe.only("github issues > #2201 - Create a select query when using a (custom) junction table", () => {
 
     it("Should create only two PM columns ('order_id' and 'user_id')", async () => {
-        connections = await createTestingConnections({
+        const connections = await createTestingConnections({
             entities: [__dirname + "/entity/ver1/*{.js,.ts}"],
-            enabledDrivers: ["sqlite"],
             schemaCreate: true,
             dropSchema: true
         });
+        if (!connections.length) return;
 
         const contextMetadata = connections[0].entityMetadatas.find(metadata => metadata.name === "RecordContext")!;
-        const expectedColumnNames = ["record_id", "role", "meta", "user_id"];
+        const expectedColumnNames = ["record_id", "meta", "user_id"];
         const existingColumnNames = contextMetadata.columns.map(col => col.databaseName);
 
         expect(existingColumnNames.length).to.eql(expectedColumnNames.length);
         expect(existingColumnNames).have.members(expectedColumnNames);
+
+        await closeTestingConnections(connections);
     });
 
-    it("Should not try to update the junction table when not needed", async () => {
-        connections = await createTestingConnections({
+    it.skip("Should not try to update the junction table when not needed", async () => {
+        const connections = await createTestingConnections({
             entities: [__dirname + "/entity/ver2/*{.js,.ts}"],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["postgres"],
             schemaCreate: true,
-            dropSchema: true
+            dropSchema: true,
+            logging: true
         });
+        if (!connections.length) return;
 
         User.useConnection(connections[0]);
+        Record.useConnection(connections[0]);
+        RecordContext.useConnection(connections[0]);
+
         const user = User.create({ id: "user1" });
         await user.save();
 
-        Record.useConnection(connections[0]);
         const record = Record.create({ id: "record1", status: "pending" });
         await record.save();
 
-        RecordContext.useConnection(connections[0]);
         const context = RecordContext.create({
             user,
             record,
@@ -54,7 +53,8 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
         } as RecordContext);
         await context.save();
 
-        const query = Record.createQueryBuilder("record")
+        const query = Record
+            .createQueryBuilder("record")
             .leftJoinAndSelect("record.contexts", "context")
             .where("record.id = :recordId", { recordId: record.id });
 
@@ -65,5 +65,7 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
 
         await result.save();
         expect(0).to.eql(0);
+
+        await closeTestingConnections(connections);
     });
 });

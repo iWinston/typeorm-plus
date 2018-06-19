@@ -1,3 +1,4 @@
+import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
 import { Column, PrimaryColumn, ManyToOne } from "../../../../../src/index";
 import { Entity } from "../../../../../src/decorator/entity/Entity";
 import { BaseEntity } from "../../../../../src/repository/BaseEntity";
@@ -14,9 +15,11 @@ export class RecordContext extends BaseEntity {
     userId: string;
 
     @ManyToOne(type => Record, record => record.contexts)
+    @JoinColumn({ name: "record_id" })
     public readonly record: Record;
 
     @ManyToOne(type => User, user => user.contexts)
+    @JoinColumn({ name: "user_id" })
     public readonly user: User;
 
     @Column("simple-json")
