@@ -19,7 +19,7 @@ describe("github issues > #2259 Missing type for generated columns", () => {
     it("Should create table with generated column", () => Promise.all(connections.map(async connection => {
         const id = new TableColumn({
             name: "id",
-            type: "string",
+            type: "uuid",
             generationStrategy: "uuid",
             isGenerated: true,
             isPrimary: true
