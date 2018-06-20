@@ -25,7 +25,7 @@ TypeORM是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)�
 
 不同于现有的所有其他JavaScript ORM框架，TypeORM支持Active Record和Data Mapper模式，这意味着你用最有效的方法编写高质量的、松耦合的、可扩展的、可维护的应用程序。
 
-TypeORM受到了参考了很多其他优秀ORM的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework).
+TypeORM参考了很多其他优秀ORM的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework).
 
 TypeORM 的一些特性：
 - 支持Active Record和Data Mapper（你可以自由选择）
@@ -61,7 +61,7 @@ TypeORM 的一些特性：
 - 支持 MongoDB NoSQL 数据库
 - 在NodeJS / 浏览器 / Ionic / Cordova / React Native / Electron平台上工作
 - 支持 TypeScript 和 JavaScript
-- 产生出高性能、灵活、清洁和可维护的代码
+- 产生出高性能、灵活、清晰和可维护的代码
 - 遵循所有可能的最佳实践
 - 命令行工具
 
@@ -106,7 +106,7 @@ const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" }
 await repository.remove(timber);
 ```
 
-或者，你如果你喜欢使用“ActiveRecord”实现，你也可以使用它：
+或者，你如果喜欢使用“ActiveRecord”实现，你也可以使用它：
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, BaseEntity} from "typeorm";
