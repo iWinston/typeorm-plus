@@ -659,12 +659,12 @@ export class OracleDriver implements Driver {
     protected async createPool(options: OracleConnectionOptions, credentials: OracleConnectionCredentialsOptions): Promise<any> {
 
         credentials = Object.assign(credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
-
+       
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
             user: credentials.username,
             password: credentials.password,
-            connectString: credentials.host + ":" + credentials.port + "/" + credentials.sid,
+            connectString: credentials.connectString ? credentials.connectString : credentials.host + ":" + credentials.port + "/" + credentials.sid,
         }, options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,
