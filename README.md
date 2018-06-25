@@ -21,7 +21,8 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native and Electron platforms
+that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, Nativescript
+React Native and Electron platforms
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
@@ -69,7 +70,7 @@ Some TypeORM features:
 * connection configuration in json / xml / yml / env formats
 * supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 * supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / React Native / Electron platforms
+* works in NodeJS / Browser / Ionic / Cordova / React Native / Nativescript / Electron platforms
 * TypeScript and JavaScript support
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
@@ -240,7 +241,7 @@ typeorm init --name MyProject --database mysql
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`, `cordova`, `react-native`.
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`, `cordova`, `react-native`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
@@ -535,7 +536,7 @@ createConnection({
 
 We are using MySQL in this example, but you can use any other supported database. 
 To use another database, simply change the `type` in the options to the database type you are using: 
-mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, react-native or mongodb.
+mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, nativescript, react-native or mongodb.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection. 
