@@ -1,7 +1,7 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
 
 /**
- * Sqlite-specific connection options.
+ * NativeScript-specific connection options.
  */
 export interface NativescriptConnectionOptions extends BaseConnectionOptions {
 

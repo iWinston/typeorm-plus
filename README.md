@@ -21,7 +21,7 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, Nativescript
+that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, NativeScript
 React Native and Electron platforms
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 Its goal is to always support the latest JavaScript features and provide additional features
@@ -70,7 +70,7 @@ Some TypeORM features:
 * connection configuration in json / xml / yml / env formats
 * supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 * supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / React Native / Nativescript / Electron platforms
+* works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Electron platforms
 * TypeScript and JavaScript support
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
