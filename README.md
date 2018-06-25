@@ -210,6 +210,10 @@ await timber.remove();
 
         `npm install mongodb --save`
 
+    * for **NativeScript**
+
+        `npm install nativescript-sqlite --save`
+
 ##### TypeScript configuration
 
 Also, make sure you are using TypeScript compiler version **2.3** or greater, 
