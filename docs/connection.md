@@ -45,6 +45,7 @@ createConnection({
     type: 'postgres',
     url: 'postgres://test:test@localhost/test'
 })
+```
 
 `createConnections` creates multiple connections:
 
