@@ -201,10 +201,10 @@ await timber.remove();
     
         `npm install oracledb --save`
     
-    Install only *one* of them, depending on which database you use.
-    
-    To make the Oracle driver work, you need to follow the installation instructions from 
-    [their](https://github.com/oracle/node-oracledb) site.
+        Install only *one* of them, depending on which database you use.
+
+        To make the Oracle driver work, you need to follow the installation instructions from
+        [their](https://github.com/oracle/node-oracledb) site.
 
     * for **MongoDB** (experimental)
 
@@ -212,7 +212,16 @@ await timber.remove();
 
     * for **NativeScript**
 
-        `npm install nativescript-sqlite --save`
+        `tns install webpack` (read below why webpack is required)
+        `tns plugin add nativescript-sqlite`
+
+        Note: This works only with NativeScript 4.x and above
+
+        _When using with NativeScript, **using webpack is compulsory**.
+        The `typeorm/browser` package is raw ES7 code with `import/export`
+        which will **NOT** run as it is. It has to be bundled.
+        Please use the `tns run --bundle` method_
+
 
 ##### TypeScript configuration
 
