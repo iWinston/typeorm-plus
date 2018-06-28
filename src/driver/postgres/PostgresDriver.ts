@@ -145,13 +145,18 @@ export class PostgresDriver implements Driver {
         "numrange",
         "tsrange",
         "tstzrange",
-        "daterange"
+        "daterange",
+        "geometry",
+        "geography"
     ];
 
     /**
      * Gets list of spatial column data types.
      */
-    spatialTypes: ColumnType[] = [];
+    spatialTypes: ColumnType[] = [
+        "geometry",
+        "geography"
+    ];
 
     /**
      * Gets list of column data types that support length by a driver.
@@ -283,7 +288,10 @@ export class PostgresDriver implements Driver {
         const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
             return metadata.columns.filter(column => column.type === "hstore").length > 0;
         });
-        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns) {
+        const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
+            return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
+        });
+        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
@@ -306,6 +314,12 @@ export class PostgresDriver implements Driver {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
                             } catch (_) {
                                 logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
+                        if (hasGeometryColumns)
+                            try {
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
+                            } catch (_) {
+                                logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
                             }
                         release();
                         ok();
@@ -370,7 +384,7 @@ export class PostgresDriver implements Driver {
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToDate(value);
 
-        } else if (columnMetadata.type === "json" || columnMetadata.type === "jsonb") {
+        } else if (this.spatialTypes.concat(["json", "jsonb"]).indexOf(columnMetadata.type) >= 0) {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "hstore") {
