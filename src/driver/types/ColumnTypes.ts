@@ -17,6 +17,12 @@ export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
     |"number"; // oracle
 
 /**
+ * Column types where spatial properties are used.
+ */
+export type SpatialColumnType = "geometry" // postgres
+    |"geography"; // postgres
+
+/**
  * Column types where precision and scale properties are used.
  */
 export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
@@ -171,6 +177,7 @@ export type SimpleColumnType =
 export type ColumnType = WithPrecisionColumnType
     |WithLengthColumnType
     |WithWidthColumnType
+    |SpatialColumnType
     |SimpleColumnType
     |BooleanConstructor
     |DateConstructor

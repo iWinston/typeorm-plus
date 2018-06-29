@@ -1,10 +1,11 @@
 import {ColumnOptions, getMetadataArgsStorage} from "../../";
 import {
-    ColumnType, SimpleColumnType, WithLengthColumnType,
+    ColumnType, SimpleColumnType, SpatialColumnType, WithLengthColumnType,
     WithPrecisionColumnType, WithWidthColumnType
 } from "../../driver/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 import {ColumnCommonOptions} from "../options/ColumnCommonOptions";
+import {SpatialColumnOptions} from "../options/SpatialColumnOptions";
 import {ColumnWithLengthOptions} from "../options/ColumnWithLengthOptions";
 import {ColumnNumericOptions} from "../options/ColumnNumericOptions";
 import {ColumnEnumOptions} from "../options/ColumnEnumOptions";
@@ -31,6 +32,12 @@ export function Column(options: ColumnOptions): Function;
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(type: SimpleColumnType, options?: ColumnCommonOptions): Function;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(type: SpatialColumnType, options?: ColumnCommonOptions & SpatialColumnOptions): Function;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.

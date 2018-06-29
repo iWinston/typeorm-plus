@@ -278,6 +278,11 @@ export class ColumnMetadata {
      */
     isMaterializedPath: boolean = false;
 
+    /**
+     * SRID (Spatial Reference ID (EPSG code))
+     */
+    srid?: number;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -366,6 +371,8 @@ export class ColumnMetadata {
         }
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer;
+        if (options.args.options.srid)
+            this.srid = options.args.options.srid;
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel;
         if (this.isCreateDate) {

@@ -122,4 +122,14 @@ export interface TableColumnOptions {
      * Generated column type. Supports only in MySQL.
      */
     generatedType?: "VIRTUAL"|"STORED";
+
+    /**
+     * Spatial Feature Type (Geometry, Point, Polygon, etc.)
+     */
+    spatialFeatureType?: string;
+
+    /**
+     * SRID (Spatial Reference ID (EPSG code))
+     */
+    srid?: number;
 }

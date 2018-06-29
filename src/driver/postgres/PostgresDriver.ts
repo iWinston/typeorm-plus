@@ -636,6 +636,14 @@ export class PostgresDriver implements Driver {
 
         } else if (column.type === "timestamp with time zone") {
             type = "TIMESTAMP" + (column.precision !== null && column.precision !== undefined ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
+        } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
+          if (column.spatialFeatureType != null && column.srid != null) {
+            type = `${column.type}(${column.spatialFeatureType},${column.srid})`;
+          } else if (column.spatialFeatureType != null) {
+            type = `${column.type}(${column.spatialFeatureType})`;
+          } else {
+            type = column.type;
+          }
         }
 
         if (column.isArray)
