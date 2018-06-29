@@ -319,9 +319,7 @@ export abstract class QueryBuilder<Entity> {
         if (this.expressionMap.parentQueryBuilder)
             this.expressionMap.parentQueryBuilder.setParameters(parameters);
 
-        Object.keys(parameters).forEach(key => {
-            this.expressionMap.parameters[key] = parameters[key];
-        });
+        Object.keys(parameters).forEach(key => this.setParameter(key, parameters[key]));
         return this;
     }
 
