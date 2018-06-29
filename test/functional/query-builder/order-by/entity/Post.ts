@@ -1,6 +1,7 @@
 import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../src/decorator/columns/Column";
+import {Index} from "../../../../../src";
 
 @Entity({
     orderBy: {
@@ -20,5 +21,9 @@ export class Post {
 
     @Column()
     num2: number = 1;
+
+    @Column({ type: "geometry" })
+    @Index({ spatial: true })
+    geom: object;
 
 }
