@@ -11,15 +11,15 @@ import {ColumnType} from "../types/ColumnTypes";
  * Organizes communication with sqlite DBMS within Nativescript.
  */
 export class NativescriptDriver extends AbstractSqliteDriver {
-  // -------------------------------------------------------------------------
-  // Public Properties
-  // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Public Properties
+    // -------------------------------------------------------------------------
 
-  /**
-   * Connection options.
-   */
+    /**
+     * Connection options.
+     */
     options: NativescriptConnectionOptions;
-    
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -27,9 +27,9 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     constructor(connection: Connection) {
         super(connection);
 
-      this.connection = connection;
-      this.options = connection.options as NativescriptConnectionOptions;
-      this.database = this.options.database;
+        this.connection = connection;
+        this.options = connection.options as NativescriptConnectionOptions;
+        this.database = this.options.database;
 
         // validate options to make sure everything is set
         if (!this.options.database)
@@ -38,7 +38,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         // load sqlite package
         this.loadDependencies();
     }
-    
+
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -53,7 +53,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
             this.databaseConnection.close().then(ok).catch(fail);
         });
     }
-    
+
     /**
      * Creates a query runner used to execute database queries.
      */
@@ -66,7 +66,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
 
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
         if ((column.type as any) === Buffer) {
-          return "blob";
+            return "blob";
         }
 
         return super.normalizeType(column);
@@ -87,8 +87,12 @@ export class NativescriptDriver extends AbstractSqliteDriver {
             new this.sqlite(options.name, (err: Error, db: any): any => {
                 if (err) return fail(err);
 
-              // we need to enable foreign keys in sqlite to make sure all foreign key related features
-              // working properly. this also makes onDelete work with sqlite.
+                // use object mode to work with TypeORM
+                db.resultType(this.sqlite.RESULTSASOBJECT);
+
+
+                // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                // working properly. this also makes onDelete work with sqlite.
                 db.execSQL(`PRAGMA foreign_keys = ON;`, [], (err: Error, result: any): any => {
                     if (err) return fail(err);
                     // We are all set

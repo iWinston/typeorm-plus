@@ -35,7 +35,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection;
 
-        return new Promise<any[]>(async (ok, fail) => {
+        return new Promise<any[]>( (ok, fail) => {
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
 
             const handler = function (err: any, result: any) {
@@ -55,15 +55,15 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                     ok(result);
                 }
             };
-
-            const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
-            if (isInsertQuery) {
-                databaseConnection.execSQL(query, parameters, handler);
-            } else {
-                databaseConnection.all(query, parameters, handler);
-            }
+            this.connect().then(databaseConnection => {
+                if (isInsertQuery) {
+                    databaseConnection.execSQL(query, parameters, handler);
+                } else {
+                    databaseConnection.all(query, parameters, handler);
+                }
+            });
         });
     }
 
