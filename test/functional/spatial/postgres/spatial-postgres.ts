@@ -117,6 +117,59 @@ describe("spatial-postgres", () => {
       })
     ));
 
+  it("should update geometry correctly", () =>
+    Promise.all(
+      connections.map(async connection => {
+        const geom = {
+          type: "Point",
+          coordinates: [0, 0]
+        };
+        const geom2 = {
+          type: "Point",
+          coordinates: [45, 45]
+        };
+        const recordRepo = connection.getRepository(Post);
+        const post = new Post();
+        post.geom = geom;
+        const persistedPost = await recordRepo.save(post);
+
+        await recordRepo.update({
+          id: persistedPost.id
+        }, {
+          geom: geom2
+        });
+
+        const foundPost = await recordRepo.findOne(persistedPost.id);
+        expect(foundPost).to.exist;
+        expect(foundPost!.geom).to.deep.equal(geom2);
+      })
+    ));
+
+  it("should re-save geometry correctly", () =>
+    Promise.all(
+      connections.map(async connection => {
+        const geom = {
+          type: "Point",
+          coordinates: [0, 0]
+        };
+        const geom2 = {
+          type: "Point",
+          coordinates: [45, 45]
+        };
+        const recordRepo = connection.getRepository(Post);
+        const post = new Post();
+        post.geom = geom;
+        const persistedPost = await recordRepo.save(post);
+
+        persistedPost.geom = geom2;
+        await recordRepo.save(persistedPost);
+
+        const foundPost = await recordRepo.findOne(persistedPost.id);
+        expect(foundPost).to.exist;
+        expect(foundPost!.geom).to.deep.equal(geom2);
+      })
+    ));
+
     it("should be able to order geometries by distance", () => Promise.all(connections.map(async connection => {
 
         const geoJson1 = {
