@@ -812,6 +812,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`);
                 }
             }
+
+            if (newColumn.spatialFeatureType !== oldColumn.spatialFeatureType || newColumn.srid !== oldColumn.srid) {
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
+            }
+
         }
 
         await this.executeQueries(upQueries, downQueries);
