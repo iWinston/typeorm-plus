@@ -393,7 +393,12 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             this.expressionMap.nativeParameters[paramName] = value;
                         }
 
-                        updateColumnAndValues.push(this.escape(column.databaseName) + " = " + this.connection.driver.createParameter(paramName, parametersCount));
+                        if (this.connection.driver instanceof MysqlDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                            updateColumnAndValues.push(this.escape(column.databaseName) + " = GeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ")");
+                        } else {
+                            updateColumnAndValues.push(this.escape(column.databaseName) + " = " + this.connection.driver.createParameter(paramName, parametersCount));
+                        }
+
                         parametersCount++;
                     }
                 });
