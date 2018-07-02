@@ -384,7 +384,7 @@ export class PostgresDriver implements Driver {
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToDate(value);
 
-        } else if (this.spatialTypes.concat(["json", "jsonb"]).indexOf(columnMetadata.type) >= 0) {
+        } else if (["json", "jsonb", ...this.spatialTypes].indexOf(columnMetadata.type) >= 0) {
             return JSON.stringify(value);
 
         } else if (columnMetadata.type === "hstore") {
