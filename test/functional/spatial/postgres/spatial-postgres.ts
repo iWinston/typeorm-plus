@@ -40,12 +40,13 @@ describe("spatial-postgres", () => {
         const schema = await queryRunner.getTable("post");
         await queryRunner.release();
         expect(schema).not.to.be.empty;
-        expect(
-          schema!.columns.find(
+        const pointColumn = schema!.columns.find(
             tableColumn =>
-              tableColumn.name === "geom" && tableColumn.type === "geometry"
+              tableColumn.name === "point" && tableColumn.type === "geometry"
           )
-        ).to.not.be.empty;
+        expect(pointColumn).to.not.be.empty;
+        expect(pointColumn!.spatialFeatureType!.toLowerCase()).to.equal("point");
+        expect(pointColumn!.srid).to.equal(4326);
       })
     ));
 

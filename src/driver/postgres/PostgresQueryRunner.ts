@@ -813,7 +813,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (newColumn.spatialFeatureType !== oldColumn.spatialFeatureType || newColumn.srid !== oldColumn.srid) {
+            if ((newColumn.spatialFeatureType || "").toLowerCase() !== (oldColumn.spatialFeatureType || "").toLowerCase() || newColumn.srid !== oldColumn.srid) {
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
             }
@@ -1356,6 +1356,40 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                             `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
                         const results: ObjectLiteral[] = await this.query(sql);
                         tableColumn.enum = results.map(result => result["value"]);
+                    }
+
+                    if (tableColumn.type === "geometry") {
+                      const geometryColumnSql = `SELECT * FROM (
+                        SELECT
+                          f_table_schema table_schema,
+                          f_table_name table_name,
+                          f_geometry_column column_name,
+                          srid,
+                          type
+                        FROM geometry_columns
+                      ) AS _
+                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+
+                      const results: ObjectLiteral[] = await this.query(geometryColumnSql);
+                      tableColumn.spatialFeatureType = results[0].type;
+                      tableColumn.srid = results[0].srid;
+                    }
+
+                    if (tableColumn.type === "geography") {
+                      const geographyColumnSql = `SELECT * FROM (
+                        SELECT
+                          f_table_schema table_schema,
+                          f_table_name table_name,
+                          f_geography_column column_name,
+                          srid,
+                          type
+                        FROM geography_columns
+                      ) AS _
+                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+
+                      const results: ObjectLiteral[] = await this.query(geographyColumnSql);
+                      tableColumn.spatialFeatureType = results[0].type;
+                      tableColumn.srid = results[0].srid;
                     }
 
                     // check only columns that have length property
