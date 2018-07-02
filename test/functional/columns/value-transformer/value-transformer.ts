@@ -3,17 +3,18 @@ import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
+import { PhoneBook } from "./entity/PhoneBook";
 
 describe("columns > value-transformer functionality", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post],
+        entities: [Post, PhoneBook],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should marshal data using the provided value-transformer", () => Promise.all(connections.map(async connection => {
+    it.only("should marshal data using the provided value-transformer", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
 
@@ -32,6 +33,22 @@ describe("columns > value-transformer functionality", () => {
         const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.title).to.be.equal("About columns1");
         expect(loadedPost!.tags).to.deep.eq(["very", "simple"]);
+
+
+        const phoneBookRepository = connection.getRepository(PhoneBook);
+        const phoneBook = new PhoneBook();
+        phoneBook.name = "George";
+        phoneBook.phones = new Map();
+        phoneBook.phones.set("work", 123456);
+        phoneBook.phones.set("mobile", 1234567);
+        await phoneBookRepository.save(phoneBook);
+
+        const loadedPhoneBook = await phoneBookRepository.findOne(1);
+        expect(loadedPhoneBook!.name).to.be.equal("George");
+        expect(loadedPhoneBook!.phones).not.to.be.undefined;
+        expect(loadedPhoneBook!.phones.get("work")).to.equal(123456);
+        expect(loadedPhoneBook!.phones.get("mobile")).to.equal(1234567);
+
 
     })));
 
