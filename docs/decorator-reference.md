@@ -812,7 +812,7 @@ export class UserRepository {
 You can obtain any custom created repository using `connection.getCustomRepository`
 or `entityManager.getCustomRepository` methods.
 
-Learn more about [custom entity repositories](working-with-entity-manager.md).
+Learn more about [custom entity repositories](custom-repository.md).
 
 ----
 
