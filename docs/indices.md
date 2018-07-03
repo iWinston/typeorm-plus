@@ -3,6 +3,8 @@
 * [Column indices](#column-indices)
 * [Unique indices](#unique-indices)
 * [Indices with multiple columns](#indices-with-multiple-columns)
+* [Spatial Indices](#spatial-indices)
+* [Disabling synchronization](#disabling-synchronization)
 
 ## Column indices
 
