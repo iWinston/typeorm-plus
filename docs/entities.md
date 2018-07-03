@@ -4,6 +4,7 @@
 * [Entity columns](#entity-columns)
   * [Primary columns](#primary-columns)
   * [Special columns](#special-columns)
+  * [Spatial columns](#spatial-columns)
 * [Column types](#column-types)
   * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
   * [Column types for `postgres`](#column-types-for-postgres)
