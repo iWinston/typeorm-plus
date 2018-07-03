@@ -393,12 +393,19 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             this.expressionMap.nativeParameters[paramName] = value;
                         }
 
+                        let expression = null;
                         if (this.connection.driver instanceof MysqlDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
-                            updateColumnAndValues.push(this.escape(column.databaseName) + " = GeomFromText(" + this.connection.driver.createParameter(paramName, parametersCount) + ")");
+                            expression = `GeomFromText(${this.connection.driver.createParameter(paramName, parametersCount)})`;
+                        } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
+                            if (column.srid != null) {
+                              expression = `ST_SetSRID(ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)}), ${column.srid})::${column.type}`;
+                            } else {
+                              expression = `ST_GeomFromGeoJSON(${this.connection.driver.createParameter(paramName, parametersCount)})::${column.type}`;
+                            }
                         } else {
-                            updateColumnAndValues.push(this.escape(column.databaseName) + " = " + this.connection.driver.createParameter(paramName, parametersCount));
+                            expression = this.connection.driver.createParameter(paramName, parametersCount);
                         }
-
+                        updateColumnAndValues.push(this.escape(column.databaseName) + " = " + expression);
                         parametersCount++;
                     }
                 });

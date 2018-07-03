@@ -124,6 +124,16 @@ export class TableColumn {
      */
     generatedType?: "VIRTUAL"|"STORED";
 
+    /**
+     * Spatial Feature Type (Geometry, Point, Polygon, etc.)
+     */
+    spatialFeatureType?: string;
+
+    /**
+     * SRID (Spatial Reference ID (EPSG code))
+     */
+    srid?: number;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -152,6 +162,8 @@ export class TableColumn {
             this.enum = options.enum;
             this.asExpression = options.asExpression;
             this.generatedType = options.generatedType;
+            this.spatialFeatureType = options.spatialFeatureType;
+            this.srid = options.srid;
         }
     }
 
@@ -185,7 +197,9 @@ export class TableColumn {
             isPrimary: this.isPrimary,
             isUnique: this.isUnique,
             isArray: this.isArray,
-            comment: this.comment
+            comment: this.comment,
+            spatialFeatureType: this.spatialFeatureType,
+            srid: this.srid
         });
     }
 

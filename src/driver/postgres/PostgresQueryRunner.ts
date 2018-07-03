@@ -812,6 +812,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`);
                 }
             }
+
+            if ((newColumn.spatialFeatureType || "").toLowerCase() !== (oldColumn.spatialFeatureType || "").toLowerCase() || newColumn.srid !== oldColumn.srid) {
+                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
+                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
+            }
+
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -1182,7 +1188,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.startTransaction();
         try {
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString})`;
+            // ignore spatial_ref_sys; it's a special table supporting PostGIS
+            // TODO generalize this as this.driver.ignoreTables
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND tablename NOT IN ('spatial_ref_sys')`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
             await this.dropEnumTypes(schemaNamesString);
@@ -1242,12 +1250,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             `WHERE "t"."relkind" = 'r' AND (${constraintsCondition})`;
 
         const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
-            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition" ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `"types"."typname" AS "type_name" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" = 'r' AND "cnst"."contype" IS NULL AND (${constraintsCondition})`;
 
@@ -1346,6 +1356,40 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                             `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
                         const results: ObjectLiteral[] = await this.query(sql);
                         tableColumn.enum = results.map(result => result["value"]);
+                    }
+
+                    if (tableColumn.type === "geometry") {
+                      const geometryColumnSql = `SELECT * FROM (
+                        SELECT
+                          f_table_schema table_schema,
+                          f_table_name table_name,
+                          f_geometry_column column_name,
+                          srid,
+                          type
+                        FROM geometry_columns
+                      ) AS _
+                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+
+                      const results: ObjectLiteral[] = await this.query(geometryColumnSql);
+                      tableColumn.spatialFeatureType = results[0].type;
+                      tableColumn.srid = results[0].srid;
+                    }
+
+                    if (tableColumn.type === "geography") {
+                      const geographyColumnSql = `SELECT * FROM (
+                        SELECT
+                          f_table_schema table_schema,
+                          f_table_name table_name,
+                          f_geography_column column_name,
+                          srid,
+                          type
+                        FROM geography_columns
+                      ) AS _
+                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+
+                      const results: ObjectLiteral[] = await this.query(geographyColumnSql);
+                      tableColumn.spatialFeatureType = results[0].type;
+                      tableColumn.srid = results[0].srid;
                     }
 
                     // check only columns that have length property
@@ -1450,7 +1494,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     columnNames: indices.map(i => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
-                    isSpatial: false,
+                    isSpatial: indices.every(i => this.driver.spatialTypes.indexOf(i["type_name"]) >= 0),
                     isFulltext: false
                 });
             });
@@ -1591,7 +1635,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)}(${columns}) ${index.where ? "WHERE " + index.where : ""}`;
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)} ${index.isSpatial ? "USING GiST " : ""} (${columns}) ${index.where ? "WHERE " + index.where : ""}`;
     }
 
     /**
