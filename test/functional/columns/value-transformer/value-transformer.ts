@@ -1,9 +1,11 @@
 import "reflect-metadata";
-import {expect} from "chai";
+
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+
 import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
 import { PhoneBook } from "./entity/PhoneBook";
+import {Post} from "./entity/Post";
+import {expect} from "chai";
 
 describe("columns > value-transformer functionality", () => {
 
@@ -14,7 +16,7 @@ describe("columns > value-transformer functionality", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("should marshal data using the provided value-transformer", () => Promise.all(connections.map(async connection => {
+    it("should marshal data using the provided value-transformer", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
 
