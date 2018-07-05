@@ -1,10 +1,10 @@
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {Connection} from "../connection/Connection";
+import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
 import {JoinTableMetadataArgs} from "../metadata-args/JoinTableMetadataArgs";
-import {Connection} from "../connection/Connection";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Creates EntityMetadata for junction tables.
@@ -133,14 +133,14 @@ export class JunctionEntityMetadataBuilder {
                 referencedEntityMetadata: relation.entityMetadata,
                 columns: junctionColumns,
                 referencedColumns: referencedColumns,
-                onDelete: "CASCADE"
+                onDelete: relation.onDelete ||  "CASCADE"
             }),
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: relation.inverseEntityMetadata,
                 columns: inverseJunctionColumns,
                 referencedColumns: inverseReferencedColumns,
-                onDelete: "CASCADE"
+                onDelete: relation.onDelete || "CASCADE"
             }),
         ];
 

@@ -66,7 +66,7 @@ For example to proper install oracle driver you need to follow all instructions 
 To create an initial `ormconfig.json` file, run the following command:
 
 ```shell
-npm run setup:config
+cp ormconfig.json.dist ormconfig.json
 ```
 
 ## Building
