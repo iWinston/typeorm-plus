@@ -21,7 +21,7 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, NativeScript
+that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, NativeScript,
 React Native and Electron platforms
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 Its goal is to always support the latest JavaScript features and provide additional features
@@ -210,17 +210,10 @@ await timber.remove();
 
         `npm install mongodb --save`
 
-    * for **NativeScript**
+    * for **NativeScript**, **react-native** and **Cordova**
 
-        `tns install webpack` (read below why webpack is required)
-        `tns plugin add nativescript-sqlite`
+        Check [documentation of supported platforms](docs/supported-platforms.md)
 
-        Note: This works only with NativeScript 4.x and above
-
-        _When using with NativeScript, **using webpack is compulsory**.
-        The `typeorm/browser` package is raw ES7 code with `import/export`
-        which will **NOT** run as it is. It has to be bundled.
-        Please use the `tns run --bundle` method_
 
 
 ##### TypeScript configuration
