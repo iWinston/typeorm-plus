@@ -26,7 +26,7 @@ describe("github issues > #2464 - ManyToMany onDelete option not working", () =>
         try {
           await repo.delete(1);
           expect.fail(); 
-        } catch(e) {
+        } catch (e) {
           e.should.be.instanceOf(QueryFailedError);
         }
         
@@ -40,8 +40,8 @@ describe("github issues > #2464 - ManyToMany onDelete option not working", () =>
         await repo.save({ id: 1, otherBars: [{ description: "test1" }] });
         await repo.delete(1);
 
-        const foo = await repo.findOne(1)
-        expect(foo).to.be.undefined
+        const foo = await repo.findOne(1);
+        expect(foo).to.be.undefined;
         
       })
     ));

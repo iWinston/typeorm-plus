@@ -14,7 +14,7 @@ interface IResultSet {
         length: number;
         item: (idx: number) => any;
         _array: any[];
-    }
+    };
 }
 interface ITransaction {
     executeSql: (
