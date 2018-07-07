@@ -9,15 +9,15 @@ export class Foo  extends BaseEntity {
 
   @JoinTable()
   @ManyToMany(() => Bar, bar => bar.foos, { 
-    cascade: ['insert', 'update'],
-    onDelete: 'NO ACTION' 
+    cascade: ["insert", "update"],
+    onDelete: "NO ACTION" 
   })
   bars?: Bar[];
 
 
   @JoinTable()
   @ManyToMany(() => Bar, bar => bar.foos, { 
-    cascade: ['insert', 'update'],
+    cascade: ["insert", "update"],
   })
   otherBars?: Bar[];
 }
