@@ -279,7 +279,8 @@ export class UserController {
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        await this.userRepository.removeById(request.params.id);
+        let userToRemove = await this.userRepository.findOne(request.params.id);
+        await this.userRepository.remove(userToRemove);
     }
 
 }`;

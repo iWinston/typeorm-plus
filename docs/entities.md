@@ -4,10 +4,11 @@
 * [Entity columns](#entity-columns)
   * [Primary columns](#primary-columns)
   * [Special columns](#special-columns)
+  * [Spatial columns](#spatial-columns)
 * [Column types](#column-types)
   * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
   * [Column types for `postgres`](#column-types-for-postgres)
-  * [Column types for `sqlite` / `cordova` / `react-native`](#column-types-for-sqlite--cordova--react-native)
+  * [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
   * [Column types for `mssql`](#column-types-for-mssql)
   * [`simple-array` column type](#simple-array-column-type)
   * [`simple-json` column type](#simple-json-column-type)
@@ -200,6 +201,59 @@ You don't need to set this column - it will be automatically set.
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
+### Spatial columns
+
+MS SQL, MySQL / MariaDB, and PostgreSQL all support spatial columns. TypeORM's
+support for each varies slightly between databases, particularly as the column
+names vary between databases.
+
+MS SQL and MySQL / MariaDB's TypeORM support exposes (and expects) geometries to
+be provided as [well-known text
+(WKT)](https://en.wikipedia.org/wiki/Well-known_text), so geometry columns
+should be tagged with the `string` type.
+
+TypeORM's PostgreSQL support uses [GeoJSON](http://geojson.org/) as an
+interchange format, so geometry columns should be tagged either as `object` or
+`Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
+types](https://www.npmjs.com/package/@types/geojson).
+
+TypeORM tries to do the right thing, but it's not always possible to determine
+when a value being inserted or the result of a PostGIS function should be
+treated as a geometry. As a result, you may find yourself writing code similar
+to the following, where values are converted into PostGIS `geometry`s from
+GeoJSON and into GeoJSON as `json`:
+
+```typescript
+const origin = {
+  type: "Point",
+  coordinates: [0, 0]
+};
+
+await getManager()
+    .createQueryBuilder(Thing, "thing")
+    // convert stringified GeoJSON into a geometry with an SRID that matches the
+    // table specification
+    .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
+    .orderBy({
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))": {
+            order: "ASC"
+        }
+    })
+    .setParameters({
+      // stringify GeoJSON
+      origin: JSON.stringify(origin)
+    })
+    .getMany();
+
+await getManager()
+    .createQueryBuilder(Thing, "thing")
+    // convert geometry result into GeoJSON, treated as JSON (so that TypeORM
+    // will know to deserialize it)
+    .select("ST_AsGeoJSON(ST_Buffer(geom, 0.1))::json geom")
+    .from("thing")
+    .getMany();
+```
+
 
 ## Column types
 
@@ -249,9 +303,9 @@ or
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`
+`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
 
-### Column types for `sqlite` / `cordova` / `react-native`
+### Column types for `sqlite` / `cordova` / `react-native` / `expo`
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,

@@ -97,6 +97,14 @@ export class SqliteDriver extends AbstractSqliteDriver {
                     if (err) return fail(err);
                     ok(databaseConnection);
                 });
+
+                // in the options, if encryption key for for SQLCipher is setted.
+                if (this.options.key) {
+                  databaseConnection.run(`PRAGMA key = ${this.options.key};`, (err: any, result: any) => {
+                    if (err) return fail(err);
+                    ok(databaseConnection);
+                  });
+                }
             });
         });
     }

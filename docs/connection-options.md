@@ -11,6 +11,7 @@
 * [`mssql` connection options](#mssql-connection-options)
 * [`mongodb` connection options](#mongodb-connection-options)
 * [`sql.js` connection options](#sqljs-connection-options)
+* [`expo` connection options](#expo-connection-options)
 * [Connection options example](#connection-options-example)
     
 ## What is `ConnectionOptions`
@@ -461,6 +462,10 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `autoSaveCallback`: A function that get's called when changes to the database are made and `autoSave` is enabled. The function gets a `UInt8Array` that represents the database.
 
 * `location`: The file location to load and save the database to.
+
+## `expo` connection options
+
+* `database` - Name of the database. For example "mydb".
 
 ## Connection options example
 
