@@ -8,6 +8,7 @@ export type DatabaseType =
     "sqlite"|
     "cordova"|
     "react-native"|
+    "nativescript" |
     "sqljs"|
     "oracle"|
     "mssql"|

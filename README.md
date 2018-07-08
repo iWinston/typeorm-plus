@@ -21,7 +21,7 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, Expo, and Electron platforms
+that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo, and Electron platforms
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
@@ -69,7 +69,7 @@ Some TypeORM features:
 * connection configuration in json / xml / yml / env formats
 * supports MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
 * supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / React Native / Expo / Electron platforms
+* works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
 * TypeScript and JavaScript support
 * produced code is performant, flexible, clean and maintainable
 * follows all possible best practices
@@ -200,14 +200,20 @@ await timber.remove();
     
         `npm install oracledb --save`
     
-    Install only *one* of them, depending on which database you use.
-    
-    To make the Oracle driver work, you need to follow the installation instructions from 
-    [their](https://github.com/oracle/node-oracledb) site.
+        Install only *one* of them, depending on which database you use.
+
+        To make the Oracle driver work, you need to follow the installation instructions from
+        [their](https://github.com/oracle/node-oracledb) site.
 
     * for **MongoDB** (experimental)
 
         `npm install mongodb --save`
+
+    * for **NativeScript**, **react-native** and **Cordova**
+
+        Check [documentation of supported platforms](docs/supported-platforms.md)
+
+
 
 ##### TypeScript configuration
 
@@ -241,7 +247,7 @@ typeorm init --name MyProject --database mysql
 
 Where `name` is the name of your project and `database` is the database you'll use.
 Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mssql`, `oracle`, `mongodb`,
-`cordova`, `react-native`, `expo`.
+`cordova`, `react-native`, `expo`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
@@ -536,7 +542,7 @@ createConnection({
 
 We are using MySQL in this example, but you can use any other supported database. 
 To use another database, simply change the `type` in the options to the database type you are using: 
-mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, react-native, expo, or mongodb.
+mysql, mariadb, postgres, sqlite, mssql, oracle, cordova, nativescript, react-native, expo, or mongodb.
 Also make sure to use your own host, port, username, password and database settings.
 
 We added our Photo entity to the list of entities for this connection. 
