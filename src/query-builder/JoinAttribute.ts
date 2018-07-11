@@ -4,6 +4,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {Alias} from "./Alias";
+import {ObjectUtils} from "../util/ObjectUtils";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -51,7 +52,7 @@ export class JoinAttribute {
     constructor(private connection: Connection,
                 private queryExpressionMap: QueryExpressionMap,
                 joinAttribute?: JoinAttribute) {
-        Object.assign(this, joinAttribute || {});
+        ObjectUtils.assign(this, joinAttribute || {});
     }
 
     // -------------------------------------------------------------------------
@@ -129,7 +130,7 @@ export class JoinAttribute {
 
         const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
         let relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
-        
+
         if (relation) {
             return relation;
         }
@@ -141,7 +142,7 @@ export class JoinAttribute {
             }
         }
 
-        throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);  
+        throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
     }
 
     /**

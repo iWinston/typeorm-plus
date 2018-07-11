@@ -240,7 +240,7 @@ export class PostgresDriver implements Driver {
         // load postgres package
         this.loadDependencies();
 
-        // Object.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
+        // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!this.options.host)
