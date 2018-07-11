@@ -34,11 +34,8 @@ export class ObjectUtils {
    */
   static assign(target: object, ...sources: any[]): any {
     for (const source of sources) {
-      for (const prop in source) {
-        const descriptor = Object.getOwnPropertyDescriptor(source, prop);
-        if (descriptor === undefined || descriptor.writable) {
-            (target as any)[prop] = source[prop];
-        }
+      for (const prop of Object.getOwnPropertyNames(source)) {
+          (target as any)[prop] = source[prop];
       }
     }
   }
