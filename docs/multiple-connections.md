@@ -76,7 +76,7 @@ Downside for might be that you'll need to manage and work with multiple connecti
 ## Using multiple databases in a single connection
 
 If you don't want to create multiple connections, 
-but want to use multiple databases in a single database,
+but want to use multiple databases in a single connection,
 you can specify database name per-entity you use:
 
 ```typescript
