@@ -99,7 +99,7 @@ Also, they provide a less explicit way of saving new objects into the database.
 `@JoinColumn` not only defines which side of the relation contains the join column with a foreign key, 
 but also allows you to customize join column name and referenced column name.
 
-When we set `@JoinColumn`, it automtically creates a column in the database named `propertyName + referencedColumnName`.
+When we set `@JoinColumn`, it automatically creates a column in the database named `propertyName + referencedColumnName`.
 For example:
 
 ```typescript
