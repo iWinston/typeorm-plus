@@ -22,16 +22,11 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
             connections.map(async connection => {
                 const repo: TreeRepository<File> = connection.getTreeRepository(File);
                 const root: File = await repo.save({ id: 1, name: "root" } as File);
-                const child = await repo.save({
-                id: 2,
-                name: "child",
-                parent: root
-                } as File);
+                const child = await repo.save({ id: 2, name: "child", parent: root } as File);
                 expect(child.parentId).to.be.equal(1);
-                const file: File | any = await repo
-                .createQueryBuilder("file")
-                .where("file.id = :id", { id: 1 })
-                .getOne();
+                const file: File | any = await repo.createQueryBuilder("file")
+                    .where("file.id = :id", { id: 1 })
+                    .getOne();
                 await repo.findDescendantsTree(file);
                 expect(file.children.length).to.be.greaterThan(0);
             })
@@ -43,11 +38,7 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
             connections.map(async connection => {
                 const repo = connection.getTreeRepository(File);
                 const root: File = await repo.save({ id: 1, name: "root" } as File);
-                const child = await repo.save({
-                id: 2,
-                name: "child",
-                parent: root
-                } as File);
+                const child = await repo.save({ id: 2, name: "child", parent: root } as File);
                 expect(child.parentId).to.be.equal(1);
                 const trees: File[] = await repo.findTrees();
                 expect(trees).to.be.an("array");
