@@ -684,8 +684,8 @@ createConnection(/*...*/).then(async connection => {
     console.log("All published photos: ", allPublishedPhotos);
 
     let [allPhotos, photosCount] = await photoRepository.findAndCount();
-    console.log("All photos: ", allPublishedPhotos);
-    console.log("Photos count: ", allPublishedPhotos);
+    console.log("All photos: ", allPhotos);
+    console.log("Photos count: ", photosCount);
 
 }).catch(error => console.log(error));
 ```
@@ -786,7 +786,7 @@ Type变量本身并不包含任何东西。
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photo       | int(11)      | FOREIGN KEY                |
+| photoId     | int(11)      | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -888,12 +888,7 @@ createConnection(/*...*/).then(async connection => {
 
     /*...*/
     let photoRepository = connection.getRepository(Photo);
-    let photos = await photoRepository.find({
-        alias: "photo",
-        innerJoinAndSelect: {
-            "metadata": "photo.metadata"
-        }
-    });
+    let photos = await photoRepository.find({ relations: ["metadata"] });
 
 
 }).catch(error => console.log(error));
@@ -916,8 +911,9 @@ import {PhotoMetadata} from "./entity/PhotoMetadata";
 createConnection(/*...*/).then(async connection => {
 
     /*...*/
-    let photoRepository = connection.getRepository(Photo);
-    let photos = await photoRepository.createQueryBuilder("photo")
+    let photos = await connection
+            .getRepository(Photo)
+            .createQueryBuilder("photo")
             .innerJoinAndSelect("photo.metadata", "metadata")
             .getMany();
 
@@ -1045,7 +1041,7 @@ export class Photo {
 | description | varchar(255) |                            |
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
-| author      | int(11)      | FOREIGN KEY                |
+| authorId    | int(11)      | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
    
@@ -1066,9 +1062,7 @@ export class Album {
     @Column()
     name: string;
 
-    @ManyToMany(type => Photo, photo => photo.albums, {  // 备注: 会在下面的Photo类里添加"albums"属性
-        cascade:true
-    })
+    @ManyToMany(type => Photo, photo => photo.albums)
     @JoinTable()
     photos: Photo[];
 }
@@ -1082,9 +1076,7 @@ export class Album {
 export class Photo {
     /// ... 其他列
 
-    @ManyToMany(type => Album, album => album.photos, {
-        cascade: true
-    })
+    @ManyToMany(type => Album, album => album.photos)
     albums: Album[];
 }
 ```
@@ -1095,8 +1087,8 @@ export class Photo {
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
-| album_id_1  | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| photo_id_2  | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| album_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| photo_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1114,34 +1106,46 @@ const options: ConnectionOptions = {
 ```typescript
 let connection = await createConnection(options);
 
-// 创建两个albums
+// 创建几张相册
 let album1 = new Album();
 album1.name = "Bears";
+await connection.manager.save(album1);
 
 let album2 = new Album();
 album2.name = "Me";
+await connection.manager.save(album2);
 
-// 创建两个photos
-let photo1 = new Photo();
-photo1.name = "Me and Bears";
-photo1.description = "I am near polar bears";
-photo1.filename = "photo-with-bears.jpg";
-photo1.albums = [album1];
+// 创建几个相片
+let photo = new Photo();
+photo.name = "Me and Bears";
+photo.description = "I am near polar bears";
+photo.filename = "photo-with-bears.jpg";
+photo.albums = [album1, album2];
+await connection.manager.save(photo);
 
-let photo2 = new Photo();
-photo2.name = "Me and Bears";
-photo2.description = "I am near polar bears";
-photo2.filename = "photo-with-bears.jpg";
-photo2.albums = [album2];
+// 现在我们的相片已经保存，并且添加到相册里面了
+// 让我们开始加载它们：
+const loadedPhoto = await connection
+    .getRepository(Photo)
+    .findOne(1, { relations: ["albums"] });
+```
 
-// 获取Photo的repository
-let photoRepository = connection.getRepository(Photo);
+`loadedPhoto` 将是这样的：
 
-// 依次存储photos，由于cascade，albums也同样会自动存起来
-await photoRepository.save(photo1);
-await photoRepository.save(photo2);
-
-console.log("Both photos have been saved");
+```typescript
+{
+    id: 1,
+    name: "Me and Bears",
+    description: "I am near polar bears",
+    filename: "photo-with-bears.jpg",
+    albums: [{
+        id: 1,
+        name: "Bears"
+    }, {
+        id: 2,
+        name: "Me"
+    }]
+}
 ```
 
 ### 使用QueryBuilder
@@ -1149,13 +1153,13 @@ console.log("Both photos have been saved");
 可以利用QueryBuilder来构建一个非常复杂的查询，例如：
 
 ```typescript
-let photoRepository = connection.getRepository(Photo);
-let photos = await photoRepository
-    .createQueryBuilder("photo") // 别名，必填项，用来指定本次查询
+let photos = await connection
+    .getRepository(Photo)
+    .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
     .innerJoinAndSelect("photo.metadata", "metadata")
-    .leftJoinAndSelect("photo.albums", "albums")
-    .where("photo.isPublished=true")
-    .andWhere("(photo.name=:photoName OR photo.name=:bearName)")
+    .leftJoinAndSelect("photo.albums", "album")
+    .where("photo.isPublished = true")
+    .andWhere("(photo.name = :photoName OR photo.name = :bearName)")
     .orderBy("photo.id", "DESC")
     .skip(5)
     .take(10)
@@ -1188,8 +1192,8 @@ Photo的albums是左联接，photo的metadata是内联接。
 * [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
 * [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 * [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
-+* [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
-+* [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
+* [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
+* [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 
 ## 扩展
 
@@ -1200,31 +1204,22 @@ Photo的albums是左联接，photo的metadata是内联接。
 * [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 * Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 
-## 贡献 😰
+## 贡献
 
 了解参与贡献 [这里](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)，以及如何搭建你的开发环境 [这里](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md)
 
 这个项目的存在多亏了所有的贡献者：
 
-<a href="https://github.com/typeorm/typeorm/graphs/contributors"><img src="https://opencollective.com/typeorm/contributors.svg?width=890" /></a>
+<a href="https://github.com/typeorm/typeorm/graphs/contributors"><img src="https://opencollective.com/typeorm/contributors.svg?width=890&showBtn=false" /></a>
 
-## 支持者 🙏
+## 赞助商
 
-感谢所有的支持者！如果你想支持者个项目并成为一个支持者[点击这里](https://opencollective.com/typeorm#backer)。
+做开源是费时费力的。如果你想投资TypeORM的未来，你可以成为赞助商，让我们的核心团队花更多的时间在TypeORM的改进和新的特性上。[成为赞助商](https://opencollective.com/typeorm)
 
-<a href="https://opencollective.com/typeorm#backers" target="_blank"><img src="https://opencollective.com/typeorm/backers.svg?width=890"></a>
+<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?width=890"></a>
 
-## 赞助商 🤑
+## 金牌赞助商
 
-成为赞助商来支持这个项目。你的logo将会放在这里。[成为赞助商](https://opencollective.com/typeorm#sponsor)
+成为金牌赞助商可以从我们的核心贡献者那里获得专业的技术支持。 [成为金牌赞助商](https://opencollective.com/typeorm)
 
-<a href="https://opencollective.com/typeorm/sponsor/0/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/1/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/1/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/2/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/2/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/3/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/3/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/4/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/4/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/5/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/5/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/6/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/6/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/7/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/7/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/8/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/8/avatar.svg"></a>
-<a href="https://opencollective.com/typeorm/sponsor/9/website" target="_blank"><img src="https://opencollective.com/typeorm/sponsor/9/avatar.svg"></a>
+<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?width=890"></a>
