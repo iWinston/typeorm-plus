@@ -53,7 +53,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             console.log(result);
         })));
 
-    it("return column on include in select on findByIds",
+    it("return column on include in select on findByIds ",
         () => Promise.all(connections.map(async connection => {
             const productRepository = connection.getMongoRepository(Product);
             let product = new Product("test1", "label1", 10);
