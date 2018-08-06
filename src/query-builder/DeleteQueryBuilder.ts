@@ -64,7 +64,9 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // execute query
             const deleteResult = new DeleteResult();
-            deleteResult.raw = await queryRunner.query(sql, parameters);
+            const [raw, affected] = await queryRunner.query(sql, parameters);
+            deleteResult.raw = raw;
+            deleteResult.affected = affected;
 
             // call after deletion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
