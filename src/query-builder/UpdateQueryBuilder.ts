@@ -372,7 +372,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     if (column.referencedColumn && value instanceof Object) {
                         value = column.referencedColumn.getEntityValue(value);
                     }
-                    value = this.connection.driver.preparePersistentValue(value, column);
+                    else if (!(value instanceof Function)) {
+                        value = this.connection.driver.preparePersistentValue(value, column);
+                    }
 
                     // todo: duplication zone
                     if (value instanceof Function) { // support for SQL expressions in update query
