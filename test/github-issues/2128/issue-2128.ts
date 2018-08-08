@@ -1,7 +1,9 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Connection } from "../../../src/connection/Connection";
+import { expect } from "chai";
 import { Post } from "./entity/Post";
+import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver";
 
 describe("github issues > #2128 skip preparePersistentValue for value functions", () => {
 
@@ -29,6 +31,31 @@ describe("github issues > #2128 skip preparePersistentValue for value functions"
             })
             .execute();
 
+        const metaAddition = JSON.stringify({
+            author: 'John Doe'
+        })
+
+        await connection.createQueryBuilder()
+            .update(Post)
+            .set({
+                meta: () => connection.driver instanceof PostgresDriver
+                    ? `'${metaAddition}'::JSONB || meta::JSONB`
+                    : `JSON_MERGE('${metaAddition}', meta)`
+            })
+            .where("title = :title", {
+                title: "First Post"
+            })
+            .execute()
+
+        const loadedPost = await connection.getRepository(Post).findOne({ title: "First Post" });
+
+        expect(loadedPost!.meta).to.deep.equal({
+             author: 'John Doe',
+             keywords: [
+                 'important',
+                 'fresh'
+            ]
+        })
 
     })));
 
