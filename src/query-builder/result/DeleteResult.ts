@@ -9,6 +9,7 @@ export class DeleteResult {
 
     /**
      * Number of affected rows/documents
+     * Not all drivers support this
      */
-    affected: number;
+    affected?: number;
 }

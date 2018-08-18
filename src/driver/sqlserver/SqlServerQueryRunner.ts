@@ -220,7 +220,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         return fail(new QueryFailedError(query, parameters, err));
                     }
 
-                    ok(result.recordset);
+                    const queryType = query.slice(0, query.indexOf(" "));
+                    switch (queryType) {
+                        case "DELETE":
+                            // for DELETE query additionally return number of affected rows
+                            ok([result.recordset, result.rowsAffected[0]]);
+                            break;
+                        default:
+                            ok(result.recordset);
+                    }
                     resolveChain();
                 });
 
