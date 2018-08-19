@@ -89,7 +89,7 @@ export class FindOptionsUtils {
         if (options.select) {
             qb.select([]);
             options.select.forEach(select => {
-                if (!metadata.findColumnWithPropertyPath(select))
+                if (!metadata.findColumnWithPropertyPath(String(select)))
                     throw new Error(`${select} column was not found in the ${metadata.name} entity.`);
 
                 qb.addSelect(qb.alias + "." + select);
