@@ -124,6 +124,8 @@ values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an
 
 * `connectTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySQL server.
  (Default: `10000`)
+
+* `acquireTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySql server. It differs from `connectTimeout` as it governs the TCP connection timeout where as connectTimeout does not. (default: `10000`)
  
 * `insecureAuth` - Allow connecting to MySQL instances that ask for the old (insecure) authentication method. 
 (Default: `false`)

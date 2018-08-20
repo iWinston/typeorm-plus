@@ -719,6 +719,7 @@ export class MysqlDriver implements Driver {
         return Object.assign({}, {
             charset: options.charset,
             timezone: options.timezone,
+            acquireTimeout: options.acquireTimeout,
             connectTimeout: options.connectTimeout,
             insecureAuth: options.insecureAuth,
             supportBigNumbers: options.supportBigNumbers !== undefined ? options.supportBigNumbers : true,
