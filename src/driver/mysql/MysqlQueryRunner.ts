@@ -105,9 +105,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TransactionAlreadyStartedError();
 
         this.isTransactionActive = true;
-        await this.query("START TRANSACTION");
         if (isolationLevel) {
-            await this.query("SET SESSION TRANSACTION ISOLATION LEVEL " + isolationLevel);
+            await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+            await this.query("START TRANSACTION");
+        } else {
+            await this.query("START TRANSACTION");
         }
     }
 
