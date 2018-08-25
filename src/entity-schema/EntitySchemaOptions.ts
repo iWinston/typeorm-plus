@@ -5,6 +5,7 @@ import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableType} from "../metadata/types/TableTypes";
 import {EntitySchemaUniqueOptions} from "./EntitySchemaUniqueOptions";
 import {EntitySchemaCheckOptions} from "./EntitySchemaCheckOptions";
+import {EntitySchemaExclusionOptions} from "./EntitySchemaExclusionOptions";
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -79,6 +80,11 @@ export class EntitySchemaOptions<T> {
     * Entity check options.
     */
     checks?: EntitySchemaCheckOptions[];
+
+    /**
+    * Entity exclusion options.
+    */
+    exclusions?: EntitySchemaExclusionOptions[];
 
     /**
      * Indicates if schema synchronization is enabled or disabled for this entity.

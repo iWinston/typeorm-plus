@@ -22,6 +22,7 @@ import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
 import {UniqueMetadata} from "./UniqueMetadata";
 import {CheckMetadata} from "./CheckMetadata";
 import {QueryRunner} from "..";
+import {ExclusionMetadata} from "./ExclusionMetadata";
 
 /**
  * Contains all entity metadata.
@@ -402,6 +403,11 @@ export class EntityMetadata {
      * Entity's check metadatas.
      */
     checks: CheckMetadata[] = [];
+
+    /**
+     * Entity's exclusion metadatas.
+     */
+    exclusions: ExclusionMetadata[] = [];
 
     /**
      * Entity's own listener metadatas.
