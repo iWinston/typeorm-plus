@@ -65,6 +65,7 @@ export class ReturningResultsEntityUpdator {
                         .addSelect(this.getUpdationReturningColumns().map(column => metadata.targetName + "." + column.propertyPath))
                         .from(metadata.target, metadata.targetName)
                         .where(entityId)
+                        .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
                         .getOne();
 
                     if (loadedReturningColumns) {
