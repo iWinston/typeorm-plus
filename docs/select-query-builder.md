@@ -453,7 +453,7 @@ createQueryBuilder("user")
     .addGroupBy("user.id");
 ```
 
-If you use `.groupBy` more than once you'll override all previous `ORDER BY` expressions.
+If you use `.groupBy` more than once you'll override all previous `GROUP BY` expressions.
 
 ## Adding `LIMIT` expression
 
