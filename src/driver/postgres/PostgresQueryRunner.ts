@@ -1230,7 +1230,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT *, "udt_name"::"regtype" AS "regtype" FROM "information_schema"."columns" WHERE ` + tablesCondition;
+        const columnsSql = `SELECT *, ("udt_schema" || '.' || "udt_name")::"regtype" AS "regtype" FROM "information_schema"."columns" WHERE ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1802,7 +1802,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 c += " BIGSERIAL";
         }
         if (column.type === "enum") {
-            c += " " + this.buildEnumName(table, column, false);
+            c += " " + this.buildEnumName(table, column);
             if (column.isArray)
                 c += " array";
 
