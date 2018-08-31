@@ -22,7 +22,7 @@ export class DriverFactory {
      * Creates a new driver depend on a given connection's driver type.
      */
     create(connection: Connection): Driver {
-        const type = connection.options.type;
+        const {type} = connection.options;
         switch (type) {
             case "mysql":
                 return new MysqlDriver(connection);
