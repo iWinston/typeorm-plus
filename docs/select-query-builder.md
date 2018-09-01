@@ -325,6 +325,7 @@ createQueryBuilder("user")
     .andWhere(new Brackets(qb => {
         qb.where("user.firstName = :firstName", { firstName: "Timber" })
           .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
 ```
 
 Which will produce the following SQL query:
