@@ -688,8 +688,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // build column types
-                const upType = `${enumNameWithoutSchema} USING "${newColumn.name}"::"text"::${enumNameWithoutSchema}`;
-                const downType = `${oldEnumNameWithoutSchema} USING "${newColumn.name}"::"text"::${oldEnumNameWithoutSchema}`;
+                const upType = `${enumName} USING "${newColumn.name}"::"text"::${enumName}`;
+                const downType = `${oldEnumName} USING "${newColumn.name}"::"text"::${oldEnumName}`;
 
                 // update column to use new type
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
