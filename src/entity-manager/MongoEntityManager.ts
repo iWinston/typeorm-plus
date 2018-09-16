@@ -90,6 +90,8 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -109,12 +111,15 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+
         }
         const [results, count] = await Promise.all<any>([
             cursor.toArray(),
@@ -140,6 +145,8 @@ export class MongoEntityManager extends EntityManager {
 
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -164,6 +171,8 @@ export class MongoEntityManager extends EntityManager {
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
         }
@@ -595,6 +604,16 @@ export class MongoEntityManager extends EntityManager {
             }
             return orderCriteria;
         }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Converts FindOptions into mongodb select by criteria.
+     */
+    protected convertFindOptionsSelectToProjectCriteria(selects: (keyof any)[]) {
+        return selects.reduce((projectCriteria, key) => {
+            projectCriteria[key] = 1;
+            return projectCriteria;
+        }, {} as any);
     }
 
     /**
