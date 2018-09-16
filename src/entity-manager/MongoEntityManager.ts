@@ -165,16 +165,17 @@ export class MongoEntityManager extends EntityManager {
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
+        const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
+        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(findOneOptionsOrConditions) || {};
         if (id) {
             query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
-                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+        if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
+            if (findOneOptionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
+            if (findOneOptionsOrConditions.order)
+                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
         }
 
         // const result = await cursor.limit(1).next();
