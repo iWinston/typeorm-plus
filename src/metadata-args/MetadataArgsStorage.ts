@@ -136,7 +136,7 @@ export class MetadataArgsStorage {
     filterEmbeddeds(target: Function|string): EmbeddedMetadataArgs[];
     filterEmbeddeds(target: (Function|string)[]): EmbeddedMetadataArgs[];
     filterEmbeddeds(target: (Function|string)|(Function|string)[]): EmbeddedMetadataArgs[] {
-        return this.filterByTargetAndWithoutDuplicateProperties(this.embeddeds, target);
+        return this.filterByTargetAndWithoutDuplicateEmbeddedProperties(this.embeddeds, target);
     }
 
     findJoinTable(target: Function|string, propertyName: string): JoinTableMetadataArgs|undefined {
@@ -215,6 +215,24 @@ export class MetadataArgsStorage {
             const sameTarget = target instanceof Array ? target.indexOf(item.target) !== -1 : item.target === target;
             if (sameTarget) {
                 if (!newArray.find(newItem => newItem.propertyName === item.propertyName))
+                    newArray.push(item);
+            }
+        });
+        return newArray;
+    }
+
+    /**
+     * Filters given array by a given target or targets and prevents duplicate embedded property names.
+     */
+    protected filterByTargetAndWithoutDuplicateEmbeddedProperties<T extends EmbeddedMetadataArgs>(array: T[], target: (Function|string)|(Function|string)[]): T[] {
+        const newArray: T[] = [];
+        array.forEach(item => {
+            const sameTarget = target instanceof Array ? target.indexOf(item.target) !== -1 : item.target === target;
+            if (sameTarget) {
+                const isDuplicateEmbeddedProperty = newArray.find((newItem: EmbeddedMetadataArgs): boolean =>
+                    newItem.prefix === item.prefix && newItem.propertyName === item.propertyName
+                );
+                if (!isDuplicateEmbeddedProperty)
                     newArray.push(item);
             }
         });

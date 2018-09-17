@@ -1,5 +1,5 @@
 import {Engine, Vehicle} from "./Vehicle";
-import {ChildEntity, Column} from "../../../../src/index";
+import {ChildEntity, Column} from "../../../../src";
 
 export class CarEngine extends Engine {
 
@@ -14,7 +14,7 @@ export class CarEngine extends Engine {
 @ChildEntity()
 export class Car extends Vehicle {
 
-    @Column(type => CarEngine)
+    @Column(type => CarEngine, { prefix: "carEngine" })
     public engine: CarEngine;
 
 }
