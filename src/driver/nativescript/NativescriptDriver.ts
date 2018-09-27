@@ -37,6 +37,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         this.connection = connection;
         this.options = connection.options as NativescriptConnectionOptions;
         this.database = this.options.database;
+        this.driver = this.options.driver;
 
         // validate options to make sure everything is set
         if (!this.options.database) {
@@ -115,7 +116,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        this.driver = this.options.driver
+        this.sqlite = this.driver
         if (!this.driver) {
             throw new DriverPackageNotInstalledError("Nativescript", "nativescript-sqlite");
         }
