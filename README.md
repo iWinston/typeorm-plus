@@ -16,6 +16,9 @@
 	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
 		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
 	</a>
+	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY">
+		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
+	</a>
   <br>
   <br>
 </div>
