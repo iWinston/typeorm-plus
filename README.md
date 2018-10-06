@@ -32,7 +32,7 @@ small applications with a few tables to large scale enterprise applications
 with multiple databases.
 
 TypeORM supports both Active Record and Data Mapper patterns, 
-unlike all other JavaScript ORMs currently in existance, 
+unlike all other JavaScript ORMs currently in existence, 
 which means you can write high quality, loosely coupled, scalable,
 maintainable applications the most productive way.
 
