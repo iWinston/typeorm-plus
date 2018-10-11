@@ -7,7 +7,7 @@
 
 ## Creating and using transactions
 
-Transactions are creating using `Connection` or `EntityManager`. 
+Transactions are created using `Connection` or `EntityManager`. 
 Examples:
 
 ```typescript
