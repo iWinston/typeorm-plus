@@ -582,7 +582,7 @@ If you are using `ts-node` then you need to specify paths to `.ts` files instead
 If you are using `outDir` then you'll need to specify paths to `.js` files inside outDir directory.
 If you are using `outDir` and when you remove or rename your entities make sure to clear `outDir` directory
 and re-compile your project again, because when you remove your source `.ts` files their compiled `.js` versions
-aren't removed from output directory and still are loaded by TypeORM because they present in outDir directory.
+aren't removed from output directory and still are loaded by TypeORM because they are present in the `outDir` directory.
 
 ### Running the application
 
