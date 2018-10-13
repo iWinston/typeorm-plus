@@ -3,6 +3,7 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SubjectChangeMap} from "./SubjectChangeMap";
 import {OrmUtils} from "../util/OrmUtils";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
 
 /**
  * Subject is a subject of persistence.
@@ -97,6 +98,16 @@ export class Subject {
      * Relations updated by the change maps.
      */
     updatedRelationMaps: { relation: RelationMetadata, value: ObjectLiteral }[] = [];
+
+    /**
+     * Updated columns
+     */
+    updatedColumns: ColumnMetadata[] = [];
+
+    /**
+     * Updated relations
+     */
+    updatedRelations: RelationMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor

@@ -3,6 +3,8 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {BroadcasterResult} from "./BroadcasterResult";
+import {ColumnMetadata} from "../metadata/ColumnMetadata";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
@@ -66,7 +68,7 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void { // todo: send relations too?
+    broadcastBeforeUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void { // todo: send relations too?
         if (entity && metadata.beforeUpdateListeners.length) {
             metadata.beforeUpdateListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
@@ -87,8 +89,8 @@ export class Broadcaster {
                         manager: this.queryRunner.manager,
                         entity: entity,
                         databaseEntity: databaseEntity,
-                        updatedColumns: [], // todo: subject.diffColumns,
-                        updatedRelations: [] // subject.diffRelations,
+                        updatedColumns: updatedColumns || [], // todo: subject.diffColumns,
+                        updatedRelations: updatedRelations || [] // subject.diffRelations,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -183,7 +185,7 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+    broadcastAfterUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void {
 
         if (entity && metadata.afterUpdateListeners.length) {
             metadata.afterUpdateListeners.forEach(listener => {
@@ -205,8 +207,8 @@ export class Broadcaster {
                         manager: this.queryRunner.manager,
                         entity: entity,
                         databaseEntity: databaseEntity,
-                        updatedColumns: [], // todo: subject.diffColumns,
-                        updatedRelations: [] // todo: subject.diffRelations,
+                        updatedColumns: updatedColumns || [], // todo: subject.diffColumns,
+                        updatedRelations: updatedRelations || [] // todo: subject.diffRelations,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
