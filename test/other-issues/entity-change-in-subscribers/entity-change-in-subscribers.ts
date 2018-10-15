@@ -10,7 +10,8 @@ describe("other issues > entity change in subscribers should affect persistence"
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        subscribers: [__dirname + "/subscriber/*{.js,.ts}"]
+        subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+        enabledDrivers: ["postgres"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
