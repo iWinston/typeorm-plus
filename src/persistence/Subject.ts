@@ -102,12 +102,12 @@ export class Subject {
     /**
      * Updated columns
      */
-    updatedColumns: ColumnMetadata[] = [];
+    diffColumns: ColumnMetadata[] = [];
 
     /**
      * Updated relations
      */
-    updatedRelations: RelationMetadata[] = [];
+    diffRelations: RelationMetadata[] = [];
 
     // -------------------------------------------------------------------------
     // Constructor

@@ -92,7 +92,7 @@ export class SubjectChangedColumnsComputer {
                 if (normalizedValue === databaseValue)
                     return;
             }
-            subject.updatedColumns.push(column);
+            subject.diffColumns.push(column);
             // find if there is already a column to be changed
             const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
             if (changeMap) { // and update its value if it was found
@@ -146,7 +146,7 @@ export class SubjectChangedColumnsComputer {
                 if (areRelatedIdsEqual) {
                     return;
                 } else {
-                    subject.updatedRelations.push(relation);
+                    subject.diffRelations.push(relation);
                 }
             }
 
