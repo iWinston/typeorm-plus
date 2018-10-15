@@ -89,8 +89,8 @@ export class Broadcaster {
                         manager: this.queryRunner.manager,
                         entity: entity,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [], // todo: subject.diffColumns,
-                        updatedRelations: updatedRelations || [] // subject.diffRelations,
+                        updatedColumns: updatedColumns || [],
+                        updatedRelations: updatedRelations || []
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -207,8 +207,8 @@ export class Broadcaster {
                         manager: this.queryRunner.manager,
                         entity: entity,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [], // todo: subject.diffColumns,
-                        updatedRelations: updatedRelations || [] // todo: subject.diffRelations,
+                        updatedColumns: updatedColumns || [],
+                        updatedRelations: updatedRelations || []
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);

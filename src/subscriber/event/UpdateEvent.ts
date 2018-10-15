@@ -37,16 +37,13 @@ export interface UpdateEvent<Entity> {
     databaseEntity: Entity;
 
     /**
-     * List of updated columns.
+     * List of updated columns. In query builder has no affected
      */
     updatedColumns: ColumnMetadata[];
 
     /**
-     * List of updated relations.
+     * List of updated relations. In query builder has no affected
      */
     updatedRelations: RelationMetadata[];
-
-    // todo: send old and new update values
-    // todo: send updated relations?
 
 }

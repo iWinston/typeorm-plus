@@ -10,8 +10,7 @@ describe("other issues > entity change in subscribers should affect persistence"
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-        enabledDrivers: ["postgres"]
+        subscribers: [__dirname + "/subscriber/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -31,19 +30,20 @@ describe("other issues > entity change in subscribers should affect persistence"
         expect(loadedPost).not.to.be.empty;
         loadedPost!.active.should.be.equal(false);
 
-        // now update some property and let update listener trigger
+        // now update some property and let update subscriber trigger
         const category2 = new PostCategory();
         category2.name = "category #2";
         loadedPost!.category = category2;
         loadedPost!.active = true;
+        loadedPost!.title += "!";
         await connection.manager.save(loadedPost!);
 
-        // check if update listener was triggered and entity was really updated by the changes in the listener
+        // check if subscriber was triggered and entity was really taken changed columns in the subscriber
         const loadedUpdatedPost = await connection.manager.findOne(Post);
 
         expect(loadedUpdatedPost).not.to.be.empty;
-        expect(loadedUpdatedPost!.updatedColumns).to.have.members(["active"]);
-        expect(loadedUpdatedPost!.updatedRelations).to.have.members(["category"]);
+        expect(loadedUpdatedPost!.updatedColumns).to.equals(2);
+        expect(loadedUpdatedPost!.updatedRelations).to.equals(1);
 
         await connection.manager.save(loadedPost!);
         await connection.manager.save(loadedPost!);

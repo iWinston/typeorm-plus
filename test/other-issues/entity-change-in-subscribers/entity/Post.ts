@@ -4,7 +4,7 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {UpdateDateColumn} from "../../../../src/decorator/columns/UpdateDateColumn";
 import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
 import {PostCategory} from "./PostCategory";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
+import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
 
 @Entity()
 export class Post {
@@ -21,10 +21,13 @@ export class Post {
     @UpdateDateColumn()
     updateDate: Date;
 
-    @OneToOne(type => PostCategory, category => category.post)
-    @JoinTable()
+    @OneToOne(type => PostCategory)
+    @JoinColumn()
     category: PostCategory;
 
-    updatedColumns: string[] = [];
-    updatedRelations: string[] = [];
+    @Column("integer")
+    updatedColumns: number = 0;
+
+    @Column("integer")
+    updatedRelations: number = 0;
 }

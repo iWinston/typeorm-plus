@@ -100,12 +100,12 @@ export class Subject {
     updatedRelationMaps: { relation: RelationMetadata, value: ObjectLiteral }[] = [];
 
     /**
-     * Updated columns
+     * List of updated columns
      */
     diffColumns: ColumnMetadata[] = [];
 
     /**
-     * Updated relations
+     * List of updated relations
      */
     diffRelations: RelationMetadata[] = [];
 
