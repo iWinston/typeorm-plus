@@ -1,8 +1,3 @@
-/**
- * @copyright ActiveMedia Solutions LLC
- * @link http://activemedia.uz
- * @author Rustam Mamadaminov <rmamdaminov@gmail.com>.
- */
 import {Post} from "../entity/Post";
 import {EntitySubscriberInterface, EventSubscriber, UpdateEvent} from "../../../../src";
 
