@@ -283,7 +283,7 @@ For example:
 or
 
 ```typescript
-@Column({ type: "int", length: 200 })
+@Column({ type: "int", width: 200 })
 ```
 
 ### Column types for `mysql` / `mariadb`
