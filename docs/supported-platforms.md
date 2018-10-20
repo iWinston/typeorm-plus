@@ -63,12 +63,26 @@ TypeORM is able to on React Native apps using the [react-native-sqlite-storage](
 
 ## Expo
 
-TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite.html).
+TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite.html). For an example how to use TypeORM in Expo see [typeorm/react-native-example](https://github.com/typeorm/react-native-example).
 
 ## NativeScript
 
 1. `tns install webpack` (read below why webpack is required)
 2. `tns plugin add nativescript-sqlite`
+3. Create Database connetion in your app's entry point
+    ```typescript
+    import driver from 'nativescript-sqlite'
+
+    const connection = await createConnection({
+        database: 'test.db',
+        type: 'nativescript',
+        driver,
+        entities: [
+            Todo //... whatver entities you have
+        ],
+        logging: true
+    })
+    ```
 
 Note: This works only with NativeScript 4.x and above
 
