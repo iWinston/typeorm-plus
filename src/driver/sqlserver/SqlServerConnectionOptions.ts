@@ -246,7 +246,7 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * Caution: If many row are received, enabling this option could result in excessive memory usage.
          */
         readonly rowCollectionOnRequestCompletion?: boolean;
-add
+
         /**
          * The version of TDS to use. If server doesn't support specified version, negotiated version is used instead.
          * The versions are available from require('tedious').TDS_VERSION. (default: 7_4).
