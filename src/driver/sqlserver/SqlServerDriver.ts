@@ -583,7 +583,7 @@ export class SqlServerDriver implements Driver {
      */
     isReturningSqlSupported(): boolean {
         if (this.options.options && this.options.options.disableOutputReturning) {
-            return false
+            return false;
         }
         return true;
     }
