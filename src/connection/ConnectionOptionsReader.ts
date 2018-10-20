@@ -83,7 +83,7 @@ export class ConnectionOptionsReader {
         const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
-        const possibleExtension = this.baseFilePath.substr(this.baseFilePath.indexOf("."));
+        const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
         const fileExtension = fileFormats.find(extension => `.${extension}` === possibleExtension);
 
         // try to find any of following configuration formats
