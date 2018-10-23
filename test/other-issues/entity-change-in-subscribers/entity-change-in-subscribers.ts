@@ -46,9 +46,6 @@ describe("other issues > entity change in subscribers should affect persistence"
         expect(loadedUpdatedPost!.updatedRelations).to.equals(1);
 
         await connection.manager.save(loadedPost!);
-        await connection.manager.save(loadedPost!);
-        await connection.manager.save(loadedPost!);
-        await connection.manager.save(loadedPost!);
 
     })));
 
