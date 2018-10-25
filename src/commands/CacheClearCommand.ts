@@ -40,8 +40,10 @@ export class CacheClearCommand {
             });
             connection = await createConnection(connectionOptions);
 
-            if (!connection.queryResultCache)
-                return console.log(chalk.black.bgRed("Cache is not enabled. To use cache enable it in connection configuration."));
+            if (!connection.queryResultCache) {
+                console.log(chalk.black.bgRed("Cache is not enabled. To use cache enable it in connection configuration."));
+                return;
+            }
 
             await connection.queryResultCache.clear();
             console.log(chalk.green("Cache was successfully cleared"));
