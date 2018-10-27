@@ -82,7 +82,7 @@ export class SubjectChangedColumnsComputer {
                         if (databaseValue !== null && databaseValue !== undefined)
                             databaseValue = JSON.stringify(databaseValue);
 
-                    } else if (column.type === "sample-array") {
+                    } else if (column.type === "simple-array") {
                         normalizedValue = DateUtils.simpleArrayToString(entityValue);
                         databaseValue = DateUtils.simpleArrayToString(databaseValue);
                     }
