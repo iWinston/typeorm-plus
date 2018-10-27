@@ -9,7 +9,7 @@ This document describes how to set up your development environment and run TypeO
 * [Running Tests Locally](#running-tests-locally)
 
 See the [contribution guidelines](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)
-if you'd like to contribute to Angular.
+if you'd like to contribute to TypeORM.
 
 ## Prerequisite Software
 
