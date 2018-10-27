@@ -701,8 +701,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             // find column name with auto increment
             let autoIncrementColumnName: string|undefined = undefined;
             const tableSql: string = dbTable["sql"];
-            if (tableSql.indexOf("AUTOINCREMENT") !== -1) {
-                autoIncrementColumnName = tableSql.substr(0, tableSql.indexOf("AUTOINCREMENT"));
+            let autoIncrementIndex = tableSql.toUpperCase().indexOf("AUTOINCREMENT");
+            if (autoIncrementIndex !== -1) {
+                autoIncrementColumnName = tableSql.substr(0, autoIncrementIndex);
                 const comma = autoIncrementColumnName.lastIndexOf(",");
                 const bracket = autoIncrementColumnName.lastIndexOf("(");
                 if (comma !== -1) {
