@@ -85,12 +85,15 @@ export class MigrationGenerateCommand {
             }
 
             if (upSqls.length) {
-                const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
-                const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
-                await CommandUtils.createFile(path, fileContent);
-
-                console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
-
+                if (argv.name) {
+                    const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
+                    const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
+                    await CommandUtils.createFile(path, fileContent);
+    
+                    console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
+                } else {
+                    console.log(chalk.yellow("Please specify migration name"));
+                }
             } else {
                 console.log(chalk.yellow(`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`));
             }
