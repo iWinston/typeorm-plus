@@ -255,7 +255,7 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
 
     async down(queryRunner: QueryRunner): Promise<any> {
         const table = await queryRunner.getTable("question");
-        const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1)
+        const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
         await queryRunner.dropForeignKey("question", foreignKey);
         await queryRunner.dropColumn("question", "questionId");
         await queryRunner.dropTable("answer");
