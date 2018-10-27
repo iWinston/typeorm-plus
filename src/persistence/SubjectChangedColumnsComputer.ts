@@ -92,7 +92,7 @@ export class SubjectChangedColumnsComputer {
                 if (normalizedValue === databaseValue)
                     return;
             }
-
+            subject.diffColumns.push(column);
             // find if there is already a column to be changed
             const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
             if (changeMap) { // and update its value if it was found
@@ -143,8 +143,11 @@ export class SubjectChangedColumnsComputer {
 
                 // if relation ids are equal then we don't need to update anything
                 const areRelatedIdsEqual = EntityMetadata.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
-                if (areRelatedIdsEqual)
+                if (areRelatedIdsEqual) {
                     return;
+                } else {
+                    subject.diffRelations.push(relation);
+                }
             }
 
             // if there is an inserted subject for the related entity of the persisted entity then use it as related entity
