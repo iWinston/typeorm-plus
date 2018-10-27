@@ -64,7 +64,28 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // execute query
             const deleteResult = new DeleteResult();
-            deleteResult.raw = await queryRunner.query(sql, parameters);
+            const result = await queryRunner.query(sql, parameters);
+
+            switch (queryRunner.connection.name) {
+                case "mysql":
+                case "mariadb": {
+                    deleteResult.raw = result;
+                    deleteResult.affected = result.affectedRows;
+                    break;
+                }
+                case "mssql":
+                case "postgres": {
+                    deleteResult.raw = result[0] ? result[0] : null;
+                    // don't return 0 because it could confuse. null means that we did not receive this value
+                    deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
+                    break;
+                }
+                // sqlite & sqljs doesn't return anything
+                case "sqlite":
+                case "sqljs":
+                default:
+                    deleteResult.raw = result;
+            }
 
             // call after deletion methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
