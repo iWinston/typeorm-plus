@@ -30,7 +30,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Database username.
      */
     readonly username?: string;
-    
+
     /**
      * Database password.
      */
@@ -249,4 +249,9 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Sets the authentication mechanism that MongoDB will use to authenticate the connection
      */
     readonly authMechanism?: string;
+
+    /**
+     * Specify new url parser usage
+     */
+    readonly useNewUrlParser?: boolean;
 }

@@ -180,7 +180,8 @@ export class MongoDriver implements Driver {
                 maxStalenessSeconds: this.options.maxStalenessSeconds,
                 loggerLevel: this.options.loggerLevel,
                 logger: this.options.logger,
-                authMechanism: this.options.authMechanism
+                authMechanism: this.options.authMechanism,
+                useNewUrlParser: this.options.useNewUrlParser
             }, (err: any, client: any) => {
                 if (err) return fail(err);
 
