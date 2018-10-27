@@ -90,6 +90,8 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -109,12 +111,15 @@ export class MongoEntityManager extends EntityManager {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+
         }
         const [results, count] = await Promise.all<any>([
             cursor.toArray(),
@@ -140,6 +145,8 @@ export class MongoEntityManager extends EntityManager {
 
         const cursor = await this.createEntityCursor(entityClassOrName, query);
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+            if (optionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
             if (optionsOrConditions.skip)
                 cursor.skip(optionsOrConditions.skip);
             if (optionsOrConditions.take)
@@ -158,14 +165,17 @@ export class MongoEntityManager extends EntityManager {
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ?  optionsOrConditions : undefined;
-        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery((id ? maybeOptions : optionsOrConditions) as any) || {};
+        const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
+        const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(findOneOptionsOrConditions) || {};
         if (id) {
             query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
-        if (FindOptionsUtils.isFindOneOptions(optionsOrConditions)) {
-            if (optionsOrConditions.order)
-                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+        if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
+            if (findOneOptionsOrConditions.select)
+                cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
+            if (findOneOptionsOrConditions.order)
+                cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
         }
 
         // const result = await cursor.limit(1).next();
@@ -595,6 +605,16 @@ export class MongoEntityManager extends EntityManager {
             }
             return orderCriteria;
         }, {} as ObjectLiteral);
+    }
+
+    /**
+     * Converts FindOptions into mongodb select by criteria.
+     */
+    protected convertFindOptionsSelectToProjectCriteria(selects: (keyof any)[]) {
+        return selects.reduce((projectCriteria, key) => {
+            projectCriteria[key] = 1;
+            return projectCriteria;
+        }, {} as any);
     }
 
     /**
