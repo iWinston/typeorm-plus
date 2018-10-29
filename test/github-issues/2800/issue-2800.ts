@@ -17,7 +17,7 @@ describe("github issues > #2800 - Can't override embedded entities in STI implem
 
     after(() => closeTestingConnections(connections));
 
-    it.only("should be able to save entity with embedded entities overriding", () => Promise.all(connections.map(async connection => {
+    it("should be able to save entity with embedded entities overriding", () => Promise.all(connections.map(async connection => {
         await connection.manager.save(Car, connection.manager.create(Car, {
             engine: {
                 horsePower: 42,
