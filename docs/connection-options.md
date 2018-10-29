@@ -131,10 +131,10 @@ values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an
 (Default: `false`)
  
 * `supportBigNumbers` - When dealing with big numbers (`BIGINT` and `DECIMAL` columns) in the database, 
-you should enable this option (Default: `false`)
+you should enable this option (Default: `true`)
  
 * `bigNumberStrings` - Enabling both `supportBigNumbers` and `bigNumberStrings` forces big numbers 
-(`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `false`). 
+(`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `true`). 
 Enabling `supportBigNumbers` but leaving `bigNumberStrings` disabled will return big numbers as String 
 objects only when they cannot be accurately represented with 
 [JavaScript Number objects](http://ecma262-5.com/ELS5_HTML.htm#Section_8.5) 
