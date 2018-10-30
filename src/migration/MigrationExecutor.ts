@@ -50,7 +50,7 @@ export class MigrationExecutor {
      * Executes all pending migrations. Pending migrations are migrations that are not yet executed,
      * thus not saved in the database.
      */
-    async executePendingMigrations(): Promise<void> {
+    async executePendingMigrations(): Promise<Migration[]> {
 
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
 
@@ -65,6 +65,9 @@ export class MigrationExecutor {
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations();
+
+        // variable to store all migrations we did successefuly
+        const successMigrations: Migration[] = [];
 
         // find all migrations that needs to be executed
         const pendingMigrations = allMigrations.filter(migration => {
@@ -87,7 +90,7 @@ export class MigrationExecutor {
             // if query runner was created by us then release it
             if (!this.queryRunner)
                 await queryRunner.release();
-            return;
+            return [];
         }
 
         // log information about migration execution
@@ -112,6 +115,7 @@ export class MigrationExecutor {
                         return this.insertExecutedMigration(queryRunner, migration);
                     })
                     .then(() => { // informative log about migration success
+                        successMigrations.push(migration);
                         this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
                     });
             });
@@ -135,6 +139,7 @@ export class MigrationExecutor {
             if (!this.queryRunner)
                 await queryRunner.release();
         }
+        return successMigrations;
 
     }
 
