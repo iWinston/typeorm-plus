@@ -237,7 +237,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statement?: { columns?: string[], conflict_target?: string | string[] }): this {
+    orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this {
       this.expressionMap.onUpdate = {};
       if (statement && statement.conflict_target instanceof Array)
           this.expressionMap.onUpdate.conflict = ` ( ${statement.conflict_target.join(", ")} ) `;
@@ -245,6 +245,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
           this.expressionMap.onUpdate.conflict = ` ON CONSTRAINT ${statement.conflict_target} `;
       if (statement && statement.columns instanceof Array)
           this.expressionMap.onUpdate.columns = statement.columns.map(column => `${column} = :${column}`).join(", ");
+      if (statement && statement.overwrite instanceof Array) {
+        if (this.connection.driver instanceof MysqlDriver) {
+          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
+        } else if (this.connection.driver instanceof PostgresDriver) {
+          this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
+        }
+      }
       return this;
   }
 
@@ -293,11 +300,19 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
         }
         if (this.connection.driver instanceof PostgresDriver) {
-            query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
-            query += `${this.expressionMap.onUpdate ? " ON CONFLICT " + this.expressionMap.onUpdate.conflict + " DO UPDATE SET " + this.expressionMap.onUpdate.columns : ""}`;
-            query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
+          query += `${this.expressionMap.onIgnore ? " ON CONFLICT DO NOTHING " : ""}`;
+          query += `${this.expressionMap.onConflict ? " ON CONFLICT " + this.expressionMap.onConflict : ""}`;
+          if (this.expressionMap.onUpdate) {
+            const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
+            query += `${columns ? " ON CONFLICT " + conflict + " DO UPDATE SET " + columns : ""}`;
+            query += `${overwrite ? " ON CONFLICT " + conflict + " DO UPDATE SET " + overwrite : ""}`;
+          }
         } else if (this.connection.driver instanceof MysqlDriver) {
-            query += `${this.expressionMap.onUpdate ? " ON DUPLICATE KEY UPDATE " + this.expressionMap.onUpdate.columns : ""}`;
+            if (this.expressionMap.onUpdate) {
+              const { overwrite, columns } = this.expressionMap.onUpdate;
+              query += `${columns ? " ON DUPLICATE KEY UPDATE " + columns : ""}`;
+              query += `${overwrite ? " ON DUPLICATE KEY UPDATE " + overwrite : ""}`;
+            }
         }
 
         // add RETURNING expression

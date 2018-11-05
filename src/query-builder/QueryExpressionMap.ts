@@ -80,7 +80,7 @@ export class QueryExpressionMap {
     /**
      * Optional on update statement used in insertion query in databases.
      */
-    onUpdate: { columns?: string, conflict?: string };
+    onUpdate: { columns?: string, conflict?: string, overwrite?: string };
 
     /**
      * JOIN queries.
