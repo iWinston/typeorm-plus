@@ -40,6 +40,7 @@ export interface ColumnCommonOptions {
 
     /**
      * Default database value.
+     * Note that default value is not supported when column type is 'json' of mysql.
      */
     default?: any;
 
