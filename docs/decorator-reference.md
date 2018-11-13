@@ -98,7 +98,7 @@ export class User {
     lastName: string;
     
     @Column({ default: false })
-    isActive: string;
+    isActive: boolean;
     
 }
 ```
