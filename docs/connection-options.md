@@ -245,7 +245,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`).
 
-* `pool.victionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
+* `pool.evictionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
 
 * `pool.numTestsPerRun` - Number of resources to check each eviction run. Default: `3`.
 
