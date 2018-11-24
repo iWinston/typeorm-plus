@@ -16,6 +16,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
+import {TableExclusion} from "./table/TableExclusion";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -127,6 +128,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropOldForeignKeys();
         await this.dropOldIndices();
         await this.dropOldChecks();
+        await this.dropOldExclusions();
         await this.dropCompositeUniqueConstraints();
         // await this.renameTables();
         await this.renameColumns();
@@ -137,6 +139,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.updateExistColumns();
         await this.createNewIndices();
         await this.createNewChecks();
+        await this.createNewExclusions();
         await this.createCompositeUniqueConstraints();
         await this.createForeignKeys();
     }
@@ -300,6 +303,28 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`dropping old unique constraint: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} from table "${table.name}"`);
             await this.queryRunner.dropUniqueConstraints(table, compositeUniques);
+        });
+    }
+
+    protected async dropOldExclusions(): Promise<void> {
+        // Only PostgreSQL supports exclusion constraints
+        if (!(this.connection.driver instanceof PostgresDriver))
+            return;
+
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const oldExclusions = table.exclusions.filter(tableExclusion => {
+                return !metadata.exclusions.find(exclusionMetadata => exclusionMetadata.name === tableExclusion.name);
+            });
+
+            if (oldExclusions.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`dropping old exclusion constraint: ${oldExclusions.map(exclusion => `"${exclusion.name}"`).join(", ")} from table "${table.name}"`);
+            await this.queryRunner.dropExclusionConstraints(table, oldExclusions);
         });
     }
 
@@ -509,6 +534,31 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`adding new unique constraints: ${compositeUniques.map(unique => `"${unique.name}"`).join(", ")} in table "${table.name}"`);
             await this.queryRunner.createUniqueConstraints(table, compositeUniques);
+        });
+    }
+
+    /**
+     * Creates exclusions which are missing in db yet.
+     */
+    protected async createNewExclusions(): Promise<void> {
+        // Only PostgreSQL supports exclusion constraints
+        if (!(this.connection.driver instanceof PostgresDriver))
+            return;
+
+        await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
+            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            if (!table)
+                return;
+
+            const newExclusions = metadata.exclusions
+            .filter(exclusionMetadata => !table.exclusions.find(tableExclusion => tableExclusion.name === exclusionMetadata.name))
+            .map(exclusionMetadata => TableExclusion.create(exclusionMetadata));
+
+            if (newExclusions.length === 0)
+                return;
+
+            this.connection.logger.logSchemaBuild(`adding new exclusion constraints: ${newExclusions.map(exclusion => `"${exclusion.name}"`).join(", ")} in table "${table.name}"`);
+            await this.queryRunner.createExclusionConstraints(table, newExclusions);
         });
     }
 

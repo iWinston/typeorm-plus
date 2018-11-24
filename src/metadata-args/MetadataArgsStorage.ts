@@ -20,6 +20,7 @@ import {GeneratedMetadataArgs} from "./GeneratedMetadataArgs";
 import {TreeMetadataArgs} from "./TreeMetadataArgs";
 import {UniqueMetadataArgs} from "./UniqueMetadataArgs";
 import {CheckMetadataArgs} from "./CheckMetadataArgs";
+import {ExclusionMetadataArgs} from "./ExclusionMetadataArgs";
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -42,6 +43,7 @@ export class MetadataArgsStorage {
     readonly indices: IndexMetadataArgs[] = [];
     readonly uniques: UniqueMetadataArgs[] = [];
     readonly checks: CheckMetadataArgs[] = [];
+    readonly exclusions: ExclusionMetadataArgs[] = [];
     readonly columns: ColumnMetadataArgs[] = [];
     readonly generations: GeneratedMetadataArgs[] = [];
     readonly relations: RelationMetadataArgs[] = [];
@@ -127,6 +129,14 @@ export class MetadataArgsStorage {
         });
     }
 
+    filterExclusions(target: Function|string): ExclusionMetadataArgs[];
+    filterExclusions(target: (Function|string)[]): ExclusionMetadataArgs[];
+    filterExclusions(target: (Function|string)|(Function|string)[]): ExclusionMetadataArgs[] {
+        return this.exclusions.filter(exclusion => {
+            return target instanceof Array ? target.indexOf(exclusion.target) !== -1 : exclusion.target === target;
+        });
+    }
+
     filterListeners(target: Function|string): EntityListenerMetadataArgs[];
     filterListeners(target: (Function|string)[]): EntityListenerMetadataArgs[];
     filterListeners(target: (Function|string)|(Function|string)[]): EntityListenerMetadataArgs[] {
@@ -169,7 +179,7 @@ export class MetadataArgsStorage {
             return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;
         });
     }
-    
+
     filterTransactionRepository(target: Function|string, propertyName: string): TransactionRepositoryMetadataArgs[] {
         return this.transactionRepositories.filter(transactionEm => {
             return (target instanceof Array ? target.indexOf(transactionEm.target) !== -1 : transactionEm.target === target) && transactionEm.methodName === propertyName;

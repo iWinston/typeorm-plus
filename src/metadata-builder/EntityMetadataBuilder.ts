@@ -18,6 +18,8 @@ import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {CheckMetadata} from "../metadata/CheckMetadata";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -204,6 +206,11 @@ export class EntityMetadataBuilder {
         // build all check constraints
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.checks.forEach(check => check.build(this.connection.namingStrategy));
+        });
+
+        // build all exclusion constraints
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.exclusions.forEach(exclusion => exclusion.build(this.connection.namingStrategy));
         });
 
         // add lazy initializer for entity relations
@@ -445,6 +452,13 @@ export class EntityMetadataBuilder {
         entityMetadata.checks = this.metadataArgsStorage.filterChecks(entityMetadata.inheritanceTree).map(args => {
             return new CheckMetadata({ entityMetadata, args });
         });
+
+        // Only PostgreSQL supports exclusion constraints.
+        if (this.connection.driver instanceof PostgresDriver) {
+            entityMetadata.exclusions = this.metadataArgsStorage.filterExclusions(entityMetadata.inheritanceTree).map(args => {
+                return new ExclusionMetadata({ entityMetadata, args });
+            });
+        }
 
         // Mysql stores unique constraints as unique indices.
         if (this.connection.driver instanceof MysqlDriver) {
