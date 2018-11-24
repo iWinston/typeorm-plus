@@ -87,7 +87,7 @@ This option is useful during debug and development.
  Instead, it syncs just by creating indices.
 
 * `migrationsRun` - Indicates if migrations should be auto run on every application launch.
-As an alternative, you can use CLI and run migrations:run command.
+As an alternative, you can use CLI and run migration:run command.
 
 * `migrationsTableName` - Name of the table in the database which is going to contain information about executed migrations.
 By default this table is called "migrations".
