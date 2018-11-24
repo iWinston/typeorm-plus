@@ -579,7 +579,7 @@ export class EntityManager {
      */
     async findOne<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string, idOrOptionsOrConditions?: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
 
-        let findOptions: FindOneOptions<any>|undefined = undefined;
+        let findOptions: FindManyOptions<any>|FindOneOptions<any>|undefined = undefined;
         if (FindOptionsUtils.isFindOneOptions(idOrOptionsOrConditions)) {
             findOptions = idOrOptionsOrConditions;
         } else if (maybeOptions && FindOptionsUtils.isFindOneOptions(maybeOptions)) {
@@ -603,8 +603,12 @@ export class EntityManager {
         if (!findOptions || findOptions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
 
-        if (findOptions)
-            FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
+        findOptions = {
+            ...(findOptions || {}),
+            take: 1,
+        }
+
+        FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
 
         if (options) {
             qb.where(options);
