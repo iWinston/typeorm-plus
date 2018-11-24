@@ -68,6 +68,7 @@ export class RelationJoinColumnBuilder {
             columns: columns,
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
+            onUpdate: relation.onUpdate,
         });
 
         // Oracle does not allow both primary and unique constraints on the same column

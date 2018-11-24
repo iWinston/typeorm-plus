@@ -87,7 +87,7 @@ This option is useful during debug and development.
  Instead, it syncs just by creating indices.
 
 * `migrationsRun` - Indicates if migrations should be auto run on every application launch.
-As an alternative, you can use CLI and run migrations:run command.
+As an alternative, you can use CLI and run migration:run command.
 
 * `migrationsTableName` - Name of the table in the database which is going to contain information about executed migrations.
 By default this table is called "migrations".
@@ -131,10 +131,10 @@ values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an
 (Default: `false`)
  
 * `supportBigNumbers` - When dealing with big numbers (`BIGINT` and `DECIMAL` columns) in the database, 
-you should enable this option (Default: `false`)
+you should enable this option (Default: `true`)
  
 * `bigNumberStrings` - Enabling both `supportBigNumbers` and `bigNumberStrings` forces big numbers 
-(`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `false`). 
+(`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `true`). 
 Enabling `supportBigNumbers` but leaving `bigNumberStrings` disabled will return big numbers as String 
 objects only when they cannot be accurately represented with 
 [JavaScript Number objects](http://ecma262-5.com/ELS5_HTML.htm#Section_8.5) 
@@ -245,7 +245,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`).
 
-* `pool.victionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
+* `pool.evictionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
 
 * `pool.numTestsPerRun` - Number of resources to check each eviction run. Default: `3`.
 

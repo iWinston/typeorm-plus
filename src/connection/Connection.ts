@@ -13,6 +13,7 @@ import {Logger} from "../logger/Logger";
 import {EntityMetadataNotFoundError} from "../error/EntityMetadataNotFoundError";
 import {MigrationInterface} from "../migration/MigrationInterface";
 import {MigrationExecutor} from "../migration/MigrationExecutor";
+import {Migration} from "../migration/Migration";
 import {MongoRepository} from "../repository/MongoRepository";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoEntityManager} from "../entity-manager/MongoEntityManager";
@@ -271,7 +272,7 @@ export class Connection {
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
      */
-    async runMigrations(options?: { transaction?: boolean }): Promise<void> {
+    async runMigrations(options?: { transaction?: boolean }): Promise<Migration[]> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name);
 
@@ -279,7 +280,8 @@ export class Connection {
         if (options && options.transaction === false) {
             migrationExecutor.transaction = false;
         }
-        await migrationExecutor.executePendingMigrations();
+        const successMigrations = await migrationExecutor.executePendingMigrations();
+        return successMigrations;
     }
 
     /**

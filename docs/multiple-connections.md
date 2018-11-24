@@ -130,7 +130,7 @@ const users = await connection
 This code will produce following sql query (depend on database type):
 
 ```sql
-SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo" 
     WHERE "photo"."userId" = "user"."id"
 ```
 

@@ -272,14 +272,31 @@ SELECT * FROM "post" WHERE "title" IS NULL
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Raw( "1 + likes = 4")
+    likes: Raw( "dislikes - 4")
 });
 ```
 
 will execute following query: 
 
 ```sql
-SELECT * FROM "post" WHERE 1 + "likes" = 4
+SELECT * FROM "post" WHERE "likes" = "dislikes" - 4
+```
+
+In the simplest case, a raw query is inserted immediately after the equal symbol.
+ But you can also completely rewrite the comparison logic using the function.
+
+```ts
+import {Raw} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    currentDate: (alias) => Raw(`${alias} > NOW()`)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "currentDate" > NOW()
 ```
 
 > Note: beware with `Raw` operator. It executes pure SQL from supplied expression and should not contain a user input,

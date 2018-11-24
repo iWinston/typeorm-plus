@@ -125,6 +125,7 @@ List of available env variables you can set:
 * TYPEORM_MIGRATIONS_DIR
 * TYPEORM_SUBSCRIBERS_DIR
 * TYPEORM_DRIVER_EXTRA
+* TYPEORM_DEBUG
 
 `ormconfig.env` should be used only during development.
 On production you can set all these values in real ENVIRONMENT VARIABLES.

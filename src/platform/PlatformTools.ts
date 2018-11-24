@@ -90,7 +90,7 @@ export class PlatformTools {
                 */
                 case "sql.js":
                     return require("sql.js");
-                    
+
                 /**
                 * sqlserver
                 */
@@ -108,6 +108,9 @@ export class PlatformTools {
 
                 case "debug":
                     return require("debug");
+
+                case "app-root-path":
+                    return require("app-root-path");
 
                 /**
                 * default
@@ -153,7 +156,7 @@ export class PlatformTools {
     static fileExist(pathStr: string): boolean {
         return fs.existsSync(pathStr);
     }
-    
+
     static readFileSync(filename: string): Buffer {
         return fs.readFileSync(filename);
     }
@@ -210,11 +213,11 @@ export class PlatformTools {
     static logError(prefix: string, error: any) {
         console.log(chalk.underline.red(prefix), error);
     }
-    
+
     static logWarn(prefix: string, warning: any) {
         console.log(chalk.underline.yellow(prefix), warning);
     }
-    
+
     static log(message: string) {
         console.log(chalk.underline(message));
     }
