@@ -8,7 +8,7 @@
 ## What is `Connection`
 
 Your interaction with the database is only possible once you setup a connection.
-TypeORM's `Connection` does not setup a database connection as it might seem, instead it setups a connection pool.
+TypeORM's `Connection` does not setup a database connection as it might seem, instead it sets up a connection pool.
 If you are interested in a real database connection, then refer to `QueryRunner` documentation.
 Each instance of `QueryRunner` is a separate isolated database connection.
 Connection pool setup is established once `connect` method of the `Connection` is called.
