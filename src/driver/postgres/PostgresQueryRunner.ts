@@ -696,8 +696,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
 
                 // build column types
-                const upType = `${enumNameWithoutSchema}${arraySuffix} USING "${newColumn.name}"::"text"::${enumNameWithoutSchema}${arraySuffix}`;
-                const downType = `${oldEnumNameWithoutSchema}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithoutSchema}${arraySuffix}`;
+                const upType = `${enumName}${arraySuffix} USING "${newColumn.name}"::"text"::${enumName}${arraySuffix}`;
+                const downType = `${oldEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumName}${arraySuffix}`;
 
                 // update column to use new type
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
@@ -1238,7 +1238,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT *, "udt_name"::"regtype" AS "regtype" FROM "information_schema"."columns" WHERE ` + tablesCondition;
+        const columnsSql = `SELECT *, ("udt_schema" || '.' || "udt_name")::"regtype" AS "regtype" FROM "information_schema"."columns" WHERE ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1810,7 +1810,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 c += " BIGSERIAL";
         }
         if (column.type === "enum") {
-            c += " " + this.buildEnumName(table, column, false);
+            c += " " + this.buildEnumName(table, column);
             if (column.isArray)
                 c += " array";
 
