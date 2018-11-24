@@ -52,6 +52,12 @@ export interface TestingOptions {
      */
     entities?: (string|Function|EntitySchema<any>)[];
 
+
+    /**
+     * Migrations needs to be included in connection for the given test suite.
+     */
+    migrations?: string[];
+
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
@@ -194,6 +200,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
             let newOptions: any = Object.assign({}, connectionOptions as ConnectionOptions, {
                 name: options && options.name ? options.name : connectionOptions.name,
                 entities: options && options.entities ? options.entities : [],
+                migrations: options && options.migrations ? options.migrations : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
@@ -208,6 +215,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.logging = options.logging;
             if (options && options.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
+            if (options && options.__dirname)
+                newOptions.migrations = [options.__dirname + "/migration/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
             return newOptions;
