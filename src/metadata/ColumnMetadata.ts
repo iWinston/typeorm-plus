@@ -532,7 +532,7 @@ export class ColumnMetadata {
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
      getEntityValue(entity: ObjectLiteral, transform: boolean = false): any|undefined {
-        // if (entity === undefined || entity === null) return undefined; // uncomment if needed
+        if (entity === undefined || entity === null) return undefined;
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined;
