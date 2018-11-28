@@ -38,6 +38,7 @@ export class ConnectionOptionsEnvReader {
             logger: PlatformTools.getEnvVariable("TYPEORM_LOGGER"),
             entityPrefix: PlatformTools.getEnvVariable("TYPEORM_ENTITY_PREFIX"),
             maxQueryExecutionTime: PlatformTools.getEnvVariable("TYPEORM_MAX_QUERY_EXECUTION_TIME"),
+            debug: PlatformTools.getEnvVariable("TYPEORM_DEBUG"),
             cli: {
                 entitiesDir: PlatformTools.getEnvVariable("TYPEORM_ENTITIES_DIR"),
                 migrationsDir: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_DIR"),
