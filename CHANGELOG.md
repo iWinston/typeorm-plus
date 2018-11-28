@@ -5,6 +5,20 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
+## 0.2.10
+
+* more accurate type for postgres ssl parameters
+* added support for `ON UPDATE CASCADE` relations for mysql
+* `repository.save` returns union type
+* added reuse of lazy relationships
+* added ability to disable prefixes for embedded columns
+* migrations can be tested
+* migration run returns array of successful migrations
+* added debug ENV option
+* added support for postgres exclusion constraints
+* bug fixes
+* documentation updates
+
 ## 0.2.9
 
 * `UpdateEvent` now returns with contains `updatedColumns` and `updatedRelations` 
