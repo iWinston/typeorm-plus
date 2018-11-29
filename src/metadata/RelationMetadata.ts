@@ -325,7 +325,7 @@ export class RelationMetadata {
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
     getEntityValue(entity: ObjectLiteral, getLazyRelationsPromiseValue: boolean = false): any|undefined {
-
+        if (entity === null || entity === undefined) return undefined;
         // extract column value from embeddeds of entity if column is in embedded
         if (this.embeddedMetadata) {
 
