@@ -103,7 +103,7 @@ Read more about caching [here](./caching.md).
 
 ## `mysql` / `mariadb` connection options
 
-* `url` - Connection url where perform connection to.
+* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
 
 * `host` - Database host.
 
@@ -162,7 +162,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## `postgres` connection options
 
-* `url` - Connection url where perform connection to.
+* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
 
 * `host` - Database host.
 
@@ -198,7 +198,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## `mssql` connection options
 
-* `url` - Connection url where perform connection to.
+* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
 
 * `host` - Database host.
 
@@ -346,7 +346,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 ## `mongodb` connection options
 
-* `url` - Connection url where perform connection to.
+* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
 
 * `host` - Database host.
 
