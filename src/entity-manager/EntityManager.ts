@@ -606,7 +606,7 @@ export class EntityManager {
         findOptions = {
             ...(findOptions || {}),
             take: 1,
-        }
+        };
 
         FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
 
@@ -671,18 +671,21 @@ export class EntityManager {
     async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: FindConditions<Entity>,
                             propertyPath: string,
-                            value: number): Promise<void> {
+                            value: number | string): Promise<void> {
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
             throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
+        if (isNaN(Number(value)))
+            throw new Error(`Value "${value}" is not a number.`);
+
         await this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + Number(value)
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + value
             })
             .where(conditions)
             .execute();
@@ -694,18 +697,21 @@ export class EntityManager {
     async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: FindConditions<Entity>,
                             propertyPath: string,
-                            value: number): Promise<void> {
+                            value: number | string): Promise<void> {
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
             throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
+        if (isNaN(Number(value)))
+            throw new Error(`Value "${value}" is not a number.`);
+
         await this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + Number(value)
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + value
             })
             .where(conditions)
             .execute();
