@@ -13,9 +13,6 @@
 	<a href="https://david-dm.org/typeorm/typeorm">
 		<img src="https://david-dm.org/typeorm/typeorm.svg">
 	</a>
-	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
-		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
-	</a>
   <br>
   <br>
 </div>
@@ -147,7 +144,7 @@ await timber.remove();
 
 ## 请注意
 
-这个文档可能不是最新的。 
+这个文档可能不是最新的。
 可以去[官网](http://typeorm.io)查看最新的英文文档。
 非常欢迎你的贡献。
 
@@ -163,7 +160,7 @@ await timber.remove();
 
     在应用里全局引用一下:
 
-    * 比如在app.ts的入口处 `require("reflect-metadata")` 
+    * 比如在app.ts的入口处 `require("reflect-metadata")`
 
 3. 你可能需要安装node类型：
 
@@ -172,31 +169,31 @@ await timber.remove();
 4. 安装数据库驱动:
 
     * **MySQL** 或 **MariaDB**
-    
+
         `npm install mysql --save`
-    
+
     * **PostgreSQL**
-    
+
         `npm install pg --save`
-    
+
     * **SQLite**
-    
+
         `npm install sqlite3 --save`
-    
+
     * **Microsoft SQL Server**
-    
+
         `npm install mssql --save`
 
     * **sql.js**
 
         `npm install sql.js --save`
-    
+
     * **Oracle** (experimental)
-    
+
         `npm install oracledb --save`
-    
+
     可以根据你的数据库选择安装上面的任意一个.
-    
+
     使用oracle驱动需要参考安装说明：[地址](https://github.com/oracle/node-oracledb).
 
 #### TypeScript配置
@@ -507,7 +504,7 @@ createConnection({
     synchronize: true,
     logging: false
 }).then(connection => {
-    // 这里可以写实体操作相关的代码 
+    // 这里可以写实体操作相关的代码
 }).catch(error => console.log(error));
 ```
 
@@ -516,7 +513,7 @@ createConnection({
 
 把Photo实体加到数据连接的实体列表中，所有需要在这个连接下使用的实体都必须加到这个列表中。
 
-`synchronize`选项可以在应用启动时确保你的实体和数据库保持同步。 
+`synchronize`选项可以在应用启动时确保你的实体和数据库保持同步。
 
 ### 引用目录下的所有实体
 
@@ -585,7 +582,7 @@ createConnection(/*...*/).then(connection => {
 
 }).catch(error => console.log(error));
 ```
-  
+
 ### 使用async/await语法
 
 现在利用TypeScript的async/await语法来实现同样的功能：
@@ -656,7 +653,7 @@ createConnection(/*...*/).then(async connection => {
 
 }).catch(error => console.log(error));
 ```
- 
+
 ### 从数据库中取photos
 
 现在来尝试用Repository做一些取数据方面的操作:
@@ -726,7 +723,7 @@ createConnection(/*...*/).then(async connection => {
     await photoRepository.remove(photoToRemove);
 
 }).catch(error => console.log(error));
-``` 
+```
 
 这个`id = 1`的photo就在数据库中被移除了。
 
@@ -832,10 +829,10 @@ createConnection(/*...*/).then(async connection => {
 
 }).catch(error => console.log(error));
 ```
- 
+
 ### 双向关系
 
-关系可以是单向的或是双向的. 
+关系可以是单向的或是双向的.
 现在PhotoMetadata和Photo的关系是单向的，关系拥有者是PhotoMetadata，Photo并不知道PhotoMetadata，这样如果要想从Photo里得到PhotoMetadata的数据会比较麻烦。
 现在来改变一下，把单向改成双向：
 
@@ -852,7 +849,7 @@ export class PhotoMetadata {
     @JoinColumn()
     photo: Photo;
 }
-```   
+```
 
 ```typescript
 import {Entity, Column, PrimaryGeneratedColumn, OneToOne} from "typeorm";
@@ -866,7 +863,7 @@ export class Photo {
     @OneToOne(type => PhotoMetadata, photoMetadata => photoMetadata.photo)
     metadata: PhotoMetadata;
 }
-```  
+```
 
 `photo => photo.metadata` 是用来指定反向关系的字段名字，photo.metadata就指出了Photo里的metadata字段名字。
 当然也可以使用`@OneToOne('metadata')`来达到同样的目的，不过这种对于以后的代码重构不友好。
@@ -897,8 +894,8 @@ createConnection(/*...*/).then(async connection => {
 
 `alias` 是FindOptions的一个必需选项，这是你自己在select里定义的别名，然后需要用在接下来的 where, order by, group by, join 以及其他表达式.
 
-这里还用到了`innerJoinAndSelect`，表示内联查询photo.metadata的数据。 
-`"photo.metadata"`里"photo"是一个别名，"metadata"则是你想查询的那个对象的属性名。 
+这里还用到了`innerJoinAndSelect`，表示内联查询photo.metadata的数据。
+`"photo.metadata"`里"photo"是一个别名，"metadata"则是你想查询的那个对象的属性名。
 `"metadata"`: 是内联返回数据的新的别名.
 
 下面来尝试第二种方式：`QueryBuilder`来达到同样的目的. 使用`QueryBuilder`可以优雅完成复杂的查询:
@@ -958,7 +955,7 @@ createConnection(options).then(async connection => {
     metadata.compressed = true;
     metadata.comment = "cybershoot";
     metadata.orientation = "portait";
-    
+
     photo.metadata = metadata; // 连接起来
 
     // 得到repository
@@ -970,7 +967,7 @@ createConnection(options).then(async connection => {
     console.log("Photo is saved, photo metadata is saved too.")
 
 }).catch(error => console.log(error));
-```     
+```
 
 ### 多对一/一对多关系
 
@@ -1044,11 +1041,11 @@ export class Photo {
 | authorId    | int(11)      | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
-   
+
 ### 多对多关系
 
 假设photo可以存在多个相册中，并且相册里可以包含多个photo。
-先创建一个`Album`类 
+先创建一个`Album`类
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
@@ -1067,7 +1064,7 @@ export class Album {
     photos: Photo[];
 }
 ```
-  
+
 `@JoinTable`多对多关系拥有者必须指定的。
 
 接着给`Photo`实体加个反向关系:
@@ -1101,7 +1098,7 @@ const options: ConnectionOptions = {
 };
 ```
 
-现在来往数据库里插入albums和photos        
+现在来往数据库里插入albums和photos
 
 ```typescript
 let connection = await createConnection(options);
