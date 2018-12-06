@@ -1782,7 +1782,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
