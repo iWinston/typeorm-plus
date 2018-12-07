@@ -329,14 +329,14 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Increments some column by provided value of the entities matched given conditions.
      */
-    increment(conditions: FindConditions<Entity>, propertyPath: string, value: number | string): Promise<void> {
+    increment(conditions: FindConditions<Entity>, propertyPath: string, value: number | string): Promise<UpdateResult> {
         return this.manager.increment(this.metadata.target, conditions, propertyPath, value);
     }
 
     /**
      * Decrements some column by provided value of the entities matched given conditions.
      */
-    decrement(conditions: FindConditions<Entity>, propertyPath: string, value: number | string): Promise<void> {
+    decrement(conditions: FindConditions<Entity>, propertyPath: string, value: number | string): Promise<UpdateResult> {
         return this.manager.decrement(this.metadata.target, conditions, propertyPath, value);
     }
 
