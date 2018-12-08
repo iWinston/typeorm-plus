@@ -199,3 +199,81 @@ module.exports = {
     ]
 };
 ```
+
+### Bundling Migration Files
+
+By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your migrations can be recongized and excuted by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
+
+```js
+const glob = require('glob');
+const path = require('path');
+
+module.exports = {
+  // ... your webpack configrations here...
+  // Dynamically generate a `{ [name]: sourceFileName }` map for the `entry` option
+  // change `src/db/migrations` to the relative path to your migration folder
+  entry: glob.sync(path.resolve('src/db/migrations/*.ts')).reduce((entries, filename) => {
+    const migrationName = path.basename(filename, '.ts');
+    return Object.assign({}, entries, {
+      [migrationName]: filename,
+    });
+  }, {}),
+  resolve: {
+    // assuming all your migration files are written in TypeScript
+    extensions: ['.ts']
+   },
+  output: {
+    // change `path` to where you want to put transpiled migration files.
+    path: __dirname + '/dist/db/migrations',
+    // this is important - we want UMD (Universal Module Definition) for migration files.
+    libraryTarget: 'umd',
+    filename: '[name].js',
+  },
+};
+```
+
+Also, since Webpack 4, when using `mode: 'production'`, files are optmized by default which includes mangling your code in order to minimize file sizes. This breaks the migrations because TypeORM relies on their names to determine which has already been executed. You may disable minimization completely by adding:
+
+```js
+module.exports = {
+  // ... other Webpack configurations here
+  optimization: {
+    minimize: false,
+  },
+};
+```
+
+Alternativley, if you are using the `UglifyJsPlugin`, you can tell it to not change class or function names like so:
+
+```js
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+
+module.exports = {
+  // ... other Webpack configurations here
+  optimization: {
+    minimizer: [
+      new UglifyJsPlugin({
+        uglifyOptions: {
+          keep_classnames: true,
+          keep_fnames: true
+        }
+      })
+    ],
+  },
+};
+```
+
+Lastly, make sure in your `ormconfig` file, the transpiled migration files are included:
+
+```js
+// TypeORM Configurations
+module.exports = {
+  // ...
+  migrations: [
+    // this is the relative path to the transpiled migration files in production
+    'db/migrations/**/*.js',
+    // your source migration files, used in development mode
+    'src/db/migrations/**/*.ts',
+  ],
+};
+```
