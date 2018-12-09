@@ -4,19 +4,20 @@ import {Connection} from "../connection/Connection";
 import {createConnection} from "../index";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {camelCase} from "../util/StringUtils";
-
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
  */
-export class MigrationGenerateCommand {
+export class MigrationGenerateCommand implements yargs.CommandModule {
 
     command = "migration:generate";
     describe = "Generates a new migration file with sql needs to be executed to update schema.";
+    aliases = "migrations:generate";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -38,24 +39,28 @@ export class MigrationGenerateCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
+        if (args._[0] === "migrations:generate") {
+            console.log("'migrations:generate' is deprecated, please use 'migration:generate' instead");
+        }
+
         const timestamp = new Date().getTime();
-        const filename = timestamp + "-" + argv.name + ".ts";
-        let directory = argv.dir;
+        const filename = timestamp + "-" + args.name + ".ts";
+        let directory = args.dir;
 
         // if directory is not set then try to open tsconfig and find default path there
         if (!directory) {
             try {
-                const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-                const connectionOptions = await connectionOptionsReader.get(argv.connection);
+                const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
+                const connectionOptions = await connectionOptionsReader.get(args.connection);
                 directory = connectionOptions.cli ? connectionOptions.cli.migrationsDir : undefined;
             } catch (err) { }
         }
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
+            const connectionOptions = await connectionOptionsReader.get(args.connection);
             Object.assign(connectionOptions, {
                 synchronize: false,
                 migrationsRun: false,
@@ -85,11 +90,11 @@ export class MigrationGenerateCommand {
             }
 
             if (upSqls.length) {
-                if (argv.name) {
-                    const fileContent = MigrationGenerateCommand.getTemplate(argv.name, timestamp, upSqls, downSqls.reverse());
+                if (args.name) {
+                    const fileContent = MigrationGenerateCommand.getTemplate(args.name, timestamp, upSqls, downSqls.reverse());
                     const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
                     await CommandUtils.createFile(path, fileContent);
-    
+
                     console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
                 } else {
                     console.log(chalk.yellow("Please specify migration name"));
