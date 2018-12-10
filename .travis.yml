@@ -21,6 +21,7 @@ before_script:
   - npm install sqlite3 --build-from-source
 
 script:
+  - npm run lint
   - npm test
 
 after_success:

@@ -47,7 +47,7 @@ export class DriverUtils {
      * Extracts connection data from the connection url.
      */
     private static parseConnectionUrl(url: string) {
-        const type = url.split(':')[0];
+        const type = url.split(":")[0];
         const firstSlashes = url.indexOf("//");
         const preBase = url.substr(firstSlashes + 2);
         const secondSlash = preBase.indexOf("/");
