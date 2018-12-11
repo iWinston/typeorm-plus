@@ -1,19 +1,20 @@
 import {CommandUtils} from "./CommandUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-const chalk = require("chalk");
 import * as path from "path";
+import * as yargs from "yargs";
+const chalk = require("chalk");
 
 /**
  * Generates a new project with TypeORM.
  */
-export class InitCommand {
+export class InitCommand implements yargs.CommandModule {
     command = "init";
     describe = "Generates initial TypeORM project structure. " +
         "If name specified then creates files inside directory called as name. " +
         "If its not specified then creates files inside current directory.";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("c", {
                 alias: "connection",
                 default: "default",
@@ -35,13 +36,13 @@ export class InitCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
         try {
-            const database = argv.database || "mysql";
-            const isExpress = argv.express !== undefined ? true : false;
-            const isDocker = argv.docker !== undefined ? true : false;
-            const basePath = process.cwd() + (argv.name ? ("/" + argv.name) : "");
-            const projectName = argv.name ? path.basename(argv.name) : undefined;
+            const database = args.database || "mysql";
+            const isExpress = args.express !== undefined ? true : false;
+            const isDocker = args.docker !== undefined ? true : false;
+            const basePath = process.cwd() + (args.name ? ("/" + args.name) : "");
+            const projectName = args.name ? path.basename(args.name) : undefined;
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
@@ -62,7 +63,7 @@ export class InitCommand {
             const packageJsonContents = await CommandUtils.readFile(basePath + "/package.json");
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.appendPackageJson(packageJsonContents, database, isExpress));
 
-            if (argv.name) {
+            if (args.name) {
                 console.log(chalk.green(`Project created inside ${chalk.blue(basePath)} directory.`));
 
             } else {
@@ -355,13 +356,13 @@ createConnection().then(async connection => {
     user.age = 25;
     await connection.manager.save(user);
     console.log("Saved a new user with id: " + user.id);
-    
+
     console.log("Loading users from the database...");
     const users = await connection.manager.find(User);
     console.log("Loaded users: ", users);
-     
+
     console.log("Here you can setup and run express/koa/any other framework.");
-    
+
 }).catch(error => console.log(error));
 `;
         }
@@ -474,7 +475,7 @@ services:
      */
     protected static getReadmeTemplate(options: { docker: boolean }): string {
         let template = `# Awesome Project Build with TypeORM
-        
+
 Steps to run this project:
 
 1. Run \`npm i\` command

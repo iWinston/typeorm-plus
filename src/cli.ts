@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import "reflect-metadata";
+import * as yargs from "yargs";
 import {SchemaSyncCommand} from "./commands/SchemaSyncCommand";
 import {SchemaDropCommand} from "./commands/SchemaDropCommand";
 import {QueryCommand} from "./commands/QueryCommand";
@@ -14,7 +15,7 @@ import {VersionCommand} from "./commands/VersionCommand";
 import {InitCommand} from "./commands/InitCommand";
 import {CacheClearCommand} from "./commands/CacheClearCommand";
 
-require("yargs")
+yargs
     .usage("Usage: $0 <command> [options]")
     .command(new SchemaSyncCommand())
     .command(new SchemaLogCommand())
@@ -29,6 +30,7 @@ require("yargs")
     .command(new VersionCommand())
     .command(new CacheClearCommand())
     .command(new InitCommand())
+    .recommendCommands()
     .demandCommand(1)
     .strict()
     .alias("v", "version")

@@ -1,18 +1,19 @@
 import {createConnection} from "../index";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
+import * as yargs from "yargs";
 const chalk = require("chalk");
 
 /**
  * Clear cache command.
  */
-export class CacheClearCommand {
+export class CacheClearCommand implements yargs.CommandModule {
 
     command = "cache:clear";
     describe = "Clears all data stored in query runner cache.";
 
-    builder(yargs: any) {
-        return yargs
+    builder(args: yargs.Argv) {
+        return args
             .option("connection", {
                 alias: "c",
                 default: "default",
@@ -25,12 +26,12 @@ export class CacheClearCommand {
             });
     }
 
-    async handler(argv: any) {
+    async handler(args: yargs.Arguments) {
 
         let connection: Connection|undefined = undefined;
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: argv.config });
-            const connectionOptions = await connectionOptionsReader.get(argv.connection);
+            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
+            const connectionOptions = await connectionOptionsReader.get(args.connection);
             Object.assign(connectionOptions, {
                 subscribers: [],
                 synchronize: false,
