@@ -50,7 +50,8 @@ export class Broadcaster {
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                        entity: entity
+                        entity: entity,
+                        metadata: metadata
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -88,6 +89,7 @@ export class Broadcaster {
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
+                        metadata: metadata,
                         databaseEntity: databaseEntity,
                         updatedColumns: updatedColumns || [],
                         updatedRelations: updatedRelations || []
@@ -128,6 +130,7 @@ export class Broadcaster {
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
+                        metadata: metadata,
                         databaseEntity: databaseEntity,
                         entityId: metadata.getEntityIdMixedMap(databaseEntity)
                     });
@@ -167,7 +170,8 @@ export class Broadcaster {
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                        entity: entity
+                        entity: entity,
+                        metadata: metadata
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -206,6 +210,7 @@ export class Broadcaster {
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
+                        metadata: metadata,
                         databaseEntity: databaseEntity,
                         updatedColumns: updatedColumns || [],
                         updatedRelations: updatedRelations || []
@@ -247,6 +252,7 @@ export class Broadcaster {
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
+                        metadata: metadata,
                         databaseEntity: databaseEntity,
                         entityId: metadata.getEntityIdMixedMap(databaseEntity)
                     });
