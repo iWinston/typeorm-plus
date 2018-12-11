@@ -671,7 +671,7 @@ export class EntityManager {
     async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: FindConditions<Entity>,
                             propertyPath: string,
-                            value: number | string): Promise<void> {
+                            value: number | string): Promise<UpdateResult> {
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
@@ -681,7 +681,7 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new Error(`Value "${value}" is not a number.`);
 
-        await this
+        return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({
@@ -697,7 +697,7 @@ export class EntityManager {
     async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: FindConditions<Entity>,
                             propertyPath: string,
-                            value: number | string): Promise<void> {
+                            value: number | string): Promise<UpdateResult> {
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
@@ -707,7 +707,7 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new Error(`Value "${value}" is not a number.`);
 
-        await this
+        return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({

@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils";
 import { Connection } from "../../../../src/connection/Connection";
+import { UpdateResult } from "../../../../src";
 import { Post } from "./entity/Post";
 import { PostBigInt } from "./entity/PostBigInt";
 
@@ -75,6 +76,24 @@ describe("repository > increment method", () => {
 
             const loadedPost2 = await connection.manager.findOne(Post, 2);
             loadedPost2!.counter.should.be.equal(34);
+        })));
+
+        it("should return UpdateResult", () => Promise.all(connections.map(async connection => {
+
+            // save few dummy posts
+            const post1 = new Post();
+            post1.id = 1;
+            post1.title = "post #1";
+            post1.counter = 1;
+            await connection.manager.save(post1);
+
+            // increment counter of post 1
+            const result = await connection
+                .getRepository(Post)
+                .increment({ id: 1 }, "counter", 22);
+
+            result.should.be.an.instanceOf(UpdateResult);
+
         })));
 
         it("should throw an error if column property path was not found", () => Promise.all(connections.map(async connection => {
