@@ -213,12 +213,12 @@ export class EmbeddedMetadata {
         }
 
         // if prefix option was set to empty string or explicity set to false - disable prefix
-        if (this.customPrefix === '' || this.customPrefix === false) {
+        if (this.customPrefix === "" || this.customPrefix === false) {
             return [];
         }
 
         // use custom prefix
-        if (typeof this.customPrefix === 'string') {
+        if (typeof this.customPrefix === "string") {
             return [this.customPrefix];
         }
 
