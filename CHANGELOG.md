@@ -2,7 +2,7 @@
 
 TypeORM follows a semantic versioning and until `1.0.0` breaking changes may appear in `0.x.x` versions,
 however since API is already quite stable we don't expect too much breaking changes.
-If we missed a note on some change or you have a questions on migrating from old version,
+If we missed a note on some change or you have a questions on migrating from old version, 
 feel free to ask us and community.
 
 ## 0.2.10
@@ -18,11 +18,10 @@ feel free to ask us and community.
 * added support for postgres exclusion constraints
 * bug fixes
 * documentation updates
-* fixed issue with mysql primary generated uuid ER_TOO_LONG_KEY (#1139)
 
 ## 0.2.9
 
-* `UpdateEvent` now returns with contains `updatedColumns` and `updatedRelations`
+* `UpdateEvent` now returns with contains `updatedColumns` and `updatedRelations` 
 
 ## 0.2.8
 
@@ -124,11 +123,11 @@ By default its true.
 * breaking change on how array parameters work in queries - now instead of (:param) new syntax must be used (:...param).
 This fixed various issues on how real arrays must work
 * changed the way how entity schemas are created (now more type-safe), now interface EntitySchema is a class
-* added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as
+* added `@Unique` decorator. Accepts custom unique constraint name and columns to be unique. Used only on as 
 composite unique constraint, on table level. E.g. `@Unique("uq_id_name", ["id", "name"])`
-* added `@Check` decorator. Accepts custom check constraint name and expression. Used only on as
+* added `@Check` decorator. Accepts custom check constraint name and expression. Used only on as 
 composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'asd'")`
-* fixed `Oracle` issues, now it will be fully maintained as other drivers
+* fixed `Oracle` issues, now it will be fully maintained as other drivers 
 * implemented migrations functionality in all drivers
 * CLI commands changed from `migrations:create`, `migrations:generate`, `migrations:revert` and `migrations:run` to `migration:create`, `migration:generate`, `migration:revert` and `migration:run`
 * changed the way how migrations work (more info in #1315). Now migration table contains `id` column with auto-generated keys, you need to re-create migrations table or add new column manually.
@@ -143,7 +142,7 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * added `hstore` and `enum` column types support in Postgres
 * added range types support in Postgres
 * TypeORM now uses `{ "supportBigNumbers": true, "bigNumberStrings": true }` options by default for `node-mysql`
-* Integer data types in MySQL now accepts `width` option instead of `length`
+* Integer data types in MySQL now accepts `width` option instead of `length` 
 * junction tables now have `onDelete: "CASCADE"` attribute on their foreign keys
 * `ancestor` and `descendant` columns in ClosureTable marked as primary keys
 * unique index now will be created for the join columns in `ManyToOne` and `OneToOne` relations
@@ -200,13 +199,13 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 
 * New DebugLogger ([#1302](https://github.com/typeorm/typeorm/pull/1302))
 * fixed issue with primary relations being nullable by default - now they are not nullable always
-* fixed issue with multiple databases support when tables with same name are used across multiple databases
+* fixed issue with multiple databases support when tables with same name are used across multiple databases 
 
 ## 0.1.7
 
 * fixed bug with migrations execution in mssql ([#1254](https://github.com/typeorm/typeorm/issues/1254))
 * added support for more complex ordering in paginated results ([#1259](https://github.com/typeorm/typeorm/issues/1259))
-* MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied
+* MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied 
 * fixed issue when relation query builder methods execute operations with empty arrays ([#1241](https://github.com/typeorm/typeorm/issues/1241))
 * Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--017) for the needed changes. To use webpack for non-Ionic browser webpack projects, the needed configuration can be found in the [docs]( http://typeorm.io/#/supported-platforms) ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
 * added support for loading sub-relations in via find options ([#1270](https://github.com/typeorm/typeorm/issues/1270))
@@ -242,14 +241,14 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * sqlite now supports relative database file paths ([#798](https://github.com/typeorm/typeorm/issues/798) and [#799](https://github.com/typeorm/typeorm/issues/799))
 * fixed bug with not properly working `update` method ([#1037](https://github.com/typeorm/typeorm/issues/1037), [#1042](https://github.com/typeorm/typeorm/issues/1042))
 * fixed bug with replication support ([#1035](https://github.com/typeorm/typeorm/pull/1035))
-* fixed bug with wrong embedded column names being generated ([#969](https://github.com/typeorm/typeorm/pull/969))
+* fixed bug with wrong embedded column names being generated ([#969](https://github.com/typeorm/typeorm/pull/969)) 
 * added support for caching in respositories ([#1057](https://github.com/typeorm/typeorm/issues/1057))
 * added support for the `citext` column type for postgres ([#1075](https://github.com/typeorm/typeorm/pull/1075))
 
 ## 0.1.1
 
 * added support for `pg-native` for postgres (#975). To use it you just need to install `npm i pg-native` and it will be picked up automatically.
-* now Find Options support `-1` and `1` for `DESC` and `ASC` values. This is better user experience for MongoDB users.
+* now Find Options support `-1` and `1` for `DESC` and `ASC` values. This is better user experience for MongoDB users. 
 * now inheritances in embeddeds are supported (#966).
 * `isArray: boolean` in `ColumnOptions` is deprecated. Use `array: boolean` instead.
 * deprecated `removeById` method, now use `deleteById` method instead.
@@ -303,13 +302,13 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * now `update` method in `QueryBuilder` accepts `Partial<Entity>` and property names used in update map are column property names and they are automatically mapped to column names.
 * `SpecificRepository` has been removed. Instead new `RelationQueryBuilder` was introduced.
 * `getEntitiesAndRawResults` of `QueryBuilder` has been renamed to `getRawAndEntities`.
-* in mssql all constraints are now generated using table name in their names - this is fixes issues with duplicate constraint names.
+* in mssql all constraints are now generated using table name in their names - this is fixes issues with duplicate constraint names. 
 * now when object is loaded from the database all its columns with null values will be set into entity properties as null.  Also after saving entity with unset properties that will be stored as nulls - their (properties) values will be set to null.
 * create and update dates in entities now use date with fractional seconds.
 * `@PrimaryGeneratedColumn` decorator now accept generation strategy as first argument (default is `increment`), instead of column type. Column type must be passed in options object, e.g. `@PrimaryGeneratedColumn({ type: "bigint"})`.
 * `@PrimaryColumn` now does not accept `generated` parameter in options. Use `@Generated` or `@PrimaryGeneratedColumn` decorators instead.
 * Logger interface has changed. Custom logger supply mechanism has changed.
-* Now `logging` options in connection options is simple "true", or "all", or list of logging modes can be supplied.
+* Now `logging` options in connection options is simple "true", or "all", or list of logging modes can be supplied. 
 * removed `driver` section in connection options. Define options right in the connection options section.
 * `Embedded` decorator is deprecated now. use `@Column(type => SomeEmbedded)` instead.
 * `schemaName` in connection options is removed. Use `schema` instead.
@@ -317,7 +316,7 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * `schemaSync` method in `Connection` has been renamed to `synchronize`.
 * `getEntityManager` has been deprecated. Use `getManager` instead.
 * `@TransactionEntityManager` is now called `@TransactionManager` now.
-* `EmbeddableEntity`, `Embedded`, `AbstractEntity` decorators has been removed. There is no need to use `EmbeddableEntity` and `AbstractEntity` decorators at all - entity will work as expected without them. Instead of `@Embedded(type => X)` decorator now `@Column(type => X)` must be used instead.
+* `EmbeddableEntity`, `Embedded`, `AbstractEntity` decorators has been removed. There is no need to use `EmbeddableEntity` and `AbstractEntity` decorators at all - entity will work as expected without them. Instead of `@Embedded(type => X)` decorator now `@Column(type => X)` must be used instead. 
 * `tablesPrefix`, `autoSchemaSync`, `autoMigrationsRun`, `dropSchemaOnConnection` options were removed. Use `entityPrefix`, `synchronize`, `migrationsRun`, `dropSchema` options instead.
 * removed `persist` method from the `Repository` and `EntityManager`. Use `save` method instead.
 * removed `getEntityManager` from `typeorm` namespace. Use `getManager` method instead.
@@ -345,7 +344,7 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * added `@Generated` decorator. It can accept `strategy` option with values `increment` and `uuid`. Default is `increment`. It always generates value for column, except when column defined as `nullable` and user sets `null` value in to column.
 * added logging of log-running requests.
 * added replication support.
-* added custom table schema and database support in `Postgres`, `Mysql` and `Sql Server` drivers.
+* added custom table schema and database support in `Postgres`, `Mysql` and `Sql Server` drivers. 
 * multiple bug fixes.
 * added ActiveRecord support (by extending BaseEntity) class
 * `Connection` how has `createQueryRunner` that can be used to control database connection and its transaction state
@@ -353,7 +352,7 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 
 ## 0.0.11
 
-* fixes [#341](https://github.com/typeorm/typeorm/issues/341) - issue when trying to create a `OneToOne` relation with
+* fixes [#341](https://github.com/typeorm/typeorm/issues/341) - issue when trying to create a `OneToOne` relation with 
 `referencedColumnName` where the relation is not between primary keys
 
 
@@ -396,10 +395,10 @@ composite check constraint, on table level. E.g. `@Check("chk_name", "name <> 'a
 * added shims for browsers using typeorm in frontend models, also added shim to use typeorm
 with class-transformer library on the frontend
 * fixed issue when socketPath could not be used with mysql driver (thanks @johncoffee)
-* all table decorators are renamed to `Entity` (`Table` => `Entity`, `AbstractTable` => `AbstractEntity`,
-`ClassTableChild` => `ClassEntityChild`, `ClosureTable` => `ClosureEntity`, `EmbeddableTable` => `EmbeddableEntity`,
+* all table decorators are renamed to `Entity` (`Table` => `Entity`, `AbstractTable` => `AbstractEntity`, 
+`ClassTableChild` => `ClassEntityChild`, `ClosureTable` => `ClosureEntity`, `EmbeddableTable` => `EmbeddableEntity`, 
 `SingleTableChild` => `SingleEntityChild`). This change is required because upcoming versions of orm will work
-not only with tables, but also with documents and other database-specific "tables".
+not only with tables, but also with documents and other database-specific "tables". 
 Previous decorator names are deprecated and will be removed in the future.
 * added custom repositories support. Example in samples directory.
 * cascade remove options has been removed from `@ManyToMany`, `@OneToMany` decorators. Also cascade remove is not possible
@@ -413,21 +412,21 @@ from two sides of `@OneToOne` relationship now.
 * fixed bug with junction tables persistence (thanks [@Luke265](https://github.com/Luke265))
 * fixed bug regexp in `QueryBuilder` (thanks [@netnexus](https://github.com/netnexus))
 * fixed issues [#202](https://github.com/typeorm/typeorm/issues/202), [#203](https://github.com/typeorm/typeorm/issues/203) (thanks to [@mingyang91](https://github.com/mingyang91))
-* fixed issues
-[#159](https://github.com/typeorm/typeorm/issues/159),
-[#181](https://github.com/typeorm/typeorm/issues/181),
-[#176](https://github.com/typeorm/typeorm/issues/176),
-[#192](https://github.com/typeorm/typeorm/issues/192),
-[#191](https://github.com/typeorm/typeorm/issues/191),
-[#190](https://github.com/typeorm/typeorm/issues/190),
-[#179](https://github.com/typeorm/typeorm/issues/179),
-[#177](https://github.com/typeorm/typeorm/issues/177),
+* fixed issues 
+[#159](https://github.com/typeorm/typeorm/issues/159), 
+[#181](https://github.com/typeorm/typeorm/issues/181), 
+[#176](https://github.com/typeorm/typeorm/issues/176), 
+[#192](https://github.com/typeorm/typeorm/issues/192), 
+[#191](https://github.com/typeorm/typeorm/issues/191), 
+[#190](https://github.com/typeorm/typeorm/issues/190), 
+[#179](https://github.com/typeorm/typeorm/issues/179), 
+[#177](https://github.com/typeorm/typeorm/issues/177), 
 [#175](https://github.com/typeorm/typeorm/issues/175),
-[#174](https://github.com/typeorm/typeorm/issues/174),
-[#150](https://github.com/typeorm/typeorm/issues/150),
-[#159](https://github.com/typeorm/typeorm/issues/159),
-[#173](https://github.com/typeorm/typeorm/issues/173),
-[#195](https://github.com/typeorm/typeorm/issues/195),
+[#174](https://github.com/typeorm/typeorm/issues/174), 
+[#150](https://github.com/typeorm/typeorm/issues/150), 
+[#159](https://github.com/typeorm/typeorm/issues/159), 
+[#173](https://github.com/typeorm/typeorm/issues/173), 
+[#195](https://github.com/typeorm/typeorm/issues/195), 
 [#151](https://github.com/typeorm/typeorm/issues/151)
 
 ## 0.0.6
@@ -474,7 +473,7 @@ from two sides of `@OneToOne` relationship now.
     * `getResultsAndCount()` renamed to `getManyAndCount()`
     * in the innerJoin*/leftJoin* methods now no need to specify `ON`
     * in the innerJoin*/leftJoin* methods no longer supports parameters, use `addParameters` or `setParameter` instead.
-    * `setParameters` is now works just like `addParameters` (because previous behaviour confused users),
+    * `setParameters` is now works just like `addParameters` (because previous behaviour confused users), 
     `addParameters` now is deprecated
     * `getOne` returns `Promise<Entity|undefined>`
 * breaking changes in `Repository` and `EntityManager`:
@@ -487,7 +486,7 @@ from two sides of `@OneToOne` relationship now.
 
 * lot of API refactorings
 * complete support TypeScript 2
-* optimized schema creation
+* optimized schema creation 
 * command line tools
 * multiple drivers support
 * multiple bugfixes
