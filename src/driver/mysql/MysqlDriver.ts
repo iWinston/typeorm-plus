@@ -512,7 +512,7 @@ export class MysqlDriver implements Driver {
         /**
          * fix https://github.com/typeorm/typeorm/issues/1139
          */
-        if (column.generationStrategy === 'uuid')
+        if (column.generationStrategy === "uuid")
             return "36";
 
         switch (column.type) {
