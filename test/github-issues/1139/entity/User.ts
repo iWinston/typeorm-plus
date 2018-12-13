@@ -3,6 +3,6 @@ import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryG
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryGeneratedColumn("uuid")
     id: string;
 }
