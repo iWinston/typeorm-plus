@@ -33,6 +33,7 @@ export class ConnectionOptionsEnvReader {
             migrationsRun: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_RUN")),
             entities: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_ENTITIES")),
             migrations: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS")),
+            migrationsTableName: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_TABLE_NAME"),
             subscribers: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS")),
             logging: this.transformLogging(PlatformTools.getEnvVariable("TYPEORM_LOGGING")),
             logger: PlatformTools.getEnvVariable("TYPEORM_LOGGER"),

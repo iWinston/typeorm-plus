@@ -11,7 +11,7 @@
 ## Creating a new connection from the configuration file
 
 Most of the times you want to store your connection options in a separate configuration file.
-It makes it convenient and easy to manage. 
+It makes it convenient and easy to manage.
 TypeORM supports multiple configuration sources.
 You only need to create a `ormconfig.[format]` file in the root directory of your application (near `package.json`),
 put your configuration there and in your app call `createConnection()` without any configuration passed:
@@ -25,7 +25,7 @@ const connection = await createConnection();
 ```
 
 Supported ormconfig file formats are: `.json`, `.js`, `.env`, `.yml` and `.xml`.
- 
+
 ## Using `ormconfig.json`
 
 Create `ormconfig.json` in the project root (near `package.json`). It should have the following content:
@@ -115,6 +115,7 @@ List of available env variables you can set:
 * TYPEORM_MIGRATIONS_RUN
 * TYPEORM_ENTITIES
 * TYPEORM_MIGRATIONS
+* TYPEORM_MIGRATIONS_TABLE_NAME
 * TYPEORM_SUBSCRIBERS
 * TYPEORM_ENTITY_SCHEMAS
 * TYPEORM_LOGGING
@@ -144,7 +145,7 @@ default: # default connection
     username: "test"
     password: "test"
     database: "test"
-    
+
 second-connection: # other connection
     host: "localhost"
     port: 3306
