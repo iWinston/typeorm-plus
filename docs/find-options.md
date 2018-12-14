@@ -272,7 +272,7 @@ SELECT * FROM "post" WHERE "title" IS NULL
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Raw( "dislikes - 4")
+    likes: Raw("dislikes - 4")
 });
 ```
 
@@ -289,7 +289,7 @@ In the simplest case, a raw query is inserted immediately after the equal symbol
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: (alias) => Raw(`${alias} > NOW()`)
+    currentDate: Raw(alias =>`${alias} > NOW()`)
 });
 ```
 
