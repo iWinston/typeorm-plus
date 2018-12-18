@@ -141,6 +141,8 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
 ## Running and reverting migrations
 
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` files. 
+
 Once you have a migration to run on production, you can run them using a CLI command:
 
 ```
