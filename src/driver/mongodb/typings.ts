@@ -2593,6 +2593,34 @@ export interface Collection {
      */
     count(query: Object, options: MongoCountPreferences, callback: MongoCallback<number>): void;
 
+        /**
+     * Count number of matching documents in the db to a query.
+     *
+     * @param query The query for the countDocuments.
+     * @param callback The command result callback.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocumentst
+     */
+    countDocuments(query: Object, callback: MongoCallback<number>): void;
+
+    /**
+     * Count number of matching documents in the db to a query.
+     *
+     * @param query The query for the count.
+     * @param options Optional.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocuments
+     */
+    countDocuments(query: Object, options?: MongoCountPreferences): Promise<number>;
+
+    /**
+     * Count number of matching documents in the db to a query.
+     *
+     * @param query The query for the count=
+     * @param options Optional settings.
+     * @param callback The command result callback.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocuments
+     */
+    countDocuments(query: Object, options: MongoCountPreferences, callback: MongoCallback<number>): void;
+
     /**
      * Creates an index on the db and collection collection.
      *
