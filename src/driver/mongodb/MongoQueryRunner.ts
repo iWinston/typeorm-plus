@@ -136,7 +136,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Count number of matching documents in the db to a query.
      */
     async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
-        return await this.getCollection(collectionName).count(query || {}, options);
+        return await this.getCollection(collectionName).countDocuments(query || {}, options);
     }
 
     /**
