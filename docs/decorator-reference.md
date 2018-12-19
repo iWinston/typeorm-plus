@@ -763,7 +763,7 @@ export class User {
 
 > Note: MySQL does not support check constraints.
 
-#### `@Check`
+#### `@Exclusion`
 
 This decorator allows you to create a database exclusion constraint for a specific column or columns.
 This decorator can be applied only to an entity itself.
