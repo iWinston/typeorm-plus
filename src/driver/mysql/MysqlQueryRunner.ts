@@ -1437,7 +1437,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             indexType += "SPATIAL ";
         if (index.isFulltext)
             indexType += "FULLTEXT ";
-        return `CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapeTableName(table)}(${columns})`;
+        return `CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapeTableName(table)} (${columns})`;
     }
 
     /**
