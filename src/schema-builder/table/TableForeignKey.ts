@@ -11,7 +11,7 @@ export class TableForeignKey {
     // -------------------------------------------------------------------------
 
     /**
-     * Name of the table which contains this foreign key.
+     * Name of the foreign key constraint.
      */
     name?: string;
 
