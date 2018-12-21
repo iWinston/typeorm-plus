@@ -26,13 +26,13 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Type of the Redis Client (redis or ioredis).
      */
-    protected clientType: string;
+    protected clientType: "redis" | "ioredis";
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection, clientType: string) {
+    constructor(protected connection: Connection, clientType: "redis" | "ioredis") {
         this.clientType = clientType;
         this.redis = this.loadRedis();
     }
