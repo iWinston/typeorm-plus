@@ -92,11 +92,11 @@ export class EntityManager {
      * Wraps given function execution (and all operations made there) in a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction<T>(runInTransaction: (entityManger: EntityManager) => Promise<T>): Promise<T>;
-    async transaction<T>(isolationLevel: IsolationLevel, runInTransaction: (entityManger: EntityManager) => Promise<T>): Promise<T>;
+    async transaction<T>(runInTransaction: (entityManager: EntityManager) => Promise<T>): Promise<T>;
+    async transaction<T>(isolationLevel: IsolationLevel, runInTransaction: (entityManager: EntityManager) => Promise<T>): Promise<T>;
     async transaction<T>(
-        isolationOrRunInTransaction: IsolationLevel | ((entityManger: EntityManager) => Promise<T>),
-        runInTransactionParam?: (entityManger: EntityManager) => Promise<T>
+        isolationOrRunInTransaction: IsolationLevel | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
 
         const isolation = typeof isolationOrRunInTransaction === "string" ? isolationOrRunInTransaction : undefined;
@@ -606,7 +606,7 @@ export class EntityManager {
         findOptions = {
             ...(findOptions || {}),
             take: 1,
-        }
+        };
 
         FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
 
@@ -671,18 +671,21 @@ export class EntityManager {
     async increment<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: FindConditions<Entity>,
                             propertyPath: string,
-                            value: number): Promise<void> {
+                            value: number | string): Promise<UpdateResult> {
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
             throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
-        await this
+        if (isNaN(Number(value)))
+            throw new Error(`Value "${value}" is not a number.`);
+
+        return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + Number(value)
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + value
             })
             .where(conditions)
             .execute();
@@ -694,18 +697,21 @@ export class EntityManager {
     async decrement<Entity>(entityClass: ObjectType<Entity>|EntitySchema<Entity>|string,
                             conditions: FindConditions<Entity>,
                             propertyPath: string,
-                            value: number): Promise<void> {
+                            value: number | string): Promise<UpdateResult> {
 
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
             throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
-        await this
+        if (isNaN(Number(value)))
+            throw new Error(`Value "${value}" is not a number.`);
+
+        return this
             .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({
-                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + Number(value)
+                [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " - " + value
             })
             .where(conditions)
             .execute();

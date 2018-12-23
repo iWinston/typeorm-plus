@@ -147,6 +147,13 @@ Once you have a migration to run on production, you can run them using a CLI com
 typeorm migration:run
 ```
 
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files. 
+
+Example with `ts-node`:
+```
+ts-node ./node_modules/.bin/typeorm migration:run
+```
+
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
 This means all sql queries written in the `up` methods of your created migrations will be executed.
 That's all! Now you have your database schema up-to-date.

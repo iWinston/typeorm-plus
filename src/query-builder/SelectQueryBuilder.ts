@@ -1531,13 +1531,22 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         }
 
         if (this.connection.driver instanceof SqlServerDriver) {
+            // Due to a limitation in SQL Server's parser implementation it does not support using
+            // OFFSET or FETCH NEXT without an ORDER BY clause being provided. In cases where the
+            // user does not request one we insert a dummy ORDER BY that does nothing and should
+            // have no effect on the query planner or on the order of the results returned.
+            // https://dba.stackexchange.com/a/193799
+            let prefix = "";
+            if ((limit || offset) && Object.keys(this.expressionMap.allOrderBys).length <= 0) {
+                prefix = " ORDER BY (SELECT NULL)";
+            }
 
             if (limit && offset)
-                return " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+                return prefix + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
             if (limit)
-                return " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
+                return prefix + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
             if (offset)
-                return " OFFSET " + offset + " ROWS";
+                return prefix + " OFFSET " + offset + " ROWS";
 
         } else if (this.connection.driver instanceof MysqlDriver) {
 
@@ -1782,7 +1791,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().groupBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)

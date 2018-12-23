@@ -1463,7 +1463,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 `WHERE COLUMNPROPERTY(object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), "COLUMN_NAME", 'IsIdentity') = 1 AND "TABLE_SCHEMA" IN (${schemaNamesString})`;
         }).join(" UNION ALL ");
 
-        const dbCollationsSql = `SELECT "NAME", "COLLATION_NAME" FROM "SYS"."DATABASES"`;
+        const dbCollationsSql = `SELECT "NAME", "COLLATION_NAME" FROM "sys"."databases"`;
 
         const indicesSql = dbNames.map(dbName => {
             return `SELECT '${dbName}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
@@ -1731,7 +1731,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)}(${columns}) ${index.where ? "WHERE " + index.where : ""}`;
+        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)} (${columns}) ${index.where ? "WHERE " + index.where : ""}`;
     }
 
     /**

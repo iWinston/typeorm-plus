@@ -1,5 +1,5 @@
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from '../../../../src/';
-import { Person } from './person';
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "../../../../src/";
+import { Person } from "./person";
 
 @Entity()
 export class Note {

@@ -1,5 +1,6 @@
 # Using CLI
 
+* [Notes on entity files written in typescript](#notes-on-entity-files-written-in-typescript)
 * [Initialize a new TypeORM project](#initialize-a-new-typeorm-project)
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
@@ -13,6 +14,34 @@
 * [Run any sql query](#run-any-sql-query)
 * [Clear cache](#clear-cache)
 * [Check version](#check-version)
+
+## Notes on entity files written in typescript
+This CLI tool is written in javascript and to be run on node. If your entity files are in typescript, you will need to transpile them to javascript before using CLI. You may skip this section if you only use javascript.
+
+You may setup ts-node in your project to ease the operation as follows:
+
+Install ts-node globally:
+```
+npm install -g ts-node
+```
+
+Add typeorm command under scripts section in package.json
+```
+"script" {
+    ...
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/.bin/typeorm"    
+}
+```
+
+Then you may run the command like this:
+```
+npm run typeorm migration:run
+```
+
+If you need to pass parameter with dash to npm script, you will need to add them after --. For example, if you need to *generate*, the command is like this:
+```
+npm run typeorm migration:generate -- -n migrationNameHere
+```
 
 ## Initialize a new TypeORM project
 

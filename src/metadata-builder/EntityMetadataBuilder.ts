@@ -607,14 +607,6 @@ export class EntityMetadataBuilder {
                     unique: false
                 }
             }),
-            new IndexMetadata({
-                entityMetadata: entityMetadata,
-                columns: [...entityMetadata.primaryColumns, entityMetadata.discriminatorColumn!],
-                args: {
-                    target: entityMetadata.target,
-                    unique: false
-                }
-            })
         );
     }
 
