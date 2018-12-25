@@ -137,7 +137,8 @@ describe("database schema > column types > mssql", () => { // https://github.com
         table!.findColumnByName("binary")!.type.should.be.equal("binary");
         table!.findColumnByName("varbinary")!.type.should.be.equal("varbinary");
         table!.findColumnByName("image")!.type.should.be.equal("image");
-        table!.findColumnByName("rowversion")!.type.should.be.equal("rowversion");
+        // the rowversion type's name in SQL server metadata is timestamp
+        table!.findColumnByName("rowversion")!.type.should.be.equal("timestamp");
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("dateObj")!.type.should.be.equal("date");
         table!.findColumnByName("datetime")!.type.should.be.equal("datetime");
