@@ -43,7 +43,13 @@ export class ConnectionOptionsEnvReader {
                 entitiesDir: PlatformTools.getEnvVariable("TYPEORM_ENTITIES_DIR"),
                 migrationsDir: PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_DIR"),
                 subscribersDir: PlatformTools.getEnvVariable("TYPEORM_SUBSCRIBERS_DIR"),
-            }
+            },
+            cache: (typeof this.transformCaching(PlatformTools.getEnvVariable("TYPEORM_CACHE")) === "string") ? {
+                type: this.transformCaching(PlatformTools.getEnvVariable("TYPEORM_CACHE")),
+                options: PlatformTools.getEnvVariable("TYPEORM_CACHE_OPTIONS") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_CACHE_OPTIONS")) : undefined,
+                alwaysEnabled: this.transformCaching(PlatformTools.getEnvVariable("TYPEORM_CACHE_ALWAYS_ENABLED")),
+                duration: parseInt(PlatformTools.getEnvVariable("TYPEORM_CACHE_DURATION"))
+            } : this.transformCaching(PlatformTools.getEnvVariable("TYPEORM_CACHE"))
         };
     }
 
@@ -61,6 +67,20 @@ export class ConnectionOptionsEnvReader {
             return "all";
 
         return this.stringToArray(logging);
+    }
+
+    /**
+     * Transforms logging string into real logging value connection requires.
+     */
+    protected transformCaching(caching: string): any {
+        if (caching === "true" || caching === "TRUE" || caching === "1")
+            return true;
+        if (caching === "redis" || caching === "database")
+            return caching;
+        if (caching === "false" || caching === "FALSE" || caching === "0")
+            return false;
+
+        return undefined;
     }
 
     /**
