@@ -6,13 +6,14 @@ export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
     |"int2" // postgres, sqlite
     |"int4" // postgres
     |"int8" // postgres, sqlite
-    |"integer" // postgres, oracle, sqlite
+    |"integer" // postgres, oracle, sqlite, mysql
     |"tinyint" // mysql, mssql, sqlite
     |"smallint" // mysql, postgres, mssql, oracle, sqlite
     |"mediumint" // mysql, sqlite
     |"bigint" // mysql, postgres, mssql, sqlite
     |"dec" // oracle, mssql
     |"decimal" // mysql, postgres, mssql, sqlite
+    |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite
     |"number"; // oracle
 
@@ -27,11 +28,12 @@ export type SpatialColumnType = "geometry" // postgres
  */
 export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"double" // mysql, sqlite
-    |"dec" // oracle, mssql
+    |"dec" // oracle, mssql, mysql
     |"decimal" // mysql, postgres, mssql, sqlite
-    |"numeric" // postgres, mssql, sqlite
+    |"fixed" // mysql
+    |"numeric" // postgres, mssql, sqlite, mysql
     |"real" // mysql, postgres, mssql, oracle, sqlite
-    |"double precision" // postgres, oracle, sqlite
+    |"double precision" // postgres, oracle, sqlite, mysql
     |"number" // oracle
     |"datetime" // mssql, mysql, sqlite
     |"datetime2" // mssql
@@ -49,12 +51,14 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
  */
 export type WithLengthColumnType = "character varying" // postgres
     |"varying character" // sqlite
-    |"nvarchar" // mssql
+    |"nvarchar" // mssql, mysql
+    |"national varchar" // mysql
     |"character" // mysql, postgres, sqlite
     |"native character" // sqlite
     |"varchar" // mysql, postgres, mssql, sqlite
     |"char" // mysql, postgres, mssql, oracle
-    |"nchar" // mssql, oracle, sqlite
+    |"nchar" // mssql, oracle, sqlite, mysql
+    |"national char" // mysql
     |"varchar2" // oracle
     |"nvarchar2" // oracle, sqlite
     |"raw" // oracle
@@ -90,8 +94,8 @@ export type SimpleColumnType =
     |"money" // postgres, mssql
 
     // boolean types
-    |"boolean" // postgres, sqlite
-    |"bool" // postgres
+    |"boolean" // postgres, sqlite, mysql
+    |"bool" // postgres, mysql
 
     // text/binary types
     |"tinyblob" // mysql
