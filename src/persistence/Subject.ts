@@ -174,7 +174,10 @@ export class Subject {
      * and if it does have differentiated columns or relations.
      */
     get mustBeUpdated() {
-        return this.canBeUpdated && this.identifier && (this.changeMaps.length > 0 || !!this.metadata.objectIdColumn); // for mongodb we do not compute changes - we always update entity
+        return this.canBeUpdated &&
+            this.identifier &&
+            this.databaseEntity &&
+            (this.changeMaps.length > 0 || !!this.metadata.objectIdColumn); // for mongodb we do not compute changes - we always update entity
     }
 
     // -------------------------------------------------------------------------
