@@ -65,7 +65,7 @@ export class ConnectionOptionsEnvReader {
     }
 
     /**
-     * Transforms caching string into real caching value connection requires.
+     * Transforms caching option into real caching value option requires.
      */
     protected transformCaching(): any {
         const caching = PlatformTools.getEnvVariable("TYPEORM_CACHE");
