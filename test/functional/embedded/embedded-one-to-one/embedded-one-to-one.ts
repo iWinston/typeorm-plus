@@ -297,7 +297,6 @@ describe("embedded > embedded-one-to-one", () => {
                 .where("user.id = :id", { id: 1 })
                 .getOne();
 
-            console.log(loadedUser);
 
             expect(loadedUser!.should.be.eql(
                 {
