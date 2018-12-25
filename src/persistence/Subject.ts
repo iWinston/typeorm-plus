@@ -176,7 +176,7 @@ export class Subject {
     get mustBeUpdated() {
         return this.canBeUpdated &&
             this.identifier &&
-            this.databaseEntity &&
+            ((this.entity && this.databaseEntity) || (!this.entity && !this.databaseEntity)) &&
             (this.changeMaps.length > 0 || !!this.metadata.objectIdColumn); // for mongodb we do not compute changes - we always update entity
     }
 
