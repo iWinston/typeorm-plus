@@ -67,7 +67,7 @@ export class ConnectionOptionsEnvReader {
     /**
      * Transforms caching option into real caching value option requires.
      */
-    protected transformCaching(): any {
+    protected transformCaching(): boolean | object | undefined {
         const caching = PlatformTools.getEnvVariable("TYPEORM_CACHE");
         if (caching === "true" || caching === "TRUE" || caching === "1")
             return true;
