@@ -70,7 +70,7 @@ export class ConnectionOptionsEnvReader {
     }
 
     /**
-     * Transforms logging string into real logging value connection requires.
+     * Transforms caching string into real caching value connection requires.
      */
     protected transformCaching(caching: string): any {
         if (caching === "true" || caching === "TRUE" || caching === "1")
