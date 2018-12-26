@@ -228,6 +228,8 @@ export class SubjectExecutor {
                         subject.entity[subject.metadata.updateDateColumn.databaseName] = new Date();
                     }
 
+                    subject.createValueSetAndPopChangeMap();
+
                     bulkInsertSubjects.push(subject);
                     bulkInsertMaps.push(subject.entity!);
                 });

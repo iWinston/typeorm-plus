@@ -25,13 +25,14 @@ describe("mongodb > timestampable columns", () => {
         const post = new Post();
         post.message = "Hello";
         await commentMongoRepository.save(post);
-
         expect(post.id).to.be.not.undefined;
         post.createdAt.should.be.instanceof(Date);
         const createdAt = post.createdAt;
 
         post.updatedAt.should.be.instanceof(Date);
         const updatedAt = post.updatedAt;
+
+        expect(post.createdAt.getTime()).to.equal(post.updatedAt.getTime());
 
         // update
         const date = new Date();
