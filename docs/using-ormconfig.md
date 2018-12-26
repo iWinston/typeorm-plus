@@ -126,6 +126,12 @@ List of available env variables you can set:
 * TYPEORM_SUBSCRIBERS_DIR
 * TYPEORM_DRIVER_EXTRA
 * TYPEORM_DEBUG
+* TYPEORM_CACHE
+* TYPEORM_CACHE_OPTIONS
+* TYPEORM_CACHE_ALWAYS_ENABLED
+* TYPEORM_CACHE_DURATION
+
+`TYPEORM_CACHE` should be boolean or string of cache type
 
 `ormconfig.env` should be used only during development.
 On production you can set all these values in real ENVIRONMENT VARIABLES.
