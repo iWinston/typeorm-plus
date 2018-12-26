@@ -17,9 +17,7 @@ describe("github issues > #2147 Lazy load JoinColumn with multiple columns name 
     after(() => closeTestingConnections(connections));
 
     it("should create multiple column join for lazy loading relationship", () => {
-        console.log("Number of connections " + connections.length);
         return Promise.all(connections.map(async connection => {
-            console.log("Connection:" + connection.name);
             // tests go here
             const username = "user name";
             const user = new User();
