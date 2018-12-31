@@ -599,6 +599,9 @@ export class PostgresDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
 
+        } else if (defaultValue === null) {
+            return `null`;
+
         } else if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`;
 

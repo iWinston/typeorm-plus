@@ -547,6 +547,9 @@ export class MysqlDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
 
+        } else if (defaultValue === null) {
+            return `null`;
+
         } else {
             return defaultValue;
         }
