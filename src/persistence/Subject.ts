@@ -182,7 +182,7 @@ export class Subject {
             this.identifier &&
             (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity)) &&
             // ((this.entity && this.databaseEntity) || (!this.entity && !this.databaseEntity)) &&
-            (this.changeMaps.length > 0 || !!this.metadata.objectIdColumn); // for mongodb we do not compute changes - we always update entity
+            this.changeMaps.length > 0;
     }
 
     // -------------------------------------------------------------------------
