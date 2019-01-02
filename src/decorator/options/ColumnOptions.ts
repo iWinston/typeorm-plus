@@ -1,10 +1,11 @@
 import {ColumnType} from "../../driver/types/ColumnTypes";
 import {ValueTransformer} from "./ValueTransformer";
+import { ColumnCommonOptions } from "./ColumnCommonOptions";
 
 /**
  * Describes all column's options.
  */
-export interface ColumnOptions {
+export interface ColumnOptions extends ColumnCommonOptions {
 
     /**
      * Column type. Must be one of the value from the ColumnTypes class.
