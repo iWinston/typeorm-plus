@@ -153,15 +153,10 @@ export class MysqlDriver implements Driver {
      */
     withLengthColumnTypes: ColumnType[] = [
         "char",
-        "nchar",
-        "national char",
         "varchar",
         "nvarchar",
-        "national varchar",
         "binary",
-        "varbinary",
-        "blob",
-        "text"
+        "varbinary"
     ];
 
     /**
