@@ -7,6 +7,7 @@ feel free to ask us and community.
 
 ## 0.2.10
 
+* Allow caching options from environment variable (#3321)
 * more accurate type for postgres ssl parameters
 * added support for `ON UPDATE CASCADE` relations for mysql
 * `repository.save` returns union type
