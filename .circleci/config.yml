@@ -6,7 +6,7 @@ jobs:
     docker:
       # specify pre-built docker images
       # documented at https://circleci.com/docs/2.0/circleci-images/
-      - image: circleci/node:4.8.2
+      - image: circleci/node:10.15.0
       - image: circleci/mysql:5.7.24
       - image: circleci/mariadb:10.1.37
       - image: circleci/postgres:9.6.11-postgis
