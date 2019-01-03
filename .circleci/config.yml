@@ -27,14 +27,14 @@ jobs:
           - v1-dependencies-
 
       - run: npm install
+      - run: npm install sqlite3 --build-from-source
 
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      - run: npm install sqlite3 --build-from-source
-      - run: docker-compose up -d
+      # - run: docker-compose up -d
         
       # run tests
       - run: npm run lint
