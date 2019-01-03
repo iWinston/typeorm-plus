@@ -7,7 +7,7 @@
     "port": 3306,
     "username": "root",
     "password": "",
-    "database": "test"
+    "database": "circle_test"
   },
   {
     "skip": true,
@@ -31,9 +31,9 @@
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
-    "username": "test",
-    "password": "test",
-    "database": "test",
+    "username": "postgres",
+    "password": "mysecretpassword",
+    "database": "circle_test",
     "logging": false
   },
   {
