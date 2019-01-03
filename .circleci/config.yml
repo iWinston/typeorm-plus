@@ -39,3 +39,6 @@ jobs:
       # run tests
       - run: npm run lint
       - run: npm test
+
+      # run code coverage
+      - run: curl -s https://codecov.io/bash
