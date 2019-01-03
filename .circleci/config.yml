@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - checkout
-      - run: npm install -g npm@latest
+      - run: sudo npm install -g npm@latest
       - run: cp ormconfig.travis.json ormconfig.json
 
       # Download and cache dependencies
