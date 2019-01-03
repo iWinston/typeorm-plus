@@ -34,6 +34,7 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run: npm install sqlite3 --build-from-source
+      - run: docker-compose up -d
         
       # run tests
       - run: npm run lint
