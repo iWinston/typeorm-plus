@@ -15,7 +15,7 @@ services:
 
   # mysql
   mysql:
-    image: "mysql:5.7.10"
+    image: "mysql:5.7.24"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -27,7 +27,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.1.16"
+    image: "mariadb:10.1.37"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -42,7 +42,7 @@ services:
     # mdillon/postgis is postgres + PostGIS (only). if you need additional
     # extensions, it's probably time to create a purpose-built image with all
     # necessary extensions. sorry, and thanks for adding support for them!
-    image: "mdillon/postgis:9.6"
+    image: "postgres:9.6.11-postgis"
     container_name: "typeorm-postgres"
     ports:
       - "5432:5432"
@@ -63,7 +63,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:3.4.18"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
