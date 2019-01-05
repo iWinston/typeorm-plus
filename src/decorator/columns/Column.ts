@@ -14,6 +14,7 @@ import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
+import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -135,6 +136,14 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
                 mode: "regular",
                 options: options
             } as ColumnMetadataArgs);
+
+            if (options.generated) {
+                getMetadataArgsStorage().generations.push({
+                    target: object.constructor,
+                    propertyName: propertyName,
+                    strategy: options.type === "uuid" ? "uuid" : "increment"
+                } as GeneratedMetadataArgs);
+            }
         }
     };
 }

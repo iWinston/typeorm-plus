@@ -23,8 +23,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             await productRepository.save(product);
             product = new Product("test3", "label3", 30);
             await productRepository.save(product);
-            const result = await productRepository.find({select: ["name", "label"], order: {name: 1}});
-            console.log(result);
+            await productRepository.find({select: ["name", "label"], order: {name: 1}});
         })));
 
     it("return column on include in select on findAndCount",
@@ -36,8 +35,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             await productRepository.save(product);
             product = new Product("test3", "label3", 30);
             await productRepository.save(product);
-            const result = await productRepository.findAndCount({select: ["name", "label"], order: {name: 1}});
-            console.log(result);
+            await productRepository.findAndCount({select: ["name", "label"], order: {name: 1}});
         })));
 
     it("return column on include in select on findByIds",
@@ -49,8 +47,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             await productRepository.save(product);
             product = new Product("test3", "label3", 30);
             const product3 = await productRepository.save(product);
-            const result = await productRepository.findByIds([product3.id], {select: ["name", "label"], order: {name: 1}});
-            console.log(result);
+            await productRepository.findByIds([product3.id], {select: ["name", "label"], order: {name: 1}});
         })));
 
     it("return column on include in select on findByIds ",
@@ -61,8 +58,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             product = new Product("test2", "label2", 20);
             await productRepository.save(product);
             product = new Product("test3", "label3", 30);
-            const result = await productRepository.findOne({where: {name: "test2"}, select: ["name", "label"], order: {name: 1}});
-            console.log(result);
+            await productRepository.findOne({where: {name: "test2"}, select: ["name", "label"], order: {name: 1}});
         })));
 
 });

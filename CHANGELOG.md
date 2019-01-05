@@ -5,8 +5,13 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
+## 0.2.11
+
+* hot fix for mysql schema sync bug
+
 ## 0.2.10
 
+* allowed caching options from environment variable (#3321)
 * more accurate type for postgres ssl parameters
 * added support for `ON UPDATE CASCADE` relations for mysql
 * `repository.save` returns union type
