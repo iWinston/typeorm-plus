@@ -46,6 +46,23 @@ Querying a column from an embedded entity should be done with respect to the hie
 userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
 ```
 
+Querying with OR operator:
+
+```typescript
+userRepository.find({
+  where: [
+    { firstName: "Timber", lastName: "Saw" },
+    { firstName: "Stan", lastName: "Lee" }
+  ]
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
+```
+
 * `order` - selection order.
 
 ```typescript
