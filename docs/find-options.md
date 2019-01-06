@@ -171,6 +171,22 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" < 10
 ```
 
+* `LessThanOrEqual`
+
+```ts
+import {LessThanOrEqual} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: LessThanOrEqual(10)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" <= 10
+```
+
 * `MoreThan`
 
 ```ts
@@ -185,6 +201,22 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "likes" > 10
+```
+
+* `MoreThanOrEqual`
+
+```ts
+import {MoreThanOrEqual} from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    likes: MoreThanOrEqual(10)
+});
+```
+
+will execute following query: 
+
+```sql
+SELECT * FROM "post" WHERE "likes" >= 10
 ```
 
 * `Equal`
