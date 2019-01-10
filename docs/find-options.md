@@ -8,35 +8,35 @@
 
 所有存储库和管理器`find`方法都接受可用于查询所需数据的特殊选项，而无需使用`QueryBuilder`：
 
-- `select` - 表示必须选择对象的哪些属性
+-   `select` - 表示必须选择对象的哪些属性
 
 ```typescript
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
-- `relations` - 关系需要加载主体。 也可以加载子关系（join 和 leftJoinAndSelect 的简写）
+-   `relations` - 关系需要加载主体。 也可以加载子关系（join 和 leftJoinAndSelect 的简写）
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });
 userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_attributes"] });
 ```
 
-- `join` - 需要为实体执行联接，扩展版对的"relations"。
+-   `join` - 需要为实体执行联接，扩展版对的"relations"。
 
 ```typescript
 userRepository.find({
-  join: {
-    alias: "user",
-    leftJoinAndSelect: {
-      profile: "user.profile",
-      photo: "user.photos",
-      video: "user.videos"
+    join: {
+        alias: "user",
+        leftJoinAndSelect: {
+            profile: "user.profile",
+            photo: "user.photos",
+            video: "user.videos"
+        }
     }
-  }
 });
 ```
 
-- `where` -查询实体的简单条件。
+-   `where` -查询实体的简单条件。
 
 ```typescript
 userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } });
@@ -48,32 +48,46 @@ userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } });
 userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
 ```
 
-- `order` - 排序
+使用 OR 运算符查询：
 
 ```typescript
 userRepository.find({
-  order: {
-    name: "ASC",
-    id: "DESC"
-  }
+    where: [{ firstName: "Timber", lastName: "Saw" }, { firstName: "Stan", lastName: "Lee" }]
+});
+```
+
+将执行以下查询：
+
+```sql
+SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
+```
+
+-   `order` - 选择排序
+
+```typescript
+userRepository.find({
+    order: {
+        name: "ASC",
+        id: "DESC"
+    }
 });
 ```
 
 返回多个实体的`find`方法（`find`，`findAndCount`，`findByIds`），同时也接受以下选项：
 
-- `skip` - 偏移（分页）
+-   `skip` - 偏移（分页）
 
 ```typescript
 userRepository.find({
-  skip: 5
+    skip: 5
 });
 ```
 
-- `take` - limit (分页) - 得到的最大实体数。
+-   `take` - limit (分页) - 得到的最大实体数。
 
 ```typescript
 userRepository.find({
-  take: 10
+    take: 10
 });
 ```
 
@@ -81,19 +95,19 @@ userRepository.find({
 
 ```typescript
 userRepository.find({
-  order: {
-    columnName: "ASC"
-  },
-  skip: 0,
-  take: 10
+    order: {
+        columnName: "ASC"
+    },
+    skip: 0,
+    take: 10
 });
 ```
 
-- `cache` - 启用或禁用查询结果缓存。 有关更多信息和选项，请参见[caching](caching.md)。
+-   `cache` - 启用或禁用查询结果缓存。 有关更多信息和选项，请参见[caching](caching.md)。
 
 ```typescript
 userRepository.find({
-  cache: true
+    cache: true
 });
 ```
 
@@ -101,19 +115,19 @@ find 选项的完整示例：
 
 ```typescript
 userRepository.find({
-  select: ["firstName", "lastName"],
-  relations: ["profile", "photos", "videos"],
-  where: {
-    firstName: "Timber",
-    lastName: "Saw"
-  },
-  order: {
-    name: "ASC",
-    id: "DESC"
-  },
-  skip: 5,
-  take: 10,
-  cache: true
+    select: ["firstName", "lastName"],
+    relations: ["profile", "photos", "videos"],
+    where: {
+        firstName: "Timber",
+        lastName: "Saw"
+    },
+    order: {
+        name: "ASC",
+        id: "DESC"
+    },
+    skip: 5,
+    take: 10,
+    cache: true
 });
 ```
 
@@ -121,13 +135,13 @@ userRepository.find({
 
 TypeORM 提供了许多内置运算符，可用于创建更复杂的查询：
 
-- `Not`
+-   `Not`
 
 ```ts
 import { Not } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  title: Not("About #1")
+    title: Not("About #1")
 });
 ```
 
@@ -137,13 +151,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" != 'About #1'
 ```
 
-- `LessThan`
+-   `LessThan`
 
 ```ts
 import { LessThan } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: LessThan(10)
+    likes: LessThan(10)
 });
 ```
 
@@ -153,12 +167,12 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "likes" < 10
 ```
 
-- `LessThanOrEqual`
+-   `LessThanOrEqual`
 
 ```ts
 import { LessThanOrEqual } from "typeorm";
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: LessThanOrEqual(10)
+    likes: LessThanOrEqual(10)
 });
 ```
 
@@ -168,13 +182,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "likes" <= 10
 ```
 
-- `MoreThan`
+-   `MoreThan`
 
 ```ts
 import { MoreThan } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: MoreThan(10)
+    likes: MoreThan(10)
 });
 ```
 
@@ -184,12 +198,12 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "likes" > 10
 ```
 
-- `MoreThanOrEqual`
+-   `MoreThanOrEqual`
 
 ```ts
 import { MoreThanOrEqual } from "typeorm";
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: MoreThanOrEqual(10)
+    likes: MoreThanOrEqual(10)
 });
 ```
 
@@ -199,13 +213,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "likes" >= 10
 ```
 
-- `Equal`
+-   `Equal`
 
 ```ts
 import { Equal } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  title: Equal("About #2")
+    title: Equal("About #2")
 });
 ```
 
@@ -215,13 +229,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" = 'About #2'
 ```
 
-- `Like`
+-   `Like`
 
 ```ts
 import { Like } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  title: Like("%out #%")
+    title: Like("%out #%")
 });
 ```
 
@@ -231,13 +245,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```
 
-- `Between`
+-   `Between`
 
 ```ts
 import { Between } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: Between(1, 10)
+    likes: Between(1, 10)
 });
 ```
 
@@ -247,13 +261,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
 ```
 
-- `In`
+-   `In`
 
 ```ts
 import { In } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  title: In(["About #2", "About #3"])
+    title: In(["About #2", "About #3"])
 });
 ```
 
@@ -263,13 +277,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
 ```
 
-- `Any`
+-   `Any`
 
 ```ts
 import { Any } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  title: Any(["About #2", "About #3"])
+    title: Any(["About #2", "About #3"])
 });
 ```
 
@@ -279,13 +293,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
 ```
 
-- `IsNull`
+-   `IsNull`
 
 ```ts
 import { IsNull } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  title: IsNull()
+    title: IsNull()
 });
 ```
 
@@ -295,13 +309,13 @@ const loadedPosts = await connection.getRepository(Post).find({
 SELECT * FROM "post" WHERE "title" IS NULL
 ```
 
-- `Raw`
+-   `Raw`
 
 ```ts
 import { Raw } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: Raw("1 + likes = 4")
+    likes: Raw("1 + likes = 4")
 });
 ```
 
@@ -319,8 +333,8 @@ SELECT * FROM "post" WHERE 1 + "likes" = 4
 import { Not, MoreThan, Equal } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-  likes: Not(MoreThan(10)),
-  title: Not(Equal("About #2"))
+    likes: Not(MoreThan(10)),
+    title: Not(Equal("About #2"))
 });
 ```
 
