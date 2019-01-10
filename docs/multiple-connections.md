@@ -1,4 +1,4 @@
-# Multiple connections, databases, schemas and replication setup
+# 多个连接，数据库，模式和主从复制设置
 
 * [Using multiple connections](#using-multiple-connections)
 * [Using multiple databases in a single connection](#using-multiple-databases-in-a-single-connection)
@@ -6,9 +6,9 @@
 * [Replication](#replication)
 
 
-## Using multiple connections
+## 使用多个连接
 
-The simplest way to use multiple databases is to create different connections:
+使用多个数据库的最简单方法是创建不同的连接：
 
 ```typescript
 import {createConnections} from "typeorm";
@@ -36,48 +36,46 @@ const connections = await createConnections([{
 }]);
 ```
 
-This approach allows you to connect to any number of databases you have 
-and each database will have its own configuration, own entities and overall ORM scope and settings.
+此方法允许你连接到已拥有的任意数量的数据库，每个数据库都有自己的配置，自己的实体和整体ORM范围和设置。
 
-For each connection a new `Connection` instance will be created.
-You must specify a unique name for each connection you create.
+对于每个连接，将创建一个新的`Connection`实例。
+你必须为创建的每个连接指定唯一的名称。
 
-The connection options can also be loaded from an ormconfig file. You can load all connections from
-the ormconfig file:
+也可以从ormconfig文件加载所有连接选项：
+
 ```typescript
 import {createConnections} from "typeorm";
 
 const connections = await createConnections();
 ```
 
-or you can specify which connection to create by name:
+指定要按名称创建的连接：
+
 ```typescript
 import {createConnection} from "typeorm";
 
 const connection = await createConnection("db2Connection");
 ```
 
-When working with connections you must specify a connection name to get a specific connection:
+使用连接时，必须指定连接名称以获取特定连接：
 
 ```typescript
 import {getConnection} from "typeorm";
 
 const db1Connection = getConnection("db1Connection");
-// you can work with "db1" database now...
+// 现在可以使用"db1"数据库...
 
 const db2Connection = getConnection("db2Connection");
-// you can work with "db2" database now...
+// 现在可以使用"db2"数据库...
 ```
 
-Benefit of using this approach is that you can configure multiple connections with different login credentials,
-host, port and even database type itself.
-Downside for might be that you'll need to manage and work with multiple connection instances. 
+使用此方法的好处是你可以使用不同的登录凭据，主机，端口甚至数据库类型来配置多个连接。
 
-## Using multiple databases in a single connection
+但是缺点可能是需要管理和使用多个连接实例。
 
-If you don't want to create multiple connections, 
-but want to use multiple databases in a single connection,
-you can specify database name per-entity you use:
+## 在单个连接中使用多个数据库
+
+如果你不想创建多个连接，但是想在一个连接中使用多个数据库，则可以指定使用的每个实体的数据库名称：
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -111,11 +109,9 @@ export class Photo {
 
 }
 ```
+`user`实体将在`secondDB`数据库内创建，`Photo`实体则在`thirdDB`数据库内。
 
-`User` entity will be created inside `secondDB` database and `Photo` entity inside `thirdDB` database.
-All other entities will be created in default connection database.
-
-If you want to select data from a different database you only need to provide an entity:
+如果要从其他数据库中选择数据，则只需提供一个实体：
 
 ```typescript
 const users = await connection
@@ -124,17 +120,17 @@ const users = await connection
     .from(User, "user")
     .addFrom(Photo, "photo")
     .andWhere("photo.userId = user.id")
-    .getMany(); // userId is not a foreign key since its cross-database request
+    .getMany(); // userId因其跨数据库请求而不是外键
 ```
 
-This code will produce following sql query (depend on database type):
+此代码将生成以下sql查询（取决于数据库类型）：
 
 ```sql
-SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."question" "question", "thirdDB"."photo" "photo" 
     WHERE "photo"."userId" = "user"."id"
 ```
 
-You can also specify a table path instead of the entity:
+还可以指定表而不是实体：
 
 ```typescript
 const users = await connection
@@ -143,14 +139,14 @@ const users = await connection
     .from("secondDB.user", "user")
     .addFrom("thirdDB.photo", "photo")
     .andWhere("photo.userId = user.id")
-    .getMany(); // userId is not a foreign key since its cross-database request
+    .getMany(); // userId因其跨数据库请求而不是外键
 ```
 
-This feature is supported only in mysql and mssql databases.
+仅在mysql和mssql数据库中支持此功能。
 
-## Using multiple schemas in a single connection
+## 在单个连接中使用多个模式
 
-You can use multiple schemas in your applications, just set `schema` on each entity:
+你可以在应用程序中使用多个模式，只需在每个实体上设置`schema`：
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -184,11 +180,11 @@ export class Photo {
 
 }
 ```
+`user`实体将在`secondSchema` schema中创建，`photo`实体将在`thirdSchema` schema中创建。
 
-`User` entity will be created inside `secondSchema` schema and `Photo` entity inside `thirdSchema` schema.
-All other entities will be created in default connection schema.
+其他实体将在默认连接架构中创建。
 
-If you want to select data from a different schema you only need to provide an entity:
+如果要从其他模式中选择数据，则只需提供一个实体：
 
 ```typescript
 const users = await connection
@@ -197,30 +193,31 @@ const users = await connection
     .from(User, "user")
     .addFrom(Photo, "photo")
     .andWhere("photo.userId = user.id")
-    .getMany(); // userId is not a foreign key since its cross-database request
+    .getMany(); // userId因其跨数据库请求而不是外键
 ```
 
-This code will produce following sql query (depend on database type):
+此代码将生成以下sql查询（取决于数据库类型）：
 
 ```sql
 SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo" 
     WHERE "photo"."userId" = "user"."id"
 ```
 
-You can also specify a table path instead of the entity:
+你还可以指定表而不是实体：
 
 ```typescript
 const users = await connection
     .createQueryBuilder()
     .select()
-    .from("secondSchema.user", "user") // in mssql you can even specify a database: secondDB.secondSchema.user
-    .addFrom("thirdSchema.photo", "photo") // in mssql you can even specify a database: thirdDB.thirdSchema.photo
+    .from("secondSchema.user", "user") // 在mssql中，指定数据库：secondDB.secondSchema.user
+    .addFrom("thirdSchema.photo", "photo") // 在mssql中，指定数据库：thirdDB.thirdSchema.photo
     .andWhere("photo.userId = user.id")
     .getMany();
 ```
 
-This feature is supported only in postgres and mssql databases.
-In mssql you can also combine schemas and databases, for example:
+仅在postgres和mssql数据库中支持此功能。
+
+在mssql中，你还可以组合模式和数据库，例如：
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -240,10 +237,11 @@ export class User {
 }
 ```
 
-## Replication
+## 主从复制
 
-You can setup read/write replication using TypeORM.
-Example of replication connection settings:
+你可以使用TypeORM设置读/写复制。
+
+复制连接设置示例：
 
 ```typescript
 {
@@ -274,10 +272,10 @@ Example of replication connection settings:
 }
 ```
 
-All schema update and write operations are performed using `master` server.
-All simple queries performed by find methods or select query builder are using a random `slave` instance. 
+所有模式更新和写入操作都使用`master`服务器执行。
+find方法或select query builder执行的所有简单查询都使用随机的`slave`实例。
 
-If you want to explicitly use master in SELECT created by query builder, you can use following code:
+如果要在查询构建器创建的SELECT中显式使用master，可以使用以下代码：
 
 ```typescript
 const postsFromMaster = await connection.createQueryBuilder(Post, "post")
@@ -285,9 +283,9 @@ const postsFromMaster = await connection.createQueryBuilder(Post, "post")
     .getMany();
 ```
 
-Replication is supported by mysql, postgres and sql server databases.
+mysql，postgres和sql server数据库都支持复制。
 
-Mysql supports deep configuration:
+Mysql支持深度配置：
 
 ```typescript
 {
@@ -314,27 +312,27 @@ Mysql supports deep configuration:
     }],
     
     /**
-    * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
+    * 如果为true，则PoolCluster将在连接失败时尝试重新连接。 （默认值：true）
     */
     canRetry: true,
 
     /**
-     * If connection fails, node's errorCount increases.
-     * When errorCount is greater than removeNodeErrorCount, remove a node in the PoolCluster. (Default: 5)
+     * 如果连接失败，则节点的errorCount会增加。
+     * 当errorCount大于removeNodeErrorCount时，删除PoolCluster中的节点。 （默认值：5）
      */
     removeNodeErrorCount: 5,
 
     /**
-     * If connection fails, specifies the number of milliseconds before another connection attempt will be made.
-     * If set to 0, then node will be removed instead and never re-used. (Default: 0)
+     * 如果连接失败，则指定在进行另一次连接尝试之前的毫秒数。
+     * 如果设置为0，则将删除节点，并且永远不会重复使用。 （默认值：0）
      */
      restoreNodeTimeout: 0,
 
     /**
-     * Determines how slaves are selected:
-     * RR: Select one alternately (Round-Robin).
-     * RANDOM: Select the node by random function.
-     * ORDER: Select the first node available unconditionally.
+     * 确定如何选择从库：
+     * RR：交替选择一个（Round-Robin）。
+     * RANDOM: 通过随机函数选择节点。
+     * ORDER: 无条件选择第一个
      */
     selector: "RR"
   }

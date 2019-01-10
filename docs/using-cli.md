@@ -1,109 +1,80 @@
-# Using CLI
+# 使用 CLI
 
-* [Notes on entity files written in typescript](#notes-on-entity-files-written-in-typescript)
-* [Initialize a new TypeORM project](#initialize-a-new-typeorm-project)
-* [Create a new entity](#create-a-new-entity)
-* [Create a new subscriber](#create-a-new-subscriber)
-* [Create a new migration](#create-a-new-migration)
-* [Generate a migration from exist table schema](#generate-a-migration-from-exist-table-schema)
-* [Run migrations](#run-migrations)
-* [Revert migrations](#revert-migrations)
-* [Sync database schema](#sync-database-schema)
-* [Log sync database schema queries without actual running them](#log-sync-database-schema-queries-without-actual-running-them)
-* [Drop database schema](#drop-database-schema)
-* [Run any sql query](#run-any-sql-query)
-* [Clear cache](#clear-cache)
-* [Check version](#check-version)
+- [使用 CLI](#%E4%BD%BF%E7%94%A8-cli)
+  - [初始化一个新的 TypeORM 项目](#%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%80%E4%B8%AA%E6%96%B0%E7%9A%84-typeorm-%E9%A1%B9%E7%9B%AE)
+  - [创建一个新实体](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E5%AE%9E%E4%BD%93)
+  - [创建一个新订阅者](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E8%AE%A2%E9%98%85%E8%80%85)
+  - [创建新迁移](#%E5%88%9B%E5%BB%BA%E6%96%B0%E8%BF%81%E7%A7%BB)
+  - [从现有表模式生成迁移](#%E4%BB%8E%E7%8E%B0%E6%9C%89%E8%A1%A8%E6%A8%A1%E5%BC%8F%E7%94%9F%E6%88%90%E8%BF%81%E7%A7%BB)
+  - [运行迁移](#%E8%BF%90%E8%A1%8C%E8%BF%81%E7%A7%BB)
+  - [还原迁移](#%E8%BF%98%E5%8E%9F%E8%BF%81%E7%A7%BB)
+  - [同步数据库架构](#%E5%90%8C%E6%AD%A5%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84)
+  - [记录同步数据库架构查询而不运行](#%E8%AE%B0%E5%BD%95%E5%90%8C%E6%AD%A5%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84%E6%9F%A5%E8%AF%A2%E8%80%8C%E4%B8%8D%E8%BF%90%E8%A1%8C)
+  - [删除数据库架构](#%E5%88%A0%E9%99%A4%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84)
+  - [运行任意 SQL 查询](#%E8%BF%90%E8%A1%8C%E4%BB%BB%E6%84%8F-sql-%E6%9F%A5%E8%AF%A2)
+  - [清除缓存](#%E6%B8%85%E9%99%A4%E7%BC%93%E5%AD%98)
+  - [检查版本](#%E6%A3%80%E6%9F%A5%E7%89%88%E6%9C%AC)
 
-## Notes on entity files written in typescript
-This CLI tool is written in javascript and to be run on node. If your entity files are in typescript, you will need to transpile them to javascript before using CLI. You may skip this section if you only use javascript.
+## 初始化一个新的 TypeORM 项目
 
-You may setup ts-node in your project to ease the operation as follows:
-
-Install ts-node globally:
-```
-npm install -g ts-node
-```
-
-Add typeorm command under scripts section in package.json
-```
-"script" {
-    ...
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/.bin/typeorm"    
-}
-```
-
-Then you may run the command like this:
-```
-npm run typeorm migration:run
-```
-
-If you need to pass parameter with dash to npm script, you will need to add them after --. For example, if you need to *generate*, the command is like this:
-```
-npm run typeorm migration:generate -- -n migrationNameHere
-```
-
-## Initialize a new TypeORM project
-
-You can create a new project with everything already setup:
+你可以使用已设置的所有内容创建新项目：
 
 ```
 typeorm init
 ```
 
-It creates all files needed for a basic project with TypeORM:
+它使用 TypeORM 创建基本项目所需的所有文件：
 
-* .gitignore
-* package.json
-* README.md
-* tsconfig.json
-* ormconfig.json
-* src/entity/User.ts
-* src/index.ts
+- .gitignore
+- package.json
+- README.md
+- tsconfig.json
+- ormconfig.json
+- src/entity/User.ts
+- src/index.ts
 
-Then you can run `npm install` to install all dependencies.
-Once all dependencies are installed, you need to modify `ormconfig.json` and insert your own database settings.
-After that, you can run your application by running `npm start`.
+然后你可以运行`npm install`来安装所有依赖项。
+一旦安装了所有依赖项，你需要修改`ormconfig.json`并插入您自己的数据库设置。
+之后，可以通过运行`npm start`来运行您的应用程序。
 
-All files are generated in the current directory.
-If you want to generate them in a special directory you can use `--name`: 
+所有文件都在当前目录中生成。
+如果要在特殊目录中生成它们，可以使用`--name`：
 
 ```
 typeorm init --name my-project
 ```
 
-To specify a specific database you use you can use `--database`:
+要指定使用的特定数据库，可以使用`--database`：
 
 ```
 typeorm init --database mssql
 ```
 
-You can also generate a base project with Express:
+你还可以使用 Express 生成基础项目：
 
 ```
 typeorm init --name my-project --express
 ```
 
-If you are using docker you can generate a `docker-compose.yml` file using:
+如果你使用的是 docker，可以使用以下命令生成`docker-compose.yml`文件：
 
 ```
 typeorm init --docker
 ```
 
-`typeorm init` is the easiest and fastest way to setup a TypeORM project.
+`typeorm init`是设置 TypeORM 项目最简单，最快捷的方法。
 
+## 创建一个新实体
 
-## Create a new entity
-
-You can create a new entity using CLI:
+你可以使用 CLI 创建新实体：
 
 ```
 typeorm entity:create -n User
 ```
 
-where `User` is an entity file and class name. 
-Running the command will create a new empty entity in `entitiesDir` of the project.
-To setup the `entitiesDir` of the project you must add it in connection options:
+其中`User`是实体文件和类名。
+运行该命令将在项目的`entitiesDir`中创建一个新的空实体。
+要设置项目的`entitiesDir`，你必须在连接选项中添加它：
 
 ```
 {
@@ -113,28 +84,27 @@ To setup the `entitiesDir` of the project you must add it in connection options:
 }
 ```
 
-Learn more about [connection options](./connection-options.md).
-If you have a multi-module project structure with multiple entities in different directories
-you can provide the path to the CLI command where you want to generate an entity:
+学习更多关于 [connection options](./connection-options.md).
 
- 
+如果多个目录中具有多个实体的多模块项目结构，则需要提供 CLI 生成实体目录的路径：
+
 ```
 typeorm entity:create -n User -d src/user/entity
 ```
 
-Learn more about [entities](./entities.md).
+学习更多关于 [entities](./entities.md).
 
-## Create a new subscriber
+## 创建一个新订阅者
 
-You can create a new subscriber using CLI:
+可以使用 CLI 创建新订阅者：
 
 ```
 typeorm subscriber:create -n UserSubscriber
 ```
 
-where `UserSubscriber` is a subscriber file and class name. 
-Running the following command will create a new empty subscriber in the `subscribersDir` of the project.
-To setup `subscribersDir` you must add it in connection options:
+其中`UserSubscriber`是订阅者文件和类名。
+执行以下命令将在项目的`subscribersDir`中创建一个新的空订阅者。
+要设置`subscribersDir`，首先必须在连接选项中添加它：
 
 ```
 {
@@ -144,28 +114,26 @@ To setup `subscribersDir` you must add it in connection options:
 }
 ```
 
-Learn more about [connection options](./connection-options.md).
-If you have a multi-module project structure with multiple subscribers in different directories
-you can provide a path to the CLI command where you want to generate a subscriber:
+了解有关[连接选项](./connection-options.md)的更多信息。
+如果你有一个不同目录中有多个订阅用户的多模块结构的项目，可以给 CLI 命令提供相应的路径，然后在其中生成 subscriber：
 
- 
 ```
 typeorm subscriber:create -n UserSubscriber -d src/user/subscriber
 ```
 
-Learn more about [Subscribers](./listeners-and-subscribers.md).
+了解有关[Subscribers](./listeners-and-subscribers.md)的更多信息。
 
-## Create a new migration
+## 创建新迁移
 
-You can create a new migration using CLI:
+你可以使用 CLI 创建新的迁移：
 
 ```
 typeorm migration:create -n UserMigration
 ```
 
-where `UserMigration` is a migration file and class name. 
-Running the command will create a new empty migration in the `migrationsDir` of the project.
-To setup `migrationsDir` you must add it in connection options:
+其中`UserMigration`是一个迁移文件和类名。
+运行该命令将在项目的`migrationsDir`中创建一个新的空迁移。
+要设置`migrationsDir`，首先必须在连接选项中添加它：
 
 ```
 {
@@ -175,100 +143,97 @@ To setup `migrationsDir` you must add it in connection options:
 }
 ```
 
-Learn more about [connection options](./connection-options.md).
-If you have a multi-module project structure with multiple migrations in different directories
-you can provide a path to the CLI command where you want to generate a migration:
+了解有关[连接选项](./connection-options.md)的更多信息。
+如果你有一个在不同目录中具有多个迁移的多模块结构的项目，则可以提供要生成迁移的 CLI 命令的路径：
 
 ```
 typeorm migration:create -n UserMigration -d src/user/migration
 ```
 
-Learn more about [Migrations](./migrations.md).
+了解有关[Migrations](./migrations.md)的更多信息。
 
-## Generate a migration from exist table schema
+## 从现有表模式生成迁移
 
-Automatic migration generation creates a new migration file
-and writes all sql queries that must be executed to update the database.
+自动迁移生成会创建新的迁移文件并编写必须执行的所有 sql 查询以更新数据库。
 
 ```
 typeorm migration:generate -n UserMigration
 ```
 
-The rule of thumb is to generate a migration after each entity change.
+根据经验，在每次实体更改后生成迁移。
 
-Learn more about [Migrations](./migrations.md).
+了解有关[Migrations](./migrations.md)的更多信息。
 
-## Run migrations
+## 运行迁移
 
-To execute all pending migrations use following command:
+要执行所有挂起的迁移，请使用以下命令：
 
 ```
 typeorm migration:run
 ```
 
-Learn more about [Migrations](./migrations.md).
+了解有关 [Migrations](./migrations.md)的更多信息。
 
-## Revert migrations
+## 还原迁移
 
-To revert the most recently executed migration use the following command:
+要还原最近执行的迁移，请使用以下命令：
 
 ```
 typeorm migration:revert
 ```
 
-This command will undo only the last executed migration.
-You can execute this command multiple times to revert multiple migrations.
-Learn more about [Migrations](./migrations.md).
+此命令将仅撤消上次执行的迁移。
+你可以多次执行此命令以还原多个迁移。
+了解有关[Migrations](./migrations.md)的更多信息。
 
-## Sync database schema
+## 同步数据库架构
 
-To synchronize a database schema use:
+要同步数据库架构，请使用：
+
 ```
 typeorm schema:sync
 ```
 
-Be careful running this command in production - 
-schema sync may cause data loss if you don't use it wisely.
-Check which sql queries it will run before running on production.
+在生产环境中请谨慎运行此命令。如果冒失的使用它，则可能会导致数据库同步时数据丢失。在部署生产环境之前，检查将运行哪些 sql 查询。
 
-## Log sync database schema queries without actual running them
+## 记录同步数据库架构查询而不运行
 
-To check what sql queries `schema:sync` is going to run use:
+要检查将要运行的 sql 查询，请使用`schema：sync`：
 
 ```
 typeorm schema:log
 ```
 
-## Drop database schema
+## 删除数据库架构
 
-To completely drop a database schema use:
+要完全删除数据库架构，请使用以下命令：
 
 ```
 typeorm schema:drop
 ```
 
-Be careful with this command on production since it completely removes data from your database.
+在生产环境时要谨慎使用这个命令，因为它会完全删除数据库中的数据。
 
-## Run any sql query
+## 运行任意 SQL 查询
 
-You can execute any sql query you want directly in the database using:
+你可以使用以下命令直接在数据库中执行想要的任何 SQL 查询：
 
 ```
 typeorm query "SELECT * FROM USERS"
 ```
 
-## Clear cache
+## 清除缓存
 
-If you are using `QueryBuilder` caching, sometimes you may want to clear everything stored in the cache. 
-You can do it using the following command:
+如果你使用`QueryBuilder`缓存，有时可能希望清除缓存中存储的所有内容。
+则可以使用以下命令执行此操作：
 
 ```
 typeorm cache:clear
 ```
 
-## Check version
+## 检查版本
 
-You can check what typeorm version you have installed (both local and global) by running:
+可以通过运行以下命令来检查已安装（本地和全局）的 typeorm 版本：
 
 ```
 typeorm version

@@ -1,11 +1,13 @@
-# Embedded Entities
+# 嵌入式实体
+通过使用`embedded columns`，可以减少应用程序中的重复（使用组合而不是继承）。
 
-There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
-Embedded column is a column which accepts a class with its own columns and merges those columns into the current entity's database table.
-Example:
+嵌入列是一个列，它接受具有自己列的类，并将这些列合并到当前实体的数据库表中。
 
-Let's say we have `User`, `Employee` and `Student` entities.
-All those entities have few things in common - `first name` and `last name` properties
+例如:
+
+假设我们有`User`，`Employee`和`Student`实体。
+
+这些属性都有少量的共同点，`first name` 和 `last name`属性。
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -69,8 +71,7 @@ export class Student {
     
 }
 ```
-
-What we can do is to reduce `firstName` and `lastName` duplication by creating a new class with those columns:
+我们可以做的是通过创建一个包含`firstName`和`lastName`的新类：
 
 ```typescript
 import {Entity, Column} from "typeorm";
@@ -86,7 +87,7 @@ export class Name {
 }
 ```
 
-Then you can "connect" those columns in your entities: 
+然后"connect"实体中的这些列：
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
@@ -144,10 +145,9 @@ export class Student {
     
 }
 ```
+`Name`实体中定义的所有列将合并为`user`，`employee`和`student`：
 
-All columns defined in the `Name` entity will be merged into `user`, `employee` and `student`:
-
-```shell
+```bash
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
@@ -176,7 +176,7 @@ All columns defined in the `Name` entity will be merged into `user`, `employee` 
 +-------------+--------------+----------------------------+
 ```
 
-This way code duplication in the entity classes is reduced.
- You can use as many columns (or relations) in embedded classes as you need.
- You even can have nested embedded columns inside embedded classes.
+这种方式可以减少实体类中的代码重复。
+你可以根据需要在嵌入式类中使用尽可能多的列（或关系）。
+甚至可以在嵌入式类中嵌套嵌套列。
  

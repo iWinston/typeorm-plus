@@ -1,19 +1,19 @@
-# Support
+# 支持
 
-### Found a bug or want to propose a new feature?
+### 发现错误或想提出新功能？
 
-If you found a bug, issue, or you just want to propose a new feature, create [an issue on github](https://github.com/typeorm/typeorm/issues).
+如果你发现了 bug，issue，或者你只是想提出一个新功能，请[在 github 上创建 issue](https://github.com/typeorm/typeorm/issues)。
 
-### Have a question?
+### 有问题？
 
-If you have a question, you can ask it on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm).
+如果你有疑问，可以在[StackOverflow](https://stackoverflow.com/questions/tagged/typeorm)上询问。
 
-### Want community support?
+### 想要社区支持？
 
-If you want community support, or simply want to chat with friendly TypeORM enthusiasts and users, you can do it on [Slack](https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY).
+如果你需要社区支持，或者只是想与 TypeORM 爱好者和用户聊天，你可以在[gitter]（https://gitter.im/typeorm/typeorm）中进行。
 
-### Want professional commercial support?
+### 想要专业的商业支持？
 
-The TypeORM core team is always ready to provide professional commercial support.
-We are ready to work with any team in any part of the world.
-[Please contact us](mailto:support@typeorm.io).
+TypeORM 核心团队随时准备提供专业的商业支持。
+我们愿意与世界任何地方的任何团队合作。
+[请联系我们](mailto:support@typeorm.io)。

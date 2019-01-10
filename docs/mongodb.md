@@ -1,128 +1,117 @@
 # MongoDB
 
-* [MongoDB support](#mongodb-support)
-* [Defining entities and columns](#defining-entities-and-columns)
-* [Defining subdocuments (embed documents)](#defining-subdocuments-embed-documents)
-* [Using `MongoEntityManager` and `MongoRepository`](#using-mongoentitymanager-and-mongorepository)
+- [MongoDB support](#mongodb-support)
+- [Defining entities and columns](#defining-entities-and-columns)
+- [Defining subdocuments (embed documents)](#defining-subdocuments-embed-documents)
+- [Using `MongoEntityManager` and `MongoRepository`](#using-mongoentitymanager-and-mongorepository)
 
-## MongoDB support
+## MongoDB 支持
 
-TypeORM has basic MongoDB support.
-Most of TypeORM functionality is RDBMS-specific, 
-this page contains all MongoDB-specific functionality documentation.
+TypeORM 具有基本的 MongoDB 支持。
+TypeORM 大多数功能都是特定于 RDBMS 的，
+此页面包含了所有 MongoDB 特定的功能文档。
 
-## Defining entities and columns
+## 定义实体和列
 
-Defining entities and columns is almost the same as in relational databases, 
-the main difference is that you must use `@ObjectIdColumn` 
-instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
+定义实体和列几乎与关系数据库中的相同，主要区别在于你必须使用`@ObjectIdColumn`而不是`@PrimaryColumn`或`@PrimaryGeneratedColumn`。
 
-Simple entity example:
+简单实体示例：
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
-    
-    @ObjectIdColumn()
-    id: ObjectID;
-    
-    @Column()
-    firstName: string;
-    
-    @Column()
-    lastName: string;
-    
+  @ObjectIdColumn()
+  id: ObjectID;
+
+  @Column()
+  firstName: string;
+
+  @Column()
+  lastName: string;
 }
 ```
 
-And this is how you bootstrap the app:
+这里是你的应用程序如何连接到 MongoDB：
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import { createConnection, Connection } from "typeorm";
 
 const connection: Connection = await createConnection({
-    type: "mongodb",
-    host: "localhost",
-    port: 27017,
-    database: "test"
+  type: "mongodb",
+  host: "localhost",
+  port: 27017,
+  database: "test"
 });
 ```
 
-## Defining subdocuments (embed documents)
+## 定义 subdocuments (embed documents)
 
-Since MongoDB stores objects and objects inside objects (or documents inside documents)
-you can do the same in TypeORM:
+由于 MongoDB 存储对象和对象内的对象（或文档内的文档），因此你可以在 TypeORM 中执行相同的操作：
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
 
 export class Profile {
-    
-    @Column()
-    about: string;
-    
-    @Column()
-    education: string;
-    
-    @Column()
-    career: string;
-    
+  @Column()
+  about: string;
+
+  @Column()
+  education: string;
+
+  @Column()
+  career: string;
 }
 ```
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
 
 export class Photo {
-    
-    @Column()
-    url: string;
-    
-    @Column()
-    description: string;
-    
-    @Column()
-    size: number;
-    
-    constructor(url: string, description: string, size: number) {
-        this.url = url;
-        this.description = description;
-        this.size = size;
-    }
-    
+  @Column()
+  url: string;
+
+  @Column()
+  description: string;
+
+  @Column()
+  size: number;
+
+  constructor(url: string, description: string, size: number) {
+    this.url = url;
+    this.description = description;
+    this.size = size;
+  }
 }
 ```
 
 ```typescript
-import {Entity, ObjectID, ObjectIdColumn, Column} from "typeorm";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
-    
-    @ObjectIdColumn()
-    id: ObjectID;
-    
-    @Column()
-    firstName: string;
-    
-    @Column()
-    lastName: string;
-    
-    @Column(type => Profile)
-    profile: Profile;
-    
-    @Column(type => Photo)
-    photos: Photo[];
-    
+  @ObjectIdColumn()
+  id: ObjectID;
+
+  @Column()
+  firstName: string;
+
+  @Column()
+  lastName: string;
+
+  @Column(type => Profile)
+  profile: Profile;
+
+  @Column(type => Photo)
+  photos: Photo[];
 }
 ```
 
-If you save this entity:
+如果保存此实体：
 
 ```typescript
-import {getMongoManager} from "typeorm";
+import { getMongoManager } from "typeorm";
 
 const user = new User();
 user.firstName = "Timber";
@@ -132,211 +121,210 @@ user.profile.about = "About Trees and Me";
 user.profile.education = "Tree School";
 user.profile.career = "Lumberjack";
 user.photos = [
-    new Photo("me-and-trees.jpg", "Me and Trees", 100),
-    new Photo("me-and-chakram.jpg", "Me and Chakram", 200),
+  new Photo("me-and-trees.jpg", "Me and Trees", 100),
+  new Photo("me-and-chakram.jpg", "Me and Chakram", 200)
 ];
 
 const manager = getMongoManager();
 await manager.save(user);
 ```
 
-Following document will be saved in the database:
+以下文档将保存在数据库中：
 
 ```json
 {
-    "firstName": "Timber",
-    "lastName": "Saw",
-    "profile": {
-        "about": "About Trees and Me",
-        "education": "Tree School",
-        "career": "Lumberjack"
+  "firstName": "Timber",
+  "lastName": "Saw",
+  "profile": {
+    "about": "About Trees and Me",
+    "education": "Tree School",
+    "career": "Lumberjack"
+  },
+  "photos": [
+    {
+      "url": "me-and-trees.jpg",
+      "description": "Me and Trees",
+      "size": 100
     },
-    "photos": [
-        {
-            "url": "me-and-trees.jpg",
-            "description": "Me and Trees",
-            "size": 100
-        },
-        {
-            "url": "me-and-chakram.jpg",
-            "description": "Me and Chakram",
-            "size": 200
-        }
-    ]
+    {
+      "url": "me-and-chakram.jpg",
+      "description": "Me and Chakram",
+      "size": 200
+    }
+  ]
 }
 ```
 
-## Using `MongoEntityManager` and `MongoRepository`
+## 使用 `MongoEntityManager` 和 `MongoRepository`
 
-You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).
-For example:
+你可以使用`EntityManager`中的大多数方法（除了特定于 RDBMS 的方法，如`query`和`transaction`）。
+例如：
 
 ```typescript
-import {getManager} from "typeorm";
+import { getManager } from "typeorm";
 
-const manager = getManager(); // or connection.manager
+const manager = getManager(); // 或者 connection.manager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
 ```
 
-For MongoDB there is also a separate `MongoEntityManager` which extends `EntityManager`.
+对于 MongoDB，还有一个单独的`MongoEntityManager`，它扩展了`EntityManager`。
 
 ```typescript
-import {getMongoManager} from "typeorm";
+import { getMongoManager } from "typeorm";
 
-const manager = getMongoManager(); // or connection.mongoManager
+const manager = getMongoManager(); // 或者 connection.mongoManager
 const timber = await manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
 ```
 
-Just like separate like `MongoEntityManager` there is a `MongoRepository` with extended `Repository`:
+就像`MongoEntityManager`的`EntityManager`一样，`MongoRepository`也扩展了`Repository`：
 
 ```typescript
-import {getMongoRepository} from "typeorm";
+import { getMongoRepository } from "typeorm";
 
-const userRepository = getMongoRepository(User); // or connection.getMongoManager
+const userRepository = getMongoRepository(User); // 或者 connection.getMongoManager
 const timber = await userRepository.findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
-Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-specific methods:
+`MongoEntityManager`和`MongoRepository`都包含许多有用的 MongoDB 特定方法：
 
 #### `createCursor`
 
-Creates a cursor for a query that can be used to iterate over results from MongoDB.
+为查询创建一个游标，可用于迭代 MongoDB 的结果。
 
 #### `createEntityCursor`
 
-Creates a cursor for a query that can be used to iterate over results from MongoDB.
-This returns a modified version of the cursor that transforms each result into Entity models.
+为查询创建一个游标，可用于迭代 MongoDB 的结果。
+这将返回游标的修改版本，该版本将每个结果转换为实体模型。
 
 #### `aggregate`
 
-Execute an aggregation framework pipeline against the collection.
+针对集合执行 aggregation framework 管道。
 
 #### `bulkWrite`
 
-Perform a bulkWrite operation without a fluent API.
+在没有连贯 API 的情况下执行 bulkWrite 操作。
 
 #### `count`
 
-Count number of matching documents in the db to a query.
+计算 db 中与查询匹配的文档的数量。
 
 #### `createCollectionIndex`
 
-Creates an index on the db and collection.
+在 db 和 collection 上创建索引。
 
 #### `createCollectionIndexes`
 
-Creates multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher.
-Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+在集合中创建多个索引，此方法仅在 MongoDB 2.6 或更高版本中受支持。
+早期版本的 MongoDB 会抛出命令不支持的错误。 索引规范在http://docs.mongodb.org/manual/reference/command/createIndexes/中定义。
 
 #### `deleteMany`
 
-Delete multiple documents on MongoDB.
+删除 MongoDB 上的多个文档。
 
 #### `deleteOne`
 
-Delete a document on MongoDB.
+删除 MongoDB 上的文档。
 
 #### `distinct`
 
-The distinct command returns returns a list of distinct values for the given key across a collection.
+distinct 命令返回集合中给定键的不同值列表。
 
 #### `dropCollectionIndex`
 
-Drops an index from this collection.
+从此集合中删除索引。
 
 #### `dropCollectionIndexes`
 
-Drops all indexes from the collection.
+删除集合中的所有索引。
 
 #### `findOneAndDelete`
 
-Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
+查找文档并在一个 atomic 操作中将其删除，在操作期间需要写入锁定。
 
 #### `findOneAndReplace`
 
-Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
+查找文档并在一个 atomic 操作中替换它，在操作期间需要写入锁定。
 
 #### `findOneAndUpdate`
 
-Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
+查找文档并在一个 atomic 操作中更新它，在操作期间需要写入锁定。
 
 #### `geoHaystackSearch`
 
-Execute a geo search using a geo haystack index on a collection.
+使用集合上的 geo haystack 索引执行 geo 搜索。
 
 #### `geoNear`
 
-Execute the geoNear command to search for items in the collection.
+执行 geoNear 命令以搜索集合中的项目。
 
 #### `group`
 
-Run a group command across a collection.
+跨集合运行组命令。
 
 #### `collectionIndexes`
 
-Retrieve all the indexes on the collection.
+检索集合上的所有索引。
 
 #### `collectionIndexExists`
 
-Retrieve if an index exists on the collection
+检索集合中是否存在索引
 
 #### `collectionIndexInformation`
 
-Retrieves this collections index info.
+检索此集合索引信息
 
 #### `initializeOrderedBulkOp`
 
-Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+启动按顺序批量写入操作，将按添加顺序连续执行操作，为类型中的每个开关创建新操作。
 
 #### `initializeUnorderedBulkOp`
 
-Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+启动乱序批量写入操作。 所有操作都将缓冲到无序执行的 insert/update/remove 命令中。
 
 #### `insertMany`
 
-Inserts an array of documents into MongoDB.
+将一组文档插入 MongoDB。
 
 #### `insertOne`
 
-Inserts a single document into MongoDB.
+将单个文档插入 MongoDB。
 
 #### `isCapped`
 
-Returns if the collection is a capped collection.
+如果集合是上限集合，则返回。
 
 #### `listCollectionIndexes`
 
-Get the list of all indexes information for the collection.
+获取集合的所有索引信息的列表。
 
 #### `mapReduce`
 
-Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
+在集合中运行 Map Reduce。 请注意，out 的内联选项将返回结果数组而不是集合。
 
 #### `parallelCollectionScan`
 
-Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are no ordering guarantees for returned results
+为集合返回 N 个并行游标，允许并行读取整个集合。 返回的结果没有顺序保证。
 
 #### `reIndex`
 
-Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+重新索引集合上的所有索引警告：reIndex 是一个阻塞操作（索引在前台重建），对于大型集合来说速度很慢。
 
 #### `rename`
 
-Changes the name of an existing collection.
+更改现有集合的名称。
 
 #### `replaceOne`
 
-Replace a document on MongoDB.
+替换 MongoDB 上的一个文档。
 
 #### `stats`
 
-Get all the collection statistics.
+获取所有集合的统计信息。
 
 #### `updateMany`
 
-Updates multiple documents within the collection based on the filter.
+根据过滤器更新集合中的多个文档。
 
 #### `updateOne`
 
-Updates a single document within the collection based on the filter.
-
+根据过滤器更新集合中的单个文档。

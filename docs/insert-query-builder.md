@@ -1,22 +1,18 @@
-# Insert using Query Builder
+# 使用 Query Builder 插入
 
-You can create `INSERT` queries using `QueryBuilder`.
-Examples:
+你可以使用`QueryBuilder`创建`INSERT`查询。
+例如：
 
 ```typescript
-import {getConnection} from "typeorm";
+import { getConnection } from "typeorm";
 
 await getConnection()
-    .createQueryBuilder()
-    .insert()
-    .into(User)
-    .values([
-        { firstName: "Timber", lastName: "Saw" }, 
-        { firstName: "Phantom", lastName: "Lancer" }
-     ])
-    .execute();
+  .createQueryBuilder()
+  .insert()
+  .into(User)
+  .values([{ firstName: "Timber", lastName: "Saw" }, { firstName: "Phantom", lastName: "Lancer" }])
+  .execute();
 ```
 
-This is the most efficient way in terms of performance to insert rows into your database.
-You can also perform bulk insertions this way.
-     
+就性能而言，这是向数据库中插入实体的最有效方法。
+你也可以通过这种方式执行批量插入。

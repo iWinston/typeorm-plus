@@ -1,18 +1,18 @@
-# Roadmap
+# 产品路线图
 
-See what amazing new features we are expecting to land in the next TypeORM versions.
+了解我们期望在下一个 TypeORM 版本中获得的惊人新功能。
 
-## Note on 1.0.0 release
+## 关于 1.0.0 版本的说明
 
-We are planning to release a final stable `1.0.0` version somewhere in Autumn 2018.
-However, TypeORM is already actively used in a number of big production systems.
-The main API is already very stable.
-TypeORM follows a semantic versioning and until `1.0.0`, breaking changes may appear in `0.x.x` versions.
-However, since the API is already quite stable we don't expect too many breaking changes.
+我们计划在 2018 年秋季的某个时间点发布一个最终稳定的`1.0.0`版本。
+但是，TypeORM 已经在许多大型生产系统中得到了积极的应用。
+主 API 已经非常稳定。
+TypeORM 遵循语义版本控制，直到`1.0.0`，重大更改可能出现在`0.x.x`版本中。
+但是，由于 API 已经相当稳定，我们预计不会有太多的重大变化。
 
-## How to install latest development version?
+## 如何安装最新的开发版本？
 
-To install latest development version use the following command:
+要安装最新的开发版本，请使用以下命令：
 
 ```
 npm i typeorm@next

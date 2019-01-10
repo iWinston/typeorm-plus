@@ -1,58 +1,57 @@
-# Select using Query Builder
+# 使用 Query Builder 查询
 
-* [What is `QueryBuilder`](#what-is-querybuilder)
-* [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
-* [Getting values using QueryBuilder](#getting-values-using-querybuilder)
-* [What are aliases for?](#what-are-aliases-for?)
-* [Using parameters to escape data](#using-parameters-to-escape-data)
-* [Adding `WHERE` expression](#adding-where-expression)
-* [Adding `HAVING` expression](#adding-having-expression)
-* [Adding `ORDER BY` expression](#adding-order-by-expression)
-* [Adding `GROUP BY` expression](#adding-group-by-expression)
-* [Adding `LIMIT` expression](#adding-limit-expression)
-* [Adding `OFFSET` expression](#adding-offset-expression)
-* [Joining relations](#joining-relations)
-* [Inner and left joins](#inner-and-left-joins)
-* [Join without selection](#join-without-selection)
-* [Joining any entity or table](#joining-any-entity-or-table)
-* [Joining and mapping functionality](#joining-and-mapping-functionality)
-* [Getting the generated query](#getting-the-generated-query)
-* [Getting raw results](#getting-raw-results)
-* [Streaming result data](#streaming-result-data)
-* [Using pagination](#using-pagination)
-* [Set locking](#set-locking)
-* [Partial selection](#partial-selection)
-* [Using subqueries](#using-subqueries)
-* [Hidden Columns](#hidden-columns)
+- [使用 Query Builder 查询](#%E4%BD%BF%E7%94%A8-query-builder-%E6%9F%A5%E8%AF%A2)
+  - [什么是 `QueryBuilder`](#%E4%BB%80%E4%B9%88%E6%98%AF-querybuilder)
+  - [如何创建和使用 `QueryBuilder`](#%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E5%92%8C%E4%BD%BF%E7%94%A8-querybuilder)
+  - [使用 `QueryBuilder` 获取值](#%E4%BD%BF%E7%94%A8-querybuilder-%E8%8E%B7%E5%8F%96%E5%80%BC)
+  - [什么是别名？](#%E4%BB%80%E4%B9%88%E6%98%AF%E5%88%AB%E5%90%8D)
+  - [使用参数来转义数据](#%E4%BD%BF%E7%94%A8%E5%8F%82%E6%95%B0%E6%9D%A5%E8%BD%AC%E4%B9%89%E6%95%B0%E6%8D%AE)
+  - [添加 `WHERE` 表达式](#%E6%B7%BB%E5%8A%A0-where-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+  - [添加 `HAVING` 表达式](#%E6%B7%BB%E5%8A%A0-having-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+  - [添加 `ORDER BY` 表达式](#%E6%B7%BB%E5%8A%A0-order-by-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+  - [添加 `GROUP BY` 表达式](#%E6%B7%BB%E5%8A%A0-group-by-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+  - [添加 `LIMIT` 表达式](#%E6%B7%BB%E5%8A%A0-limit-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+  - [添加 `OFFSET` 表达式](#%E6%B7%BB%E5%8A%A0-offset-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+  - [联查](#%E8%81%94%E6%9F%A5)
+  - [内联 和 左联](#%E5%86%85%E8%81%94-%E5%92%8C-%E5%B7%A6%E8%81%94)
+  - [不使用条件的联查](#%E4%B8%8D%E4%BD%BF%E7%94%A8%E6%9D%A1%E4%BB%B6%E7%9A%84%E8%81%94%E6%9F%A5)
+  - [联查任何实体或表](#%E8%81%94%E6%9F%A5%E4%BB%BB%E4%BD%95%E5%AE%9E%E4%BD%93%E6%88%96%E8%A1%A8)
+  - [联查和映射功能](#%E8%81%94%E6%9F%A5%E5%92%8C%E6%98%A0%E5%B0%84%E5%8A%9F%E8%83%BD)
+  - [获取生成的 sql 查询语句](#%E8%8E%B7%E5%8F%96%E7%94%9F%E6%88%90%E7%9A%84-sql-%E6%9F%A5%E8%AF%A2%E8%AF%AD%E5%8F%A5)
+  - [获得原始结果](#%E8%8E%B7%E5%BE%97%E5%8E%9F%E5%A7%8B%E7%BB%93%E6%9E%9C)
+  - [流数据](#%E6%B5%81%E6%95%B0%E6%8D%AE)
+  - [使用分页](#%E4%BD%BF%E7%94%A8%E5%88%86%E9%A1%B5)
+  - [加锁](#%E5%8A%A0%E9%94%81)
+  - [查询部分字段](#%E6%9F%A5%E8%AF%A2%E9%83%A8%E5%88%86%E5%AD%97%E6%AE%B5)
+  - [使用子查询](#%E4%BD%BF%E7%94%A8%E5%AD%90%E6%9F%A5%E8%AF%A2)
+  - [隐藏列](#%E9%9A%90%E8%97%8F%E5%88%97)
 
-## What is `QueryBuilder`
+## 什么是 `QueryBuilder`
 
-`QueryBuilder` is one of the most powerful features of TypeORM - 
-it allows you to build SQL queries using elegant and convenient syntax,
-execute them and get automatically transformed entities.
+`QueryBuilder`是 TypeORM 最强大的功能之一 ，它允许你使用优雅便捷的语法构建 SQL 查询，执行并获得自动转换的实体。
 
-Simple example of `QueryBuilder`:
+`QueryBuilder`的简单示例:
 
 ```typescript
 const firstUser = await connection
-    .getRepository(User)
-    .createQueryBuilder("user")
-    .where("user.id = :id", { id: 1 })
-    .getOne();
+  .getRepository(User)
+  .createQueryBuilder("user")
+  .where("user.id = :id", { id: 1 })
+  .getOne();
 ```
 
-It builds the following SQL query: 
+它将生成以下 SQL 查询：
 
 ```sql
-SELECT 
-    user.id as userId, 
-    user.firstName as userFirstName, 
+SELECT
+    user.id as userId,
+    user.firstName as userFirstName,
     user.lastName as userLastName
 FROM users user
 WHERE user.id = 1
 ```
 
-and returns you an instance of `User`:
+然后返回一个 `User` 实例:
 
 ```
 User {
@@ -60,264 +59,255 @@ User {
     firstName: "Timber",
     lastName: "Saw"
 }
-``` 
+```
 
-## How to create and use a `QueryBuilder`
+## 如何创建和使用 `QueryBuilder`
 
-There are several ways how you can create a `Query Builder`:
+有几种方法可以创建`Query Builder`：
 
-* Using connection:
-    
-    ```typescript
-    import {getConnection} from "typeorm";
-    
-    const user = await getConnection()
-        .createQueryBuilder()
-        .select("user")
-        .from(User, "user")
-        .where("user.id = :id", { id: 1 })
-        .getOne();
-    ```
+- 使用 connection:
 
-* Using entity manager:
-    
-    ```typescript
-    import {getManager} from "typeorm";
-    
-    const user = await getManager()
-        .createQueryBuilder(User, "user")
-        .where("user.id = :id", { id: 1 })
-        .getOne();
-    ```
+  ```typescript
+  import { getConnection } from "typeorm";
 
-* Using repository:
-    
-    ```typescript
-    import {getRepository} from "typeorm";
-    
-    const user = await getRepository(User)
-        .createQueryBuilder("user")
-        .where("user.id = :id", { id: 1 })
-        .getOne();
-    ```
+  const user = await getConnection()
+    .createQueryBuilder()
+    .select("user")
+    .from(User, "user")
+    .where("user.id = :id", { id: 1 })
+    .getOne();
+  ```
 
-There are 5 different `QueryBuilder` types available:
+- 使用 entity manager:
 
-* `SelectQueryBuilder` - used to build and execute `SELECT` queries. Example:
+  ```typescript
+  import { getManager } from "typeorm";
 
-    ```typescript
-    import {getConnection} from "typeorm";
-    
-    const user = await getConnection()
-        .createQueryBuilder()
-        .select("user")
-        .from(User, "user")
-        .where("user.id = :id", { id: 1 })
-        .getOne();
-    ```
+  const user = await getManager()
+    .createQueryBuilder(User, "user")
+    .where("user.id = :id", { id: 1 })
+    .getOne();
+  ```
 
-* `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
+- 使用 repository:
 
-    ```typescript
-    import {getConnection} from "typeorm";
-    
-    await getConnection()
-        .createQueryBuilder()
-        .insert()
-        .into(User)
-        .values([
-            { firstName: "Timber", lastName: "Saw" }, 
-            { firstName: "Phantom", lastName: "Lancer" }
-         ])
-        .execute();
-    ```
+  ```typescript
+  import { getRepository } from "typeorm";
 
-* `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
-                          
-    ```typescript
-    import {getConnection} from "typeorm";
-    
-    await getConnection()
-        .createQueryBuilder()
-        .update(User)
-        .set({ firstName: "Timber", lastName: "Saw" })
-        .where("id = :id", { id: 1 })
-        .execute();
-    ```
-* `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
-                                                    
-    ```typescript
-    import {getConnection} from "typeorm";
-    
-    await getConnection()
-        .createQueryBuilder()
-        .delete()
-        .from(User)
-        .where("id = :id", { id: 1 })
-        .execute();
-    ```
+  const user = await getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .getOne();
+  ```
 
-* `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD]. 
+有 5 种不同的`QueryBuilder`类型可用：
 
-You can switch between different types of query builder within any of them,
-once you do, you will get a new instance of query builder (unlike all other methods).
+- `SelectQueryBuilder` - 用于构建和执行`SELECT`查询。 例如：
 
-## Getting values using `QueryBuilder`
+  ```typescript
+  import { getConnection } from "typeorm";
 
-To get a single result from the database, 
-for example to get a user by id or name, you must use `getOne`:
+  const user = await getConnection()
+    .createQueryBuilder()
+    .select("user")
+    .from(User, "user")
+    .where("user.id = :id", { id: 1 })
+    .getOne();
+  ```
+
+- `InsertQueryBuilder` - 用于构建和执行`INSERT`查询。 例如：
+
+  ```typescript
+  import { getConnection } from "typeorm";
+
+  await getConnection()
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values([{ firstName: "Timber", lastName: "Saw" }, { firstName: "Phantom", lastName: "Lancer" }])
+    .execute();
+  ```
+
+- `UpdateQueryBuilder` - 用于构建和执行`UPDATE`查询。 例如：
+
+  ```typescript
+  import { getConnection } from "typeorm";
+
+  await getConnection()
+    .createQueryBuilder()
+    .update(User)
+    .set({ firstName: "Timber", lastName: "Saw" })
+    .where("id = :id", { id: 1 })
+    .execute();
+  ```
+
+- `DeleteQueryBuilder` - 用于构建和执行`DELETE`查询。 例如：
+
+  ```typescript
+  import { getConnection } from "typeorm";
+
+  await getConnection()
+    .createQueryBuilder()
+    .delete()
+    .from(User)
+    .where("id = :id", { id: 1 })
+    .execute();
+  ```
+
+- `RelationQueryBuilder` - 用于构建和执行特定于关系的操作[TBD]。
+
+你可以在其中切换任何不同类型的查询构建器，一旦执行，则将获得一个新的查询构建器实例（与所有其他方法不同）。
+
+## 使用 `QueryBuilder` 获取值
+
+要从数据库中获取单个结果，例如通过 id 或 name 获取用户，必须使用`getOne`：
 
 ```typescript
 const timber = await getRepository(User)
-    .createQueryBuilder("user")
-    .where("user.id = :id OR user.name = :name", { id: 1, name: "Timber" })
-    .getOne();
-``` 
+  .createQueryBuilder("user")
+  .where("user.id = :id OR user.name = :name", { id: 1, name: "Timber" })
+  .getOne();
+```
 
-To get multiple results from the database, 
-for example, to get all users from the database, use `getMany`:
+要从数据库中获取多个结果，例如，要从数据库中获取所有用户，请使用`getMany`：
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .getMany();
+  .createQueryBuilder("user")
+  .getMany();
 ```
 
-There are two types of results you can get using select query builder: **entities** or **raw results**.
-Most of the time, you need to select real entities from your database, for example, users. 
-For this purpose, you use `getOne` and `getMany`.
-But sometimes you need to select some specific data, let's say the *sum of all user photos*. 
-This data is not an entity, it's called raw data.
-To get raw data, you use `getRawOne` and `getRawMany`.
-Examples:
+使用查询构建器查询可以获得两种类型的结果：**entities** 或 **raw results**。
+大多数情况下，你只需要从数据库中选择真实实体，例如 users。
+为此，你可以使用`getOne`和`getMany`。
+但有时你需要选择一些特定的数据，比方说所有*sum of all user photos*。
+此数据不是实体，它称为原始数据。
+要获取原始数据，请使用`getRawOne`和`getRawMany`。
+例如：
 
 ```typescript
 const { sum } = await getRepository(User)
-    .createQueryBuilder("user")
-    .select("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
-    .getRawOne();
+  .createQueryBuilder("user")
+  .select("SUM(user.photosCount)", "sum")
+  .where("user.id = :id", { id: 1 })
+  .getRawOne();
 ```
 
 ```typescript
 const photosSums = await getRepository(User)
-    .createQueryBuilder("user")
-    .select("user.id")
-    .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
-    .getRawMany();
+  .createQueryBuilder("user")
+  .select("user.id")
+  .addSelect("SUM(user.photosCount)", "sum")
+  .where("user.id = :id", { id: 1 })
+  .getRawMany();
 
-// result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
+// 结果会像这样: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
-## What are aliases for?
+## 什么是别名？
 
-We used `createQueryBuilder("user")`. But what is "user"?
-It's just a regular SQL alias. 
-We use aliases everywhere, except when we work with selected data.
+我们使用`createQueryBuilder（"user"）`。 但什么是"user"？
+它只是一个常规的 SQL 别名。
+我们在任何地方都使用别名，除非我们处理选定的数据。
 
-`createQueryBuilder("user")` is equivalent to:
+`createQueryBuilder("user")` 相当于：
 
 ```typescript
 createQueryBuilder()
-    .select("user")
-    .from(User, "user")
+  .select("user")
+  .from(User, "user");
 ```
 
-Which will result in the following sql query:
+这会生成以下 sql 查询：
 
 ```sql
 SELECT ... FROM users user
 ```
 
-In this SQL query, `users` is the table name, and `user` is an alias we assign to this table.
-Later we use this alias to access the table:
+在这个 SQL 查询中，`users`是表名，`user`是我们分配给该表的别名。
+
+稍后我们使用此别名来访问表：
 
 ```typescript
 createQueryBuilder()
-    .select("user")
-    .from(User, "user")
-    .where("user.name = :name", { name: "Timber" })
+  .select("user")
+  .from(User, "user")
+  .where("user.name = :name", { name: "Timber" });
 ```
 
-Which produces the following SQL query:
+以上代码会生成如下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user WHERE user.name = 'Timber'
 ```
 
-See, we used the users table by using the `user` alias we assigned when we created a query builder.
+看到了吧，我们使用了在创建查询构建器时分配的`user`别名来使用 users 表。
 
-One query builder is not limited to one alias, they can have multiple aliases.
-Each select can have its own alias,
-you can select from multiple tables each with its own alias, 
-you can join multiple tables each with its own alias.
-You can use those aliases to access tables are you selecting (or data you are selecting). 
+一个查询构建器不限于一个别名，它们可以有多个别名。
+每个选择都可以有自己的别名，你可以选择多个有自己别名的表，你可以使用自己的别名连接多个表。
+你也可以使用这些别名来访问选择的表（或正在选择的数据）。
 
-## Using parameters to escape data
+## 使用参数来转义数据
 
-We used `where("user.name = :name", { name: "Timber" })`.
-What does `{ name: "Timber" }` stand for? It's a parameter we used to prevent SQL injection.
-We could have written: `where("user.name = '" + name + "')`, 
-however this is not safe, as it opens the code to SQL injections.
-The safe way is to use this special syntax: `where("user.name = :name", { name: "Timber" })`,
-where `:name` is a parameter name and the value is specified in an object: `{ name: "Timber" }`.
+我们使用了`where("user.name = :name", { name: "Timber" })`.
+`{name：“Timber”}`代表什么？ 这是我们用来阻止 SQL 注入的参数。
+我们可以写：`where（"user.name ='"+ name +"'）`，但是这不安全，因为有可能被 SQL 注入。
+安全的方法是使用这种特殊的语法：`where（"user.name =name"，{name:"Timber"}）`，其中`name`是参数名，值在对象中指定： `{name:"Timber"}`。
 
 ```typescript
 .where("user.name = :name", { name: "Timber" })
 ```
 
-is a shortcut for:
+是下面的简写：
 
 ```typescript
 .where("user.name = :name")
 .setParameter("name", "Timber")
 ```
 
-## Adding `WHERE` expression
+## 添加 `WHERE` 表达式
 
-Adding a `WHERE` expression is as easy as:
+添加 `WHERE` 表达式就像：
 
 ```typescript
-createQueryBuilder("user")
-    .where("user.name = :name", { name: "Timber" })
+createQueryBuilder("user").where("user.name = :name", { name: "Timber" });
 ```
 
-Which will produce:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user WHERE user.name = 'Timber'
 ```
 
-You can add `AND` into an exist `WHERE` expression:
+你可以将 `AND` 添加到现有的 `WHERE` 表达式中：
 
 ```typescript
 createQueryBuilder("user")
-    .where("user.firstName = :firstName", { firstName: "Timber" })
-    .andWhere("user.lastName = :lastName", { lastName: "Saw" });
+  .where("user.firstName = :firstName", { firstName: "Timber" })
+  .andWhere("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user WHERE user.firstName = 'Timber' AND user.lastName = 'Saw'
 ```
 
-You can add `OR` into an existing `WHERE` expression:
+你也可以添加 `OR` 添加到现有的 `WHERE` 表达式中：
 
 ```typescript
 createQueryBuilder("user")
-    .where("user.firstName = :firstName", { firstName: "Timber" })
-    .orWhere("user.lastName = :lastName", { lastName: "Saw" });
+  .where("user.firstName = :firstName", { firstName: "Timber" })
+  .orWhere("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user WHERE user.firstName = 'Timber' OR user.lastName = 'Saw'
 ```
 
-You can add a complex `WHERE` expression into an existing `WHERE` using `Brackets`
+你可以使用`Brackets`将复杂的`WHERE`表达式添加到现有的`WHERE`中：
 
 ```typescript
 createQueryBuilder("user")
@@ -325,225 +315,213 @@ createQueryBuilder("user")
     .andWhere(new Brackets(qb => {
         qb.where("user.firstName = :firstName", { firstName: "Timber" })
           .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    }))
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
 ```
 
-You can combine as many `AND` and `OR` expressions as you need.
-If you use `.where` more than once you'll override all previous `WHERE` expressions.
+你可以根据需要组合尽可能多的`AND`和`OR`表达式。
+如果你多次使用`.where`，你将覆盖所有以前的`WHERE`表达式。
+注意：小心`orWhere` - 如果你使用带有`AND`和`OR`表达式的复杂表达式，请记住他们将无限制的叠加。
+有时你只需要创建一个 where 字符串，避免使用`orWhere`。
 
-Note: be careful with `orWhere` - if you use complex expressions with both `AND` and `OR` expressions,
-keep in mind that they are stacked without any pretences. 
-Sometimes you'll need to create a where string instead, and avoid using `orWhere`. 
+## 添加 `HAVING` 表达式
 
-## Adding `HAVING` expression
-
-Adding a `HAVING` expression is easy as:
+添加`HAVING`表达式很简单：
 
 ```typescript
-createQueryBuilder("user")
-    .having("user.name = :name", { name: "Timber" })
+createQueryBuilder("user").having("user.name = :name", { name: "Timber" });
 ```
 
-Which will produce following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user HAVING user.name = 'Timber'
 ```
 
-You can add `AND` into an exist `HAVING` expression:
+你可以添加 `AND` 到已经存在的 `HAVING` 表达式中：
 
 ```typescript
 createQueryBuilder("user")
-    .having("user.firstName = :firstName", { firstName: "Timber" })
-    .andHaving("user.lastName = :lastName", { lastName: "Saw" });
+  .having("user.firstName = :firstName", { firstName: "Timber" })
+  .andHaving("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user HAVING user.firstName = 'Timber' AND user.lastName = 'Saw'
 ```
 
-You can add `OR` into a exist `HAVING` expression:
+你可以添加 `OR` 到已经存在的 `HAVING` 表达式中：
 
 ```typescript
 createQueryBuilder("user")
-    .having("user.firstName = :firstName", { firstName: "Timber" })
-    .orHaving("user.lastName = :lastName", { lastName: "Saw" });
+  .having("user.firstName = :firstName", { firstName: "Timber" })
+  .orHaving("user.lastName = :lastName", { lastName: "Saw" });
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user HAVING user.firstName = 'Timber' OR user.lastName = 'Saw'
 ```
 
-You can combine as many `AND` and `OR` expressions as you need.
-If you use `.having` more than once you'll override all previous `HAVING` expressions.
+你可以根据需要组合尽可能多的`AND`和`OR`表达式。
+如果使用多个`.having`，后面的将覆盖所有之前的`HAVING`表达式。
 
-## Adding `ORDER BY` expression
+## 添加 `ORDER BY` 表达式
 
-Adding an `ORDER BY` expression is easy as:
+添加 `ORDER BY` 很简单：
 
 ```typescript
-createQueryBuilder("user")
-    .orderBy("user.id")
+createQueryBuilder("user").orderBy("user.id");
 ```
 
-Which will produce:
+将会生成一下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user ORDER BY user.id
 ```
 
-You can change the ordering direction from ascending to descending (or versa):
+你可以将排序方向从升序更改为降序（或反之亦然）：
+
+```typescript
+createQueryBuilder("user").orderBy("user.id", "DESC");
+
+createQueryBuilder("user").orderBy("user.id", "ASC");
+```
+
+也可以添加多个排序条件：
 
 ```typescript
 createQueryBuilder("user")
-    .orderBy("user.id", "DESC")
-    
-createQueryBuilder("user")
-    .orderBy("user.id", "ASC")
+  .orderBy("user.name")
+  .addOrderBy("user.id");
 ```
 
-You can add multiple order-by criteria:
+还可以使用排序字段作为一个 map：
 
 ```typescript
-createQueryBuilder("user")
-    .orderBy("user.name")
-    .addOrderBy("user.id");
+createQueryBuilder("user").orderBy({
+  "user.name": "ASC",
+  "user.id": "DESC"
+});
 ```
 
-You can also use a map of order-by fields:
+如果你使用了多个`.orderBy`，后面的将覆盖所有之前的`ORDER BY`表达式。
+
+## 添加 `GROUP BY` 表达式
+
+添加 `GROUP BY` 表达式很简单：
 
 ```typescript
-createQueryBuilder("user")
-    .orderBy({
-        "user.name": "ASC",
-        "user.id": "DESC"
-    });
+createQueryBuilder("user").groupBy("user.id");
 ```
 
-If you use `.orderBy` more than once you'll override all previous `ORDER BY` expressions.
-
-## Adding `GROUP BY` expression
-
-Adding a `GROUP BY` expression is easy as:
-
-```typescript
-createQueryBuilder("user")
-    .groupBy("user.id")
-```
-
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user GROUP BY user.id
 ```
-To add more group-by criteria use `addGroupBy`:
+
+如果要使用更多 group-by, 则可以使用 c`addGroupBy`:
 
 ```typescript
 createQueryBuilder("user")
-    .groupBy("user.name")
-    .addGroupBy("user.id");
+  .groupBy("user.name")
+  .addGroupBy("user.id");
 ```
 
-If you use `.groupBy` more than once you'll override all previous `GROUP BY` expressions.
+如果使用了多个`.groupBy` ，则后面的将会覆盖之前所有的 `ORDER BY` 表达式。
 
-## Adding `LIMIT` expression
+## 添加 `LIMIT` 表达式
 
-Adding a `LIMIT` expression is easy as:
+添加 `LIMIT` 表达式很简单：
 
 ```typescript
-createQueryBuilder("user")
-    .limit(10)
+createQueryBuilder("user").limit(10);
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user LIMIT 10
 ```
 
-The resulting SQL query depends on the type of database (SQL, mySQL, Postgres, etc).
-Note: LIMIT may not work as you may expect if you are using complex queries with joins or subqueries.
-If you are using pagination, it's recommended to use `take` instead.
+生成的 SQL 查询取决于数据库的类型（SQL，mySQL，Postgres 等）。
+注意：如果你使用带有连接或子查询的复杂查询，LIMIT 可能无法正常工作。
+如果使用分页，建议使用`take`代替。
 
-## Adding `OFFSET` expression
+## 添加 `OFFSET` 表达式
 
-Adding an SQL `OFFSET` expression is easy as:
+添加 SQL`OFFSET`表达式很简单：
 
 ```typescript
-createQueryBuilder("user")
-    .offset(10)
+createQueryBuilder("user").offset(10);
 ```
 
-Which will produce the following SQL query:
+将会生成以下 SQL 语句：
 
 ```sql
 SELECT ... FROM users user OFFSET 10
 ```
 
-The resulting SQL query depends on the type of database (SQL, mySQL, Postgres, etc).
-Note: OFFSET may not work as you may expect if you are using complex queries with joins or subqueries.
-If you are using pagination, it's recommended to use `skip` instead.
+生成的 SQL 查询取决于数据库的类型（SQL，mySQL，Postgres 等）。
+注意：如果你使用带有连接或子查询的复杂查询，OFFSET 可能无法正常工作。
+如果使用分页，建议使用`skip`代替。
 
-## Joining relations
+## 联查
 
-Let's say you have the following entities:
+假设有以下实体：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
-import {Photo} from "./Photo";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @OneToMany(type => Photo, photo => photo.user)
-    photos: Photo[];
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @OneToMany(type => Photo, photo => photo.user)
+  photos: Photo[];
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
-import {User} from "./User";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { User } from "./User";
 
 @Entity()
 export class Photo {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    url: string;
-    
-    @ManyToOne(type => User, user => user.photos)
-    user: User;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  url: string;
+
+  @ManyToOne(type => User, user => user.photos)
+  user: User;
 }
 ```
 
-Now let's say you want to load user "Timber" with all of his photos:
+现在让我们假设你要用用户"Timber"加载他所有的 photos：
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo")
-    .where("user.name = :name", { name: "Timber" })
-    .getOne();
+  .leftJoinAndSelect("user.photos", "photo")
+  .where("user.name = :name", { name: "Timber" })
+  .getOne();
 ```
 
-You'll get the following result:
+你将会得到以下结果：
 
 ```typescript
 {
@@ -559,408 +537,419 @@ You'll get the following result:
 }
 ```
 
-As you can see `leftJoinAndSelect` automatically loaded all of Timber's photos.
-The first argument is the relation you want to load and the second argument is an alias you assign to this relation's table.
-You can use this alias anywhere in query builder.
-For example, let's take all Timber's photos which aren't removed.
+你可以看到`leftJoinAndSelect`自动加载了所有 Timber 的 photos。
+第一个参数是你要加载的关系，第二个参数是你为此关系的表分配的别名。
+你可以在查询构建器中的任何位置使用此别名。
+例如，让我们获得所有未删除的 Timber 的 photos。
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo")
-    .where("user.name = :name", { name: "Timber" })
-    .andWhere("photo.isRemoved = :isRemoved", { isRemoved: false })
-    .getOne();
+  .leftJoinAndSelect("user.photos", "photo")
+  .where("user.name = :name", { name: "Timber" })
+  .andWhere("photo.isRemoved = :isRemoved", { isRemoved: false })
+  .getOne();
 ```
 
-This will generate following sql query:
+将会生成以下 SQL 查询：
 
 ```sql
-SELECT user.*, photo.* FROM users user 
+SELECT user.*, photo.* FROM users user
     LEFT JOIN photos photo ON photo.user = user.id
     WHERE user.name = 'Timber' AND photo.isRemoved = FALSE
 ```
 
-You can also add conditions to the join expression instead of using "where":
+你还可以向连接表达式添加条件，而不是使用"where"：
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo", "photo.isRemoved = :isRemoved", { isRemoved: false })
-    .where("user.name = :name", { name: "Timber" })
-    .getOne();
+  .leftJoinAndSelect("user.photos", "photo", "photo.isRemoved = :isRemoved", { isRemoved: false })
+  .where("user.name = :name", { name: "Timber" })
+  .getOne();
 ```
 
-This will generate the following sql query:
+这将生成以下 sql 查询：
 
 ```sql
-SELECT user.*, photo.* FROM users user 
+SELECT user.*, photo.* FROM users user
     LEFT JOIN photos photo ON photo.user = user.id AND photo.isRemoved = FALSE
     WHERE user.name = 'Timber'
 ```
 
-## Inner and left joins
+## 内联 和 左联
 
-If you want to use `INNER JOIN` instead of `LEFT JOIN` just use `innerJoinAndSelect` instead:
+如果你想使用`INNER JOIN`而不是`LEFT JOIN`，只需使用`innerJoinAndSelect`：
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .innerJoinAndSelect("user.photos", "photo", "photo.isRemoved = :isRemoved", { isRemoved: false })
-    .where("user.name = :name", { name: "Timber" })
-    .getOne();
+  .innerJoinAndSelect("user.photos", "photo", "photo.isRemoved = :isRemoved", { isRemoved: false })
+  .where("user.name = :name", { name: "Timber" })
+  .getOne();
 ```
 
 This will generate:
 
 ```sql
-SELECT user.*, photo.* FROM users user 
+SELECT user.*, photo.* FROM users user
     INNER JOIN photos photo ON photo.user = user.id AND photo.isRemoved = FALSE
     WHERE user.name = 'Timber'
 ```
 
-The difference between `LEFT JOIN` and `INNER JOIN` is that `INNER JOIN` won't return a user if it does not have any photos.
-`LEFT JOIN` will return you the user even if it doesn't have photos.
-To learn more about different join types, refer to the [SQL documentation](https://msdn.microsoft.com/en-us/library/zt8wzxy4.aspx).
+`LEFT JOIN`和`INNER JOIN`之间的区别在于，如果没有任何 photos，`INNER JOIN`将不会返回 user。
+即使没有 photos，`LEFT JOIN`也会返回 user。
+要了解有关不同连接类型的更多信息，请参阅 [SQL 文档](https://msdn.microsoft.com/en-us/library/zt8wzxy4.aspx).
 
-## Join without selection
+## 不使用条件的联查
 
-You can join data without its selection.
-To do that, use `leftJoin` or `innerJoin`:
+你可以在不使用条件的情况下联查数据。
+要做到这一点，使用`leftJoin`或`innerJoin`：
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .innerJoin("user.photos", "photo")
-    .where("user.name = :name", { name: "Timber" })
-    .getOne();
+  .innerJoin("user.photos", "photo")
+  .where("user.name = :name", { name: "Timber" })
+  .getOne();
 ```
 
-This will generate:
+将会生成如下 SQL 语句：
 
 ```sql
-SELECT user.* FROM users user 
+SELECT user.* FROM users user
     INNER JOIN photos photo ON photo.user = user.id
     WHERE user.name = 'Timber'
 ```
 
-This will select Timber if he has photos, but won't return his photos. 
+这将会返回 Timber 如果他有 photos，但是并不会返回他的 photos。
 
-## Joining any entity or table
+## 联查任何实体或表
 
-You can join not only relations, but also other unrelated entities or tables.
-Examples:
+你不仅能联查关系，还能联查任何其他实体或表。
+
+例如：
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .leftJoinAndSelect(Photo, "photo", "photo.userId = user.id")
-    .getMany();
+  .leftJoinAndSelect(Photo, "photo", "photo.userId = user.id")
+  .getMany();
 ```
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .leftJoinAndSelect("photos", "photo", "photo.userId = user.id")
-    .getMany();
+  .leftJoinAndSelect("photos", "photo", "photo.userId = user.id")
+  .getMany();
 ```
 
-## Joining and mapping functionality
+## 联查和映射功能
 
-Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
+将`profilePhoto`添加到`User`实体，你可以使用`QueryBuilder`将任何数据映射到该属性：
 
 ```typescript
-export class User {    
-    /// ...
-    profilePhoto: Photo;
-    
+export class User {
+  /// ...
+  profilePhoto: Photo;
 }
 ```
 
 ```typescript
 const user = await createQueryBuilder("user")
-    .leftJoinAndMapOne("user.profilePhoto", "user.photos", "photo", "photo.isForProfile = TRUE")
-    .where("user.name = :name", { name: "Timber" })
-    .getOne();
+  .leftJoinAndMapOne("user.profilePhoto", "user.photos", "photo", "photo.isForProfile = TRUE")
+  .where("user.name = :name", { name: "Timber" })
+  .getOne();
 ```
 
-This will load Timber's profile photo and set it to `user.profilePhoto`.
-If you want to load and map a single entity use `leftJoinAndMapOne`.
-If you want to load and map multiple entities use `leftJoinAndMapMany`.
+这将加载 Timber 的个人资料照片并将其设置为`user.profilePhoto`。
+如果要加载并映射单个实体，请使用`leftJoinAndMapOne`。
+如果要加载和映射多个实体，请使用`leftJoinAndMapMany`。
 
-## Getting the generated query
+## 获取生成的 sql 查询语句
 
-Sometimes you may want to get the SQL query generated by `QueryBuilder`.
-To do so, use `getSql`:
+有时你可能想要获取`QueryBuilder`生成的 SQL 查询。
+为此，请使用`getSql`：
 
 ```typescript
 const sql = createQueryBuilder("user")
-    .where("user.firstName = :firstName", { firstName: "Timber" })
-    .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    .getSql();
+  .where("user.firstName = :firstName", { firstName: "Timber" })
+  .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+  .getSql();
 ```
 
-For debugging purposes you can use `printSql`:
+出于调试目的，你也可以使用`printSql`：
 
 ```typescript
 const users = await createQueryBuilder("user")
-    .where("user.firstName = :firstName", { firstName: "Timber" })
-    .orWhere("user.lastName = :lastName", { lastName: "Saw" })
-    .printSql()
-    .getMany();
+  .where("user.firstName = :firstName", { firstName: "Timber" })
+  .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+  .printSql()
+  .getMany();
 ```
 
-This query will return users and print the used sql statement to the console.
+此查询将返回 users 并将使用的 sql 语句打印到控制台。
 
-## Getting raw results
+## 获得原始结果
 
-There are two types of results you can get using select query builder: **entities** and **raw results**.
-Most of the time, you need to select real entities from your database, for example, users. 
-For this purpose, you use `getOne` and `getMany`.
-However, sometimes you need to select specific data, like the *sum of all user photos*. 
-Such data is not a entity, it's called raw data.
-To get raw data, you use `getRawOne` and `getRawMany`.
-Examples:
+使用选择查询构建器可以获得两种类型的结果：**entities** 和 **raw results**。
+大多数情况下，你只需要从数据库中选择真实实体，例如 users。
+为此，你可以使用`getOne`和`getMany`。
+但是，有时需要选择特定数据，例如 _sum of all user photos_。
+这些数据不是实体，它被称为原始数据。
+要获取原始数据，请使用`getRawOne`和`getRawMany`。
+例如：
 
 ```typescript
 const { sum } = await getRepository(User)
-    .createQueryBuilder("user")
-    .select("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
-    .getRawOne();
+  .createQueryBuilder("user")
+  .select("SUM(user.photosCount)", "sum")
+  .where("user.id = :id", { id: 1 })
+  .getRawOne();
 ```
 
 ```typescript
 const photosSums = await getRepository(User)
-    .createQueryBuilder("user")
-    .select("user.id")
-    .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
-    .getRawMany();
+  .createQueryBuilder("user")
+  .select("user.id")
+  .addSelect("SUM(user.photosCount)", "sum")
+  .where("user.id = :id", { id: 1 })
+  .getRawMany();
 
-// result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
+// 结果将会像这样: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
-## Streaming result data
+## 流数据
 
-You can use `stream` which returns you a stream.
-Streaming returns you raw data and you must handle entity transformation manually:
+你可以使用`stream`来返回流。
+Streaming 返回原始数据，必须手动处理实体转换：
 
 ```typescript
 const stream = await getRepository(User)
-    .createQueryBuilder("user")
-    .where("user.id = :id", { id: 1 })
-    .stream();
+  .createQueryBuilder("user")
+  .where("user.id = :id", { id: 1 })
+  .stream();
 ```
 
-## Using pagination
+## 使用分页
 
-Most of the time when you develop an application, you need pagination functionality.
-This is used if you have pagination, page slider, or infinite scroll components in your application.
+大多数情况下，在开发应用程序时，你可能需要分页功能。
+如果你的应用程序中有分页，page slider 或无限滚动组件，则使用此选项。
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo")
-    .take(10)
-    .getMany();
+  .createQueryBuilder("user")
+  .leftJoinAndSelect("user.photos", "photo")
+  .take(10)
+  .getMany();
 ```
 
-This will give you the first 10 users with their photos.
+将会返回前 10 个 user 的 photos。
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo")
-    .skip(10)
-    .getMany();
+  .createQueryBuilder("user")
+  .leftJoinAndSelect("user.photos", "photo")
+  .skip(10)
+  .getMany();
 ```
 
-This will give you all except the first 10 users with their photos.
-You can combine those methods:
+将返回除了前 10 个 user 以外的所有 user 的 photos。
+
+你可以组合这些方法：
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo")
-    .skip(5)
-    .take(10)
-    .getMany();
+  .createQueryBuilder("user")
+  .leftJoinAndSelect("user.photos", "photo")
+  .skip(5)
+  .take(10)
+  .getMany();
 ```
 
-This will skip the first 5 users and take 10 users after them.
+这将跳过前 5 个 users，并获取他们之后的 10 个 user。
 
+`take`和`skip`可能看起来像我们正在使用`limit`和`offset`，但它们不是。
+一旦你有更复杂的连接或子查询查询，`limit`和`offset`可能无法正常工作。
+使用`take`和`skip`可以防止这些问题。
 
-`take` and `skip` may look like we are using `limit` and `offset`, but they aren't.
-`limit` and `offset` may not work as you expect once you have more complicated queries with joins or subqueries.
-Using `take` and `skip` will prevent those issues.
+## 加锁
 
-## Set locking
-
-QueryBuilder supports both optimistic and pessimistic locking.
-To use pessimistic read locking use the following method:
+QueryBuilder 支持 optimistic 和 pessimistic 锁定。
+要使用 pessimistic 读锁定，请使用以下方法：
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .setLock("pessimistic_read")
-    .getMany();
+  .createQueryBuilder("user")
+  .setLock("pessimistic_read")
+  .getMany();
 ```
 
-To use pessimistic write locking use the following method:
+要使用 pessimistic 写锁定，请使用以下方法：
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .setLock("pessimistic_write")
-    .getMany();
+  .createQueryBuilder("user")
+  .setLock("pessimistic_write")
+  .getMany();
 ```
 
-To use optimistic locking use the following method:
+要使用 optimistic 锁定，请使用以下方法：
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .setLock("optimistic", existUser.version)
-    .getMany();
+  .createQueryBuilder("user")
+  .setLock("optimistic", existUser.version)
+  .getMany();
 ```
 
-Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
+Optimistic 锁定与`@ Version`和`@ UpdatedDate`装饰器一起使用。
 
-## Partial selection
+## 查询部分字段
 
-If you want to select only some entity properties, you can use the following syntax:
+如果只想选择实体的某些属性，可以使用以下语法：
 
 ```typescript
 const users = await getRepository(User)
-    .createQueryBuilder("user")
-    .select([
-        "user.id",
-        "user.name"
-    ])
-    .getMany();
+  .createQueryBuilder("user")
+  .select(["user.id", "user.name"])
+  .getMany();
 ```
 
-This will only select the `id` and `name` of `User`.
+这只会选择`User`的`id`和`name`。
 
-## Using subqueries
+## 使用子查询
 
-You can easily create subqueries. Subqueries are supported in `FROM`, `WHERE` and `JOIN` expressions.
-Example:
+你可以轻松创建子查询。 `FROM`，`WHERE`和`JOIN`表达式都支持子查询。
+例如：
 
 ```typescript
 const qb = await getRepository(Post).createQueryBuilder("post");
 const posts = qb
-    .where("post.title IN " + qb.subQuery().select("user.name").from(User, "user").where("user.registered = :registered").getQuery())
-    .setParameter("registered", true)
-    .getMany();
+  .where(
+    "post.title IN " +
+      qb
+        .subQuery()
+        .select("user.name")
+        .from(User, "user")
+        .where("user.registered = :registered")
+        .getQuery()
+  )
+  .setParameter("registered", true)
+  .getMany();
 ```
 
-A more elegant way to do the same:
-
-```typescript
-const posts = await connection.getRepository(Post)
-    .createQueryBuilder("post")
-    .where(qb => {
-        const subQuery = qb.subQuery()
-            .select("user.name")
-            .from(User, "user")
-            .where("user.registered = :registered")
-            .getQuery();
-        return "post.title IN " + subQuery;
-    })
-    .setParameter("registered", true)
-    .getMany();
-```
-
-Alternatively, you can create a separate query builder and use its generated SQL:
-
-```typescript
-const userQb = await connection.getRepository(User)
-    .createQueryBuilder("user")
-    .select("user.name")
-    .where("user.registered = :registered", { registered: true });
-
-const posts = await connection.getRepository(Post)
-    .createQueryBuilder("post")
-    .where("post.title IN (" + userQb.getQuery() + ")")
-    .setParameters(userQb.getParameters())
-    .getMany();
-```
-
-You can create subqueries in `FROM` like this:
-
-```typescript
-const userQb = await connection.getRepository(User)
-    .createQueryBuilder("user")
-    .select("user.name", "name")
-    .where("user.registered = :registered", { registered: true });
-
-const posts = await connection
-    .createQueryBuilder()
-    .select("user.name", "name")
-    .from("(" + userQb.getQuery() + ")", "user")
-    .setParameters(userQb.getParameters())
-    .getRawMany();
-```
-
-or using more a elegant syntax:
+使用更优雅的方式来做同样的事情：
 
 ```typescript
 const posts = await connection
-    .createQueryBuilder()
-    .select("user.name", "name")
-    .from(subQuery => {
-        return subQuery
-            .select("user.name", "name")
-            .from(User, "user")
-            .where("user.registered = :registered", { registered: true });
-    }, "user")
-    .getRawMany();
+  .getRepository(Post)
+  .createQueryBuilder("post")
+  .where(qb => {
+    const subQuery = qb
+      .subQuery()
+      .select("user.name")
+      .from(User, "user")
+      .where("user.registered = :registered")
+      .getQuery();
+    return "post.title IN " + subQuery;
+  })
+  .setParameter("registered", true)
+  .getMany();
 ```
 
-If you want to add a subselect as a "second from" use `addFrom`.
+或者，你可以创建单独的查询构建器并使用其生成的 SQL：
 
-You can use subselects in `SELECT` statements as well:
+```typescript
+const userQb = await connection
+  .getRepository(User)
+  .createQueryBuilder("user")
+  .select("user.name")
+  .where("user.registered = :registered", { registered: true });
+
+const posts = await connection
+  .getRepository(Post)
+  .createQueryBuilder("post")
+  .where("post.title IN (" + userQb.getQuery() + ")")
+  .setParameters(userQb.getParameters())
+  .getMany();
+```
+
+你可以在`FROM`中创建子查询，如下所示：
+
+```typescript
+const userQb = await connection
+  .getRepository(User)
+  .createQueryBuilder("user")
+  .select("user.name", "name")
+  .where("user.registered = :registered", { registered: true });
+
+const posts = await connection
+  .createQueryBuilder()
+  .select("user.name", "name")
+  .from("(" + userQb.getQuery() + ")", "user")
+  .setParameters(userQb.getParameters())
+  .getRawMany();
+```
+
+或使用更优雅的语法：
 
 ```typescript
 const posts = await connection
-    .createQueryBuilder()
-    .select("post.id", "id")
-    .addSelect(subQuery => {
-        return subQuery
-            .select("user.name", "name")
-            .from(User, "user")
-            .limit(1);
-    }, "name")
-    .from(Post, "post")
-    .getRawMany();
+  .createQueryBuilder()
+  .select("user.name", "name")
+  .from(subQuery => {
+    return subQuery
+      .select("user.name", "name")
+      .from(User, "user")
+      .where("user.registered = :registered", { registered: true });
+  }, "user")
+  .getRawMany();
 ```
-## Hidden Columns
 
-If the model you are querying has a column with a `select: false` column, you must use the `addSelect` function in order to retreive the information from the column.
+如果想添加一个子查询做为"second from"，请使用`addFrom`。
 
-Let's say you have the following entity:
+你也可以在`SELECT`语句中使用子查询：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+const posts = await connection
+  .createQueryBuilder()
+  .select("post.id", "id")
+  .addSelect(subQuery => {
+    return subQuery
+      .select("user.name", "name")
+      .from(User, "user")
+      .limit(1);
+  }, "name")
+  .from(Post, "post")
+  .getRawMany();
+```
+
+## 隐藏列
+
+如果要查询的模型具有"select：false"的列，则必须使用`addSelect`函数来从列中检索信息。
+
+假设你有以下实体：
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({select: false})
-    password: string;
+  @Column()
+  name: string;
+
+  @Column({ select: false })
+  password: string;
 }
 ```
 
-Using a standard `find` or query, you will not recieve the `password` property for the model. However, if you do the following:
+使用标准的`find`或查询，你将不会接收到模型的`password`属性。 但是，如果执行以下操作：
 
 ```typescript
-const users = await connection.getRepository(User)
-    .createQueryBuilder()
-    .select("user.id", "id")
-    .addSelect("user.password")
-    .getMany();
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder()
+  .select("user.id", "id")
+  .addSelect("user.password")
+  .getMany();
 ```
 
-You will get the property `password` in your query.
+你将在查询中获得属性`password`。

@@ -1,477 +1,389 @@
-# Connection Options
-
-* [What is `ConnectionOptions`](#what-is-connectionoptions)
-* [Common connection options](#common-connection-options)
-* [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
-* [`postgres` connection options](#postgres-connection-options)
-* [`sqlite` connection options](#sqlite-connection-options)
-* [`cordova` connection options](#cordova-connection-options)
-* [`react-native` connection options](#react-native-connection-options)
-* [`nativescript` connection options](#nativescript-connection-options)
-* [`mssql` connection options](#mssql-connection-options)
-* [`mongodb` connection options](#mongodb-connection-options)
-* [`sql.js` connection options](#sqljs-connection-options)
-* [`expo` connection options](#expo-connection-options)
-* [Connection options example](#connection-options-example)
-    
-## What is `ConnectionOptions`
+# Connection 选项
 
-Connection options is a connection configuration you pass to `createConnection`
- or define in `ormconfig` file. Different databases have their own specific connection options.
+- [Connection 选项](#connection-%E9%80%89%E9%A1%B9)
+  - [什么是 `ConnectionOptions`](#%E4%BB%80%E4%B9%88%E6%98%AF-connectionoptions)
+  - [常用的连接选项](#%E5%B8%B8%E7%94%A8%E7%9A%84%E8%BF%9E%E6%8E%A5%E9%80%89%E9%A1%B9)
+  - [`mysql` / `mariadb`](#mysql--mariadb)
+  - [`postgres`](#postgres)
+  - [`sqlite`](#sqlite)
+  - [`cordova`](#cordova)
+  - [`react-native`](#react-native)
+  - [`nativescript`](#nativescript)
+  - [`mssql`](#mssql)
+  - [`mongodb`](#mongodb)
+  - [`sql.js`](#sqljs)
+  - [`expo`](#expo)
+  - [连接选项示例](#%E8%BF%9E%E6%8E%A5%E9%80%89%E9%A1%B9%E7%A4%BA%E4%BE%8B)
 
-## Common connection options
+## 什么是 `ConnectionOptions`
 
-* `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "mariadb", "sqlite", "cordova", "nativescript",
- "oracle", "mssql", "mongodb", "sqljs", "react-native".
- This option is **required**.
+连接选项是你传递给`createConnection`或在`ormconfig`文件中定义的连接配置。不同的数据库有自己的特定连接选项。
 
-* `name` - Connection name. You'll use it to get connection you need using `getConnection(name: string)` 
-or `ConnectionManager.get(name: string)`. 
-Connection names for different connections cannot be same - they all must be unique.
-If connection name is not given then it will be called "default".
+## 常用的连接选项
 
-* `extra` - Extra connection options to be passed to the underlying driver. 
-Use it if you want to pass extra settings to underlying database driver.
+- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
 
-* `entities` - Entities to be loaded and used for this connection.
-Accepts both entity classes and directories paths to load from.
-Directories support glob patterns.
-Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-Learn more about [Entities](./entities.md).
-
-* `subscribers` - Subscribers to be loaded and used for this connection.
-Accepts both entity classes and directories to load from.
-Directories support glob patterns.
-Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
-Learn more about [Subscribers](listeners-and-subscribers.md).
-
-* `entitySchemas` - Entity schemas to be loaded and used for this connection.
-Accepts both entity schema classes and directories to load from.
-Directories support glob patterns.
-Example: `entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json", "modules/**/entity-schema/*.json"]`.
-Learn more about [Entity Schemas](./schema-in-files.md).
-
-* `migrations` - Migrations to be loaded and used for this connection.
-Accepts both migration classes and directories to load from.
-Directories support glob patterns.
-Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
-Learn more about [Migrations](./migrations.md).
-
-* `logging` - Indicates if logging is enabled or not. 
-If set to `true` then query and error logging will be enabled.
-You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-Learn more about [Logging](./logging.md).
+- `name` - 连接名。 在使用 `getConnection(name: string)`
+  或 `ConnectionManager.get(name: string)`时候需要用到。不同连接的连接名称不能相同，它们都必须是唯一的。如果没有给出连接名称，那么它将被设置为"default"。
 
-* `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file". 
-Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-Learn more about [Logging](./logging.md).
+- `extra` - 要传递给底层驱动程序的额外连接选项。如果要将额外设置传递给基础数据库驱动程序，请使用此配置。
 
-* `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
-then logger will log this query.
+- `entities` - 要加载并用于此连接的实体。接受要加载的实体类和目录路径。目录支持 glob 模式。示例：`entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`。了解有关[entities](./entities.md)的更多信息。
 
-* `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
-Learn more about [Naming strategies](./naming-strategy.md).
+- `subscribers` - 要加载并用于此连接的订阅者。接受要加载的实体类和目录。目录支持 glob 模式。示例：`subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`。了解有关[subscribers](listeners-and-subscribers.md)的更多信息。
 
-* `entityPrefix` - Prefixes with the given string all tables (or collections) on this database connection.
+- `entitySchemas` - 要加载并用于此连接的实体架构。接受要加载的实体模式类和目录。目录支持 glob 模式。示例：`entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json"`。了解有关[Entity Schemas](./schema-in-files.md)的更多信息。
 
-* `dropSchema` - Drops the schema each time connection is being established.
-Be careful with this option and don't use this in production - otherwise you'll lose all production data.
-This option is useful during debug and development.
+- `migrations` - 要加载和用于此连接的迁移。接受要加载的迁移类和目录。目录支持 glob 模式。
+  示例: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
+  了解有关 [Migrations](./migrations.md)的更多信息。
 
-* `synchronize` - Indicates if database schema should be auto created on every application launch.
- Be careful with this option and don't use this in production - otherwise you can lose production data.
- This option is useful during debug and development.
- As an alternative to it, you can use CLI and run schema:sync command.
- Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
- Instead, it syncs just by creating indices.
+- `logging` - 指示是否启用日志记录。如果设置为`true`，则将启用查询和错误日志记录。你还可以指定要启用的不同类型的日志记录，例如`["query", "error", "schema"]`。详细了解[Logging](./logging.md)。
 
-* `migrationsRun` - Indicates if migrations should be auto run on every application launch.
-As an alternative, you can use CLI and run migration:run command.
+- `logger` - 记录器，用于日志的记录方式。可能的值是"advanced-console", "simple-console" 和 "file"。默认为"advanced-console"。你还可以指定实现`Logger`接口的记录器类。详细了解[Logging](./logging.md)。
 
-* `migrationsTableName` - Name of the table in the database which is going to contain information about executed migrations.
-By default this table is called "migrations".
+- `maxQueryExecutionTime` - 如果查询执行时间超过此给定的最大执行时间（以毫秒为单位），则 logger 将记录此查询。
 
-* `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
-Read more about caching [here](./caching.md).
+- `namingStrategy` - 命名策略，用于命名数据 ​​ 库中的表和列。了解有关[Naming strategies](./naming-strategy.md)的更多信息。
 
-* `cli.entitiesDir` - Directory where entities should be created by default by CLI.
+- `entityPrefix` - 给此数据库连接上的所有表（或集合）加的前缀。
 
-* `cli.migrationsDir` - Directory where migrations should be created by default by CLI.
+- `dropSchema` - 每次建立连接时删除架构。请注意此选项，不要在生产环境中使用它，否则将丢失所有生产数据。但是此选项在调试和开发期间非常有用。
 
-* `cli.subscribersDir` - Directory where subscribers should be created by default by CLI.
+- `synchronize` - 指示是否在每次应用程序启动时自动创建数据库架构。
+  请注意此选项，不要在生产环境中使用它，否则将丢失所有生产数据。但是此选项在调试和开发期间非常有用。作为替代方案，你可以使用 CLI 运行 schema：sync 命令。请注意，对于 MongoDB 数据库，它不会创建模式，因为 MongoDB 是无模式的。相反，它只是通过创建索引来同步。
 
-## `mysql` / `mariadb` connection options
+- `migrationsRun` - 指示是否在每次启动应用程序时自动运行迁移。或者，您可以使用 CLI run migrations:run command
 
-* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
+- `migrationsTableName` - 数据库中将包含有关已执行迁移的信息的表的名称。默认情况下，此表名为"migrations"。
 
-* `host` - Database host.
+- `cache` - 启用实体结果缓存。你还可以在此处配置缓存类型和其他缓存选项。阅读更多有关[caching](./caching.md)的信息。
 
-* `port` - Database host port. Default mysql port is `3306`.
+- `cli.entitiesDir` - CLI 默认情况下创建实体的目录。
 
-* `username` - Database username.
+- `cli.migrationsDir` - CLI 默认情况下创建迁移的目录。
 
-* `password` - Database password.
+- `cli.subscribersDir` - CLI 默认情况下创建订阅者的目录。
 
-* `database` - Database name.
+## `mysql` / `mariadb`
 
-* `charset` - The charset for the connection. This is called "collation" in the SQL-level of MySQL 
-(like utf8_general_ci). If a SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used. (Default: `UTF8_GENERAL_CI`).
+- `url` - 连接 URL
 
-* `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time 
-values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form 
-`+HH:MM` or `-HH:MM`. (Default: `local`)
+- `host` - 数据库 host
 
-* `connectTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySQL server.
- (Default: `10000`)
+- `port` - 数据库端口。mysql 默认的端口是`3306`.
 
-* `acquireTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySql server. It differs from `connectTimeout` as it governs the TCP connection timeout where as connectTimeout does not. (default: `10000`)
- 
-* `insecureAuth` - Allow connecting to MySQL instances that ask for the old (insecure) authentication method. 
-(Default: `false`)
- 
-* `supportBigNumbers` - When dealing with big numbers (`BIGINT` and `DECIMAL` columns) in the database, 
-you should enable this option (Default: `true`)
- 
-* `bigNumberStrings` - Enabling both `supportBigNumbers` and `bigNumberStrings` forces big numbers 
-(`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `true`). 
-Enabling `supportBigNumbers` but leaving `bigNumberStrings` disabled will return big numbers as String 
-objects only when they cannot be accurately represented with 
-[JavaScript Number objects](http://ecma262-5.com/ELS5_HTML.htm#Section_8.5) 
-(which happens when they exceed the `[-2^53, +2^53]` range), otherwise they will be returned as 
-Number objects. This option is ignored if `supportBigNumbers` is disabled.
+- `username` - 数据库用户名
 
-* `dateStrings` - Force date types (`TIMESTAMP`, `DATETIME`, `DATE`) to be returned as strings rather than 
-inflated into JavaScript Date objects. Can be true/false or an array of type names to keep as strings. 
-(Default: `false`)
+- `password` - 数据库密码
 
-* `debug` - Prints protocol details to stdout. Can be true/false or an array of packet type names that 
-should be printed. (Default: `false`)
+- `database` - 数据库名
 
-* `trace` - Generates stack traces on Error to include call site of library entrance ("long stack traces"). 
-Slight performance penalty for most calls. (Default: `true`)
+- `charset` - 连接的字符集。这在 MySQL 的 SQL 级别中称为"collation"（如 utf8_general_ci）。如果指定了 SQL 级别的字符集（如 utf8mb4），则使用该字符集的默认排序规则。 （默认值：UTF8_GENERAL_CI）。
 
-* `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope 
-of SQL injection attacks. (Default: `false`)
+- `timezone` - MySQL 服务器上配置的时区。这用于将服务器日期/时间值强制转换为 JavaScript Date 对象，反之亦然。该值可以是`local`，`Z`或`+HHMM`或`-HHMM`形式的偏移。 （默认：`local`）
 
-* `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
- For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
- 
-* `ssl` -  object with ssl parameters or a string containing the name of ssl profile. 
-See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
+- `connectTimeout` - 在连接到 MySQL 服务器期间发生超时之前的毫秒数。 （默认值：`10000`）
 
-## `postgres` connection options
+- `insecureAuth` - 允许连接到要求旧（不安全）身份验证方法的 MySQL 实例。 （默认值：`false`）
 
-* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
+- `supportBigNumbers` - 处理数据库中的大数字（`BIGINT`和`DECIMAL`列）时，应启用此选项（默认值：`false`）
 
-* `host` - Database host.
+- `bigNumberStrings` - 同时启用`supportBigNumbers`和`bigNumberStrings`会强制将大数字（`BIGINT`和`DECIMAL`列）作为 JavaScript String 对象返回（默认值：`false`）。启用`supportBigNumbers`但禁用`bigNumberStrings`仅当它们无法用 JavaScript Number 对象准确表示时才会返回大数字作为 String 对象（当它们超过`[-2^53，+2^53]`范围时会发生），否则它们将被返回作为数字对象。如果禁用了`supportBigNumbers`，则忽略此选项。
 
-* `port` - Database host port. Default postgres port is `5432`.
+- `dateStrings` - 强制日期类型（`TIMESTAMP`，`DATETIME`，`DATE`）作为字符串返回，而不是转换为 JavaScript Date 对象。可以是 true/false 或要保留为字符串的类型名称数组。 （默认值：`false`）
 
-* `username` - Database username.
+- `debug` - 将协议详细信息打印到 stdout。可以是 true/false 或应打印的数据包类型名称数组。 （默认值：`false`）
 
-* `password` - Database password.
+- `trace` - 在 Error 上生成堆栈跟踪,包括库入口的调用站点（"long stack traces"）。对大多调用来说，性能损失很轻。 （默认值：`true`）
 
-* `database` - Database name.
+- `multipleStatements` - 每个查询允许多个 mysql 语句。请注意，它可能会增加 SQL 注入攻击的范围。 （默认值：`false`）
 
-* `schema` - Schema name. Default is "public".
+- `flags` - 使用非默认连接标志的连接标志列表。也可以将默认值列入黑名单。有关更多信息，请查看[Connection Flags](https://github.com/mysqljs/mysql#connection-flags)。
 
-* `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
+- `ssl` - 带有 ssl 参数的对象或包含 ssl 配置文件名称的字符串。请参阅[SSL 选项](https://github.com/mysqljs/mysql#ssl-options)。
 
-## `sqlite` connection options
+## `postgres`
 
-* `database` - Database path. For example "./mydb.sql"
+- `url` - 连接 URL
 
-## `cordova` connection options
+- `host` - 数据库主机
 
-* `database` - Database name
+- `port` - 数据库端口， postgres 默认端口是 `5432`。
 
-* `location` - Where to save the database. See [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage#opening-a-database) for options.
+- `username` - 数据库用户名
 
-## `react-native` connection options
-* `database` - Database name
+- `password` - 数据库密码
 
-* `location` - Where to save the database. See [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage#opening-a-database) for options.
+- `database` - 数据库名称
 
-## `nativescript` connection options
-* `database` - Database name
+- `schema` - Schema 名称，默认是 "public".
 
-## `mssql` connection options
+- `ssl` - 带有 ssl 参数的对象。 详见 [TLS/SSL](https://node-postgres.com/features/ssl)。
 
-* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
+## `sqlite`
 
-* `host` - Database host.
+- `database` - 数据库路径。 例如 "./mydb.sql"
 
-* `port` - Database host port. Default mssql port is `1433`.
+## `cordova`
 
-* `username` - Database username.
+- `database` - 数据库名
 
-* `password` - Database password.
+- `location` - 数据库存储位置。 详见 [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage#opening-a-database)。
 
-* `database` - Database name.
+## `react-native`
 
-* `schema` - Schema name. Default is "public".
+- `database` - 数据库名
 
-* `domain` - Once you set domain, the driver will connect to SQL Server using domain login.
+- `location` - 数据库存储位置。详见 [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage#opening-a-database) 。
 
-* `connectionTimeout` - Connection timeout in ms (default: `15000`).
+## `nativescript`
 
-* `requestTimeout` - Request timeout in ms (default: `15000`). NOTE: msnodesqlv8 driver doesn't support
- timeouts < 1 second.
+- `database` - 数据库名
 
-* `stream` - Stream recordsets/rows instead of returning them all at once as an argument of callback (default: `false`).
- You can also enable streaming for each request independently (`request.stream = true`). Always set to `true` if you plan to
- work with a large amount of rows.
- 
-* `pool.max` - The maximum number of connections there can be in the pool (default: `10`).
+## `mssql`
 
-* `pool.min` - The minimum of connections there can be in the pool (default: `0`).
+- `url` - 连接 URL
 
-* `pool.maxWaitingClients` - maximum number of queued requests allowed, additional acquire calls will be callback with
- an err in a future cycle of the event loop.
- 
-* `pool.testOnBorrow` -  should the pool validate resources before giving them to clients. Requires that either
-  `factory.validate` or `factory.validateAsync` to be specified.
-  
-* `pool.acquireTimeoutMillis` - max milliseconds an `acquire` call will wait for a resource before timing out.
- (default no limit), if supplied should non-zero positive integer.
- 
-* `pool.fifo` - if true the oldest resources will be first to be allocated. If false the most recently released resources
- will be the first to be allocated. This in effect turns the pool's behaviour from a queue into a stack. boolean,
- (default `true`).
- 
-* `pool.priorityRange` - int between 1 and x - if set, borrowers can specify their relative priority in the queue if no
- resources are available. see example. (default `1`).
- 
-* `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`).
+- `host` - 数据库主机
 
-* `pool.evictionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
+- `port` - 端口。mssql 默认端口是 `1433`.
 
-* `pool.numTestsPerRun` - Number of resources to check each eviction run. Default: `3`.
+- `username` - 用户名
 
-* `pool.softIdleTimeoutMillis` - amount of time an object may sit idle in the pool before it is eligible for eviction by
- the idle object evictor (if any), with the extra condition that at least "min idle" object instances remain in the pool.
- Default `-1` (nothing can get evicted).
- 
-* `pool.idleTimeoutMillis` -  the minimum amount of time that an object may sit idle in the pool before it is eligible for
- eviction due to idle time. Supersedes `softIdleTimeoutMillis`. Default: `30000`.
- 
-* `options.fallbackToDefaultDb` - By default, if the database requestion by `options.database` cannot be accessed, the connection
- will fail with an error. However, if `options.fallbackToDefaultDb` is set to `true`, then the user's default database will
-  be used instead (Default: `false`).
-  
-* `options.enableAnsiNullDefault` - If true, SET ANSI_NULL_DFLT_ON ON will be set in the initial sql. This means new
- columns will be nullable by default. See the [T-SQL documentation](https://msdn.microsoft.com/en-us/library/ms187375.aspx)
- for more details. (Default: `true`).
- 
-* `options.cancelTimeout` - The number of milliseconds before the cancel (abort) of a request is considered failed (default: `5000`).
+- `password` - 密码
 
-* `options.packetSize` - The size of TDS packets (subject to negotiation with the server). Should be a power of 2. (default: `4096`).
+- `database` - 数据库名
 
-* `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `true`).
+- `schema` - Schema 名称。 默认"public".
 
-* `options.abortTransactionOnError` - A boolean determining whether to rollback a transaction automatically if any
- error is encountered during the given transaction's execution. This sets the value for `SET XACT_ABORT` during the
- initial SQL phase of a connection ([documentation](http://msdn.microsoft.com/en-us/library/ms188792.aspx)).
+- `domain` - 设置 domain 后，驱动程序将使用 domain 登录连接到 SQL Server。
 
-* `options.localAddress` - A string indicating which network interface (ip address) to use when connecting to SQL Server.
+- `connectionTimeout` - 超时时间，毫秒为单位 (默认: `15000`)。
 
-* `options.useColumnNames` - A boolean determining whether to return rows as arrays or key-value collections. (default: `false`).
+- `requestTimeout` - 请求超时时间，毫秒为单位 (默认: `15000`)。注意: msnodesqlv8 驱动不支持
+  timeouts < 1 秒
 
-* `options.camelCaseColumns` - A boolean, controlling whether the column names returned will have the first letter
- converted to lower case (`true`) or not. This value is ignored if you provide a `columnNameReplacer`. (default: `false`).
+- `stream` - Stream recordsets/rows instead of returning them all at once as an argument of callback（默认值：`false`）。你还可以单独为每个请求启用 streaming（`request.stream = true`）。如果你计划使用大量 rows，请始终设置为`true`。
 
-* `options.isolationLevel` - The default isolation level that transactions will be run with. The isolation levels are
- available from `require('tedious').ISOLATION_LEVEL`.
-   * `READ_UNCOMMITTED`
-   * `READ_COMMITTED`
-   * `REPEATABLE_READ`
-   * `SERIALIZABLE`
-   * `SNAPSHOT`
-   
-   (default: `READ_COMMITTED`)
- 
-* `options.connectionIsolationLevel` - The default isolation level for new connections. All out-of-transaction queries
- are executed with this setting. The isolation levels are available from `require('tedious').ISOLATION_LEVEL`.
-   * `READ_UNCOMMITTED`
-   * `READ_COMMITTED`
-   * `REPEATABLE_READ`
-   * `SERIALIZABLE`
-   * `SNAPSHOT`
-   
-   (default: `READ_COMMITTED`)
- 
-* `options.readOnlyIntent` - A boolean, determining whether the connection will request read-only access from a
- SQL Server Availability Group. For more information, see here. (default: `false`).
+- `pool.max` - 连接池的最大数 (默认: `10`).
 
-* `options.encrypt` - A boolean determining whether or not the connection will be encrypted. Set to true if you're
- on Windows Azure. (default: `false`).
- 
-* `options.cryptoCredentialsDetails` - When encryption is used, an object may be supplied that will be used for the
- first argument when calling [tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)
-  (default: `{}`).
-  
-* `options.rowCollectionOnDone` - A boolean, that when true will expose received rows in Requests' `done*` events.
- See done, [doneInProc](http://tediousjs.github.io/tedious/api-request.html#event_doneInProc)
- and [doneProc](http://tediousjs.github.io/tedious/api-request.html#event_doneProc). (default: `false`)
-   
-   Caution: If many rows are received, enabling this option could result in excessive memory usage.
+- `pool.min` - 连接池的最小数 (默认: `0`).
 
-* `options.rowCollectionOnRequestCompletion` - A boolean, that when true will expose received rows
- in Requests' completion callback. See [new Request](http://tediousjs.github.io/tedious/api-request.html#function_newRequest). (default: `false`)
+- `pool.maxWaitingClients` - 允许的最大队列请求数，在事件循环的未来周期中，将使用错误回调其他获取调用。
 
-   Caution: If many rows are received, enabling this option could result in excessive memory usage.
+- `pool.testOnBorrow` - 如果连接池在将资源提供给客户端之前验证资源。需要指定`factory.validate`或`factory.validateAsync`。
 
-* `options.tdsVersion` - The version of TDS to use. If the server doesn't support the specified version, a negotiated version
- is used instead. The versions are available from `require('tedious').TDS_VERSION`.
-   * `7_1`
-   * `7_2`
-   * `7_3_A`
-   * `7_3_B`
-   * `7_4`
-   
-  (default: `7_4`)
+- `pool.acquireTimeoutMillis` - 最大毫秒，`acquire`调用将在超时之前等待资源。（默认无限制），如果提供的话应该是非零正整数。
 
-* `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
- details (default: `false`).
- 
-* `options.debug.data` - A boolean, controlling whether `debug` events will be emitted with text describing packet data
- details (default: `false`).
- 
-* `options.debug.payload` - A boolean, controlling whether `debug` events will be emitted with text describing packet
- payload details (default: `false`).
- 
-* `options.debug.token` - A boolean, controlling whether `debug` events will be emitted with text describing token stream
- tokens (default: `false`).
+- `pool.fifo` - 如果为true，则首先分配最旧的资源。 如果为false，则表示最近发布的资源将是第一个被分配的。这实际上将池的行为从队列转换为堆栈。布尔值，(默认为`true`)。
 
-## `mongodb` connection options
+- `pool.priorityRange` - 1和x之间的int值  - 如果设置了且没有可用资源，则borrowers可以在队列中指定其相对优先级(默认 `1`)。
 
-* `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
+- `pool.autostart` - 布尔值，一旦调用构造函数，池应该开始创建资源等（默认为`true`）。
 
-* `host` - Database host.
+- `pool.victionRunIntervalMillis` - 多久检查一次eviction checks。 默认值：`0`（不运行）。
 
-* `port` - Database host port. Default mongodb port is `27017`.
+- `pool.numTestsPerRun` - 每次eviction checks资源数量。 默认值：`3`。
 
-* `database` - Database name.
+- `pool.softIdleTimeoutMillis` - 在空闲对象逐出器（如果有的话）有资格驱逐之前，对象可以在池中空闲的时间量，其中额外条件是至少"最小空闲"对象实例保留在池中。默认 `-1` (nothing can get evicted).
 
-* `poolSize` - Set the maximum pool size for each individual server or proxy connection.
+- `pool.idleTimeoutMillis` - 对象在由于空闲时间而有资格被驱逐之前可能在池中闲置的最短时间。 取代`softIdleTimeoutMillis`。 默认值：`30000`。
 
-* `ssl` - Use ssl connection (needs to have a mongod server with ssl support). Default: `false`.
+- `options.fallbackToDefaultDb` - 默认情况下，如果无法访问`options.database`的数据库请求，则连接将失败并显示错误。 但是，如果`options.fallbackToDefaultDb`设置为`true`，则将改为使用用户的默认数据库（默认值：`false`）。
 
-* `sslValidate` - Validate mongod server certificate against ca (needs to have a mongod server with ssl support,
- 2.4 or higher). Default: `true`.
- 
-* `sslCA` - Array of valid certificates either as Buffers or Strings (needs to have a mongod server with ssl support,
- 2.4 or higher).
- 
-* `sslCert` - String or buffer containing the certificate we wish to present (needs to have a mongod server with ssl
- support, 2.4 or higher)
- 
-* `sslKey` - String or buffer containing the certificate private key we wish to present (needs to have a mongod server
- with ssl support, 2.4 or higher).
- 
-* `sslPass` - String or buffer containing the certificate password (needs to have a mongod server with ssl support,
- 2.4 or higher).
- 
-* `autoReconnect` - Reconnect on error. Default: `true`.
+- `options.enableAnsiNullDefault` - 如果为true，则在初始sql中设置SET ANSI_NULL_DFLT_ON ON。 这意味着默认情况下新列可以为空。 有关更多详细信息，请参阅[T-SQL文档](https://msdn.microsoft.com/en-us/library/ms187375.aspx)。 （默认值：`true`）。
 
-* `noDelay` - TCP Socket NoDelay option. Default: `true`.
+- `options.cancelTimeout` - 取消（中止）请求之前的毫秒数被视为失败（默认值：`5000`）。
 
-* `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
+- `options.packetSize` - TDS数据包的大小（需要与服务器协商）。 应该是2的幂。（默认值：`4096`）。
 
-* `connectTimeoutMS` - TCP Connection timeout setting. Default: `30000`.
+- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`true`)。
 
-* `socketTimeoutMS` - TCP Socket timeout setting. Default: `360000`.
+- `options.abortTransactionOnError` - 如果在给定事务执行期间遇到任何错误，则确定是否自动回滚事务的布尔值。 这将在连接的初始SQL阶段设置`SET XACT_ABORT`的值（[文档](http://msdn.microsoft.com/en-us/library/ms188792.aspx))。
 
-* `reconnectTries` - Server attempt to reconnect #times. Default: `30`.
+- `options.localAddress` - 字符串，指示连接到SQL Server时要使用的网络接口（IP地址）。
 
-* `reconnectInterval` - Server will wait #milliseconds between retries. Default: `1000`.
+- `options.useColumnNames` - 布尔值，用于确定是将行作为数组还是键值集合返回。 （默认：`false`）。
 
-* `ha` - Turn on high availability monitoring. Default: `true`.
+- `options.camelCaseColumns` - 布尔值，控制返回的列名是否将第一个字母转换为小写（`true`为小写）。 如果提供`columnNameReplacer`，则忽略该值。 （默认：`false`）。
 
-* `haInterval` - Time between each replicaset status check. Default: `10000,5000`.
+- `options.isolationLevel` - 将运行事务的默认隔离级别。 隔离级别可从`require（'tedious').ISOLATION_LEVEL`获得。
 
-* `replicaSet` - The name of the replicaset to connect to.
- 
-* `acceptableLatencyMS` - Sets the range of servers to pick when using NEAREST (lowest ping ms + the latency fence,
- ex: range of 1 to (1 + 15) ms). Default: `15`.
+  - `READ_UNCOMMITTED`
+  - `READ_COMMITTED`
+  - `REPEATABLE_READ`
+  - `SERIALIZABLE`
+  - `SNAPSHOT`
 
-* `secondaryAcceptableLatencyMS` - Sets the range of servers to pick when using NEAREST (lowest ping ms + the latency
- fence, ex: range of 1 to (1 + 15) ms). Default: `15`.
- 
-* `connectWithNoPrimary` - Sets if the driver should connect even if no primary is available. Default: `false`.
+  (默认: `READ_COMMITTED`)
 
-* `authSource` - If the database authentication is dependent on another databaseName.
+- `options.connectionIsolationLevel` - 新连接的默认隔离级别。 使用此设置执行所有事务外查询。 隔离级别可从`require('tedious').ISOLATION_LEVEL`获得。
 
-* `w` - The write concern.
+  - `READ_UNCOMMITTED`
+  - `READ_COMMITTED`
+  - `REPEATABLE_READ`
+  - `SERIALIZABLE`
+  - `SNAPSHOT`
 
-* `wtimeout` - The write concern timeout value.
+  (默认: `READ_COMMITTED`)
 
-* `j` - Specify a journal write concern. Default: `false`.
+- `options.readOnlyIntent` - 布尔值，确定连接是否将从SQL Server可用性组请求只读访问权限。 有关更多信息，请参阅此处。 （默认：`false`）。
 
-* `forceServerObjectId` - Force server to assign _id values instead of driver. Default: `false`.
+- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`false`）。
 
-* `serializeFunctions` - Serialize functions on any object. Default: `false`.
+- `options.cryptoCredentialsDetails` - 使用加密时，可以提供一个对象，该对象在调用[tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)时将用于第一个参数（默认值：`{}`）。
 
-* `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
+- `options.rowCollectionOnDone` - 布尔值，当为true时将在Requests的`done *`事件中公开接收到的行。
+  查看 done, [doneInProc](http://tediousjs.github.io/tedious/api-request.html#event_doneInProc)
+  和 [doneProc](http://tediousjs.github.io/tedious/api-request.html#event_doneProc). (默认: `false`)
 
-* `raw` - Return document results as raw BSON buffers. Default: `false`.
+  注意：如果收到很多行，启用此选项可能会导致内存使用过多。
 
-* `promoteLongs` - Promotes Long values to number if they fit inside the 53 bits resolution. Default: `true`.
+- `options.rowCollectionOnRequestCompletion` - 布尔值，当为true时将在请求的完成回调中公开接收的行。 查看 [new Request](http://tediousjs.github.io/tedious/api-request.html#function_newRequest). (默认: `false`)
 
-* `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
+  注意：如果收到很多行，启用此选项可能会导致内存使用过多。
 
-* `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types.
- Default: `true`.
- 
-* `domainsEnabled` - Enable the wrapping of the callback in the current domain, disabled by default to avoid perf hit.
- Default: `false`.
- 
-* `bufferMaxEntries` - Sets a cap on how many operations the driver will buffer up before giving up on getting a
- working connection, default is -1 which is unlimited.
- 
-* `readPreference` - The preferred read preference.
-  * `ReadPreference.PRIMARY`
-  * `ReadPreference.PRIMARY_PREFERRED`
-  * `ReadPreference.SECONDARY`
-  * `ReadPreference.SECONDARY_PREFERRED`
-  * `ReadPreference.NEAREST`
-  
-* `pkFactory` - A primary key factory object for generation of custom _id keys.
+- `options.tdsVersion` - 要使用的TDS版本。 如果服务器不支持指定的版本，则使用协商的版本。 这些版本可以从`require('tedious').TDS_VERSION`获得。
 
-* `promiseLibrary` - A Promise library class the application wishes to use such as Bluebird, must be ES6 compatible.
+  - `7_1`
+  - `7_2`
+  - `7_3_A`
+  - `7_3_B`
+  - `7_4`
 
-* `readConcern` - Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
+  (默认: `7_4`)
 
-* `maxStalenessSeconds` - Specify a maxStalenessSeconds value for secondary reads, minimum is 90 seconds.
+- `options.debug.packet` - 布尔值，控制是否将使用描述数据包详细信息的文本发出`debug`事件（默认值：`false`）。
 
-* `appname` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
- value in the server log upon establishing each connection. It is also recorded in the slow query log and profile
- collections
- 
-* `loggerLevel` - Specify the log level used by the driver logger (`error/warn/info/debug`).
+- `options.debug.data` - 布尔值，控制是否将发出`debug`事件，文本描述包数据细节（默认值：`false`）。
 
-* `logger` - Specify a customer logger mechanism, can be used to log using your app level logger.
+- `options.debug.payload` - 布尔值，控制是否使用描述数据包有效负载详细信息的文本发出`debug`事件（默认值：`false`）。
 
-* `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
+- `options.debug.token` - 布尔值，控制是否将使用描述令牌流令牌的文本发出`debug`事件（默认值：`false`）。
 
-## `sql.js` connection options
+> 注： 由于译者对mssql理解不够深入，故一些翻译直接使用了机翻，因此会有些词不达意，如有更好的翻译选项，请提交PR进行完善。
 
-* `database`: The raw UInt8Array database that should be imported.
+## `mongodb`
 
-* `autoSave`: Whether or not autoSave should be disabled. If set to true the database will be saved to the given file location (Node.js) or LocalStorage element (browser) when a change happens and `location` is specified. Otherwise `autoSaveCallback` can be used.
+- `url` - 连接 URL
 
-* `autoSaveCallback`: A function that get's called when changes to the database are made and `autoSave` is enabled. The function gets a `UInt8Array` that represents the database.
+- `host` - 数据库主机
 
-* `location`: The file location to load and save the database to.
+- `port` - 端口号，mongodb 默认端口是`27017`
 
-## `expo` connection options
+- `database` - 数据库名
 
-* `database` - Name of the database. For example "mydb".
+- `poolSize` - 设置每个服务器或代理连接的最大池大小
 
-## Connection options example
+- `ssl` - 使用 ssl 连接（需要有支持 ssl 的 mongod 服务器）。默认值：`false`。
 
-Here is a small example of connection options for mysql:
+- `sslValidate` - 针对 ca 验证 mongod 服务器证书（需要具有 ssl 支持的，2.4 或更高版本的 mongod 服务器）。默认值：`true`。
+
+- `sslCA` - 有效证书的数组，可以是 Buffers 或 Strings（需要具有支持 ssl 的，2.4 或更高版本的 mongod 服务器）。
+
+- `sslCert` - 包含我们希望提供的证书的字符串或缓冲区（需要具有支持 ssl 的，2.4 或更高版本的 mongod 服务器）。
+
+- `sslKey` - String or buffer containing the certificate private key we wish to present (需要具有支持 ssl 的，2.4 或更高版本的 mongod 服务器)。
+
+- `sslPass` - 包含我们希望提供的证书私钥的字符串或缓冲区 (needs to have a mongod server with ssl support,
+  2.4 or higher).
+
+- `autoReconnect` - 出错时重新连接。 默认: `true`.
+
+- `noDelay` - TCP Socket NoDelay 选项. 默认: `true`.
+
+- `keepAlive` - 在 TCP socket 上启动 keepAlive 之前等待的毫秒数。默认: `30000`.
+
+- `connectTimeoutMS` - TCP 连接超时。 默认: `30000`.
+
+- `socketTimeoutMS` - TCP Socket 连接超时。 默认: `360000`.
+
+- `reconnectTries` - 服务器尝试重新连接 #次数. 默认: `30`.
+
+- `reconnectInterval` - 服务器将在重试之间等待 #毫秒 默认: `1000`.
+
+- `ha` - 打开高可用性监控。默认: `true`.
+
+- `haInterval` - 每次复制状态检查之间的时间。 默认: `10000,5000`.
+
+- `replicaSet` - 要连接的 replicaset 的名称。
+
+- `acceptableLatencyMS` - 设置使用 NEAREST 时要选择的服务器范围（最低 ping ms +延迟时间范围，例如：范围为 1 到（1 + 15）ms）。默认值：15。
+
+- `secondaryAcceptableLatencyMS` - 设置使用 NEAREST 时要选择的服务器范围（最低 ping ms +延迟时间范围，例如：范围为 1 到（1 + 15）ms）。默认值：15。
+
+- `connectWithNoPrimary` - 设置驱动程序是否应该连接，即使没有主数据库依然可用。默认: `false`.
+
+- `authSource` - 数据库身份验证是否依赖于另一个 databaseName。
+
+- `w` - The write concern.
+
+- `wtimeout` - The write concern 超时
+
+- `j` - Specify a journal write concern. 默认: `false`.
+
+- `forceServerObjectId` - 强制服务器分配\_id值而不是驱动程序。 默认: `false`.
+
+- `serializeFunctions` - 序列化任何对象上的函数。 默认: `false`.
+
+- `ignoreUndefined` - 指定BSON序列化程序是否应忽略未定义的字段。 默认: `false`.
+
+- `raw` - 将文档结果作为原始BSON缓冲区返回。 默认: `false`.
+
+- `promoteLongs` - 如果Long值适合53位分辨率，则将其提升为数字。默认: `true`.
+
+- `promoteBuffers` - 将二进制BSON值提升为native Node Buffers。默认: `false`.
+
+- `promoteValues` - 在可能的情况下将BSON值提升为native类型，设置为false以仅接收wrapper类型。默认: `true`.
+
+- `domainsEnabled` - 启用当前域中回调的包装，默认情况下禁用以避免执行命中。 默认: `false`.
+
+- `bufferMaxEntries` - 设置一个限制，在放弃获得有效连接之前，驱动程序将缓冲多少个操作，默认为-1标识无限制。
+
+- `readPreference` - 首选read偏好:
+
+  - `ReadPreference.PRIMARY`
+  - `ReadPreference.PRIMARY_PREFERRED`
+  - `ReadPreference.SECONDARY`
+  - `ReadPreference.SECONDARY_PREFERRED`
+  - `ReadPreference.NEAREST`
+
+- `pkFactory` - 用于生成自定义\_id键的主键工厂对象。
+
+- `promiseLibrary` - 应用程序希望使用的Promise库类如Bluebird，必须与ES6兼容。
+
+- `readConcern` - 指定集合的​​读取问题。 （仅支持MongoDB 3.2或更高版本）。
+
+- `maxStalenessSeconds` - 为辅助读取指定maxStalenessSeconds值，最小值为90秒。
+
+- `appname` - 创建此MongoClient实例的应用程序的名称。 MongoDB 3.4及更新版将在建立每个连接时在服务器日志中打印此值。它还记录在慢查询日志和概要文件集合中。
+
+- `loggerLevel` - 指定驱动程序记录器使用的日志级别 (`error/warn/info/debug`)。
+
+- `logger` - 指定客户记录器机制，可用于使用你的应用程序级别记录器进行记录。
+
+- `authMechanism` - 设置MongoDB用于验证连接的身份验证机制。 
+
+> 注： 由于译者对MongoDB理解不够深入，故一些翻译直接使用了机翻，因此会有些词不达意，如有更好的翻译选项，请提交PR进行完善。
+
+## `sql.js`
+
+- `database`: 应导入的原始 UInt8Array 数据库。
+
+- `autoSave`: 是否应禁用 autoSave。如果设置为 true，则在发生更改并指定`location`时，数据库将保存到给定的文件位置（Node.js）或 LocalStorage（浏览器）。否则可以使用`autoSaveCallback`。
+
+- `autoSaveCallback`: 在对数据库进行更改并启用`autoSave`时调用的函数。该函数获取表示数据库的`UInt8Array`。
+
+- `location`: 要加载和保存数据库的文件位置。
+
+## `expo`
+
+- `database` - 数据库名， 例如 "mydb".
+
+## 连接选项示例
+
+以下是 mysql 连接选项的一个小例子：
 
 ```typescript
 {

@@ -1,65 +1,65 @@
-# Decorators reference
+# 装饰器参考
 
-* [Entity decorators](#entity-decorators)
-    * [`@Entity`](#entity)
-* [Column decorators](#column-decorators)
-    * [`@Column`](#column)
-    * [`@PrimaryColumn`](#primarycolumn)
-    * [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
-    * [`@ObjectIdColumn`](#objectidcolumn)
-    * [`@CreateDateColumn`](#createdatecolumn)
-    * [`@UpdateDateColumn`](#updatedatecolumn)
-    * [`@VersionColumn`](#versioncolumn)
-    * [`@Generated`](#generated)
-* [Relation decorators](#relation-decorators)
-    * [`@OneToOne`](#onetoone)
-    * [`@ManyToOne`](#manytoone)
-    * [`@OneToMany`](#onetomany)
-    * [`@ManyToMany`](#manytomany)
-    * [`@JoinColumn`](#joincolumn)
-    * [`@JoinTable`](#jointable)
-    * [`@RelationId`](#relationid)
-* [Subscriber and listener decorators](#subscriber-and-listener-decorators)
-    * [`@AfterLoad`](#afterload)
-    * [`@BeforeInsert`](#beforeinsert)
-    * [`@AfterInsert`](#afterinsert)
-    * [`@BeforeUpdate`](#beforeupdate)
-    * [`@AfterUpdate`](#afterupdate)
-    * [`@BeforeRemove`](#beforeremove)
-    * [`@AfterRemove`](#afterremove)
-    * [`@EventSubscriber`](#eventsubscriber)
-* [Other decorators](#other-decorators)
-    * [`@Index`](#index)
-    * [`@Unique`](#unique)
-    * [`@Check`](#check)
-    * [`@Exclusion`](#exclusion)
-    * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
-    * [`@EntityRepository`](#entityrepository)
+- [装饰器参考](#%E8%A3%85%E9%A5%B0%E5%99%A8%E5%8F%82%E8%80%83)
+  - [实体装饰器](#%E5%AE%9E%E4%BD%93%E8%A3%85%E9%A5%B0%E5%99%A8)
+      - [`@Entity`](#entity)
+  - [列装饰器](#%E5%88%97%E8%A3%85%E9%A5%B0%E5%99%A8)
+      - [`@Column`](#column)
+      - [`@PrimaryColumn`](#primarycolumn)
+      - [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
+      - [`@ObjectIdColumn`](#objectidcolumn)
+      - [`@CreateDateColumn`](#createdatecolumn)
+      - [`@UpdateDateColumn`](#updatedatecolumn)
+      - [`@VersionColumn`](#versioncolumn)
+      - [`@Generated`](#generated)
+  - [关系装饰器](#%E5%85%B3%E7%B3%BB%E8%A3%85%E9%A5%B0%E5%99%A8)
+      - [`@OneToOne`](#onetoone)
+      - [`@ManyToOne`](#manytoone)
+      - [`@OneToMany`](#onetomany)
+      - [`@ManyToMany`](#manytomany)
+      - [`@JoinColumn`](#joincolumn)
+      - [`@JoinTable`](#jointable)
+      - [`@RelationId`](#relationid)
+  - [订阅者和监听者装饰器](#%E8%AE%A2%E9%98%85%E8%80%85%E5%92%8C%E7%9B%91%E5%90%AC%E8%80%85%E8%A3%85%E9%A5%B0%E5%99%A8)
+      - [`@AfterLoad`](#afterload)
+      - [`@BeforeInsert`](#beforeinsert)
+      - [`@AfterInsert`](#afterinsert)
+      - [`@BeforeUpdate`](#beforeupdate)
+      - [`@AfterUpdate`](#afterupdate)
+      - [`@BeforeRemove`](#beforeremove)
+      - [`@AfterRemove`](#afterremove)
+      - [`@EventSubscriber`](#eventsubscriber)
+  - [其他装饰器](#%E5%85%B6%E4%BB%96%E8%A3%85%E9%A5%B0%E5%99%A8)
+      - [`@Index`](#index)
+      - [`@Unique`](#unique)
+      - [`@Check`](#check)
+      - [`@Transaction`, `@TransactionManager` 和 `@TransactionRepository`](#transaction-transactionmanager-%E5%92%8C-transactionrepository)
+      - [`@EntityRepository`](#entityrepository)
 
-## Entity decorators
+## 实体装饰器
 
 #### `@Entity`
 
-Marks your model as an entity. Entity is a class which is transformed into a database table.
-You can specify the table name in the entity:
+将模型标记为实体。 实体是一个转换为数据库表的类。
+你可以在实体中指定表名：
 
 ```typescript
 @Entity("users")
 export class User {
 ```
 
-This code will create a database table named "users".
+此代码将创建一个名为"users"的数据库表。
 
-You can also specify some additional entity options:
+你还可以指定一些其他实体选项：
 
-* `name` - table name. If not specified, then table name is generated from entity class name.
-* `database` - database name in selected DB server.
-* `schema` - schema name.
-* `engine` - database engine to be set during table creation (works only in some databases).
-* `skipSync` - entities marked with this decorator are skipped from schema updates.
-* `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
+- `name` - 表名。 如果未指定，则从实体类名生成表名。
+- `database` - 所选 DB 服务器中的数据库名称。
+- `schema` - 架构名称。
+- `engine` - 在表创建期间设置的数据库引擎（仅在某些数据库中有效）。
+- `skipSync` - 标有此装饰器的实体将从架构更新中跳过。
+- `orderBy` - 使用`find`操作和`QueryBuilder`指定实体的默认排序。
 
-Example:
+例子:
 
 ```typescript
 @Entity({
@@ -76,646 +76,583 @@ Example:
 export class User {
 ```
 
-Learn more about [Entities](entities.md).
+了解有关 [Entities](entities.md)的更多信息。
 
-## Column decorators
+## 列装饰器
 
 #### `@Column`
 
-Marks a property in your entity as a table column.
-Example:
+将实体中的属性标记为表列。
+例：
 
 ```typescript
 @Entity("users")
 export class User {
+  @Column({ primary: true })
+  id: number;
 
-    @Column({ primary: true })
-    id: number;
+  @Column({ type: "varchar", length: 200, unique: true })
+  firstName: string;
 
-    @Column({ type: "varchar", length: 200, unique: true })
-    firstName: string;
+  @Column({ nullable: true })
+  lastName: string;
 
-    @Column({ nullable: true })
-    lastName: string;
-
-    @Column({ default: false })
-    isActive: boolean;
+  @Column({ default: false })
+  isActive: string;
 }
 ```
 
-`@Column` accept several options you can use:
+`@Column` 接受可以使用的几个选项：
 
-* `type: ColumnType` - Column type. One of the [supported column types](entities.md#column-types).
-* `name: string` - Column name in the database table.
-By default the column name is generated from the name of the property.
-You can change it by specifying your own name.
-* `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
-you specify column type and length options.
-* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
-* `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database.
-By default column is `nullable: false`.
-* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
-Default value is `false`.
-* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
-* `default: string` - Adds database-level column's `DEFAULT` value.
-* `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates unique constraint).
-* `comment: string` - Database's column comment. Not supported by all database types.
-* `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
- number of digits that are stored for the values. Used in some column types.
-* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column),
-which represents the number of digits to the right of the decimal point and must not be greater than precision.
-Used in some column types.
-* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL.
-If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
-* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
-* `charset: string` - Defines a column character set. Not supported by all database types.
-* `collation: string` - Defines a column collation.
-* `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
-You can specify array of values or specify a enum class.
-* `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres column types which can be array (for example int[]).
-* `transformer: ValueTransformer` - Specifies a value transformer that is to be used to (un)marshal this column when reading or writing to the database.
-* `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL.
-* `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL.
+- `type: ColumnType` - 列类型。受支持的[supported column types](entities.md#column-types)其中之一。
+- `name: string` -数据库表中的列名。
+  默认情况下，列名称是从属性的名称生成的。你也可以自定义命名。
+- `length: string|number` - 列类型的长度。 例如，如果要创建`varchar（150）`类型，请指定列类型和长度选项。
+- `width: number` - 列类型的显示宽度。 仅用于 [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+- `onUpdate: string` - `ON UPDATE` 触发器。仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+- `nullable: boolean` - 设置列值`NULL`或`NOT NULL`。
+  默认值是 `nullable: false`.
+- `readonly: boolean` - 指示"save"操作是否未更新列值。 这意味着只有在第一次插入对象时才能写入此值。
+  默认值是 `false`。
+- `select: boolean` - 定义在进行查询时是否默认隐藏此列。 设置为`false`时，列数据不会显示标准查询。 默认值`select：true`。
+- `default: string` - 添加数据库级列的`DEFAULT`值。
+- `primary: boolean` - 将列标记为主列。 与`@PrimaryColumn`使用相同。
+- `unique: boolean` - 将列标记为唯一列（创建唯一约束）。
+- `comment: string` - 列的注释。 并非所有数据库类型都支持。
+- `precision: number` - 十进制（精确数字）列的精度（仅适用于十进制列），这是为值存储的最大位数。用于某些列类型。
+- `scale: number` - 十进制（精确数字）列的比例（仅适用于十进制列），表示小数点右侧的位数，且不得大于精度。用于某些列类型。
+- `zerofill: boolean` - 将`ZEROFILL`属性设置为数字列。 仅在 MySQL 中使用。
+  如果是`true`，MySQL 会自动将`UNSIGNED`属性添加到此列。
+- `unsigned: boolean` - 将`UNSIGNED`属性设置为数字列。 仅在 MySQL 中使用。
+- `charset: string` - 定义列字符集。 并非所有数据库类型都支持。
+- `collation: string` - 定义列排序规则。
+- `enum: string[]|AnyEnum` - 在`enum`列类型中使用，以指定允许的枚举值列表。
+  你可以指定值数组或指定枚举类。
+- `asExpression: string` - 生成的列表达式。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+- `generatedType: "VIRTUAL"|"STORED"` - 生成的列类型。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+- `hstoreType: "object"|"string"` - 返回类型`HSTORE`列。 以字符串或对象的形式返回值。 仅用于 [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
+- `array: boolean` - 用于可以是数组的 postgres 列类型（例如 int []）。
+- `transformer: ValueTransformer` - 指定在读取或写入数据库时用于封送/取消封送此列的值转换器。
+- `spatialFeatureType: string` - 可选的要素类型（`Point`，`Polygon`，`LineString`，`Geometry`）用作空间列的约束。 如果没有指定，默认为`Geometry`。 仅在 PostgreSQL 中使用。
+- `srid: number` - 可选的 [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) 用作空间列约束。如果未指定，则默认为`0`。 标准地理坐标（WGS84 基准面中的纬度/经度）对应于[EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/)。 仅在 PostgreSQL 中使用。
 
-Learn more about [entity columns](entities.md#entity-columns).
+了解有关[entity columns](entities.md#entity-columns)的更多信息。
 
 #### `@PrimaryColumn`
 
-Marks a property in your entity as a table primary column.
-Same as `@Column` decorator but sets its `primary` option to true.
-Example:
+将实体中的属性标记为表主列。
+与`@column`装饰器相同，但需将其`primary`选项设置为 true。
+例如：
 
 ```typescript
 @Entity()
 export class User {
-
-    @PrimaryColumn()
-    id: number;
-
+  @PrimaryColumn()
+  id: number;
 }
 ```
 
-Learn more about [entity columns](entities.md#entity-columns).
+了解有关 [entity columns](entities.md#entity-columns)的更多信息。
 
 #### `@PrimaryGeneratedColumn`
 
-Marks a property in your entity as a table-generated primary column.
-Column it creates is primary and its value is auto-generated.
-Example:
+将实体中的属性标记为表生成的主列。
+它创建的列是主列，值自动生成。
+例如：
 
 ```typescript
 @Entity()
 export class User {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
+  @PrimaryGeneratedColumn()
+  id: number;
 }
 ```
 
-There are two generation strategies:
+有两种策略：
 
-* `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
-* `uuid` - generates unique `uuid` string.
+- `increment` - 使用 AUTO_INCREMENT / SERIAL / SEQUENCE（取决于数据库类型）生成增量编号。
+- `uuid` - 生成唯一的`uuid`字符串。
 
-Default generation strategy is `increment`, to change it to `uuid`, simply pass it as the first argument to decorator:
+默认生成策略是`increment`，将其更改为`uuid`，只需将其作为 decorator 的第一个参数传递：
 
 ```typescript
 @Entity()
 export class User {
-
-    @PrimaryGeneratedColumn("uuid")
-    id: number;
-
+  @PrimaryGeneratedColumn("uuid")
+  id: number;
 }
 ```
 
-Learn more about [entity columns](entities.md#entity-columns).
+了解有关[entity columns](entities.md#entity-columns)的更多信息。
 
 #### `@ObjectIdColumn`
 
-Marks a property in your entity as ObjectID.
-This decorator is only used in MongoDB.
-Every entity in MongoDB must have a ObjectID column.
-Example:
+将实体中的属性标记为 ObjectID。
+此装饰器仅用于 MongoDB。
+MongoDB 中的每个实体都必须具有 ObjectID 列。
+例如：
 
 ```typescript
 @Entity()
 export class User {
-
-    @ObjectIdColumn()
-    id: ObjectID;
-
+  @ObjectIdColumn()
+  id: ObjectID;
 }
 ```
 
-Learn more about [MongoDB](mongodb.md).
+了解有关[MongoDB](mongodb.md)的更多信息。
 
 #### `@CreateDateColumn`
 
-Special column that is automatically set to the entity's insertion time.
-You don't need to write a value into this column - it will be automatically set.
-Example:
+特殊列，自动设置为实体的插入时间。
+不需要在此列中手动写入值，该值会自动设置。
+例如：
 
 ```typescript
 @Entity()
 export class User {
-
-    @CreateDateColumn()
-    createdDate: Date;
-
+  @CreateDateColumn()
+  createdDate: Date;
 }
 ```
 
 #### `@UpdateDateColumn`
 
-Special column that is automatically set to the entity's update time
-each time you call `save` from entity manager or repository.
-You don't need to write a value into this column - it will be automatically set.
+每次从实体管理器或存储库调用`save`时自动设置为实体更新时间的特殊列。
+不需要在此列中手动写入值，该值会自动设置。
 
 ```typescript
 @Entity()
 export class User {
-
-    @UpdateDateColumn()
-    updatedDate: Date;
-
+  @UpdateDateColumn()
+  updatedDate: Date;
 }
 ```
 
 #### `@VersionColumn`
 
-Special column that is automatically set to the entity's version (incremental number)
-each time you call `save` from entity manager or repository.
-You don't need to write a value into this column - it will be automatically set.
+每次从实体管理器或存储库调用`save`时自动设置为实体版本（增量编号）的特殊列。
+不需要在此列中手动写入值，该值会自动设置。
 
 ```typescript
 @Entity()
 export class User {
-
-    @VersionColumn()
-    version: number;
-
+  @VersionColumn()
+  version: number;
 }
 ```
 
 #### `@Generated`
 
-Marks column to be a generated value. For example:
+将列标记为生成的值。 例如：
 
 ```typescript
 @Entity()
 export class User {
-
-    @Column()
-    @Generated("uuid")
-    uuid: string;
-
+  @Column()
+  @Generated("uuid")
+  uuid: string;
 }
 ```
 
-Value will be generated only once, before inserting the entity into the database.
+在将实体插入数据库之前，只会生成一次值。
 
-## Relation decorators
+## 关系装饰器
 
 #### `@OneToOne`
 
-One-to-one is a relation where A contains only once instance of B, and B contains only one instance of A.
-Let's take for example `User` and `Profile` entities.
-User can have only a single profile, and a single profile is owned by only a single user.
-Example:
+一对一是一种 A 只包含一次 B，而 B 只包含一个 A 的实例关系。
+我们以`User`和`Profile`实体为例。
+用户只能拥有一个 profile，并且一个 profile 仅由一个用户拥有。
+例如：
 
 ```typescript
-import {Entity, OneToOne, JoinColumn} from "typeorm";
-import {Profile} from "./Profile";
+import { Entity, OneToOne, JoinColumn } from "typeorm";
+import { Profile } from "./Profile";
 
 @Entity()
 export class User {
-
-    @OneToOne(type => Profile, profile => profile.user)
-    @JoinColumn()
-    profile: Profile;
-
+  @OneToOne(type => Profile, profile => profile.user)
+  @JoinColumn()
+  profile: Profile;
 }
 ```
 
-Learn more about [one-to-one relations](one-to-one-relations.md).
+了解有关[一对一关系](one-to-one-relations.md)的更多信息。
 
 #### `@ManyToOne`
 
-Many-to-one / one-to-many is a relation where A contains multiple instances of B, but B contains only one instance of A.
-Let's take for example `User` and `Photo` entities.
-User can have multiple photos, but each photo is owned by only one single user.
-Example:
+多对一/一对多是 A 包含多个 B 实例，但 B 只包含一个 A 实例的关系。
+我们以`User`和`Photo`实体为例。
+User 可以拥有多张 photos，但每张 photo 仅由一位 user 拥有。
+例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
-import {User} from "./User";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { User } from "./User";
 
 @Entity()
 export class Photo {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  url: string;
 
-    @Column()
-    url: string;
-
-    @ManyToOne(type => User, user => user.photos)
-    user: User;
-
+  @ManyToOne(type => User, user => user.photos)
+  user: User;
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](many-to-one-one-to-many-relations.md).
+了解有关[多对一/一对多关系](many-to-one-one-to-many-relations.md)的更多信息。
 
 #### `@OneToMany`
 
-Many-to-one / one-to-many is a relation where A contains multiple instances of B, but B contains only one instance of A.
-Let's take for example `User` and `Photo` entities.
-User can have multiple photos, but each photo is owned by only a single user.
-Example:
+多对一/一对多是 A 包含多个 B 实例，但 B 只包含一个 A 实例的关系。
+我们以`User`和`Photo`实体为例。
+User 可以拥有多张 photos，但每张 photo 仅由一位 user 拥有。
+例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
-import {Photo} from "./Photo";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  name: string;
 
-    @Column()
-    name: string;
-
-    @OneToMany(type => Photo, photo => photo.user)
-    photos: Photo[];
-
+  @OneToMany(type => Photo, photo => photo.user)
+  photos: Photo[];
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](many-to-one-one-to-many-relations.md).
+了解有关 [多对一/一对多关系](many-to-one-one-to-many-relations.md)的更多信息。
 
 #### `@ManyToMany`
 
-Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
-Let's take for example `Question` and `Category` entities.
-Question can have multiple categories, and each category can have multiple questions.
-Example:
+多对多是一种 A 包含多个 B 实例，而 B 包含多个 A 实例的关系。
+我们以`Question`和`Category`实体为例。
+Question 可以有多个 categories，每个 category 可以有多个 questions。
+例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  title: string;
 
-    @Column()
-    title: string;
+  @Column()
+  text: string;
 
-    @Column()
-    text: string;
-
-    @ManyToMany(type => Category)
-    @JoinTable()
-    categories: Category[];
-
+  @ManyToMany(type => Category)
+  @JoinTable()
+  categories: Category[];
 }
 ```
 
-Learn more about [many-to-many relations](many-to-many-relations.md).
+了解有关 [多对多关系](many-to-many-relations.md)的更多信息。
 
 #### `@JoinColumn`
 
-Defines which side of the relation contains the join column with a foreign key and
-allows you to customize the join column name and referenced column name.
-Example:
+定义关系的哪一侧包含具有外键和的联接列允许你自定义联接列名和引用列名。
+使用外键定义关系的哪一侧包含 join 列，并允许你自定义 join 列名称和引用的列名称。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @ManyToOne(type => Category)
-    @JoinColumn({
-        name: "cat_id",
-        referencedColumnName: "name"
-    })
-    category: Category;
-
+  @ManyToOne(type => Category)
+  @JoinColumn({
+    name: "cat_id",
+    referencedColumnName: "name"
+  })
+  category: Category;
 }
 ```
 
 #### `@JoinTable`
 
-Used for `many-to-many` relations and describes join columns of the "junction" table.
-Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
-You can change the column names inside the junction table and their referenced columns with the `@JoinColumn` decorator. You can also change the name of the generated "junction" table.
-Example:
+用于`多对多`关系，并描述"junction"表的连接列。
+Junction 是由 TypeORM 自动创建的一个特殊的独立表，其中列引用了相关实体。
+
+你可以使用`@JoinColumn`装饰器更改联结表及其引用列中的列名。 还可以更改生成的"junction"表的名称。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @ManyToMany(type => Category)
-    @JoinTable({
-        name: "question_categories",
-        joinColumn: {
-            name: "question",
-            referencedColumnName: "id"
-        },
-        inverseJoinColumn: {
-            name: "category",
-            referencedColumnName: "id"
-        }
-    })
-    categories: Category[];
-
+  @ManyToMany(type => Category)
+  @JoinTable({
+    name: "question_categories",
+    joinColumn: {
+      name: "question",
+      referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+      name: "category",
+      referencedColumnName: "id"
+    }
+  })
+  categories: Category[];
 }
 ```
 
-If the destination table has composite primary keys,
-then an array of properties must be sent to the `@JoinTable` decorator.
+如果目标表具有复合主键，则必须将一组属性发送到`@JoinTable`装饰器。
 
 #### `@RelationId`
 
-Loads id (or ids) of specific relations into properties.
-For example, if you have a many-to-one `category` in your `Post` entity,
-you can have a new category id by marking a new property with `@RelationId`.
-Example:
+将特定关系的 id（或 id）加载到属性中。
+例如，如果你的`Post`实体中有一个多对一的`category`，你可以通过用`@RelationId`标记一个新属性来获得一个新的类别 id。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
+  @ManyToOne(type => Category)
+  category: Category;
 
-    @ManyToOne(type => Category)
-    category: Category;
-
-    @RelationId((post: Post) => post.category) // you need to specify target relation
-    categoryId: number;
-
+  @RelationId((post: Post) => post.category) // 需要指定目标关系
+  categoryId: number;
 }
 ```
 
-This functionality works for all kind of relations, including `many-to-many`:
+此功能适用于所有类型的关系，包括`多对多`：
 
 ```typescript
 @Entity()
 export class Post {
+  @ManyToMany(type => Category)
+  categories: Category[];
 
-    @ManyToMany(type => Category)
-    categories: Category[];
-
-    @RelationId((post: Post) => post.categories)
-    categoryIds: number[];
-
+  @RelationId((post: Post) => post.categories)
+  categoryIds: number[];
 }
 ```
 
-Relation id is used only for representation.
-The underlying relation is not added/removed/changed when chaining the value.
+Relation id 仅用于表现。
+链接值时，不会添加/删除/更改基础关系。
 
-## Subscriber and listener decorators
+## 订阅者和监听者装饰器
 
 #### `@AfterLoad`
 
-You can define a method with any name in entity and mark it with `@AfterLoad`
-and TypeORM will call it each time the entity
-is loaded using `QueryBuilder` or repository/manager find methods.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@AfterLoad`标记，TypeORM 将在每次使用`QueryBuilder`或 repository/ manager 查找方法加载时调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @AfterLoad()
-    updateCounters() {
-        if (this.likesCount === undefined)
-            this.likesCount = 0;
-    }
+  @AfterLoad()
+  updateCounters() {
+    if (this.likesCount === undefined) this.likesCount = 0;
+  }
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+了解有关[listeners](listeners-and-subscribers.md)的更多信息。
 
 #### `@BeforeInsert`
 
-You can define a method with any name in entity and mark it with `@BeforeInsert`
-and TypeORM will call it before the entity is inserted using repository/manager `save`.
-Example:
+你可以在实体中定义任何名称的方法，并使用`@BeforeInsert`标记，TypeORM 将在使用 repository/manager`save`插入实体之前调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @BeforeInsert()
-    updateDates() {
-        this.createdDate = new Date();
-    }
+  @BeforeInsert()
+  updateDates() {
+    this.createdDate = new Date();
+  }
 }
 ```
-Learn more about [listeners](listeners-and-subscribers.md).
+
+了解有关[listeners](listeners-and-subscribers.md)的更多信息。
 
 #### `@AfterInsert`
 
-You can define a method with any name in entity and mark it with `@AfterInsert`
-and TypeORM will call it after the entity is inserted using repository/manager `save`.
-Example:
+你可以在实体中定义任何名称的方法，并使用`@AfterInsert`标记，TypeORM 将在使用 repository/manager`save`插入实体后调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @AfterInsert()
-    resetCounters() {
-        this.counters = 0;
-    }
+  @AfterInsert()
+  resetCounters() {
+    this.counters = 0;
+  }
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+了解有关 [listeners](listeners-and-subscribers.md)的更多信息。
 
 #### `@BeforeUpdate`
 
-You can define a method with any name in the entity and mark it with `@BeforeUpdate`
-and TypeORM will call it before an existing entity is updated using repository/manager `save`.
-Example:
+你可以在实体中定义任何名称的方法，并使用`@BeforeUpdate`标记，TypeORM 将在使用 repository/manager`save`更新现有实体之前调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @BeforeUpdate()
-    updateDates() {
-        this.updatedDate = new Date();
-    }
+  @BeforeUpdate()
+  updateDates() {
+    this.updatedDate = new Date();
+  }
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+了解有关 [listeners](listeners-and-subscribers.md)的更多信息。
 
 #### `@AfterUpdate`
 
-You can define a method with any name in the entity and mark it with `@AfterUpdate`
-and TypeORM will call it after an existing entity is updated using repository/manager `save`.
-Example:
+你可以在实体中定义任何名称的方法，并使用`@AfterUpdate`标记，TypeORM 将在使用存储库/管理器`save`更新现有实体之后调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @AfterUpdate()
-    updateCounters() {
-        this.counter = 0;
-    }
+  @AfterUpdate()
+  updateCounters() {
+    this.counter = 0;
+  }
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+了解有关 [listeners](listeners-and-subscribers.md) 的更多信息
 
 #### `@BeforeRemove`
 
-You can define a method with any name in the entity and mark it with `@BeforeRemove`
-and TypeORM will call it before a entity is removed using repository/manager `remove`.
-Example:
+你可以在实体中定义任何名称的方法，并使用`@BeforeRemove`标记，TypeORM 将在使用 repository/manager`remove`删除实体之前调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @BeforeRemove()
-    updateStatus() {
-        this.status = "removed";
-    }
+  @BeforeRemove()
+  updateStatus() {
+    this.status = "removed";
+  }
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+了解有关 [listeners](listeners-and-subscribers.md)的更多信息。
 
 #### `@AfterRemove`
 
-You can define a method with any name in the entity and mark it with `@AfterRemove`
-and TypeORM will call it after the entity is removed using repository/manager `remove`.
-Example:
+你可以在实体中定义一个任何名称的方法，并使用`@AfterRemove`标记它，TypeORM 将在使用 repository/manager`remove`删除实体之后调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-
-    @AfterRemove()
-    updateStatus() {
-        this.status = "removed";
-    }
+  @AfterRemove()
+  updateStatus() {
+    this.status = "removed";
+  }
 }
 ```
 
-Learn more about [listeners](listeners-and-subscribers.md).
+了解有关 [listeners](listeners-and-subscribers.md)的更多信息。
 
 #### `@EventSubscriber`
 
-Marks a class as an event subscriber which can listen to specific entity events or any entity's events.
-Events are fired using `QueryBuilder` and repository/manager methods.
-Example:
+将类标记为可以侦听特定实体事件或任何实体事件的事件订阅者。
+使用`QueryBuilder`和 repository/manager 方法触发事件。
+例如：
 
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
+  /**
+   * 表示此订阅者仅侦听Post事件。
+   */
+  listenTo() {
+    return Post;
+  }
 
-
-    /**
-     * Indicates that this subscriber only listen to Post events.
-     */
-    listenTo() {
-        return Post;
-    }
-
-    /**
-     * Called before post insertion.
-     */
-    beforeInsert(event: InsertEvent<Post>) {
-        console.log(`BEFORE POST INSERTED: `, event.entity);
-    }
-
+  /**
+   * 在POST INSERTED之前调用。
+   */
+  beforeInsert(event: InsertEvent<Post>) {
+    console.log(`BEFORE POST INSERTED: `, event.entity);
+  }
 }
 ```
 
-You can implement any method from `EntitySubscriberInterface`.
-To listen to any entity, you just omit the `listenTo` method and use `any`:
+你可以从`EntitySubscriberInterface`实现任何方法。
+要监听任何实体，只需省略`listenTo`方法并使用`any`：
 
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface {
-
-    /**
-     * Called before entity insertion.
-     */
-    beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
-    }
-
+  /**
+   * 在ENTITY INSERTED之前
+   */
+  beforeInsert(event: InsertEvent<any>) {
+    console.log(`BEFORE ENTITY INSERTED: `, event.entity);
+  }
 }
 ```
 
-Learn more about [subscribers](listeners-and-subscribers.md).
+了解有关 [subscribers](listeners-and-subscribers.md)的详细信息
 
-## Other decorators
+## 其他装饰器
 
 #### `@Index`
 
-This decorator allows you to create a database index for a specific column or columns.
-It also allows you to mark column or columns to be unique.
-This decorator can be applied to columns or an entity itself.
-Use it on a column when an index on a single column is needed
-and use it on the entity when a single index on multiple columns is required.
-Examples:
+此装饰器允许你为特定列创建数据库索引。
+它还允许你将列或列标记为唯一。
+此装饰器可以应用于列或实体本身。
+单列索引时使用或多列索引时使用。
+例如：
 
 ```typescript
 @Entity()
 export class User {
+  @Index()
+  @Column()
+  firstName: string;
 
-    @Index()
-    @Column()
-    firstName: string;
-
-    @Index({ unique: true })
-    @Column()
-    lastName: string;
+  @Index({ unique: true })
+  @Column()
+  lastName: string;
 }
 ```
+
 ```typescript
 @Entity()
 @Index(["firstName", "lastName"])
 @Index(["lastName", "middleName"])
 @Index(["firstName", "lastName", "middleName"], { unique: true })
 export class User {
+  @Column()
+  firstName: string;
 
-    @Column()
-    firstName: string;
+  @Column()
+  lastName: string;
 
-    @Column()
-    lastName: string;
-
-    @Column()
-    middleName: string;
+  @Column()
+  middleName: string;
 }
 ```
 
-Learn more about [indices](indices.md).
+了解有关 [indices](indices.md)的更多信息。
 
 #### `@Unique`
 
-This decorator allows you to create a database unique constraint for a specific column or columns.
-This decorator can be applied only to an entity itself.
+此装饰器允许你为特定列创建数据库唯一约束。
+该装饰器只能应用于实体本身。
 
-Examples:
+例如:
 
 ```typescript
 @Entity()
@@ -723,77 +660,50 @@ Examples:
 @Unique(["lastName", "middleName"])
 @Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
 export class User {
+  @Column()
+  firstName: string;
 
-    @Column()
-    firstName: string;
+  @Column()
+  lastName: string;
 
-    @Column()
-    lastName: string;
-
-    @Column()
-    middleName: string;
+  @Column()
+  middleName: string;
 }
 ```
 
-> Note: MySQL stores unique constraints as unique indices
+> 注意：MySQL 将唯一约束存储为唯一索引
 
 #### `@Check`
 
-This decorator allows you to create a database check constraint for a specific column or columns.
-This decorator can be applied only to an entity itself.
+此装饰器允许为特定列创建数据库检查约束。
+该装饰器只能应用于实体本身。
 
-Examples:
+例如:
 
 ```typescript
 @Entity()
 @Check(`"firstName" <> 'John' AND "lastName" <> 'Doe'`)
 @Check(`"age" > 18`)
 export class User {
+  @Column()
+  firstName: string;
 
-    @Column()
-    firstName: string;
+  @Column()
+  lastName: string;
 
-    @Column()
-    lastName: string;
-
-    @Column()
-    age: number;
+  @Column()
+  age: number;
 }
 ```
 
-> Note: MySQL does not support check constraints.
+> 注意：MySQL 不支持检查约束。
 
-#### `@Exclusion`
+#### `@Transaction`, `@TransactionManager` 和 `@TransactionRepository`
 
-This decorator allows you to create a database exclusion constraint for a specific column or columns.
-This decorator can be applied only to an entity itself.
-
-Examples:
-
-```typescript
-@Entity()
-@Exclusion(`USING gist ("room" WITH =, tsrange("from", "to") WITH &&)`)
-export class RoomBooking {
-
-    @Column()
-    room: string;
-
-    @Column()
-    from: Date;
-
-    @Column()
-    to: Date;
-}
-```
-
-> Note: Only PostgreSQL supports exclusion constraints.
-
-#### `@Transaction`, `@TransactionManager` and `@TransactionRepository`
-
-`@Transaction` is used on a method and wraps all its execution into a single database transaction.
-All database queries must be performed using the `@TransactionManager` provided manager
-or with the transaction repositories injected with `@TransactionRepository`.
-Examples:
+`@Transaction`用于方法上，并将其所有的执行包裹到单个数据库事务中。
+必须使用`@TransportManager`提供的管理器执行所有数据库查询
+或者使用`@TransactionRepository`注入的事务存储库。
+例如：
 
 ```typescript
 
@@ -817,32 +727,27 @@ save(@QueryParam("name") name: string, @TransactionRepository() userRepository: 
 }
 ```
 
-> Note: all operations inside a transaction MUST ONLY use the provided instance of `EntityManager` or injected repositories.
-Using any other source of queries (global manager, global repositories, etc.) will lead to bugs and errors.
+> 注意：事务中的所有操作必须且只能使用提供的`EntityManager`实例或注入的存储库。
+> 使用任何其他查询源（全局管理器，全局存储库等）将导致错误和错误。
 
-Learn more about [transactions](transactions.md).
+了解有关 [transactions](transactions.md)的更多信息。
 
 #### `@EntityRepository`
 
-Marks a custom class as an entity repository.
-Example:
+将自定义类标记为实体存储库。
+例如：
 
 ```typescript
 @EntityRepository()
 export class UserRepository {
-
-    /// ... custom repository methods ...
-
+  /// ... 定制存储库方法 ...
 }
 ```
 
-You can obtain any custom created repository using `connection.getCustomRepository`
-or `entityManager.getCustomRepository` methods.
+你可以使用`connection.getCustomRepository`或`entityManager.getCustomRepository`方法获取任何自定义创建的存储库。
 
-Learn more about [custom entity repositories](custom-repository.md).
+了解有关 [custom entity repositories](custom-repository.md)的更多信息。
 
-----
+---
 
-> Note: some decorators (like `@Tree`, `@ChildEntity`, etc.) aren't
-documented in this reference because they are treated as experimental at the moment.
-Expect to see their documentation in the future.
+> 注意：本参考文献中没有的记录一些装饰器（如`@Tree`，`@ChildEntity`等），因为它们目前还在实验状态。期待将来看到他们的文档。

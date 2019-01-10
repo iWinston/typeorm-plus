@@ -1,17 +1,17 @@
-# Delete using Query Builder
+# 使用 Query Builder 删除
 
-You can create `DELETE` queries using `QueryBuilder`.
-Examples:
-                                               
+你可以使用`QueryBuilder`创建`DELETE`查询。
+例如：
+
 ```typescript
-import {getConnection} from "typeorm";
+import { getConnection } from "typeorm";
 
 await getConnection()
-    .createQueryBuilder()
-    .delete()
-    .from(User)
-    .where("id = :id", { id: 1 })
-    .execute();
+  .createQueryBuilder()
+  .delete()
+  .from(User)
+  .where("id = :id", { id: 1 })
+  .execute();
 ```
 
-This is the most efficient way in terms of performance to delete entities from your database. 
+就性能而言，这是删除数据库中的实体的最有效方法。

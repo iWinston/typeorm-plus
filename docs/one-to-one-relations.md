@@ -1,54 +1,51 @@
-# One-to-one relations
+# 一对一
 
-One-to-one is a relation where A contains only one instance of B, and B contains only one instance of A.
-Let's take for example `User` and `Profile` entities.
-User can have only a single profile, and a single profile is owned by only a single user.
+一对一是一种 A 只包含一个 B 实例，而 B 只包含一个 A 实例的关系。
+我们以`User`和`Profile`实体为例。
+
+用户只能拥有一个配置文件，并且一个配置文件仅由一个用户拥有。
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class Profile {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    gender: string;
-    
-    @Column()
-    photo: string;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  gender: string;
+
+  @Column()
+  photo: string;
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
-import {Profile} from "./Profile";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Profile } from "./Profile";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @OneToOne(type => Profile)
-    @JoinColumn()
-    profile: Profile;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @OneToOne(type => Profile)
+  @JoinColumn()
+  profile: Profile;
 }
 ```
 
-Here we added `@OneToOne` to the `profile` and specify the target relation type to be `Profile`.
-We also added `@JoinColumn` which is required and must be set only on one side of the relation.
-The side you set `@JoinColumn` on, that side's table will contain a "relation id" and foreign keys to target entity table.
+这里我们将`@OneToOne`添加到`profile`并将目标关系类型指定为`Profile`。
+我们还添加了`@JoinColumn`，这是必选项并且只能在关系的一侧设置。
+你设置`@JoinColumn`的哪一方，哪一方的表将包含一个"relation id"和目标实体表的外键。
 
-This example will produce following tables:
+此示例将生成以下表：
 
-```shell
+```bash
 +-------------+--------------+----------------------------+
 |                        profile                          |
 +-------------+--------------+----------------------------+
@@ -66,9 +63,9 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 ```
 
-Again, `@JoinColumn` must be set only on one side of relation - the side that must have the foreign key in the database table.
+同样，`@JoinColumn`必须仅设置在关系的一侧且必须在数据库表中具有外键的一侧。
 
-Example how to save such a relation:
+该例子展示如何保存这样的关系：
 
 ```typescript
 const profile = new Profile();
@@ -77,89 +74,85 @@ profile.photo = "me.jpg";
 await connection.manager.save(profile);
 
 const user = new User();
-user.name = 'Joe Smith';
+user.name = "Joe Smith";
 user.profile = profile;
 await connection.manager.save(user);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+启用级联后，只需一次`save`调用即可保存此关系。
 
-To load user with profile inside you must specify relation in `FindOptions`:
- 
+要加载带有配置文件的用户，必须在`FindOptions`中指定关系：
+
 ```typescript
 const userRepository = connection.getRepository(User);
 const users = await userRepository.find({ relations: ["profile"] });
 ```
 
-Or using `QueryBuilder` you can join them:
+或者使用`QueryBuilder`:
 
 ```typescript
 const users = await connection
-    .getRepository(User)
-    .createQueryBuilder("user")
-    .leftJoinAndSelect("user.profile", "profile")
-    .getMany();
+  .getRepository(User)
+  .createQueryBuilder("user")
+  .leftJoinAndSelect("user.profile", "profile")
+  .getMany();
 ```
 
-With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
+通过在关系上启用预先加载，你不必指定关系或手动加入，它将始终自动加载。
 
-Relations can be uni-directional and bi-directional. 
-Uni-directional are relations with a relation decorator only on one side.
-Bi-directional are relations with decorators on both sides of a relation.
+关系可以是单向的和双向的。
+单向是仅在一侧与关系装饰器的关系。
+双向是与关系两侧的装饰者的关系。
 
-We just created a uni-directional relation. Let's make it bi-directional:
+我们刚刚创建了一个单向关系。 让我们将它改为双向：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne} from "typeorm";
-import {User} from "./User";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "typeorm";
+import { User } from "./User";
 
 @Entity()
 export class Profile {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    gender: string;
-    
-    @Column()
-    photo: string;
-    
-    @OneToOne(type => User, user => user.profile) // specify inverse side as a second parameter
-    user: User;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  gender: string;
+
+  @Column()
+  photo: string;
+
+  @OneToOne(type => User, user => user.profile) // 将另一面指定为第二个参数
+  user: User;
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
-import {Profile} from "./Profile";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Profile } from "./Profile";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @OneToOne(type => Profile, profile => profile.user) // specify inverse side as a second parameter
-    @JoinColumn()
-    profile: Profile;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @OneToOne(type => Profile, profile => profile.user) // 指定另一面作为第二个参数
+  @JoinColumn()
+  profile: Profile;
 }
 ```
 
-We just made our relation bi-directional. Note, inverse relation does not have a `@JoinColumn`.
-`@JoinColumn` must only be on one side of the relation -  on the table that will own the foreign key.
+我们只是创建了双向关系。 注意，反向关系没有`@JoinColumn`。
+`@JoinColumn`必须只在关系的一侧且拥有外键的表上。
 
-Bi-directional relations allow you to join relations from both sides using `QueryBuilder`: 
+双向关系允许你使用`QueryBuilder`从双方加入关系：
 
 ```typescript
 const profiles = await connection
-    .getRepository(Profile)
-    .createQueryBuilder("profile")
-    .leftJoinAndSelect("profile.user", "user")
-    .getMany();
+  .getRepository(Profile)
+  .createQueryBuilder("profile")
+  .leftJoinAndSelect("profile.user", "user")
+  .getMany();
 ```

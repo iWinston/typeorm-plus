@@ -1,580 +1,577 @@
-# Migrations
+# 迁移
 
-* [How migrations work](#how-migrations-work)
-* [Creating a new migration](#creating-a-new-migration)
-* [Running and reverting migrations](#running-and-reverting-migrations)
-* [Generating migrations](#generating-migrations)
-* [Using migration API to write migrations](#using-migration-api-to-write-migrations)
+- [迁移的工作原理](#迁移的工作原理)
+- [创建新迁移](#创建新迁移)
+- [运行和还原迁移](#运行和还原迁移)
+- [生成迁移](#生成迁移)
+- [使用迁移 API 编写迁移](#使用迁移API编写迁移)
 
-## How migrations work
+## 迁移的工作原理
 
-Once you get into production you'll need to synchronize model changes into the database.
-Typically it is unsafe to use `synchronize: true` for schema synchronization on production once
-you get data in your database. Here is where migrations come to help.
+一旦上线生产环境，你将需要将模型更改同步到数据库中。
+通常在数据库中获取数据后，使用`synchronize：true`进行生产模式同步是不安全的。 因此这时候使用迁移，可以解决此类问题。
 
-A migration is just a single file with sql queries to update a database schema
-and apply new changes to an existing database.
+迁移只是一个带有 SQL 查询的文件，用于更新数据库架构并将新更改应用于现有数据库。
 
-Let's say you already have a database and a post entity:
+假设你已经有一个数据库和一个 post 实体：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Post {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    title: string;
-    
-    @Column()
-    text: string;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  text: string;
 }
 ```
 
-And your entity worked in production for months without any changes.
-You have thousands of posts in your database.
+这些实体在生产环境中运行了几个月而没有任何变化。
+数据库中产生了有几千个 posts。
 
-Now you need to make a new release and rename `title` to `name`.
-What would you do? 
+现在你需要创建一个新版本并将`title`重命名为`name`。
+你会怎么做？
 
-You need to create a new migration with the following sql query (postgres dialect):
+你需要使用以下 sql 查询（postgres dialect）创建新的迁移：
 
 ```sql
 ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name";
 ```
 
-Once you run this sql query your database schema is ready to work with your new codebase.
-TypeORM provides a place where you can write such sql queries and run them when needed.
-This place is called "migrations".
+运行此 sql 查询后，你的数据库架构就可以使用新的代码库了。
+TypeORM 提供了一个可以编写此类 SQL 查询并在需要时运行它们的位置。
+这个位置就叫"migrations"。
 
-## Creating a new migration
+## 创建新迁移
 
-Before creating a new migration you need to setup your connection options properly:
+在创建新迁移之前，你需要正确设置连接选项：
 
 ```json
 {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "test",
-    "password": "test",
-    "database": "test",
-    "entities": ["entity/*.js"],
-    "migrationsTableName": "custom_migration_table",
-    "migrations": ["migration/*.js"],
-    "cli": {
-        "migrationsDir": "migration"
-    }
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "test",
+  "password": "test",
+  "database": "test",
+  "entities": ["entity/*.js"],
+  "migrationsTableName": "custom_migration_table",
+  "migrations": ["migration/*.js"],
+  "cli": {
+    "migrationsDir": "migration"
+  }
 }
 ```
 
-Here we setup three options:
-* `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
-* `"migrations": ["migration/*.js"]` - indicates that typeorm must load migrations from the given "migration" directory.
-* `"cli": { "migrationsDir": "migration" }` - indicates that the CLI must create new migrations in the "migration" directory.
+这里我们设置三个选项：
 
-Once you setup connection options you can create a new migration using CLI:
+- `"migrationsTableName": "migrations"` - 仅当需要迁移表名称与`migrations`不同时才指定此选项。
+- `"migrations": ["migration/*.js"]` - 表示 typeorm 必须从给定的"migration"目录加载迁移。
+- `"cli": { "migrationsDir": "migration" }` - 表示 CLI 必须在"migration"目录中创建新的迁移。
+
+设置连接选项后，可以使用 CLI 创建新的迁移：
 
 ```
 typeorm migration:create -n PostRefactoring
 ```
 
-To use CLI commands, you need to install typeorm globally (`npm i typeorm -g`).
-Also, make sure your local typeorm version matches the global version.
-Learn more about the [TypeORM CLI](./using-cli.md).
+要使用 CLI 命令，需要全局安装 typeorm（`npm i typeorm -g`）。
+此外，请确保你本地 typeorm 版本与全局版本匹配。
+了解更多有关[TypeORM CLI](./using-cli.md)的信息。
 
-Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in the "migration" directory 
-named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
-Now you can open the file and add your migration sql queries there.
+此处`PostRefactoring`是迁移的名称 - 你可以指定任何想要的名称。
+运行该命令后，可以在"migration"目录中看到一个名为`{TIMESTAMP} -PostRefactoring.ts`的新文件，其中`{TIMESTAMP}`是生成迁移时的当前时间戳。
+现在你可以打开该文件并在那里添加迁移 sql 查询。
 
-You should see the following content inside your migration:
+你应该可以在迁移中看到以下内容：
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        
-    }
+  async up(queryRunner: QueryRunner): Promise<any> {}
 
-    async down(queryRunner: QueryRunner): Promise<any> { 
-        
-    }
-
-    
+  async down(queryRunner: QueryRunner): Promise<any> {}
 }
 ```
 
-There are two methods you must fill with your migration code: `up` and `down`.
-`up` has to contain the code you need to perform the migration.
-`down` has to revert whatever `up` changed.
-`down` method is used to revert the last migration.
+你必须使用两种方法填写迁移代码：`up`和`down`。
+`up`必须包含执行迁移所需的代码。
+`down`必须恢复任何`up`改变。
+`down`方法用于恢复上次迁移。
 
-Inside both `up` and `down` you have a `QueryRunner` object.
-All database operations are executed using this object.
-Learn more about [query runner](./query-runner.md).
+在`up`和`down`里面有一个`QueryRunner`对象。
+使用此对象执行所有数据库操作。
+了解有关[query runner](./ query-runner.md)的更多信息。
 
-Let's see what the migration looks like with our `Post` changes:
+让我们通过`Post`更改看看迁移是什么样的：
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
-    }
+  async up(queryRunner: QueryRunner): Promise<any> {
+    await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+  }
 
-    async down(queryRunner: QueryRunner): Promise<any> { 
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`); // reverts things made in "up" method
-    }
-
-    
+  async down(queryRunner: QueryRunner): Promise<any> {
+    await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`); // 恢复"up"方法所做的事情
+  }
 }
 ```
 
-## Running and reverting migrations
+## 运行和还原迁移
 
-Once you have a migration to run on production, you can run them using a CLI command:
+迁移到生产后，可以使用 CLI 命令运行它们：
 
 ```
 typeorm migration:run
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files. 
+**`typeorm migration：create`和`typeorm migration：generate`将创建`.ts`文件。 `migration：run`和`migration：revert`命令仅适用于`.js`文件。 因此，在运行命令之前需要编译 typescript 文件。**或者你可以使用`ts-node`和`typeorm`来运行`.ts`迁移文件。
 
-Example with `ts-node`:
+`ts-node`的示例：
+
 ```
 ts-node ./node_modules/typeorm/cli.js migration:run
 ```
 
-This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
-This means all sql queries written in the `up` methods of your created migrations will be executed.
-That's all! Now you have your database schema up-to-date.
+此命令将执行所有挂起的迁移，并按其时间戳排序的顺序运行它们。
+这意味着将在你创建的迁移的`up`方法中编写的所有 sql 查询都将被执行。
+至此你将获得最新的数据库架构。
 
-If for some reason you want to revert the changes, you can run:
+如果由于某种原因你想要还原更改，则可以运行：
 
 ```
 typeorm migration:revert
 ```
 
-This command will execute `down` in the latest executed migration. 
-If you need to revert multiple migrations you must call this command multiple times. 
+该命令将在最近执行的迁移中执行`down`。
+如果需要还原多个迁移，则必须多次调用此命令。
 
-## Generating migrations
+## 生成迁移
 
-TypeORM is able to automatically generate migration files with schema changes you made.
+当你更改数据库架构时，TypeORM 能够自动生成架构更改的迁移文件。
 
-Let's say you have a `Post` entity with a `title` column, and you have changed the name `title` to `name`.
-You can run following command:
+假设你有一个带有`title`列的`Post`实体，并且已将名称`title`更改为`name`。
+则可以运行以下命令：
 
 ```
 typeorm migration:generate -n PostRefactoring
 ```
 
-And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
+它将生成一个名为`{TIMESTAMP} -PostRefactoring.ts`的新迁移，其中包含以下内容：
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
-    }
+  async up(queryRunner: QueryRunner): Promise<any> {
+    await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+  }
 
-    async down(queryRunner: QueryRunner): Promise<any> { 
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`);
-    }
-
-    
+  async down(queryRunner: QueryRunner): Promise<any> {
+    await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`);
+  }
 }
 ```
 
-See, you don't need to write the queries on your own. 
-The rule of thumb for generating migrations is that you generate them after "each" change you made to your models.
+瞅瞅，你已经不需要自己编写查询了。
+生成迁移的经验法则是，在对模型进行"每次"更改后生成它们。
 
-## Using migration API to write migrations
+## 使用迁移API编写迁移
 
-In order to use an API to change a database schema you can use `QueryRunner`.
+为了使用 API 来更改数据库架构，你可以使用`QueryRunner`。
 
-Example:
+例如:
 
 ```ts
-import {MigrationInterface, QueryRunner, Table } from "typeorm";
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.createTable(new Table({
-            name: "question",
-            columns: [
-                {
-                    name: "id",
-                    type: "int",
-                    isPrimary: true
-                },
-                {
-                    name: "name",
-                    type: "varchar",
-                }
-            ]
-        }), true)        
-        
-        await queryRunner.createIndex("question", new TableIndex({
-            name: "IDX_QUESTION_NAME",
-            columnNames: ["name"]
-        }));
-        
-        await queryRunner.createTable(new Table({
-            name: "answer",
-            columns: [
-                {
-                    name: "id",
-                    type: "int",
-                    isPrimary: true
-                },
-                {
-                    name: "name",
-                    type: "varchar",
-                }
-            ]
-        }), true);
-        
-        await queryRunner.addColumn("answer", new TableColumn({
-            name: "questionId", 
-            type: "int" 
-        }));
-        
-        await queryRunner.createForeignKey("answer", new TableForeignKey({
-            columnNames: ["questionId"],
-            referencedColumnNames: ["id"],
-            referencedTableName: "question",
-            onDelete: "CASCADE"
-        }));
-    }
+  async up(queryRunner: QueryRunner): Promise<any> {
+    await queryRunner.createTable(
+      new Table({
+        name: "question",
+        columns: [
+          {
+            name: "id",
+            type: "int",
+            isPrimary: true
+          },
+          {
+            name: "name",
+            type: "varchar"
+          }
+        ]
+      }),
+      true
+    );
 
-    async down(queryRunner: QueryRunner): Promise<any> {
-        const table = await queryRunner.getTable("question");
-        const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
-        await queryRunner.dropForeignKey("question", foreignKey);
-        await queryRunner.dropColumn("question", "questionId");
-        await queryRunner.dropTable("answer");
-        await queryRunner.dropIndex("question", "IDX_QUESTION_NAME");
-        await queryRunner.dropTable("question");
-    }
-    
+    await queryRunner.createIndex(
+      "question",
+      new TableIndex({
+        name: "IDX_QUESTION_NAME",
+        columnNames: ["name"]
+      })
+    );
+
+    await queryRunner.createTable(
+      new Table({
+        name: "answer",
+        columns: [
+          {
+            name: "id",
+            type: "int",
+            isPrimary: true
+          },
+          {
+            name: "name",
+            type: "varchar"
+          }
+        ]
+      }),
+      true
+    );
+
+    await queryRunner.addColumn(
+      "answer",
+      new TableColumn({
+        name: "questionId",
+        type: "int"
+      })
+    );
+
+    await queryRunner.createForeignKey(
+      "answer",
+      new TableForeignKey({
+        columnNames: ["questionId"],
+        referencedColumnNames: ["id"],
+        referencedTableName: "question",
+        onDelete: "CASCADE"
+      })
+    );
+  }
+
+  async down(queryRunner: QueryRunner): Promise<any> {
+    const table = await queryRunner.getTable("question");
+    const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
+    await queryRunner.dropForeignKey("question", foreignKey);
+    await queryRunner.dropColumn("question", "questionId");
+    await queryRunner.dropTable("answer");
+    await queryRunner.dropIndex("question", "IDX_QUESTION_NAME");
+    await queryRunner.dropTable("question");
+  }
 }
 ```
 
 ---
 
-```ts 
+```ts
 getDatabases(): Promise<string[]>
 ```
- 
-Returns all available database names including system databases.
+
+返回所有可用的数据库名称，包括系统数据库。
 
 ---
 
-```ts 
+```ts
 getSchemas(database?: string): Promise<string[]>
 ```
- 
-- `database` - If database parameter specified, returns schemas of that database
 
-Returns all available schema names including system schemas. Useful for SQLServer and Postgres only.
+- `database` - 如果指定了 database 参数，则返回该数据库的模式
+
+返回所有可用的模式名称，包括系统模式。 仅对 SQLServer 和 Postgres 有用。
 
 ---
 
-```ts 
+```ts
 getTable(tableName: string): Promise<Table|undefined>
 ```
- 
-- `tableName` - name of a table to be loaded
 
-Loads a table by a given name from the database.
+- `tableName` -要加载的表的名称
+
+从数据库中按给定名称加载表。
 
 ---
 
-```ts 
+```ts
 getTables(tableNames: string[]): Promise<Table[]>
 ```
- 
-- `tableNames` - name of a tables to be loaded
 
-Loads a tables by a given names from the database.
+- `tableNames` - 要加载的表的名称
+
+从数据库中按给定名称加载表。
 
 ---
 
-```ts 
+```ts
 hasDatabase(database: string): Promise<boolean>
 ```
- 
-- `database` - name of a database to be checked
 
-Checks if database with the given name exist.
+- `database` - 要检查的数据库的名称
+
+检查是否存在具有给定名称的数据库。
 
 ---
 
-```ts 
+```ts
 hasSchema(schema: string): Promise<boolean>
 ```
- 
-- `schema` - name of a schema to be checked
 
-Checks if schema with the given name exist. Used only for SqlServer and Postgres.
+- `schema` - 要检查的模式的名称
+
+检查是否存在具有给定名称的模式。 仅用于 SqlServer 和 Postgres。
 
 ---
 
 ```ts
 hasTable(table: Table|string): Promise<boolean>
 ```
- 
-- `table` - Table object or name
 
-Checks if table exist.
+- `table` - 表对象或名称
+
+检查表是否存在。
 
 ---
 
-```ts 
+```ts
 hasColumn(table: Table|string, columnName: string): Promise<boolean>
 ```
- 
-- `table` - Table object or name
-- `columnName` - name of a column to be checked
 
-Checks if column exist in the table.
+- `table` - 表对象或名称
+- `columnName` - 要检查的列的名称
+
+检查表中是否存在列。
 
 ---
 
-```ts 
+```ts
 createDatabase(database: string, ifNotExist?: boolean): Promise<void>
 ```
- 
-- `database` - database name
-- `ifNotExist` - skips creation if `true`, otherwise throws error if database already exist
 
-Creates a new database. 
+- `database` - 数据库名称
+- `ifNotExist` - 如果为'true`则跳过创建，否则如果数据库已存在则抛出错误
+
+创建一个新数据库。
 
 ---
 
-```ts 
+```ts
 dropDatabase(database: string, ifExist?: boolean): Promise<void>
 ```
- 
-- `database` - database name
-- `ifExist` - skips deletion if `true`, otherwise throws error if database was not found
 
-Drops database.
+- `database` - 数据库名称
+- `ifExist` - 如果为`true`则跳过删除，否则如果找不到数据库则抛出错误
+
+删除数据库。
 
 ---
 
-```ts 
+```ts
 createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
 ```
- 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
-If schema path passed, it will create schema in specified database
-- `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
 
-Creates a new table schema.
+- `schemaPath` - 架构名称。 对于 SqlServer，可以接受模式路径（例如'dbName.schemaName'）作为参数。
+     如果传递了架构路径，它将在指定的数据库中创建架构
+- `ifNotExist` - 如果为`true`则跳过创建，否则如果 schema 已存在则抛出错误
+
+创建一个新的表模式。
 
 ---
 
-```ts 
+```ts
 dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>
 ```
- 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
-If schema path passed, it will drop schema in specified database
-- `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
-- `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
-Used only in Postgres.
 
-Drops a table schema.
+- `schemaPath` - 架构名称。 对于 SqlServer，可以接受模式路径（例如'dbName.schemaName'）作为参数。
+     如果传递了架构路径，它将删除指定数据库中的架构
+- `ifExist` - 如果为`true`则跳过删除，否则如果找不到模式则抛出错误
+- `isCascade` - 如果为`true`，则自动删除模式中包含的对象（表，函数等）。
+  仅在 Postgres 中使用。
+
+删除表架构。
 
 ---
 
-```ts 
+```ts
 createTable(table: Table, ifNotExist?: boolean, createForeignKeys?: boolean, createIndices?: boolean): Promise<void>
 ```
 
-- `table` - Table object. 
-- `ifNotExist` - skips creation if `true`, otherwise throws error if table already exist. Default `false`
-- `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
-- `createIndices` - indicates whether indices will be created on table creation. Default `true`
+- `table` - 表对象。
+- `ifNotExist` - 如果`true`则跳过创建，否则如果表已经存在则抛出错误。 默认`false`
+- `createForeignKeys` - 指示是否将在创建表时创建外键。 默认为`true`
+- `createIndices` - 指示是否将在创建表时创建索引。 默认为`true`
 
-Creates a new table.
+创建一个新表。
 
 ---
 
-```ts 
+```ts
 dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>
 ```
 
-- `table` - Table object or table name to be dropped
-- `ifExist` - skips dropping if `true`, otherwise throws error if table does not exist
-- `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
-- `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
+- `table` - 要删除的表对象或表名
+- `ifExist` - 如果`true`则跳过，否则抛出错误，如果表不存在则抛出错误
+- `dropForeignKeys` - 表示删除表时是否删除外键。 默认为`true`
+- `dropIndices` - 指示删除表时是否删除索引。 默认为`true`
 
-Drops a table.
+删除一张表。
 
 ---
 
-```ts 
+```ts
 renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void>
 ```
 
-- `oldTableOrName` - old Table object or name to be renamed
-- `newTableName` - new table name
+- `oldTableOrName` - 旧的表对象或要重命名的名称
+- `newTableName` - 新表名
 
-Renames a table.
+重命名一张表。
 
 ---
 
-```ts 
+```ts
 addColumn(table: Table|string, column: TableColumn): Promise<void>
 ```
 
-- `table` - Table object or name
-- `column` - new column
+- `table` - 表对象或名称
+- `column` - 新列
 
-Adds a new column.
+添加一个新列。
 
 ---
 
-```ts 
+```ts
 addColumns(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columns` - new columns
+- `table` - 表对象或名称
+- `columns` - 新列
 
-Adds a new column.
+添加一个新列。
 
 ---
 
-```ts 
+```ts
 renameColumn(table: Table|string, oldColumnOrName: TableColumn|string, newColumnOrName: TableColumn|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `oldColumnOrName` - old column. Accepts TableColumn object or column name
-- `newColumnOrName` - new column. Accepts TableColumn object or column name
+- `table` - 表对象或名称
+- `oldColumnOrName` - 旧列。接受 TableColumn 对象或列名称
+- `newColumnOrName` - 新列。接受 TableColumn 对象或列名称
 
-Renames a column.
+重命名一列。
 
 ---
 
-```ts 
+```ts
 changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>
 ```
 
-- `table` - Table object or name
-- `oldColumn` -  old column. Accepts TableColumn object or column name
-- `newColumn` -  new column. Accepts TableColumn object
+- `table` - 表对象或名称
+- `oldColumn` - 旧列。 接受 TableColumn 对象或列名称
+- `newColumn` - 新列。 接受 TableColumn 对象
 
-Changes a column in the table.
+更改表中的列。
 
 ---
 
-```ts 
+```ts
 changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `changedColumns` - array of changed columns.
-  + `oldColumn` - old TableColumn object
-  + `newColumn` - new TableColumn object
+- `table` - 表对象或名称
+- `changedColumns` - 更改列的数组
+  - `oldColumn` - 旧的 TableColumn 对象
+  - `newColumn` - 新的 TableColumn 对象
 
-Changes a columns in the table.
+更改表中的列。
 
 ---
 
-```ts 
+```ts
 dropColumn(table: Table|string, column: TableColumn|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `column` - TableColumn object or column name to be dropped
+- `table` - 表对象或名称
+- `column` - 要删除的 TableColumn 对象或列名称
 
-Drops a column in the table.
+删除表中的列。
 
 ---
 
-```ts 
+```ts
 dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columns` - array of TableColumn objects to be dropped
+- `table` - 表对象或名称
+- `columns` - 要删除的 TableColumn 对象数组
 
-Drops a columns in the table.
+删除表中的列。
 
 ---
 
-```ts 
+```ts
 createPrimaryKey(table: Table|string, columnNames: string[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columnNames` - array of column names which will be primary
+- `table` - 表对象或名称
+- `columnNames` - 列名称的数组将是主要的
 
-Creates a new primary key.
+创建一个新的主键。
 
 ---
 
-```ts 
+```ts
 updatePrimaryKeys(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columns` - array of TableColumn objects which will be updated
+- `table` - 表对象或名称
+- `columns` - 将更新的 TableColumn 对象数组
 
-Updates composite primary keys.
+更新复合主键。
 
 ---
 
-```ts 
+```ts
 dropPrimaryKey(table: Table|string): Promise<void>
 ```
 
-- `table` - Table object or name
+- `table` - 表对象或名称
 
-Drops a primary key.
+删除主键。
 
 ---
 
-```ts 
+```ts
 createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueConstraint` - TableUnique object to be created
+- `table` - 表对象或名称
+- `uniqueConstraint` - 要创建的 TableUnique 对象
 
-Creates new unique constraint.
+创建新的唯一约束。
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `createIndex()` method instead.
+> 注意：不适用于 MySQL，因为 MySQL 将唯一约束存储为唯一索引。 请改用`createIndex()`方法。
 
 ---
 
-```ts 
+```ts
 createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueConstraints` - array of TableUnique objects to be created
+- `table` - 表对象或名称
+- `uniqueConstraints` - 表对象或名称
 
-Creates new unique constraints.
+创建新的唯一约束。
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `createIndices()` method instead.
+> 注意：不适用于 MySQL，因为 MySQL 将唯一约束存储为唯一索引。 请改用`createIndices()`方法。
 
 ---
 
@@ -582,12 +579,12 @@ Creates new unique constraints.
 dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueOrName` - TableUnique object or unique constraint name to be dropped
+- `table` - 表对象或名称
+- `uniqueOrName` - 要删除的 TableUnique 对象或唯一约束名称
 
-Drops an unique constraint.
+删除一个唯一约束。
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndex()` method instead.
+> 注意：不适用于 MySQL，因为 MySQL 将唯一约束存储为唯一索引。 请改用`dropIndex()`方法。
 
 ---
 
@@ -595,12 +592,12 @@ Drops an unique constraint.
 dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueConstraints` - array of TableUnique objects to be dropped
+- `table` - 表对象或名称
+- `uniqueConstraints` - 要删除的 TableUnique 对象的数组
 
-Drops an unique constraints.
+删除一个唯一约束。
 
-> Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndices()` method instead.
+> 注意：不适用于 MySQL，因为 MySQL 将唯一约束存储为唯一索引。 请改用`dropIndices()`方法。
 
 ---
 
@@ -608,12 +605,12 @@ Drops an unique constraints.
 createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkConstraint` - TableCheck object
+- `table` - 表对象或名称
+- `checkConstraint` - TableCheck 对象
 
-Creates new check constraint.
+创建新的检查约束。
 
-> Note: MySQL does not support check constraints.
+> 注意：MySQL 不支持检查约束。
 
 ---
 
@@ -621,12 +618,12 @@ Creates new check constraint.
 createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkConstraints` - array of TableCheck objects
+- `table` - 表对象或名称
+- `checkConstraints` - TableCheck 对象的数组
 
-Creates new check constraint.
+创建新的检查约束。
 
-> Note: MySQL does not support check constraints.
+> 注意：MySQL 不支持检查约束。
 
 ---
 
@@ -634,12 +631,12 @@ Creates new check constraint.
 dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkOrName` - TableCheck object or check constraint name
+- `table` - 表对象或名称
+- `checkOrName` - TableCheck 对象或检查约束名称
 
-Drops check constraint.
+删除检查约束。
 
-> Note: MySQL does not support check constraints.
+> 注意：MySQL 不支持检查约束。
 
 ---
 
@@ -647,12 +644,12 @@ Drops check constraint.
 dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkConstraints` - array of TableCheck objects
+- `table` - 表对象或名称
+- `checkConstraints` - TableCheck 对象的数组
 
-Drops check constraints.
+删除检查约束。
 
-> Note: MySQL does not support check constraints.
+> 注意：MySQL 不支持检查约束。
 
 ---
 
@@ -660,10 +657,10 @@ Drops check constraints.
 createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKey` - TableForeignKey object
+- `table` - 表对象或名称
+- `foreignKey` - TableForeignKey 对象
 
-Creates a new foreign key.
+创建一个新的外键。
 
 ---
 
@@ -671,10 +668,10 @@ Creates a new foreign key.
 createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKeys` - array of TableForeignKey objects
+- `table` - 表对象或名称
+- `foreignKeys` - TableForeignKey 对象的数组
 
-Creates a new foreign keys.
+创建一个新的外键。
 
 ---
 
@@ -682,10 +679,10 @@ Creates a new foreign keys.
 dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKeyOrName` - TableForeignKey object or foreign key name
+- `table` - 表对象或名称
+- `foreignKeyOrName` - TableForeignKey 对象或外键名称
 
-Drops a foreign key.
+删除一个外键。
 
 ---
 
@@ -693,10 +690,10 @@ Drops a foreign key.
 dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKeys` - array of TableForeignKey objects
+- `table` - 表对象或名称
+- `foreignKeys` - TableForeignKey 对象的数组
 
-Drops a foreign keys.
+删除一个外键。
 
 ---
 
@@ -704,10 +701,10 @@ Drops a foreign keys.
 createIndex(table: Table|string, index: TableIndex): Promise<void>
 ```
 
-- `table` - Table object or name
-- `index` - TableIndex object
+- `table` - 表对象或名称
+- `index` - TableIndex 对象
 
-Creates a new index.
+创建一个新索引。
 
 ---
 
@@ -715,10 +712,10 @@ Creates a new index.
 createIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `indices` - array of TableIndex objects
+- `table` - 表对象或名称
+- `indices` - TableIndex 对象的数组
 
-Creates a new indices.
+创建一个新索引。
 
 ---
 
@@ -726,10 +723,10 @@ Creates a new indices.
 dropIndex(table: Table|string, index: TableIndex|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `index` - TableIndex object or index name
+- `table` - 表对象或名称
+- `index` - TableIndex 对象或索引名称
 
-Drops an index.
+删除索引。
 
 ---
 
@@ -737,10 +734,10 @@ Drops an index.
 dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `indices` - array of TableIndex objects
+- `table` - 表对象或名称
+- `indices` - TableIndex 对象的数组
 
-Drops an indices.
+删除指数。
 
 ---
 
@@ -748,11 +745,11 @@ Drops an indices.
 clearTable(tableName: string): Promise<void>
 ```
 
-- `tableName` - table name
+- `tableName` - 表明
 
-Clears all table contents.
+清除所有表内容。
 
-> Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+> 注意：此操作使用 SQL 的 TRUNCATE 查询，该查询无法在事务中恢复。
 
 ---
 
@@ -760,8 +757,9 @@ Clears all table contents.
 enableSqlMemory(): void
 ```
 
-Enables special query runner mode in which sql queries won't be executed, instead they will be memorized into a special variable inside query runner.
-You can get memorized sql using `getMemorySql()` method.
+启用特殊查询运行程序模式，其中不执行 sql 查询，而是将它们存储到查询运行程序内的特殊变量中。
+
+你可以使用`getMemorySql()`方法获得内存中的 sql。
 
 ---
 
@@ -769,7 +767,7 @@ You can get memorized sql using `getMemorySql()` method.
 disableSqlMemory(): void
 ```
 
-Disables special query runner mode in which sql queries won't be executed. Previously memorized sql will be flushed.
+禁用不执行 sql 查询的特殊查询运行程序模式。 以前存储的 sql 将被刷新。
 
 ---
 
@@ -777,7 +775,7 @@ Disables special query runner mode in which sql queries won't be executed. Previ
 clearSqlMemory(): void
 ```
 
-Flushes all memorized sqls.
+刷新所有内存中的 sqls。
 
 ---
 
@@ -785,9 +783,9 @@ Flushes all memorized sqls.
 getMemorySql(): SqlInMemory
 ```
 
-- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sqls
+- 返回带有`upQueries`和`downQueries`squls 数组的`SqlInMemory`对象
 
-Gets sql stored in the memory. Parameters in the sql are already replaced.
+获取存储在内存中的 sql。 sql 中的参数已被替换。
 
 ---
 
@@ -795,7 +793,7 @@ Gets sql stored in the memory. Parameters in the sql are already replaced.
 executeMemoryUpSql(): Promise<void>
 ```
 
-Executes memorized up sql queries.
+执行内存中的 SQL 查询。
 
 ---
 
@@ -803,7 +801,6 @@ Executes memorized up sql queries.
 executeMemoryDownSql(): Promise<void>
 ```
 
-Executes memorized down sql queries.
+执行内存中的 SQL 查询。
 
 ---
-

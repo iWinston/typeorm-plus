@@ -1,91 +1,91 @@
-# Using ormconfig.json
+# 使用 ormconfig.json
 
-  - * [Creating a new connection from the configuration file](#creating-a-new-connection-from-the-configuration-file)
-  - * [Using `ormconfig.json`](#using-ormconfigjson)
-  - * [Using `ormconfig.js`](#using-ormconfigjs)
-  - * [Using environment variables](#using-environment-variables)
-  - * [Using `ormconfig.yml`](#using-ormconfigyml)
-  - * [Using `ormconfig.xml`](#using-ormconfigxml)
-  - * [Overriding options defined in ormconfig](#overriding-options-defined-in-ormconfig)
+- [使用 ormconfig.json](#%E4%BD%BF%E7%94%A8-ormconfigjson)
+  - [从配置文件创建新连接](#%E4%BB%8E%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%88%9B%E5%BB%BA%E6%96%B0%E8%BF%9E%E6%8E%A5)
+  - [使用 `ormconfig.json`](#%E4%BD%BF%E7%94%A8-ormconfigjson)
+  - [使用 `ormconfig.js`](#%E4%BD%BF%E7%94%A8-ormconfigjs)
+  - [使用环境变量](#%E4%BD%BF%E7%94%A8%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)
+  - [使用 `ormconfig.yml`](#%E4%BD%BF%E7%94%A8-ormconfigyml)
+  - [使用 `ormconfig.xml`](#%E4%BD%BF%E7%94%A8-ormconfigxml)
+  - [覆盖 ormconfig 中定义的选项](#%E8%A6%86%E7%9B%96-ormconfig-%E4%B8%AD%E5%AE%9A%E4%B9%89%E7%9A%84%E9%80%89%E9%A1%B9)
 
-## Creating a new connection from the configuration file
+## 从配置文件创建新连接
 
-Most of the times you want to store your connection options in a separate configuration file.
-It makes it convenient and easy to manage.
-TypeORM supports multiple configuration sources.
-You only need to create a `ormconfig.[format]` file in the root directory of your application (near `package.json`),
-put your configuration there and in your app call `createConnection()` without any configuration passed:
+大多数情况下，我们希望将连接选项存储在单独的配置文件中，因为此方式使管理变得更方便和容易。 TypeORM 支持多个配置源。你只需要在应用程序的根目录（`package.json`附近）中创建一个`ormconfig.[format]`文件存放连接配置，并在应用程序中调用`createConnection()`，而不传递任何参数配置：
 
 ```typescript
-import {createConnection} from "typeorm";
+import { createConnection } from "typeorm";
 
-// createConnection method will automatically read connection options
-// from your ormconfig file or environment variables
+// createConnection方法会自动读取来自ormconfig文件或环境变量中的连接选项
 const connection = await createConnection();
 ```
 
-Supported ormconfig file formats are: `.json`, `.js`, `.env`, `.yml` and `.xml`.
+支持的 ormconfig 文件格式有：`.json`, `.js`, `.env`, `.yml` 和 `.xml`.
 
-## Using `ormconfig.json`
+## 使用 `ormconfig.json`
 
-Create `ormconfig.json` in the project root (near `package.json`). It should have the following content:
+在项目根目录（`package.json`附近）中创建`ormconfig.json`，并包含以下内容：
 
 ```json
 {
-   "type": "mysql",
-   "host": "localhost",
-   "port": 3306,
-   "username": "test",
-   "password": "test",
-   "database": "test"
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "test",
+  "password": "test",
+  "database": "test"
 }
 ```
 
-You can specify any other options from [ConnectionOptions](./connection-options.md).
+你可以参考[ConnectionOptions](./connection-options.md)来设置其他选项。
 
-If you want to create multiple connections then simply create multiple connections in a single array:
+如果要创建多个连接，则只需在数组中添加多个连接：
 
 ```json
-[{
-   "name": "default",
-   "type": "mysql",
-   "host": "localhost",
-   "port": 3306,
-   "username": "test",
-   "password": "test",
-   "database": "test"
-}, {
-   "name": "second-connection",
-   "type": "mysql",
-   "host": "localhost",
-   "port": 3306,
-   "username": "test",
-   "password": "test",
-   "database": "test"
-}]
+[
+  {
+    "name": "default",
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "test",
+    "password": "test",
+    "database": "test"
+  },
+  {
+    "name": "second-connection",
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "test",
+    "password": "test",
+    "database": "test"
+  }
+]
 ```
 
-## Using `ormconfig.js`
+## 使用 `ormconfig.js`
 
-Create `ormconfig.js` in the project root (near `package.json`). It should have following content:
+在项目根目录（`package.json`附近）中创建`ormconfig.js`，并包含以下内容：
 
 ```javascript
 module.exports = {
-   "type": "mysql",
-   "host": "localhost",
-   "port": 3306,
-   "username": "test",
-   "password": "test",
-   "database": "test"
-}
+  type: "mysql",
+  host: "localhost",
+  port: 3306,
+  username: "test",
+  password: "test",
+  database: "test"
+};
 ```
 
-You can specify any other options from [ConnectionOptions](./connection-options.md).
-If you want to create multiple connections then simply create multiple connections in a single array and return it.
+你可以参考[ConnectionOptions](./connection-options.md)来设置其他选项。
 
-## Using environment variables
+如果要创建多个连接，则只需在数组中添加多个连接：
 
-Create `.env` or `ormconfig.env` in the project root (near `package.json`). It should have the following content:
+## 使用环境变量
+
+在项目根目录（`package.json`附近）中创建`.env` 或者 `ormconfig.env`，并包含以下内容：
 
 ```ini
 TYPEORM_CONNECTION = mysql
@@ -99,72 +99,62 @@ TYPEORM_LOGGING = true
 TYPEORM_ENTITIES = entity/.*js,modules/**/entity/.*js
 ```
 
-List of available env variables you can set:
+可以设置的可用 env 变量列表：
 
-* TYPEORM_CONNECTION
-* TYPEORM_HOST
-* TYPEORM_USERNAME
-* TYPEORM_PASSWORD
-* TYPEORM_DATABASE
-* TYPEORM_PORT
-* TYPEORM_URL
-* TYPEORM_SID
-* TYPEORM_SCHEMA
-* TYPEORM_SYNCHRONIZE
-* TYPEORM_DROP_SCHEMA
-* TYPEORM_MIGRATIONS_RUN
-* TYPEORM_ENTITIES
-* TYPEORM_MIGRATIONS
-* TYPEORM_MIGRATIONS_TABLE_NAME
-* TYPEORM_SUBSCRIBERS
-* TYPEORM_ENTITY_SCHEMAS
-* TYPEORM_LOGGING
-* TYPEORM_LOGGER
-* TYPEORM_ENTITY_PREFIX
-* TYPEORM_MAX_QUERY_EXECUTION_TIME
-* TYPEORM_ENTITIES_DIR
-* TYPEORM_MIGRATIONS_DIR
-* TYPEORM_SUBSCRIBERS_DIR
-* TYPEORM_DRIVER_EXTRA
-* TYPEORM_DEBUG
-* TYPEORM_CACHE
-* TYPEORM_CACHE_OPTIONS
-* TYPEORM_CACHE_ALWAYS_ENABLED
-* TYPEORM_CACHE_DURATION
+- TYPEORM_CONNECTION
+- TYPEORM_HOST
+- TYPEORM_USERNAME
+- TYPEORM_PASSWORD
+- TYPEORM_DATABASE
+- TYPEORM_PORT
+- TYPEORM_URL
+- TYPEORM_SID
+- TYPEORM_SCHEMA
+- TYPEORM_SYNCHRONIZE
+- TYPEORM_DROP_SCHEMA
+- TYPEORM_MIGRATIONS_RUN
+- TYPEORM_ENTITIES
+- TYPEORM_MIGRATIONS
+- TYPEORM_SUBSCRIBERS
+- TYPEORM_ENTITY_SCHEMAS
+- TYPEORM_LOGGING
+- TYPEORM_LOGGER
+- TYPEORM_ENTITY_PREFIX
+- TYPEORM_MAX_QUERY_EXECUTION_TIME
+- TYPEORM_ENTITIES_DIR
+- TYPEORM_MIGRATIONS_DIR
+- TYPEORM_SUBSCRIBERS_DIR
+- TYPEORM_DRIVER_EXTRA
 
-`TYPEORM_CACHE` should be boolean or string of cache type
+`ormconfig.env`只能在开发期间使用。在生产环境中，你可以在 ENVIRONMENT VARIABLES 中设置所有这些值。
 
-`ormconfig.env` should be used only during development.
-On production you can set all these values in real ENVIRONMENT VARIABLES.
+你无法使用`env`文件或环境变量定义多个连接。如果你的应用需要有多个连接，请使用其他配置替代。
 
-You cannot define multiple connections using an `env` file or environment variables.
-If your app has multiple connections then use alternative configuration storage format.
+## 使用 `ormconfig.yml`
 
-## Using `ormconfig.yml`
-
-Create `ormconfig.yml` in the project root (near `package.json`). It should have the following content:
+在项目根目录（`package.json`附近）中创建`ormconfig.yml`，并包含以下内容：
 
 ```yaml
-default: # default connection
-    host: "localhost"
-    port: 3306
-    username: "test"
-    password: "test"
-    database: "test"
+default: # 默认连接
+  host: "localhost"
+  port: 3306
+  username: "test"
+  password: "test"
+  database: "test"
 
-second-connection: # other connection
-    host: "localhost"
-    port: 3306
-    username: "test"
-    password: "test"
-    database: "test2"
+second-connection: # 其他连接
+  host: "localhost"
+  port: 3306
+  username: "test"
+  password: "test"
+  database: "test2"
 ```
 
-You can use any connection options available.
+你可以使用任一连接。
 
-## Using `ormconfig.xml`
+## 使用 `ormconfig.xml`
 
-Create `ormconfig.xml` in the project root (near `package.json`). It should have the following content:
+在项目根目录（`package.json`附近）中创建`ormconfig.xml`，并包含以下内容：
 
 ```xml
 <connections>
@@ -187,25 +177,21 @@ Create `ormconfig.xml` in the project root (near `package.json`). It should have
 </connections>
 ```
 
-You can use any connection options available.
+你可以使用任一连接。
 
-## Overriding options defined in ormconfig
+## 覆盖 ormconfig 中定义的选项
 
-Sometimes you want to override values defined in your ormconfig file,
-or you might to append some TypeScript / JavaScript logic to your configuration.
-
-In such cases you can load options from ormconfig and get `ConnectionOptions` built,
-then you can do whatever you want with those options, before passing them to `createConnection` function:
-
+有时你希望覆盖 ormconfig 文件中定义的值，或者可能会在配置中附加一些 TypeScript / JavaScript 逻辑。
+在这种情况下，你可以从 ormconfig 加载选项并构建`ConnectionOptions`，然后在将它们传递给`createConnection`函数之前，使用这些选项执行任何操作：
 
 ```typescript
-// read connection options from ormconfig file (or ENV variables)
+// 从ormconfig文件（或ENV变量）读取连接选项
 const connectionOptions = await getConnectionOptions();
 
-// do something with connectionOptions,
-// for example append a custom naming strategy or a custom logger
+// 使用connectionOptions做一些事情，
+// 例如，附加自定义命名策略或自定义记录器
 Object.assign(connectionOptions, { namingStrategy: new MyNamingStrategy() });
 
-// create a connection using modified connection options
+// 使用覆盖后的连接选项创建连接
 const connection = await createConnection(connectionOptions);
 ```

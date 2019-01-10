@@ -1,182 +1,162 @@
-# Entity Listeners and Subscribers
+# 实体监听器和订阅者
 
-* [What is an Entity Listener](#what-is-an-entity-listener)
-    * [`@AfterLoad`](#afterload)
-    * [`@BeforeInsert`](#beforeinsert)
-    * [`@AfterInsert`](#afterinsert)
-    * [`@BeforeUpdate`](#beforeupdate)
-    * [`@AfterUpdate`](#afterupdate)
-    * [`@BeforeRemove`](#beforeremove)
-    * [`@AfterRemove`](#afterremove)
-* [What is a Subscriber](#what-is-a-subscriber)
+- [实体监听器和订阅者](#%E5%AE%9E%E4%BD%93%E7%9B%91%E5%90%AC%E5%99%A8%E5%92%8C%E8%AE%A2%E9%98%85%E8%80%85)
+  - [监听器](#%E7%9B%91%E5%90%AC%E5%99%A8)
+    - [`@AfterLoad`](#afterload)
+    - [`@BeforeInsert`](#beforeinsert)
+    - [`@AfterInsert`](#afterinsert)
+    - [`@BeforeUpdate`](#beforeupdate)
+    - [`@AfterUpdate`](#afterupdate)
+    - [`@BeforeRemove`](#beforeremove)
+    - [`@AfterRemove`](#afterremove)
+  - [订阅者](#%E8%AE%A2%E9%98%85%E8%80%85)
 
-## What is an Entity Listener
+## 监听器
 
-Any of your entities can have methods with custom logic that listen to specific entity events.
-You must mark those methods with special decorators depending on what event you want to listen to.
+任何实体都可以使用具有侦听特定实体事件的自定义逻辑的方法。
+你必须使用特殊装饰器标记这些方法，具体取决于要侦听的事件。
 
 ### `@AfterLoad`
 
-You can define a method with any name in entity and mark it with `@AfterLoad`
-and TypeORM will call it each time the entity 
-is loaded using `QueryBuilder` or repository/manager find methods.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@AfterLoad`标记它，TypeORM 将在每次实体时调用它
+使用`QueryBuilder`或 repository/manager 查找方法加载。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @AfterLoad()
-    updateCounters() {
-        if (this.likesCount === undefined)
-            this.likesCount = 0;
-    }
+  @AfterLoad()
+  updateCounters() {
+    if (this.likesCount === undefined) this.likesCount = 0;
+  }
 }
 ```
 
 ### `@BeforeInsert`
 
-You can define a method with any name in entity and mark it with `@BeforeInsert`
-and TypeORM will call it before the entity is inserted using repository/manager `save`.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@BeforeInsert`标记它，并且 TypeORM 将在使用 repository/manager `save`插入实体之前调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @BeforeInsert()
-    updateDates() {
-        this.createdDate = new Date();
-    }
+  @BeforeInsert()
+  updateDates() {
+    this.createdDate = new Date();
+  }
 }
 ```
 
 ### `@AfterInsert`
 
-You can define a method with any name in entity and mark it with `@AfterInsert`
-and TypeORM will call it after the entity is inserted using repository/manager `save`.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@AfterInsert`标记它，并且在使用 repository/manager `save`插入实体后，TypeORM 将调用它。
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @AfterInsert()
-    resetCounters() {
-        this.counters = 0;
-    }
+  @AfterInsert()
+  resetCounters() {
+    this.counters = 0;
+  }
 }
 ```
 
 ### `@BeforeUpdate`
 
-You can define a method with any name in the entity and mark it with `@BeforeUpdate`
-and TypeORM will call it before an existing entity is updated using repository/manager `save`. Keep in mind, however, that this will occur only when information is changed in the model. If you run `save` without modifying anything from the model, `@BeforeUpdate` and `@AfterUpdate` will not run.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@BeforeUpdate`标记它，并且 TypeORM 将在使用 repository/manager `save`更新现有实体之前调用它。 但请记住，只有在模型中更改信息时才会出现这种情况。 如果运行`save`而不修改模型中的任何内容，`@BeforeUpdate`和`@AfterUpdate`将不会运行。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @BeforeUpdate()
-    updateDates() {
-        this.updatedDate = new Date();
-    }
+  @BeforeUpdate()
+  updateDates() {
+    this.updatedDate = new Date();
+  }
 }
 ```
 
 ### `@AfterUpdate`
 
-You can define a method with any name in the entity and mark it with `@AfterUpdate`
-and TypeORM will call it after an existing entity is updated using repository/manager `save`.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@AfterUpdate`标记它，并且在使用 repository/manager `save`更新现有实体后，TypeORM 将调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @AfterUpdate()
-    updateCounters() {
-        this.counter = 0;
-    }
+  @AfterUpdate()
+  updateCounters() {
+    this.counter = 0;
+  }
 }
 ```
 
 ### `@BeforeRemove`
 
-You can define a method with any name in the entity and mark it with `@BeforeRemove`
-and TypeORM will call it before a entity is removed using repository/manager `remove`.
-Example:
+你可以在实体中定义具有任何名称的方法，并使用`@BeforeRemove`标记它，并且 TypeORM 将在使用 repository/manager `remove`删除实体之前调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @BeforeRemove()
-    updateStatus() {
-        this.status = "removed";
-    }
+  @BeforeRemove()
+  updateStatus() {
+    this.status = "removed";
+  }
 }
 ```
 
 ### `@AfterRemove`
 
-You can define a method with any name in the entity and mark it with `@AfterRemove`
-and TypeORM will call it after the entity is removed using repository/manager `remove`.
-Example:
+你可以在实体中定义一个具有任何名称的方法，并使用`@ AfterRemove`标记它，TypeORM 将在使用 repository/manager `remove`删除实体后调用它。
+例如：
 
 ```typescript
 @Entity()
 export class Post {
-    
-    @AfterRemove()
-    updateStatus() {
-        this.status = "removed";
-    }
+  @AfterRemove()
+  updateStatus() {
+    this.status = "removed";
+  }
 }
 ```
 
-## What is a Subscriber
+## 订阅者
 
-Marks a class as an event subscriber which can listen to specific entity events or any entity events.
-Events are firing using `QueryBuilder` and repository/manager methods.
-Example:
+将类标记为可以侦听特定实体事件或任何实体事件的事件订阅者。
+使用`QueryBuilder`和存储库/管理器方法触发事件。
+例如：
 
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
+  /**
+   * 表示此订阅者仅侦听Post事件。
+   */
+  listenTo() {
+    return Post;
+  }
 
-    
-    /**
-     * Indicates that this subscriber only listen to Post events.
-     */
-    listenTo() {
-        return Post;
-    }
-    
-    /**
-     * Called before post insertion.
-     */
-    beforeInsert(event: InsertEvent<Post>) {
-        console.log(`BEFORE POST INSERTED: `, event.entity);
-    }
-
+  /**
+   * 插入post之前调用。
+   */
+  beforeInsert(event: InsertEvent<Post>) {
+    console.log(`BEFORE POST INSERTED: `, event.entity);
+  }
 }
 ```
 
-You can implement any method from `EntitySubscriberInterface`.
-To listen to any entity you just omit `listenTo` method and use `any`:
+你可以从`EntitySubscriberInterface`实现任何方法。
+要监听任何实体，你只需省略`listenTo`方法并使用`any`：
 
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface {
-    
-    /**
-     * Called before entity insertion.
-     */
-    beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
-    }
-
+  /**
+   * 在实体插入之前调用。
+   */
+  beforeInsert(event: InsertEvent<any>) {
+    console.log(`BEFORE ENTITY INSERTED: `, event.entity);
+  }
 }
 ```

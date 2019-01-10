@@ -1,14 +1,15 @@
-# Migration from Sequelize to TypeORM
+# 从 Sequelize 迁移到 TypeORM
 
-* [Setting up a connection](#setting-up-a-connection)
-* [Schema synchronization](#schema-synchronization)
-* [Creating a models](#creating-a-models)
-* [Other model settings](#other-model-settings)
-* [Working with models](#working-with-models)
+- [从 Sequelize 迁移到 TypeORM](#%E4%BB%8E-sequelize-%E8%BF%81%E7%A7%BB%E5%88%B0-typeorm)
+  - [建立连接](#%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5)
+  - [架构同步](#%E6%9E%B6%E6%9E%84%E5%90%8C%E6%AD%A5)
+  - [创建模型](#%E5%88%9B%E5%BB%BA%E6%A8%A1%E5%9E%8B)
+  - [其他模型设置](#%E5%85%B6%E4%BB%96%E6%A8%A1%E5%9E%8B%E8%AE%BE%E7%BD%AE)
+    - [使用模型](#%E4%BD%BF%E7%94%A8%E6%A8%A1%E5%9E%8B)
 
-## Setting up a connection
+## 建立连接
 
-In sequelize you create a connection this way:
+在 sequelize 中，可以通过以下方式创建连接：
 
 ```javascript
 const sequelize = new Sequelize("database", "username", "password", {
@@ -26,189 +27,178 @@ sequelize
   });
 ```
 
-In TypeORM you create a connection like this:
+在 TypeORM 中，可以创建如下连接：
 
 ```typescript
-import {createConnection} from "typeorm";
+import { createConnection } from "typeorm";
 
 createConnection({
-    type: "mysql",
-    host: "localhost",
-    username: "username",
-    password: "password"
-}).then(connection => {
-    console.log("Connection has been established successfully.");
+  type: "mysql",
+  host: "localhost",
+  username: "username",
+  password: "password"
 })
-.catch(err => {
+  .then(connection => {
+    console.log("Connection has been established successfully.");
+  })
+  .catch(err => {
     console.error("Unable to connect to the database:", err);
-});
+  });
 ```
 
-Then you can get your connection instance from anywhere in your app using `getConnection`.
+然后使用`getConnection`从应用程序的任何位置获取连接实例。
 
-Learn more about [Connections](connection.md)
+## 架构同步
 
-## Schema synchronization
-
-In sequelize you do schema synchronization this way:
+在 sequelize 中，你可以通过以下方式进行架构同步：
 
 ```javascript
-Project.sync({force: true});
-Task.sync({force: true});
+Project.sync({ force: true });
+Task.sync({ force: true });
 ```
 
-In TypeORM you just add `synchronize: true` in the connection options:
+在 TypeORM 中，你只需在连接选项中添加`synchronize：true`：
 
 ```typescript
 createConnection({
-    type: "mysql",
-    host: "localhost",
-    username: "username",
-    password: "password",
-    synchronize: true
+  type: "mysql",
+  host: "localhost",
+  username: "username",
+  password: "password",
+  synchronize: true
 });
 ```
 
-## Creating a models
+## 创建模型
 
-This is how models are defined in sequelize:
+以下是 sequelize 中定义模型的方式：
 
 ```javascript
 module.exports = function(sequelize, DataTypes) {
+  const Project = sequelize.define("project", {
+    title: DataTypes.STRING,
+    description: DataTypes.TEXT
+  });
 
-    const Project = sequelize.define("project", {
-      title: DataTypes.STRING,
-      description: DataTypes.TEXT
-    });
-    
-    return Project;
-
+  return Project;
 };
 ```
 
 ```javascript
 module.exports = function(sequelize, DataTypes) {
+  const Task = sequelize.define("task", {
+    title: DataTypes.STRING,
+    description: DataTypes.TEXT,
+    deadline: DataTypes.DATE
+  });
 
-    const Task = sequelize.define("task", {
-      title: DataTypes.STRING,
-      description: DataTypes.TEXT,
-      deadline: DataTypes.DATE
-    });
-    
-    return Task;
+  return Task;
 };
 ```
 
-In TypeORM these models are called entities and you can define them like this:
+在 TypeORM 中，这些模型称为实体，你可以像这样定义它们：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class Project {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    title: string;
-    
-    @Column()
-    description: string;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  description: string;
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class Task {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    title: string;
-    
-    @Column("text")
-    description: string;
-    
-    @Column()
-    deadline: Date;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column("text")
+  description: string;
+
+  @Column()
+  deadline: Date;
 }
 ```
 
-It's highly recommended to define one entity class per file.
-TypeORM allows you to use your classes as database models
-and provides a declarative way to define what part of your model 
-will become part of your database table.
-The power of TypeScript gives you type hinting and other useful features that you can use in classes.
+强烈建议为每个文件定义一个实体类。
+TypeORM 允许你将类用作数据库模型
+并提供一种声明性方法来定义模型的哪个部分将成为数据库表的一部分。
+TypeScript 的强大功能为你提供类型提示和其他可在类中使用的有用功能。
 
-Learn more about [Entities and columns](entities.md)
+## 其他模型设置
 
-## Other model settings
-
-The following in sequelize:
+在 sequelize 中:
 
 ```javascript
 flag: { type: Sequelize.BOOLEAN, allowNull: true, defaultValue: true },
 ```
 
-Can be achieved in TypeORM like this:
+可以在 TypeORM 中实现，如下所示：
 
 ```typescript
 @Column({ nullable: true, default: true })
 flag: boolean;
 ```
 
-Following in sequelize:
+在 sequelize 中:
 
 ```javascript
 flag: { type: Sequelize.DATE, defaultValue: Sequelize.NOW }
 ```
 
-Is written like this in TypeORM:
+在 TypeORM 中这样写：
 
 ```typescript
 @Column({ default: () => "NOW()" })
 myDate: Date;
 ```
 
-Following in sequelize:
+在 sequelize 中:
 
 ```javascript
 someUnique: { type: Sequelize.STRING, unique: true },
 ```
 
-Can be achieved this way in TypeORM:
+可以在 TypeORM 中实现这种方式：
 
 ```typescript
 @Column({ unique: true })
 someUnique: string;
 ```
 
-Following in sequelize:
+在 sequelize 中:
 
 ```javascript
 fieldWithUnderscores: { type: Sequelize.STRING, field: "field_with_underscores" },
 ```
 
-Translates to this in TypeORM:
+在 TypeORM 中可以这样：
 
 ```typescript
 @Column({ name: "field_with_underscores" })
 fieldWithUnderscores: string;
 ```
 
-Following in sequelize:
+在 sequelize 中:
 
 ```javascript
 incrementMe: { type: Sequelize.INTEGER, autoIncrement: true },
 ```
 
-Can be achieved this way in TypeORM:
+在 TypeORM 中可以这样：
 
 ```typescript
 @Column()
@@ -216,20 +206,20 @@ Can be achieved this way in TypeORM:
 incrementMe: number;
 ```
 
-Following in sequelize:
+在 sequelize 中:
 
 ```javascript
 identifier: { type: Sequelize.STRING, primaryKey: true },
 ```
 
-Can be achieved this way in TypeORM:
+在 TypeORM 中可以这样：
 
 ```typescript
 @Column({ primary: true })
 identifier: string;
 ```
 
-To create `createDate` and `updateDate`-like columns you need to defined two columns (name it what you want) in your entity:
+要创建`createDate` 和 `updateDate`，就像定义其他列一样，在实体中定义两列，并将其命名：
 
 ```typescript
 @CreateDateColumn();
@@ -237,70 +227,69 @@ createDate: Date;
 
 @UpdateDateColumn();
 updateDate: Date;
-``` 
+```
 
-### Working with models
+### 使用模型
 
-To create and save a new model in sequelize you write:
+要在 sequelize 中创建新模型：
 
 ```javascript
 const employee = await Employee.create({ name: "John Doe", title: "senior engineer" });
 ```
 
-In TypeORM there are several ways to create and save a new model:
+在 TypeORM 中，有几种方法可以创建新模型：
 
 ```typescript
-const employee = new Employee(); // you can use constructor parameters as well
+const employee = new Employee(); // 你也可以使用构造函数参数
 employee.name = "John Doe";
 employee.title = "senior engineer";
-await getRepository(Employee).save(employee)
 ```
 
-or active record pattern
+或者
 
 ```typescript
 const employee = Employee.create({ name: "John Doe", title: "senior engineer" });
-await employee.save();
 ```
 
-if you want to load an existing entity from the database and replace some of its properties you can use the following method:
+如果要从数据库加载现有实体并替换其某些属性，可以使用以下方法：
 
 ```typescript
 const employee = await Employee.preload({ id: 1, name: "John Doe" });
 ```
-Learn more about [Active Record vs Data Mapper](active-record-data-mapper.md) and [Repository API](repository-api.md).
 
-To access properties in sequelize you do the following:
+在 sequelize 中访问属性，可执行以下操作：
 
 ```typescript
 console.log(employee.get("name"));
 ```
 
-In TypeORM you simply do:
+在 TypeORM 中你只需：
 
 ```typescript
 console.log(employee.name);
 ```
 
-To create an index in sequelize you do:
+要在 sequelize 中创建索引，可使用：
 
 ```typescript
-sequelize.define("user", {}, {
-  indexes: [
-    {
-      unique: true,
-      fields: ["firstName", "lastName"]
-    }
-  ]
-});
+sequelize.define(
+  "user",
+  {},
+  {
+    indexes: [
+      {
+        unique: true,
+        fields: ["firstName", "lastName"]
+      }
+    ]
+  }
+);
 ```
 
-In TypeORM you do:
+在 TypeORM 中你只需：
 
 ```typescript
 @Entity()
 @Index(["firstName", "lastName"], { unique: true })
-export class User {
-}
+export class User {}
 ```
-Learn more about [Indices](indices.md)

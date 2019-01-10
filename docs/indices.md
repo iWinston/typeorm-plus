@@ -1,169 +1,153 @@
-# Indices
+# 索引
 
-* [Column indices](#column-indices)
-* [Unique indices](#unique-indices)
-* [Indices with multiple columns](#indices-with-multiple-columns)
-* [Spatial Indices](#spatial-indices)
-* [Disabling synchronization](#disabling-synchronization)
+- [索引](#%E7%B4%A2%E5%BC%95)
+  - [单列索引](#%E5%8D%95%E5%88%97%E7%B4%A2%E5%BC%95)
+  - [唯一索引](#%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95)
+  - [联合索引](#%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95)
+  - [空间索引](#%E7%A9%BA%E9%97%B4%E7%B4%A2%E5%BC%95)
+  - [禁用同步](#%E7%A6%81%E7%94%A8%E5%90%8C%E6%AD%A5)
 
-## Column indices
+## 单列索引
 
-You can create a database index for a specific column by using `@Index` on a column you want to make an index.
-You can create indices for any columns of your entity.
-Example:
+你可以在要创建索引的列上使用`@Index`为特定列创建数据库索引。
+也可以为实体的任何列创建索引。
+例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Index()
-    @Column()
-    firstName: string;
-    
-    @Column()
-    @Index()
-    lastName: string;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Index()
+  @Column()
+  firstName: string;
+
+  @Column()
+  @Index()
+  lastName: string;
 }
 ```
 
-You can also specify an index name:
+还可以指定索引名称：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Index("name1-idx")
-    @Column()
-    firstName: string;
-    
-    @Column()
-    @Index("name2-idx")
-    lastName: string;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Index("name1-idx")
+  @Column()
+  firstName: string;
+
+  @Column()
+  @Index("name2-idx")
+  lastName: string;
 }
 ```
 
-## Unique indices
+## 唯一索引
 
-To create an unique index you need to specify `{ unique: true }` in the index options:
+要创建唯一索引，需要在索引选项中指定`{unique：true}`：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Index({ unique: true })
-    @Column()
-    firstName: string;
-    
-    @Column()
-    @Index({ unique: true })
-    lastName: string;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Index({ unique: true })
+  @Column()
+  firstName: string;
+
+  @Column()
+  @Index({ unique: true })
+  lastName: string;
 }
 ```
 
-## Indices with multiple columns
+## 联合索引
 
-To create an index with multiple columns you need to put `@Index` on the entity itself
-and specify all column property names which should be included in the index.
-Example:
+要创建具有多个列的索引，需要将`@Index`放在实体本身上，并指定应包含在索引中的所有列属性名称。
+例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, Index} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
 @Entity()
 @Index(["firstName", "lastName"])
 @Index(["firstName", "middleName", "lastName"], { unique: true })
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    firstName: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    middleName: string;
+  @Column()
+  firstName: string;
 
-    @Column()
-    lastName: string;
+  @Column()
+  middleName: string;
 
+  @Column()
+  lastName: string;
 }
 ```
 
-## Spatial Indices
+## 空间索引
 
-MySQL and PostgreSQL (when PostGIS is available) both support spatial indices.
+MySQL 和 PostgreSQL（当 PostGIS 可用时）都支持空间索引。
 
-To create a spatial index on a column in MySQL, add an `Index` with `spatial:
-true` on a column that uses a spatial type (`geometry`, `point`, `linestring`,
-`polygon`, `multipoint`, `multilinestring`, `multipolygon`,
-`geometrycollection`):
+要在 MySQL 中的列上创建空间索引，请在使用空间类型的列（`geometry`，`point`，`linestring`，`polygon`，`multipoint`，`multilinestring`，`multipolygon`，`geometrycollection`）上添加`index`，其中`spatial：true`）：
 
 ```typescript
 @Entity()
 export class Thing {
-    @Column("point")
-    @Index({ spatial: true })
-    point: string;
+  @Column("point")
+  @Index({ spatial: true })
+  point: string;
 }
 ```
 
-To create a spatial index on a column in PostgreSQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
+要在 PostgreSQL 中的列上创建空间索引，请在使用空间类型（`geometry`，`geography`）的列上添加带有`spatial：true`的`Index`：
 
 ```typescript
 @Entity()
 export class Thing {
-    @Column("geometry", {
-      spatialFeatureType: "Point",
-      srid: 4326
-    })
-    @Index({ spatial: true })
-    point: Geometry;
+  @Column("geometry", {
+    spatialFeatureType: "Point",
+    srid: 4326
+  })
+  @Index({ spatial: true })
+  point: Geometry;
 }
 ```
 
-## Disabling synchronization
+## 禁用同步
 
-TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) because of lot of different database specifics and multiple
-issues with getting information about exist database indices and synchronizing them automatically. In such cases you should create index manually
-(for example in the migrations) with any index signature you want. To make TypeORM ignore these indices during synchronization use `synchronize: false`
-option on `@Index` decorator.
+TypeORM 不支持某些索引选项和定义（例如`lower`，`pg_trgm`），因为它们具有许多不同的数据库细节以及获取有关现有数据库索引的信息并自动同步的多个问题。 在这种情况下，你应该使用所需的任何索引签名手动创建索引（例如在迁移中）。 要使 TypeORM 在同步期间忽略这些索引，请在`@Index`装饰器上使用`synchronize：false`选项。
 
-For example, you create an index with case-insensitive comparison:
+例如，使用不区分大小写的比较创建索引：
 
 ```sql
 CREATE INDEX "POST_NAME_INDEX" ON "post" (lower("name"))
 ```
 
-after that, you should disable synchronization for this index to avoid deletion on next schema sync:
+之后，应该禁用此索引的同步，以避免在下一个架构同步时删除：
 
 ```ts
 @Entity()
 @Index("POST_NAME_INDEX", { synchronize: false })
 export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-
+  @Column()
+  name: string;
 }
 ```
-
-
-

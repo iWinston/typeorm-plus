@@ -1,16 +1,17 @@
-# What is EntityManager
+# 什么是 EntityManager
 
-Using `EntityManager` you can manage (insert, update, delete, load, etc.) any entity. 
-EntityManager is just like a collection of all entity repositories in a single place.
- 
-You can access the entity manager via `getManager()` or from `Connection`.
-Example how to use it:
- 
+使用`EntityManager`，你可以管理（insert, update, delete, load 等）任何实体。
+EntityManager 就像放一个实体存储库的集合的地方。
+
+你可以通过`getManager（）`或`Connection`访问实体管理器。
+
+如何使用它：
+
 ```typescript
-import {getManager} from "typeorm";
-import {User} from "./entity/User";
+import { getManager } from "typeorm";
+import { User } from "./entity/User";
 
-const entityManager = getManager(); // you can also get it via getConnection().manager
+const entityManager = getManager(); // 你也可以通过 getConnection().manager 获取
 const user = await entityManager.findOne(User, 1);
 user.name = "Umed";
 await entityManager.save(user);

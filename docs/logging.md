@@ -1,14 +1,15 @@
-# Logging
+# 日志
 
-* [Enabling logging](#enabling-logging)
-* [Logging options](#logging-options)
-* [Log long-running queries](#log-long-running-queries)
-* [Changing default logger](#changing-default-logger)
-* [Using custom logger](#using-custom-logger)
+- [日志](#%E6%97%A5%E5%BF%97)
+  - [开启日志](#%E5%BC%80%E5%90%AF%E6%97%A5%E5%BF%97)
+  - [日志选项](#%E6%97%A5%E5%BF%97%E9%80%89%E9%A1%B9)
+  - [记录耗时长的查询](#%E8%AE%B0%E5%BD%95%E8%80%97%E6%97%B6%E9%95%BF%E7%9A%84%E6%9F%A5%E8%AF%A2)
+  - [更改默认记录器](#%E6%9B%B4%E6%94%B9%E9%BB%98%E8%AE%A4%E8%AE%B0%E5%BD%95%E5%99%A8)
+  - [使用自定义记录器](#%E4%BD%BF%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AE%B0%E5%BD%95%E5%99%A8)
 
-## Enabling logging
+## 开启日志
 
-You can enable logging of all queries and errors by simply setting `logging: true` in your connection options:
+你只需在连接选项中设置`logging：true`即可启用所有查询和错误的记录：
 
 ```typescript
 {
@@ -24,19 +25,19 @@ You can enable logging of all queries and errors by simply setting `logging: tru
 }
 ```
 
-## Logging options
+## 日志选项
 
-You can enable different types of logging in connection options:
+可以在连接选项中启用不同类型的日志记录：
 
 ```typescript
-{ 
+{
     host: "localhost",
     ...
     logging: ["query", "error"]
 }
 ```
 
-If you want to enable logging of failed queries only then only add `error`:
+如果要启用失败查询的日志记录，则只添加`error`：
 
 ```typescript
 {
@@ -46,17 +47,17 @@ If you want to enable logging of failed queries only then only add `error`:
 }
 ```
 
-There are other options you can use:
+还可以使用其他选项：
 
-* `query` - logs all queries.
-* `error` - logs all failed queries and errors.
-* `schema` - logs the schema build process.
-* `warn` - logs internal orm warnings.
-* `info` - logs internal orm informative messages.
-* `log` - logs internal orm log messages.
+- `query` - 记录所有查询。
+- `error` - 记录所有失败的查询和错误。
+- `schema` - 记录架构构建过程。
+- `warn` - 记录内部 orm 警告。
+- `info` - 记录内部 orm 信息性消息。
+- `log` - 记录内部 orm 日志消息。
 
-You can specify as many options as needed. 
-If you want to enable all logging you can simply specify `logging: "all"`:
+你可以根据需要指定任意数量的选项。
+如果要启用所有日志记录，只需指定`logging：“all”`：
 
 ```typescript
 {
@@ -66,10 +67,9 @@ If you want to enable all logging you can simply specify `logging: "all"`:
 }
 ```
 
-## Log long-running queries
+## 记录耗时长的查询
 
-If you have performance issues, you can log queries that take too much time to execute
-by setting `maxQueryExecutionTime` in connection options:
+如果遇到性能问题，可以通过在连接选项中设置`maxQueryExecutionTime`来记录执行时间过长的查询：
 
 ```typescript
 {
@@ -79,20 +79,19 @@ by setting `maxQueryExecutionTime` in connection options:
 }
 ```
 
-This code will log all queries which run more then `1 second`.
+此代码将记录所有运行超过`1秒`的查询。
 
-## Changing default logger
+## 更改默认记录器
 
-TypeORM ships with 4 different types of logger:
+TypeORM 附带 4 种不同类型的记录器：
 
-* `advanced-console` - this is the default logger which logs all messages into the console using color 
-and sql syntax highlighting (using [chalk](https://github.com/chalk/chalk)).
-* `simple-console` - this is a simple console logger which is exactly the same as the advanced logger, but it does not use any color highlighting.
-This logger can be used if you have problems / or don't like colorized logs.
-* `file` - this logger writes all logs into `ormlogs.log` in the root folder of your project (near `package.json` and `ormconfig.json`).
-* `debug` - this logger uses [debug package](https://github.com/visionmedia/debug), to turn on logging set your env variable `DEBUG=typeorm:*` (note logging option has no effect on this logger).
+- `advanced-console` - 默认记录器，它将使用颜色和 sql 语法高亮显示所有记录到控制台中的消息（使用[chalk](https://github.com/chalk/chalk)）。
+- `simple-console` - 简单的控制台记录器，与高级记录器完全相同，但它不使用任何颜色突出显示。
+  如果你又问题/或不喜欢彩色日志，可以使用此记录器。
+- `file` - 这个记录器将所有日志写入项目根文件夹中的`ormlogs.log`（靠近`package.json`和`ormconfig.json`）。
+- `debug` - 此记录器使用[debug package](https://github.com/visionmedia/debug)打开日志记录设置你的 env 变量`DEBUG = typeorm：*`（注意记录选项对此记录器没有影响）。
 
-You can enable any of them in connection options:
+你可以在连接选项中启用其中任何一个：
 
 ```typescript
 {
@@ -103,63 +102,62 @@ You can enable any of them in connection options:
 }
 ```
 
-## Using custom logger
+## 使用自定义记录器
 
-You can create your own logger class by implementing the `Logger` interface:
+你可以通过实现`Logger`接口来创建自己的记录器类：
 
 ```typescript
-import {Logger} from "typeorm";
+import { Logger } from "typeorm";
 
 export class MyCustomLogger implements Logger {
-    
-    // implement all methods from logger class
-    
+  // 实现logger类的所有方法
 }
 ```
 
-And specify it in connection options:
+并在连接选项中指定它：
 
 ```typescript
-import {createConnection} from "typeorm";
-import {MyCustomLogger} from "./logger/MyCustomLogger";
+import { createConnection } from "typeorm";
+import { MyCustomLogger } from "./logger/MyCustomLogger";
 
 createConnection({
-    name: "mysql",
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-    logger: new MyCustomLogger()
+  name: "mysql",
+  type: "mysql",
+  host: "localhost",
+  port: 3306,
+  username: "test",
+  password: "test",
+  database: "test",
+  logger: new MyCustomLogger()
 });
 ```
 
-If you defined your connection options in the `ormconfig` file,
-then you can use it and override it in the following way:
+如果在`ormconfig`文件中定义了
+然后你可以使用它并以下面的方式覆盖它：
 
 ```typescript
-import {createConnection, getConnectionOptions} from "typeorm";
-import {MyCustomLogger} from "./logger/MyCustomLogger";
+import { createConnection, getConnectionOptions } from "typeorm";
+import { MyCustomLogger } from "./logger/MyCustomLogger";
 
-// getConnectionOptions will read options from your ormconfig file
-// and return it in connectionOptions object
-// then you can simply append additional properties to it
+// getConnectionOptions将从ormconfig文件中读取选项并将其返回到connectionOptions对象中，
+// 然后你只需向其附加其他属性
 getConnectionOptions().then(connectionOptions => {
-    return createConnection(Object.assign(connectionOptions, {
-        logger: new MyCustomLogger()
-    }))
+  return createConnection(
+    Object.assign(connectionOptions, {
+      logger: new MyCustomLogger()
+    })
+  );
 });
 ```
 
-Logger methods can accept `QueryRunner` when it's available. It's helpful if you want to log additional data.
-Also, via query runner, you can get access to additional data passed during persist/remove. For example:
+记录器方法可接受`QueryRunner`。 如果要记录其他数据将会很有帮助。
+此外，通过查询运行程序，你可以访问在持久/删除期间传递的其他数据。 例如：
 
 ```typescript
-// user sends request during entity save
+// 用户在实体保存期间发送请求
 postRepository.save(post, { data: { request: request } });
 
-// in logger you can access it this way:
+// 在logger中你可以这样访问它：
 logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
     const requestUrl = queryRunner && queryRunner.data["request"] ? "(" + queryRunner.data["request"].url + ") " : "";
     console.log(requestUrl + "executing query: " + sql);

@@ -6,8 +6,8 @@
 
 ## Main API
 
-* `createConnection()` - Creates a new connection and registers it in global connection manager.
-If connection options parameter is omitted then connection options are read from `ormconfig` file or environment variables.
+* `createConnection()` - 创建一个新连接并将其注册到全局连接管理器中。
+如果省略connection options参数，则从`ormconfig`文件或环境变量中读取连接选项。
 
 ```typescript
 import {createConnection} from "typeorm";
@@ -22,8 +22,8 @@ const connection = await createConnection({
 });
 ```
 
-* `createConnections()` - Creates multiple connections and registers them in global connection manager.
-If connection options parameter is omitted then connection options are read from `ormconfig` file or environment variables.
+* `createConnections()` - 创建多个连接并在全局连接管理器中注册它们。
+如果省略connection options参数，则从`ormconfig`文件或环境变量中读取连接选项。
 
 ```typescript
 import {createConnections} from "typeorm";
@@ -47,7 +47,7 @@ const connection = await createConnections([{
 }]);
 ```
 
-* `getConnectionManager()` - Gets connection manager which stores all created (using `createConnection()` or `createConnections()`) connections.
+* `getConnectionManager()` - 获取存储所有已创建（使用`createConnection()`或`createConnections()`）连接的管理器。
 
 ```typescript
 import {getConnectionManager} from "typeorm";
@@ -56,18 +56,18 @@ const defaultConnection = getConnectionManager().get("default");
 const secondaryConnection = getConnectionManager().get("secondary");
 ```
 
-* `getConnection()` - Gets connection which was created by using `createConnection` method.
+* `getConnection()` - 获取使用`createConnection`方法创建的连接。
 
 ```typescript
 import {getConnection} from "typeorm";
 
 const connection = getConnection();
-// if you have named connection you can specify its name:
+// 如果有命名连接，则可以指定其名称：
 const secondaryConnection = getConnection("secondary-connection");
 ```
 
-* `getEntityManager()` - Gets `EntityManager` from connection. 
-Connection name can be specified to indicate what connection's entity manager should be taken.
+* `getEntityManager()` - 获取`EntityManager`。
+可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
 import {getEntityManager} from "typeorm";
@@ -80,7 +80,7 @@ const secondaryManager = getEntityManager("secondary-connection");
 ```
 
 * `getRepository()` - Gets `Repository` for given entity from connection. 
-Connection name can be specified to indicate what connection's entity manager should be taken.
+可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
 import {getRepository} from "typeorm";
@@ -93,199 +93,197 @@ const blogRepository = getRepository(Blog, "secondary-connection");
 ```
 
 * `getTreeRepository()` - Gets `TreeRepository` for given entity from connection. 
-Connection name can be specified to indicate what connection's entity manager should be taken.
+可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
 import {getTreeRepository} from "typeorm";
 
 const userRepository = getTreeRepository(User);
-// you can use repository methods now
+// 使用存储库方法
 
 const blogRepository = getTreeRepository(Blog, "secondary-connection");
-// you can use secondary connection repository methods
+// 使用另一个存储库方法
 ```
 
-* `getMongoRepository()` - Gets `MongoRepository` for given entity from connection. 
-Connection name can be specified to indicate what connection's entity manager should be taken.
+* `getMongoRepository()` - 获取给定实体的`MongoRepository`。
+可以指定连接名称以指示应该采用哪个连接的实体管理器。
 
 ```typescript
 import {getMongoRepository} from "typeorm";
 
 const userRepository = getMongoRepository(User);
-// you can use repository methods now
+//使用存储库方法
 
 const blogRepository = getMongoRepository(Blog, "secondary-connection");
-// you can use secondary connection repository methods
+// 使用另一个存储库方法
 ```
 
 ## `Connection` API
 
-* `name` - Connection name. If you created nameless connection then it's equal to "default".
-You use this name when you work with multiple connections and call `getConnection(connectionName: string)`
+* `name` - 连接名。 如果没有指定连接名，则默认值为`default`。
+在处理多个连接时使用此名称并调用`getConnection(connectionName：string)`。
 
 ```typescript
 const connectionName: string = connection.name;
 ```
 
-* `options` - Connection options used to create this connection.
-Learn more about [Connection Options](./connection-options.md).
+* `options` - 用于创建此连接的连接选项。
+了解有关[连接选项](./ connection-options.md)的更多信息。
 
 ```typescript
 const connectionOptions: ConnectionOptions = connection.options;
-// you can cast connectionOptions to MysqlConnectionOptions
-// or any other xxxConnectionOptions depending on the database driver you use
+// 你可以将connectionOptions转换为MysqlConnectionOptions或任何其他xxxConnectionOptions，
+// 具体取决于你使用的数据库驱动程序
 ```
 
-* `isConnected` - Indicates if a real connection to the database is established.
+* `isConnected` - 指示是否建立了与数据库的真实连接。
 
 ```typescript
 const isConnected: boolean = connection.isConnected;
 ```
 
-* `driver` - Underlying database driver used in this connection.
+* `driver` - 此连接中使用的基础数据库驱动程序。
 
 ```typescript
 const driver: Driver = connection.driver;
-// you can cast connectionOptions to MysqlDriver
-// or any other xxxDriver depending on the database driver you use
+// 你可以根据使用的数据库驱动程序将connectionOptions转换为MysqlDriver或任何其他xxxDriver
 ```
 
-* `manager` - `EntityManager` used to work with connection entities.
-Learn more about [Entity Manager and Repository](working-with-entity-manager.md).
+* `manager` - `EntityManager`用于连接实体。
+查看更多关于[实体管理器和存储库](working-with-entity-manager.md).
 
 ```typescript
 const manager: EntityManager = connection.manager;
-// you can call manager methods, for example find:
+// 你可以调用manager方法，例如find：
 const user = await manager.findOne(1);
 ```
 
-* `mongoManager` - `MongoEntityManager` used to work with connection entities in mongodb connections.
-For more information about MongoEntityManager see [MongoDB](./mongodb.md) documentation.
+* `mongoManager` - `MongoEntityManager`用于处理mongodb连接中的连接实体。
+有关MongoEntityManager的更多信息，请参阅[MongoDB](./mongodb.md)文档。
 
 ```typescript
 const manager: MongoEntityManager = connection.mongoManager;
-// you can call manager or mongodb-manager specific methods, for example find:
+//你可以调用manager或mongodb-manager特定方法，例如find：
 const user = await manager.findOne(1);
 ```
 
-* `connect` - Performs connection to the database. 
-When you use `createConnection` it automatically calls `connect` and you don't need to call it yourself.
+* `connect` - 执行与数据库的连接。
+当你使用`createConnection`时，它会自动调用`connect`，你不需要自己调用它。
 
 ```typescript
 await connection.connect();
 ```
 
-* `close` - Closes connection with the database. 
-Usually, you call this method when your application is shutting down.
+* `close` - 关闭与数据库的连接。
+通常需要在应用程序关闭时调用此方法。
 
 ```typescript
 await connection.close();
 ```
 
-* `synchronize` - Synchronizes database schema. When `synchronize: true` is set in connection options it calls this method. 
-Usually, you call this method when your application is shuting down.
+* `synchronize` - 同步数据库架构。 当在连接选项中设置`synchronize：true`时，它会调用此方法。
+通常需要在应用程序关闭时调用此方法。
 
 ```typescript
 await connection.synchronize();
 ```
 
-* `dropDatabase` - Drops the database and all its data.
-Be careful with this method on production since this method will erase all your database tables and their data.
-Can be used only after connection to the database is established.
+* `dropDatabase` - 删除数据库及其所有数据。
+请谨慎使用此方法，因为此方法将清除所有数据库表及其数据。
+只有在建立与数据库的连接后才能使用。
 
 ```typescript
 await connection.dropDatabase();
 ```
 
-* `runMigrations` - Runs all pending migrations.
+* `runMigrations` - 运行所有挂起的迁移。
 
 ```typescript
 await connection.runMigrations();
 ```
 
-* `undoLastMigration` - Reverts last executed migration.
+* `undoLastMigration` - 恢复上次执行的迁移。
 
 ```typescript
 await connection.undoLastMigration();
 ```
 
-* `hasMetadata` - Checks if metadata for a given entity is registered.
-Learn more about [Entity Metadata](./entity-metadata.md).
+* `hasMetadata` - 检查是否已注册给定实体的元数据。
+了解更多关于 [Entity Metadata](./entity-metadata.md).
 
 ```typescript
 if (connection.hasMetadata(User))
     const userMetadata = connection.getMetadata(User);
 ```
 
-* `getMetadata` - Gets `EntityMetadata` of the given entity.
-You can also specify a table name and if entity metadata with such table name is found it will be returned.
-Learn more about [Entity Metadata](./entity-metadata.md).
+* `getMetadata` - 获取给定实体的`EntityMetadata`。
+你还可以指定表名，如果找到具有此类表名的实体元数据，则会返回该名称。
+了解更多关于 [Entity Metadata](./entity-metadata.md).
 
 ```typescript
 const userMetadata = connection.getMetadata(User);
-// now you can get any information about User entity
+// 获得有关用户实体的任何信息
 ```
 
-* `getRepository` - Gets `Repository` of the given entity.
-You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about [Repositories](working-with-entity-manager.md).
+* `getRepository` - 获取给定实体的`Repository`。
+你还可以指定表名，如果找到给定表的存储库，则会返回该表。
+了解更多关于 [Repositories](working-with-entity-manager.md).
 
 ```typescript
 const repository = connection.getRepository(User);
-// now you can call repository methods, for example find:
+// 调用存储库方法，例如find：
 const users = await repository.findOne(1);
 ```
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.
-You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about [Repositories](working-with-entity-manager.md).
+你还可以指定表名，如果找到给定表的存储库，则会返回该表。
+了解更多关于 [Repositories](working-with-entity-manager.md).
 
 ```typescript
 const repository = connection.getTreeRepository(Category);
-// now you can call tree repository methods, for example findTrees:
+// 调用树存储库方法，例如findTrees：
 const categories = await repository.findTrees();
 ```
 
-* `getMongoRepository` - Gets `MongoRepository` of the given entity.
-This repository is used for entities in MongoDB connection.
-Learn more about [MongoDB support](./mongodb.md).
+* `getMongoRepository` -获取给定实体的`MongoRepository`。
+此存储库用于MongoDB连接中的实体。
+了解更多关于 [MongoDB support](./mongodb.md).
 
 ```typescript
 const repository = connection.getMongoRepository(User);
-// now you can call mongodb-specific repository methods, for example createEntityCursor:
+// 调用特定于mongodb的存储库方法，例如createEntityCursor：
 const categoryCursor = repository.createEntityCursor();
 const category1 = await categoryCursor.next();
 const category2 = await categoryCursor.next();
 ```
 
-* `getCustomRepository` - Gets customly defined repository.
-Learn more about [custom repositories](working-with-entity-manager.md).
+* `getCustomRepository` - 获取自定义的存储库。
+了解更多关于 [custom repositories](working-with-entity-manager.md).
 
 ```typescript
 const userRepository = connection.getCustomRepository(UserRepository);
-// now you can call methods inside your custom repository - UserRepository class
+// 调用自定义存储库中的方法 -  UserRepository类
 const crazyUsers = await userRepository.findCrazyUsers();
 ```
 
-* `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-Learn more about [Transactions](./transactions.md).
+* `transaction` - 提供单个事务，在单个数据库事务中执行多个数据库请求。
+了解更多关于 [Transactions](./transactions.md).
 
 ```typescript
 await connection.transaction(async manager => {
-    // NOTE: you must perform all database operations using given manager instance
-    // its a special instance of EntityManager working with this transaction
-    // and don't forget to await things here
+    // 注意：你必须使用给定的管理器实例执行所有数据库操作，
+    // 它是一个使用此事务的EntityManager的特殊实例，并且不要忘记在处理操作
 });
 ```
 
-* `query` - Executes a raw SQL query.
+* `query` - 执行原始SQL查询。
 
 ```typescript
 const rawData = await connection.query(`SELECT * FROM USERS`);
 ```
 
-* `createQueryBuilder` - Creates a query builder, which can be used to build queries.
-Learn more about [QueryBuilder](select-query-builder.md).
+* `createQueryBuilder` - 创建一个查询构建器，可用于构建查询。
+了解更多关于 [QueryBuilder](select-query-builder.md).
 
 ```typescript
 const users = await connection.createQueryBuilder()
@@ -295,25 +293,24 @@ const users = await connection.createQueryBuilder()
     .getMany();
 ```
 
-* `createQueryRunner` - Creates a query runner used manage and work with a single real database connection.
-Learn more about [QueryRunner](./query-runner.md). 
+* `createQueryRunner` - 创建一个用于管理和使用单个真实数据库连接的查询运行器。
+了解更多关于 [QueryRunner](./query-runner.md). 
 
 ```typescript
 const queryRunner = connection.createQueryRunner();
 
-// you can use its methods only after you call connect
-// which performs real database connection
+// 只有在调用connect执行真正的数据库连接后才能使用它的方法
 await queryRunner.connect();
 
-// .. now you can work with query runner and call its methods
+// .. 使用查询运行器并调用其方法
 
-// very important - don't forget to release query runner once you finished working with it
+// 重要提示 -  一旦完成,不要忘记释放查询运行器
 await queryRunner.release();
 ```
 
 ## `ConnectionManager` API
 
-* `create` - Creates a new connection and register it in the manager.
+* `create` - 创建一个新连接并在管理器中注册。
 
 ```typescript
 const connection = connectionManager.create({
@@ -326,14 +323,14 @@ const connection = connectionManager.create({
 });
 ```
 
-* `get` - Gets already created connection stored in the manager by its name.
+* `get` - 获取已经创建的连接存储在管理器中的名称。
 
 ```typescript
 const defaultConnection = connectionManager.get("default");
 const secondaryConnection = connectionManager.get("secondary");
 ```
 
-* `has` - Checks if a connection is registered in the given connection manager.
+* `has` - 检查是否在给定的连接管理器中注册了连接。
 
 ```typescript
 if (connectionManager.has("default")) {

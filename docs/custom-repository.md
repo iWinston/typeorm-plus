@@ -1,47 +1,44 @@
-# Custom repositories
+# 自定义 repositories
 
-You can create a custom repository which should contain methods to work with your database.
-Usually custom repositories are created for a single entity and contains its specific queries.
-For example, let's say we want to have a method called `findByName(firstName: string, lastName: string)`
-which will search for users by a given first and last names. 
-The best place for this method is in `Repository`,
-so we could call it like `userRepository.findByName(...)`.
-You can achieve this using custom repositories.
+你可以创建一个自定义存储库，其中应包含使用数据库的方法。
+通常为单个实体创建自定义存储库，并包含其特定查询。
+比如，假设我们想要一个名为`findByName（firstName：string，lastName：string）`的方法，它将按给定的 first 和 last names 搜索用户。
+这个方法的最好的地方是在`Repository`，所以我们可以这样称呼它`userRepository.findByName（...）`。
+你也可以使用自定义存储库来实现此目的。
 
-There are several ways how custom repositories can be created.
+有几种方法可以创建自定义存储库。
 
-* [Custom repository extends standard Repository](#custom-repository-extends-standard-repository) 
-* [Custom repository extends standard AbstractRepository](#custom-repository-extends-standard-abstractrepository) 
-* [Custom repository without extends](#custom-repository-without-extends)
-* [Using custom repositories in transactions](#using-custom-repositories-in-transactions-or-why-custom-repositories-cannot-be-services)
+- [自定义 repositories](#%E8%87%AA%E5%AE%9A%E4%B9%89-repositories)
+  - [扩展了标准 repository 的定制 repository](#%E6%89%A9%E5%B1%95%E4%BA%86%E6%A0%87%E5%87%86-repository-%E7%9A%84%E5%AE%9A%E5%88%B6-repository)
+  - [扩展了标准 AbstractRepository 的自定义 repository](#%E6%89%A9%E5%B1%95%E4%BA%86%E6%A0%87%E5%87%86-abstractrepository-%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89-repository)
+  - [没有扩展的自定义 repository](#%E6%B2%A1%E6%9C%89%E6%89%A9%E5%B1%95%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89-repository)
+  - [在事务中使用自定义存储库或为什么自定义存储库不能是服务](#%E5%9C%A8%E4%BA%8B%E5%8A%A1%E4%B8%AD%E4%BD%BF%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AD%98%E5%82%A8%E5%BA%93%E6%88%96%E4%B8%BA%E4%BB%80%E4%B9%88%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AD%98%E5%82%A8%E5%BA%93%E4%B8%8D%E8%83%BD%E6%98%AF%E6%9C%8D%E5%8A%A1)
 
-## Custom repository extends standard Repository
+## 扩展了标准 repository 的定制 repository
 
-The first way to create a custom repository is to extend `Repository`.
-Example:
+创建自定义 repository 的第一种方法是扩展`Repository`。
+例如：
 
 ```typescript
-import {EntityRepository, Repository} from "typeorm";
-import {User} from "../entity/User";
+import { EntityRepository, Repository } from "typeorm";
+import { User } from "../entity/User";
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
-
-    findByName(firstName: string, lastName: string) {
-        return this.findOne({ firstName, lastName });
-    }
-
+  findByName(firstName: string, lastName: string) {
+    return this.findOne({ firstName, lastName });
+  }
 }
 ```
 
-Then you can use it this way:
+然后你可以这样使用它：
 
 ```typescript
-import {getCustomRepository} from "typeorm";
-import {UserRepository} from "./repository/UserRepository";
+import { getCustomRepository } from "typeorm";
+import { UserRepository } from "./repository/UserRepository";
 
-const userRepository = getCustomRepository(UserRepository); // or connection.getCustomRepository or manager.getCustomRepository()
-const user = userRepository.create(); // same as const user = new User();
+const userRepository = getCustomRepository(UserRepository); // 或connection.getCustomRepository或manager.getCustomRepository（）
+const user = userRepository.create(); // 和 const user = new User();一样
 user.firstName = "Timber";
 user.lastName = "Saw";
 await userRepository.save(user);
@@ -49,117 +46,103 @@ await userRepository.save(user);
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-As you can see you can "get" the repository using `getCustomRepository`
-and you can access any method created inside it and any method in the standard entity repository.
+如你所见，你也可以使用`getCustomRepository` 获取 repository，
+并且可以访问在其中创建的任何方法以及标准实体 repository 中的任何方法。
 
-## Custom repository extends standard AbstractRepository
+## 扩展了标准 AbstractRepository 的自定义 repository
 
-The second way to create a custom repository is to extend `AbstractRepository`:
+创建自定义 repository 的第二种方法是扩展`AbstractRepository`：
 
 ```typescript
-import {EntityRepository, AbstractRepository} from "typeorm";
-import {User} from "../entity/User";
+import { EntityRepository, AbstractRepository } from "typeorm";
+import { User } from "../entity/User";
 
 @EntityRepository(User)
 export class UserRepository extends AbstractRepository<User> {
+  createAndSave(firstName: string, lastName: string) {
+    const user = new User();
+    user.firstName = firstName;
+    user.lastName = lastName;
+    return this.manager.save(user);
+  }
 
-    createAndSave(firstName: string, lastName: string) {
-        const user = new User();
-        user.firstName = firstName;
-        user.lastName = lastName;
-        return this.manager.save(user);
-    }
-
-    findByName(firstName: string, lastName: string) {
-        return this.repository.findOne({ firstName, lastName });
-    }
-
+  findByName(firstName: string, lastName: string) {
+    return this.repository.findOne({ firstName, lastName });
+  }
 }
 ```
 
-Then you can use it this way:
+然后你可以这样使用它：
 
 ```typescript
-import {getCustomRepository} from "typeorm";
-import {UserRepository} from "./repository/UserRepository";
+import { getCustomRepository } from "typeorm";
+import { UserRepository } from "./repository/UserRepository";
 
 const userRepository = getCustomRepository(UserRepository); // or connection.getCustomRepository or manager.getCustomRepository()
 await userRepository.createAndSave("Timber", "Saw");
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-The difference between this type of repository and the previous one is that it does not expose all the methods `Repository` has.
-`AbstractRepository` does not have any public methods, 
-it only has protected methods, like `manager` and `repository`, which you can use in your own
-public methods.
-Extending `AbstractRepository` is useful if you don't want to expose all methods the standard `Repository` has to the public.
+这种类型的存储库与前一个存储库之间的区别在于它没有公开`Repository`所具有的所有方法。
+`AbstractRepository`没有任何公共方法，它只有受保护的方法，比如`manager`和`repository`，你可以在自己的公共方法中使用它们。
+如果你不希望将标准`Repository`所有方法公开给 public，那么扩展`AbstractRepository`将非常有用。
 
-## Custom repository without extends
+## 没有扩展的自定义 repository
 
-The third way to create a repository is to not extend anything, 
-but define a constructor which always accepts an entity manager instance:
+创建存储库的第三种方法是不扩展任何东西，
+但是需要定义一个总是接受实体管理器(entity manager)实例的构造函数：
 
 ```typescript
-import {EntityRepository, Repository, EntityManager} from "typeorm";
-import {User} from "../entity/User";
+import { EntityRepository, Repository, EntityManager } from "typeorm";
+import { User } from "../entity/User";
 
 @EntityRepository()
 export class UserRepository {
+  constructor(private manager: EntityManager) {}
 
-    constructor(private manager: EntityManager) {
-    }
+  createAndSave(firstName: string, lastName: string) {
+    const user = new User();
+    user.firstName = firstName;
+    user.lastName = lastName;
+    return this.manager.save(user);
+  }
 
-    createAndSave(firstName: string, lastName: string) {
-        const user = new User();
-        user.firstName = firstName;
-        user.lastName = lastName;
-        return this.manager.save(user);
-    }
-
-    findByName(firstName: string, lastName: string) {
-        return this.manager.findOne(User, { firstName, lastName });
-    }
-
+  findByName(firstName: string, lastName: string) {
+    return this.manager.findOne(User, { firstName, lastName });
+  }
 }
 ```
 
-Then you can use it this way:
+然后你可以这样使用它：
 
 ```typescript
-import {getCustomRepository} from "typeorm";
-import {UserRepository} from "./repository/UserRepository";
+import { getCustomRepository } from "typeorm";
+import { UserRepository } from "./repository/UserRepository";
 
-const userRepository = getCustomRepository(UserRepository); // or connection.getCustomRepository or manager.getCustomRepository()
+const userRepository = getCustomRepository(UserRepository); // 或者 connection.getCustomRepository 或者 manager.getCustomRepository()
 await userRepository.createAndSave("Timber", "Saw");
 const timber = await userRepository.findByName("Timber", "Saw");
 ```
 
-This type of repository does not extend anything - you only need to define a constructor
-which must accept `EntityManager`. Then you can use it everywhere in your repository methods.
-Also, this type of repository is not bound to a specific entity,
-thus, you can operate with multiple entities inside them. 
+这种类型的存储库不会扩展任何东西，你只需要定义一个必须接受`EntityManager`的构造函数。 然后在存储库方法中的任何位置使用它。
+此外，这种类型的存储库不绑定到特定实体，因此你可以使用其中的多个实体进行操作。
 
-## Using custom repositories in transactions or why custom repositories cannot be services
+## 在事务中使用自定义存储库或为什么自定义存储库不能是服务
 
-Custom repositories cannot be services, 
-because there isn't a single instance of a custom repository (just like regular repositories or entity manager) in the app.
-Besides the fact that there can be multiple connections in your app (where entity manager and repositories are different)
-repositories and managers are different in transactions as well. 
-For example:
+自定义存储库不能是服务，因为应用程序中没有自定义存储库的单个实例（就像常规存储库或实体管理器一样）。
+除了您的应用程序中可能存在多个连接（实体管理器和存储库不同）之外，存储库和管理器在事务中也是不同的。
+
+例如：
 
 ```typescript
 await connection.transaction(async manager => {
-    // in transactions you MUST use manager instance provided by a transaction,
-    // you cannot use global managers, repositories or custom repositories
-    // because this manager is exclusive and transactional
-    // and if let's say we would do custom repository as a service
-    // it has a "manager" property which should be unique instance of EntityManager
-    // but there is no global EntityManager instance and cannot be
-    // thats why custom managers are specific to each EntityManager and cannot be services.
-    // this also opens opportunity to use custom repositories in transactions without any issues:
-    
-    const userRepository = manager.getCustomRepository(UserRepository); // DONT USE GLOBAL getCustomRepository here!
-    await userRepository.createAndSave("Timber", "Saw");
-    const timber = await userRepository.findByName("Timber", "Saw");
+  // 在事务中你必须使用事务提供的管理器实例而不能使用全局管理器、存储库或自定义存储库，
+  // 因为这个管理器是独占的和事务性的，
+  // 如果让我们自定义存储库作为服务,它的一个"manager"属性应该 是EntityManager的唯一实例，但没有全局的EntityManager实例，并且也不可能有。
+  // 这就是为什么自定义管理器特定于每个EntityManager而不能是服务。
+  // 这也提供了在事务中使用自定义存储库而不会出现什么问题：
+  const userRepository = manager.getCustomRepository(UserRepository); // 不要在这里使用全局的getCustomRepository！
+  await userRepository.createAndSave("Timber", "Saw");
+  const timber = await userRepository.findByName("Timber", "Saw");
 });
 ```

@@ -1,38 +1,37 @@
-# Example using TypeORM with Express
+# 使用 TypeORM 和 Express 的示例
 
-* [Initial setup](#initial-setup)
-* [Adding Express to the application](#adding-express-to-the-application)
-* [Adding TypeORM to the application](#adding-typeorm-to-the-application)
+- [使用 TypeORM 和 Express 的示例](#%E4%BD%BF%E7%94%A8-typeorm-%E5%92%8C-express-%E7%9A%84%E7%A4%BA%E4%BE%8B)
+  - [初始设置](#%E5%88%9D%E5%A7%8B%E8%AE%BE%E7%BD%AE)
+  - [将 Express 添加到应用程序](#%E5%B0%86-express-%E6%B7%BB%E5%8A%A0%E5%88%B0%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
+  - [将 TypeORM 添加到应用程序](#%E5%B0%86-typeorm-%E6%B7%BB%E5%8A%A0%E5%88%B0%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
 
-## Initial setup
+## 初始设置
 
-Let's create a simple application called "user" which stores users in the database
-and allows us to create, update, remove, and get a list of all users, as well as a single user by id
-within web api.
+让我们创建一个名为"user"的简单应用程序，它将用户存储在数据库中
+并允许我们在 web api 创建、更新、删除和获取所有用户的列表，以及通过 id 获取的单个用户。
 
-First, create a directory called "user":
+首先，创建一个名为"user"的目录：
 
 ```
 mkdir user
 ```
 
-Then switch to the directory and create a new project:
+然后切换到目录并创建一个新项目：
 
 ```
 cd user
 npm init
 ```
 
-Finish the init process by filling in all required application information.
+通过填写所有必需的应用程序信息来完成初始化过程。
 
-Now we need to install and setup a TypeScript compiler. Lets install it first:
+现在我们需要安装和设置 TypeScript 编译器。 首先安装：
 
 ```
 npm i typescript --save-dev
 ```
 
-Then let's create a `tsconfig.json` file which contains the configuration required for the application to
-compile and run. Create it using your favorite editor and put the following configuration:
+然后创建一个`tsconfig.json`文件，其中包含应用程序编译和运行所需的配置。 使用你常用的编辑器创建它并进行以下配置：
 
 ```json
 {
@@ -47,7 +46,7 @@ compile and run. Create it using your favorite editor and put the following conf
 }
 ```
 
-Now let's create a main application endpoint - `app.ts` inside the `src` directory:
+现在让我们在`src`目录中创建一个主应用程序入口--`app.ts`：
 
 ```
 mkdir src
@@ -55,206 +54,203 @@ cd src
 touch app.ts
 ```
 
-Let's add a simple `console.log` inside it:
+先在其中添加一个简单的`console.log`：
 
 ```typescript
 console.log("Application is up and running");
 ```
 
-Now it's time to run our application.
-To run it, you need to compile your typescript project first:
+然后运行程序。在运行之前，你需要首先编译 typescript 项目：
 
 ```
 tsc
 ```
 
-Once you compile it, you should have a `src/app.js` file generated.
-You can run it using:
+编译之后，可以看到生成一个`src/app.js`文件。
+然后可以使用以下命令运行它
 
 ```
 node src/app.js
 ```
 
-You should see the, "Application is up and running" message in your console right after you run the application.
+运行应用程序后，则在控制台中看到"Application is up and running"的消息。
 
-You must compile your files each time you make a change.
-Alternatively, you can setup watcher or install [ts-node](http://github.com/ts-node/ts-node) to avoid manual compilation each time.
+每次进行更改时都必须编译文件。
+或者，你可以设置监听程序或安装[ts-node](http://github.com/ts-node/ts-node)以避免每次手动编译。
 
-## Adding Express to the application
+## 将 Express 添加到应用程序
 
-Let's add Express to our application. First, let's install the packages we need:
+将 Express 添加到应用程序中。 首先，需要安装依赖包：d:
 
 ```
 npm i express body-parser @types/express @types/body-parser --save
 ```
 
-* `express` is the express engine itself. It allows us to create a web api
-* `body-parser` is used to setup how express would handle body sent by a client
-* `@types/express` is used to have a type information when using express
-* `@types/body-parser` is used to have a type information when using body parser
+- `express` 是 express 引擎，允许我们创建一个 web api
+- `body-parser` 用于设置 express 如何处理客户端发送的 body
+- `@types/express` 用于在使用 express 时具有类型提示信息
+- `@types/body-parser` 用于在使用 body parser 时具有类型提示信息
 
-Let's edit the `src/app.ts` file and add express-related logic:
+让我们编辑`src/app.ts`文件并添加与表达相关的逻辑：
 
 ```typescript
 import * as express from "express";
-import {Request, Response} from "express";
-import * as bodyParser from  "body-parser";
+import { Request, Response } from "express";
+import * as bodyParser from "body-parser";
 
-// create and setup express app
+//创建并设置 express app
 const app = express();
 app.use(bodyParser.json());
 
-// register routes
+// 注册路由
 
 app.get("/users", function(req: Request, res: Response) {
-    // here we will have logic to return all users
+  // 获取用户信息的逻辑操作
 });
 
 app.get("/users/:id", function(req: Request, res: Response) {
-    // here we will have logic to return user by id
+  // 通过id获得用户信息的逻辑操作
 });
 
 app.post("/users", function(req: Request, res: Response) {
-    // here we will have logic to save a user
+  // 保存用户信息的逻辑操作
 });
 
 app.put("/users/:id", function(req: Request, res: Response) {
-    // here we will have logic to update a user by a given user id
+  // 根据给定id更新某个用户的逻辑操作
 });
 
 app.delete("/users/:id", function(req: Request, res: Response) {
-    // here we will have logic to delete a user by a given user id
+  // 根据给定id删除一个用户的逻辑操作
 });
 
-// start express server
+// 启动 express 服务
 app.listen(3000);
 ```
 
-Now you can compile and run your project.
-You should have an express server running now with working routes.
-However, those routes do not return any content yet.
+现在你可以编译并运行项目。
+此时你应该有一个启动的 express 服务，并且有可以工作的路由。
+但是，这些路由目前并未返回任何内容。
 
-## Adding TypeORM to the application
+## 将 TypeORM 添加到应用程序
 
-Finally, let's add TypeORM to the application.
-In this example, we will use `mysql` driver.
-Setup process for other drivers is similar.
+最后，让我们将 TypeORM 添加到应用程序中。
+在这个例子中，我们将使用`mysql`驱动程序。
+其他驱动程序的安装过程类似。
 
-Let's install the required packages first:
+首先安装依赖包：
 
 ```
 npm i typeorm mysql reflect-metadata --save
 ```
 
-* `typeorm` is the typeorm package itself
-* `mysql` is the underlying database driver.
-If you are using a diffrent database system,  you must install the appropriate package
-* `reflect-metadata` is required to make decorators to work properly
+- `typeorm` typeorm 包
+- `mysql` 是底层数据库驱动程序。如果你使用的是其他数据库系统，则必须安装相应的包。
+- `reflect-metadata` 需要使装饰器正常工作
 
-Now let's create `ormconfig.json` with the database connection configuration we will use.
+然后创建一个`ormconfig.json`文件来配置数据库连接。
 
 ```json
-  {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "test",
-    "password": "test",
-    "database": "test",
-    "entities": ["src/entity/*.js"],
-    "logging": true
-  }
+{
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "test",
+  "password": "test",
+  "database": "test",
+  "entities": ["src/entity/*.js"],
+  "logging": true
+}
 ```
 
-Configure each option as you need.
-Learn more about [connection options](./connection-options.md).
+根据需要配置每个选项。
+了解有关 [连接选项](./connection-options.md)的更多信息。
 
-Let's create a `User` entity inside `src/entity`:
+让我们在`src/entity`中创建一个`User`实体：
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  firstName: string;
 
-    @Column()
-    firstName: string;
-
-    @Column()
-    lastName: string;
-
+  @Column()
+  lastName: string;
 }
 ```
 
-Let's change `src/app.ts`:
+然后修改 `src/app.ts`:
 
 ```typescript
 import * as express from "express";
-import {Request, Response} from "express";
-import * as bodyParser from  "body-parser";
-import {createConnection} from "typeorm";
-import {User} from "./User";
+import { Request, Response } from "express";
+import * as bodyParser from "body-parser";
+import { createConnection } from "typeorm";
+import { User } from "./User";
 
-// create typeorm connection
+// 创建 typeorm 连接
 createConnection().then(connection => {
-    const userRepository = connection.getRepository(User);
+  const userRepository = connection.getRepository(User);
 
-    // create and setup express app
-    const app = express();
-    app.use(bodyParser.json());
+  // 创建并设置express app
+  const app = express();
+  app.use(bodyParser.json());
 
-    // register routes
+  // 注册路由
 
-    app.get("/users", async function(req: Request, res: Response) {
-        return userRepository.find();
-    });
+  app.get("/users", async function(req: Request, res: Response) {
+    return userRepository.find();
+  });
 
-    app.get("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.findOne(req.params.id);
-    });
+  app.get("/users/:id", async function(req: Request, res: Response) {
+    return userRepository.findOne(req.params.id);
+  });
 
-    app.post("/users", async function(req: Request, res: Response) {
-        const user = userRepository.create(req.body);
-        return userRepository.save(user);
-    });
+  app.post("/users", async function(req: Request, res: Response) {
+    const user = userRepository.create(req.body);
+    return userRepository.save(user);
+  });
 
-    app.put("/users/:id", function(req: Request, res: Response) {
-        const user = userRepository.findOne(req.params.id);
-        userRepository.merge(user, req.body);
-        return userRepository.save(user);
-    });
+  app.put("/users/:id", function(req: Request, res: Response) {
+    const user = userRepository.findOne(req.params.id);
+    userRepository.merge(user, req.body);
+    return userRepository.save(user);
+  });
 
-    app.delete("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.remove(req.params.id);
-    });
+  app.delete("/users/:id", async function(req: Request, res: Response) {
+    return userRepository.remove(req.params.id);
+  });
 
-    // start express server
-    app.listen(3000);
+  // 启动 express server
+  app.listen(3000);
 });
 ```
 
-If you want to extract action callbacks into separate files and you need the `connection` instance,
-you can simply use `getConnection`:
+如果要将逻辑处理提取到单独的文件中并且还需要`connection`实例，则可以使用`getConnection`：
 
 ```typescript
-import {getConnection} from "typeorm";
-import {User} from "./User";
+import { getConnection } from "typeorm";
+import { User } from "./User";
 
 export function UsersListAction(req: Request, res: Response) {
-    return getConnection().getRepository(User).find();
+  return getConnection()
+    .getRepository(User)
+    .find();
 }
 ```
 
-You don't even need `getConnection` in this example - you can directly use the `getRepository` function:
+在这个例子中你甚至不需要`getConnection` - 可以直接使用`getRepository`函数：
 
 ```typescript
-import {getRepository} from "typeorm";
-import {User} from "./User";
+import { getRepository } from "typeorm";
+import { User } from "./User";
 
 export function UsersListAction(req: Request, res: Response) {
-    return getRepository(User).find();
+  return getRepository(User).find();
 }
 ```

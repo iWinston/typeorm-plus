@@ -1,76 +1,73 @@
-# Relations
+# 关系
 
-* [What are relations](#what-are-relations)
-* [Relation options](#relation-options)
-* [Cascades](#cascades)
-* [`@JoinColumn` options](#joincolumn-options)
-* [`@JoinTable` options](#jointable-options)
+- [关系](#%E5%85%B3%E7%B3%BB)
+  - [什么是关系](#%E4%BB%80%E4%B9%88%E6%98%AF%E5%85%B3%E7%B3%BB)
+  - [关系选项](#%E5%85%B3%E7%B3%BB%E9%80%89%E9%A1%B9)
+  - [级联](#%E7%BA%A7%E8%81%94)
+  - [`@JoinColumn` 选项](#joincolumn-%E9%80%89%E9%A1%B9)
+  - [`@JoinTable` 选项](#jointable-%E9%80%89%E9%A1%B9)
 
-## What are relations
+## 什么是关系
 
-Relations helps you to work with related entities easily. 
-There are several types of relations:
+关系可以帮助你轻松地与相关实体合作。
+有几种类型的关系：
 
-* one-to-one using `@OneToOne`
-* many-to-one using `@ManyToOne`
-* one-to-many using `@OneToMany`
-* many-to-many using `@ManyToMany`
-          
-## Relation options
+- 一对一 `@OneToOne`
+- 多对一 `@ManyToOne`
+- 一对多 `@OneToMany`
+- 多对多 `@ManyToMany`
 
-There are several options you can specify for relations:
+## 关系选项
 
-* `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity 
-* `cascade: boolean` - If set to true, the related object will be inserted and update in the database.
-* `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
-* `primary: boolean` - Indicates whether this relation's column will be a primary column or not.
-* `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
+你可以为关系指定几个选项：
 
-## Cascades
+- `eager: boolean` - 如果设置为 true，则在此实体上使用`find *` 或`QueryBuilder`时，将始终使用主实体加载关系
+- `cascade: boolean` - 如果设置为 true，则将插入相关对象并在数据库中更新。
+- `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - 指定删除引用对象时外键的行为方式
+- `primary: boolean` - 指示此关系的列是否为主列。
+- `nullable: boolean` -指示此关系的列是否可为空。 默认情况下是可空。
 
-Cascades example:
+## 级联
+
+级联例子:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
-import {Question} from "./Question";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Question } from "./Question";
 
 @Entity()
 export class Category {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @ManyToMany(type => Question, question => question.categories)
-    questions: Question[];
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @ManyToMany(type => Question, question => question.categories)
+  questions: Question[];
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    title: string;
-    
-    @Column()
-    text: string;
-    
-    @ManyToMany(type => Category, category => category.questions, {
-        cascade: true
-    })
-    @JoinTable()
-    categories: Category[];
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  text: string;
+
+  @ManyToMany(type => Category, category => category.questions, {
+    cascade: true
+  })
+  @JoinTable()
+  categories: Category[];
 }
 ```
 
@@ -86,30 +83,29 @@ question.categories = [category1, category2];
 await connection.manager.save(question);
 ```
 
-As you can see in this example we did not call `save` for `category1` and `category2`.
-They will be automatically inserted, because we set `cascade` to true.
+正如您在本示例中所看到的，我们没有为`category1`和`category2`调用`save`。
+由于我们将`cascade`设置为 true，因此它们将自动插入数据库。
 
-Keep in mind - great power comes with great responsibility.
-Cascades may seem like a good and easy way to work with relations,
-but they may also bring bugs and security issues when some undesired object is being saved into the database. 
-Also, they provide a less explicit way of saving new objects into the database.
+请记住，能力越大，责任越大。
+级联可能看起来像是一种处理关系的好方法，
+但是当一些不需要的对象被保存到数据库中时，它们也可能带来错误和安全问题。
+此外，它们提供了一种将新对象保存到数据库中的不太明确的方法。
 
-## `@JoinColumn` options
+## `@JoinColumn` 选项
 
-`@JoinColumn` not only defines which side of the relation contains the join column with a foreign key, 
-but also allows you to customize join column name and referenced column name.
+`@ JoinColumn`不仅定义了关系的哪一侧包含带有外键的连接列，还允许自定义连接列名和引用的列名。
 
-When we set `@JoinColumn`, it automatically creates a column in the database named `propertyName + referencedColumnName`.
-For example:
+当我们设置`@ JoinColumn`时，它会自动在数据库中创建一个名为`propertyName + referencedColumnName`的列。
+例如：
 
 ```typescript
 @ManyToOne(type => Category)
-@JoinColumn() // this decorator is optional for @ManyToOne, but required for @OneToOne
+@JoinColumn() // 这个装饰器对于@ManyToOne是可选的，但@OneToOne是必需的
 category: Category;
 ```
 
-This code will create a `categoryId` column in the database.
-If you want to change this name in the database you can specify a custom join column name:
+此代码将在数据库中创建`categoryId`列。
+如果要在数据库中更改此名称，可以指定自定义连接列名称：
 
 ```typescript
 @ManyToOne(type => Category)
@@ -117,10 +113,9 @@ If you want to change this name in the database you can specify a custom join co
 category: Category;
 ```
 
-Join columns are always a reference to some other columns (using a foreign key).
-By default your relation always refers to the primary column of the related entity.
-If you want to create relation with other columns of the related entity -
-you can specify them in `@JoinColumn` as well:
+Join 列始终是对其他一些列的引用（使用外键）。
+默认情况下，关系始终引用相关实体的主列。
+如果要与相关实体的其他列创建关系 - 你也可以在`@ JoinColumn`中指定它们：
 
 ```typescript
 @ManyToOne(type => Category)
@@ -128,20 +123,20 @@ you can specify them in `@JoinColumn` as well:
 category: Category;
 ```
 
-The relation now refers to `name` of the `Category` entity, instead of `id`.
-Column name for that relation will become `categoryName`
+该关系现在引用`Category`实体的`name`，而不是`id`。
+该关系的列名将变为`categoryName`
 
-## `@JoinTable` options
+## `@JoinTable` 选项
 
-`@JoinTable` is used for `many-to-many` relations and describes join columns of the "junction" table.
-A junction table is a special separate table created automatically by TypeORM with columns that refer to the related entities.
-You can change column names inside junction tables and their referenced columns with `@JoinColumn`:
-You can also change the name of the generated "junction" table.
+`@ JoinTable`用于“多对多”关系，并描述"junction"表的连接列。
+联结表是由 TypeORM 自动创建的一个特殊的单独表，其中的列引用相关实体。
+你可以使用`@ JoinColumn`更改联结表及其引用列中的列名：
+你还可以更改生成的"junction"表的名称。
 
 ```typescript
 @ManyToMany(type => Category)
 @JoinTable({
-    name: "question_categories" // table name for the junction table of this relation
+    name: "question_categories" // 此关系的联结表的表名
     joinColumn: {
         name: "question",
         referencedColumnName: "id"
@@ -154,5 +149,5 @@ You can also change the name of the generated "junction" table.
 categories: Category[];
 ```
 
-If the destination table has composite primary keys,
-then an array of properties must be sent to `@JoinTable`.
+如果目标表具有复合主键，
+则必须将一组属性发送到`@ JoinTable`。

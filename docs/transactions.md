@@ -1,82 +1,73 @@
-# Transactions
+# 事务
 
-- [Creating and using transactions](#creating-and-using-transactions)
-	- [Specifying Isolation Levels](#specifying-isolation-levels)
-- [Transaction decorators](#transaction-decorators)
-- [Using `QueryRunner` to create and control state of single database connection](#using-queryrunner-to-create-and-control-state-of-single-database-connection)
+- [事务](#%E4%BA%8B%E5%8A%A1)
+  - [创建和使用事务](#%E5%88%9B%E5%BB%BA%E5%92%8C%E4%BD%BF%E7%94%A8%E4%BA%8B%E5%8A%A1)
+    - [指定隔离级别](#%E6%8C%87%E5%AE%9A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB)
+  - [事务装饰器](#%E4%BA%8B%E5%8A%A1%E8%A3%85%E9%A5%B0%E5%99%A8)
+  - [使用 `QueryRunner` 创建和控制单个数据库连接的状态](#%E4%BD%BF%E7%94%A8-queryrunner-%E5%88%9B%E5%BB%BA%E5%92%8C%E6%8E%A7%E5%88%B6%E5%8D%95%E4%B8%AA%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%9E%E6%8E%A5%E7%9A%84%E7%8A%B6%E6%80%81)
 
-## Creating and using transactions
+## 创建和使用事务
 
-Transactions are created using `Connection` or `EntityManager`. 
-Examples:
+事务是使用`Connection`或`EntityManager`创建的。
+例如:
 
 ```typescript
-import {getConnection} from "typeorm";
+import { getConnection } from "typeorm";
 
-await getConnection().transaction(transactionalEntityManager => {
-    
-});
+await getConnection().transaction(transactionalEntityManager => {});
 ```
 
-or 
+or
 
 ```typescript
-import {getManager} from "typeorm";
+import { getManager } from "typeorm";
 
-await getManager().transaction(transactionalEntityManager => {
-    
-});
+await getManager().transaction(transactionalEntityManager => {});
 ```
 
-Everything you want to run in a transaction must be executed in a callback:
+你想要在事务中运行的所有内容都必须在回调中执行：
 
 ```typescript
-import {getManager} from "typeorm";
+import { getManager } from "typeorm";
 
 await getManager().transaction(async transactionalEntityManager => {
-    await transactionalEntityManager.save(users);
-    await transactionalEntityManager.save(photos);
-    // ...
+  await transactionalEntityManager.save(users);
+  await transactionalEntityManager.save(photos);
+  // ...
 });
 ```
 
-The most important restriction when working in an transaction is, to **ALWAYS** use the provided instance of entity manager - 
-`transactionalEntityManager` in this example.
-If you'll use global manager (from `getManager` or manager from connection) you'll have problems.
-You also cannot use classes which use global manager or connection to execute their queries.
-All operations **MUST** be executed using the provided transactional entity manager.
+当在事务中工作时需要**总是**使用提供的实体管理器实例 - `transactionalEntityManager`。
+如果你使用全局管理器（来自`getManager`或来自连接的 manager 可能会遇到一些问题。
+你也不能使用使用全局管理器或连接的类来执行查询。**必须**使用提供的事务实体管理器执行所有操作。
 
-### Specifying Isolation Levels
+### 指定隔离级别
 
-Specifying the isolation level for the transaction can be done by supplying it as the first paramter:
+指定事务的隔离级别可以通过将其作为第一个参数提供来完成：
 
 ```typescript
-import {getManager} from "typeorm";
+import { getManager } from "typeorm";
 
-await getManager().transaction("SERIALIZABLE", transactionalEntityManager => {
-    
-});
+await getManager().transaction("SERIALIZABLE", transactionalEntityManager => {});
 ```
 
-Isolation level implementations are *not* agnostic across all databases.
+隔离级别实现与所有数据库不相关。
 
-The following database drivers support the standard isolation levels (`READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`):
-* MySQL
-* Postgres
-* SQL Server
+以下数据库驱动程序支持标准隔离级别（`READ UNCOMMITTED`，`READ COMMITTED`，`REPEATABLE READ`，`SERIALIZABLE`）：
 
-**SQlite** defaults transactions to `SERIALIZABLE`, but if *shared cache mode* is enabled, a transaction can use the `READ UNCOMMITTED` isolation level.
+- MySQL
+- Postgres
+- SQL Server
 
-**Oracle** only supports the `READ COMMITTED` and `SERIALIZABLE` isolation levels.
+**SQlite**将事务默认为`SERIALIZABLE`，但如果启用了*shared cache mode*，则事务可以使用`READ UNCOMMITTED`隔离级别。
 
+**Oracle**仅支持`READ COMMITTED`和`SERIALIZABLE`隔离级别。
 
-## Transaction decorators
+## 事务装饰器
 
-There are a few decorators which can help you organize your transactions - 
-`@Transaction`, `@TransactionManager` and `@TransactionRepository`.
+以下装饰器可以帮助你组织事务操作 - `@Transaction`, `@TransactionManager` 和 `@TransactionRepository`。
 
-`@Transaction` wraps all its execution into a single database transaction,
-and `@TransactionManager` provides a transaction entity manager which must be used to execute queries inside this transaction:
+`@Transaction`将其所有执行包装到一个数据库事务中，`@TransportManager`提供了一个事务实体管理器，它必须用于在该事务中执行查询：
 
 ```typescript
 @Transaction()
@@ -85,7 +76,7 @@ save(@TransactionManager() manager: EntityManager, user: User) {
 }
 ```
 
-with isolation level:
+隔离级别：
 
 ```typescript
 @Transaction({ isolation: "SERIALIZABLE" })
@@ -94,77 +85,65 @@ save(@TransactionManager() manager: EntityManager, user: User) {
 }
 ```
 
-You **must** always use the manager provided by `@TransactionManager`.
+你**必须**使用`@TransportManager`提供的管理器。
 
-However, you can also inject transaction repository (which uses transaction entity manager under the hood), 
-using `@TransactionRepository`:
+但是，你也可以使用`@TransactionRepository`注入事务存储库（使用事务实体管理器）：
 
 ```typescript
 @Transaction()
 save(user: User, @TransactionRepository(User) userRepository: Repository<User>) {
-    return userRepository.save(user);    
-}
-``` 
-
-You can inject both built-in TypeORM's repositories like `Repository`, `TreeRepository` and `MongoRepository` 
-(using `@TransactionRepository(Entity) entityRepository: Repository<Entity>`) 
-or custom repositories (classes extending the built-in TypeORM's repositories classes and decorated with `@EntityRepository`) 
-using the `@TransactionRepository() customRepository: CustomRepository`.
-
-## Using `QueryRunner` to create and control state of single database connection
-
-`QueryRunner` provides a single database connection.
-Transactions are organized using query runners. 
-Single transactions can only be established on a single query runner.
-You can manually create a query runner instance and use it to manually control transaction state.
-Example:
-
-```typescript
-import {getConnection} from "typeorm";
-
-// get a connection and create a new query runner
-const connection = getConnection();
-const queryRunner = connection.createQueryRunner();
-
-// establish real database connection using our new query runner
-await queryRunner.connect();
-
-// now we can execute any queries on a query runner, for example:
-await queryRunner.query("SELECT * FROM users");
-
-// we can also access entity manager that works with connection created by a query runner:
-const users = await queryRunner.manager.find(User);
-
-// lets now open a new transaction:
-await queryRunner.startTransaction();
-
-try {
-    
-    // execute some operations on this transaction:
-    await queryRunner.manager.save(user1);
-    await queryRunner.manager.save(user2);
-    await queryRunner.manager.save(photos);
-    
-    // commit transaction now:
-    await queryRunner.commitTransaction();
-    
-} catch (err) {
-    
-    // since we have errors lets rollback changes we made
-    await queryRunner.rollbackTransaction();
-    
-} finally {
-    
-    // you need to release query runner which is manually created:
-    await queryRunner.release();
+    return userRepository.save(user);
 }
 ```
 
-There are 3 methods to control transactions in `QueryRunner`:
+你可以注入内置的 TypeORM 的存储库，如`Repository`，`TreeRepository`和`MongoRepository`
+（使用`@TransactionRepository(Entity)entityRepository：Repository<Entity>`）或自定义存储库（扩展内置 TypeORM 的存储库类并用`@ EntityRepository`装饰的类）使用`@TransactionRepository() customRepository：CustomRepository`。
 
+## 使用 `QueryRunner` 创建和控制单个数据库连接的状态
 
-* `startTransaction` - starts a new transaction inside the query runner instance.
-* `commitTransaction` - commits all changes made using the query runner instance.
-* `rollbackTransaction` - rolls all changes made using the query runner instance back.
+`QueryRunner`提供单个数据库连接。
+使用查询运行程序组织事务。
+单个事务只能在单个查询运行器上建立。
+你可以手动创建查询运行程序实例，并使用它来手动控制事务状态。
+例如：
 
-Learn more about [Query Runner](./query-runner.md).
+```typescript
+import { getConnection } from "typeorm";
+
+// 获取连接并创建新的queryRunner
+const connection = getConnection();
+const queryRunner = connection.createQueryRunner();
+
+// 使用我们的新queryRunner建立真正的数据库连
+await queryRunner.connect();
+
+// 现在我们可以在queryRunner上执行任何查询，例如：
+await queryRunner.query("SELECT * FROM users");
+
+// 我们还可以访问与queryRunner创建的连接一起使用的实体管理器：
+const users = await queryRunner.manager.find(User);
+
+// 开始事务：
+await queryRunner.startTransaction();
+
+try {
+  // 对此事务执行一些操作：
+  await queryRunner.manager.save(user1);
+  await queryRunner.manager.save(user2);
+  await queryRunner.manager.save(photos);
+
+  // 提交事务：
+  await queryRunner.commitTransaction();
+} catch (err) {
+  // 有错误做出回滚更改
+  await queryRunner.rollbackTransaction();
+}
+```
+
+在`QueryRunner`中有 3 种控制事务的方法：
+
+- `startTransaction` - 启动一个新事务。
+- `commitTransaction` - 提交所有更改。
+- `rollbackTransaction` - 回滚所有更改。
+
+了解有关[Query Runner](./query-runner.md)的更多信息。

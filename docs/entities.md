@@ -1,49 +1,53 @@
-# Entities
+# 实体
 
-* [What is Entity?](#what-is-entity)
-* [Entity columns](#entity-columns)
-  * [Primary columns](#primary-columns)
-  * [Special columns](#special-columns)
-  * [Spatial columns](#spatial-columns)
-* [Column types](#column-types)
-  * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-  * [Column types for `postgres`](#column-types-for-postgres)
-  * [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
-  * [Column types for `mssql`](#column-types-for-mssql)
-  * [`simple-array` column type](#simple-array-column-type)
-  * [`simple-json` column type](#simple-json-column-type)
-  * [Columns with generated values](#columns-with-generated-values)
-* [Column options](#column-options)
+- [实体](#%E5%AE%9E%E4%BD%93)
+  - [实体是什么?](#%E5%AE%9E%E4%BD%93%E6%98%AF%E4%BB%80%E4%B9%88)
+  - [实体列](#%E5%AE%9E%E4%BD%93%E5%88%97)
+    - [主列](#%E4%B8%BB%E5%88%97)
+    - [特殊列](#%E7%89%B9%E6%AE%8A%E5%88%97)
+    - [Spatial columns](#spatial-columns)
+  - [列类型](#%E5%88%97%E7%B1%BB%E5%9E%8B)
+    - [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+    - [Column types for `postgres`](#column-types-for-postgres)
+    - [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
+    - [Column types for `mssql`](#column-types-for-mssql)
+    - [Column types for `oracle`](#column-types-for-oracle)
+    - [`simple-array` column type](#simple-array-column-type)
+    - [`simple-json` column type](#simple-json-column-type)
+    - [Columns with generated values](#columns-with-generated-values)
+  - [列选项](#%E5%88%97%E9%80%89%E9%A1%B9)
+  - [实体继承](#%E5%AE%9E%E4%BD%93%E7%BB%A7%E6%89%BF)
+  - [树实体](#%E6%A0%91%E5%AE%9E%E4%BD%93)
+    - [邻接列表](#%E9%82%BB%E6%8E%A5%E5%88%97%E8%A1%A8)
+    - [Closure table](#closure-table)
 
-## What is Entity?
+## 实体是什么?
 
-Entity is a class that maps to a database table (or collection when using MongoDB).
-You can create an entity by defining a new class and mark it with `@Entity()`:
+实体是一个映射到数据库表（或使用MongoDB时的集合）的类。
+你可以通过定义一个新类来创建一个实体，并用`@Entity()`来标记：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  firstName: string;
 
-    @Column()
-    firstName: string;
+  @Column()
+  lastName: string;
 
-    @Column()
-    lastName: string;
-
-    @Column()
-    isActive: boolean;
-
+  @Column()
+  isActive: boolean;
 }
 ```
 
-This will create following database table:
+这将创建以下数据库表：
 
-```shell
+```bash
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
@@ -54,168 +58,148 @@ This will create following database table:
 +-------------+--------------+----------------------------+
 ```
 
-Basic entities consist of columns and relations.
-Each entity **MUST** have a primary column (or ObjectId column if are using MongoDB).
+基本实体由列和关系组成。
+每个实体**必须**有一个主列（如果使用MongoDB，则为ObjectId列）。
 
-Each entity must be registered in your connection options:
+每个实体都必须在连接选项中注册：
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
-import {User} from "./entity/User";
+import { createConnection, Connection } from "typeorm";
+import { User } from "./entity/User";
 
 const connection: Connection = await createConnection({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-    entities: [User]
+  type: "mysql",
+  host: "localhost",
+  port: 3306,
+  username: "test",
+  password: "test",
+  database: "test",
+  entities: [User]
 });
 ```
 
-Or you can specify the whole directory with all entities inside - and all of them will be loaded:
+或者你可以指定包含所有实体的整个目录， 该目录下所有实体都将被加载：
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import { createConnection, Connection } from "typeorm";
 
 const connection: Connection = await createConnection({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-    entities: ["entity/*.js"]
+  type: "mysql",
+  host: "localhost",
+  port: 3306,
+  username: "test",
+  password: "test",
+  database: "test",
+  entities: ["entity/*.js"]
 });
 ```
+如果要为`User`实体使用替代表名，可以在`@ Entity`中指定：`@Entity（“my_users”）`。
+如果要为应用程序中的所有数据库表设置基本前缀，可以在连接选项中指定`entityPrefix`。
 
-If you want to use an alternative table name for the `User` entity you can specify it in `@Entity`: `@Entity("my_users")`.
-If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
+使用实体构造函数时，其参数**必须是可选的**。 由于ORM在从数据库加载时才创建实体类的实例，因此在此之前并不知道构造函数的参数。
 
-When using an entity constructor its arguments **must be optional**. Since ORM creates instances of entity classes when loading from the database, therefore it is not aware of your constructor arguments.
+在[Decorators reference](decorator-reference.md)中了解有关参数@Entity的更多信息。
 
-Learn more about parameters @Entity in [Decorators reference](decorator-reference.md).
+## 实体列
 
-## Entity columns
+由于数据库表由列组成，因此实体也必须由列组成。
+标有`@ Column`的每个实体类属性都将映射到数据库表列。
 
-Since database table consist of columns your entities must consist of columns too.
-Each entity class property you marked with `@Column` will be mapped to a database table column.
+### 主列
 
-### Primary columns
+每个实体必须至少有一个主列。
+有几种类型的主要列：
 
-Each entity must have at least one primary column.
-There are several types of primary columns:
-
-* `@PrimaryColumn()` creates a primary column which take any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. Example below will create id with `int` as type which you must manually assign before save.
+- `@PrimaryColumn()` 创建一个主列，它可以获取任何类型的任何值。你也可以指定列类型。 如果未指定列类型，则将从属性类型自动推断。
+ 下面的示例将使用`int`类型创建id，你必须在保存之前手动分配。
 
 ```typescript
-import {Entity, PrimaryColumn} from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm";
 
 @Entity()
 export class User {
-
-    @PrimaryColumn()
-    id: number;
-
-
+  @PrimaryColumn()
+  id: number;
 }
 ```
 
-* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence` (depend on the database). You don't have to manually assign its value before save - value will be automatically generated.
+- `@PrimaryGeneratedColumn()` 创建一个主列，该值将使用自动增量值自动生成。 它将使用`auto-increment` /`serial` /`sequence`创建`int`列（取决于数据库）。 你不必在保存之前手动分配其值，该值将会自动生成。
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class User {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-
+  @PrimaryGeneratedColumn()
+  id: number;
 }
 ```
 
-* `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
+- `@PrimaryGeneratedColumn("uuid")` 创建一个主列，该值将使用`uuid`自动生成。 Uuid是一个独特的字符串id。 你不必在保存之前手动分配其值，该值将自动生成。
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class User {
-
-    @PrimaryGeneratedColumn("uuid")
-    id: string;
-
-
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 }
 ```
 
-You can have composite primary columns as well:
+你也可以拥有复合主列：
 
 ```typescript
-import {Entity, PrimaryColumn} from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm";
 
 @Entity()
 export class User {
+  @PrimaryColumn()
+  firstName: string;
 
-    @PrimaryColumn()
-    firstName: string;
-
-    @PrimaryColumn()
-    lastName: string;
-
+  @PrimaryColumn()
+  lastName: string;
 }
 ```
+当您使用`save`保存实体时，它总是先尝试使用给定的实体ID（或ids）在数据库中查找实体。
+如果找到id / ids，则将更新数据库中的这一行。
+如果没有包含id / ids的行，则会插入一个新行。
 
-When you save entities using `save` it always tries to find a entity in the database with the given entity id (or ids).
-If id/ids are found then it will update this row in the database.
-If there is no row with the id/ids, a new row will be inserted.
-
-To find a entity by id you can use `manager.findOne` or `repository.findOne`. Example:
+要通过id查找实体，可以使用`manager.findOne`或`repository.findOne`。 例：
 
 ```typescript
-// find one by id with single primary key
+// 使用单个主键查找一个id
 const person = await connection.manager.findOne(Person, 1);
 const person = await connection.getRepository(Person).findOne(1);
 
-// find one by id with composite primary keys
+// 使用复合主键找到一个id
 const user = await connection.manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
 const user = await connection.getRepository(User).findOne({ firstName: "Timber", lastName: "Saw" });
 ```
 
-### Special columns
+### 特殊列
 
-There are several special column types with additional functionality available:
+有几种特殊的列类型可以使用：
 
+- `@CreateDateColumn` 是一个特殊列，自动为实体插入日期。无需设置此列，该值将自动设置。
 
-* `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
-You don't need to set this column - it will be automatically set.
+- `@UpdateDateColumn` 是一个特殊列，在每次调用实体管理器或存储库的`save`时，自动更新实体日期。无需设置此列，该值将自动设置。
 
-* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time 
-each time you call `save` of entity manager or repository.
-You don't need to set this column - it will be automatically set.
-
-* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
-each time you call `save` of entity manager or repository.
-You don't need to set this column - it will be automatically set.
+- `@VersionColumn` 是一个特殊列，在每次调用实体管理器或存储库的`save`时自动增长实体版本（增量编号）。无需设置此列，该值将自动设置。
 
 ### Spatial columns
 
-MS SQL, MySQL / MariaDB, and PostgreSQL all support spatial columns. TypeORM's
-support for each varies slightly between databases, particularly as the column
-names vary between databases.
+MS SQL，MySQL / MariaDB和PostgreSQL都支持Spatial columns。由于各数据库列名不同，TypeORM对数据库的支持略有差异。
+
+MS SQL和MySQL / MariaDB的TypeORM支持[well-known text(WKT)](https://en.wikipedia.org/wiki/Well-known_text)的geometries，因此geometry columns应该是用`string`类型标记。
 
 MS SQL and MySQL / MariaDB's TypeORM support exposes (and expects) geometries to
 be provided as [well-known text
 (WKT)](https://en.wikipedia.org/wiki/Well-known_text), so geometry columns
 should be tagged with the `string` type.
 
-TypeORM's PostgreSQL support uses [GeoJSON](http://geojson.org/) as an
-interchange format, so geometry columns should be tagged either as `object` or
-`Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
-types](https://www.npmjs.com/package/@types/geojson).
+TypeORM的PostgreSQL支持使用[GeoJSON](http://geojson.org/)作为交换格式，因此geometry columns应在导入后标记为`object`或`Geometry`（或子类，例如`Point`）。
+
 
 TypeORM tries to do the right thing, but it's not always possible to determine
 when a value being inserted or the result of a PostGIS function should be
@@ -230,72 +214,67 @@ const origin = {
 };
 
 await getManager()
-    .createQueryBuilder(Thing, "thing")
-    // convert stringified GeoJSON into a geometry with an SRID that matches the
-    // table specification
-    .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
-    .orderBy({
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))": {
-            order: "ASC"
-        }
-    })
-    .setParameters({
-      // stringify GeoJSON
-      origin: JSON.stringify(origin)
-    })
-    .getMany();
+  .createQueryBuilder(Thing, "thing")
+  // 将字符串化的GeoJSON转换为具有与表规范匹配的SRID的geometry
+  .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
+  .orderBy({
+    "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))": {
+      order: "ASC"
+    }
+  })
+  .setParameters({
+    // stringify GeoJSON
+    origin: JSON.stringify(origin)
+  })
+  .getMany();
 
 await getManager()
-    .createQueryBuilder(Thing, "thing")
-    // convert geometry result into GeoJSON, treated as JSON (so that TypeORM
-    // will know to deserialize it)
-    .select("ST_AsGeoJSON(ST_Buffer(geom, 0.1))::json geom")
-    .from("thing")
-    .getMany();
+  .createQueryBuilder(Thing, "thing")
+  // 将geometry结果转换为GeoJSON，以将此视为JSON（以便TypeORM知道反序列化它）
+  .select("ST_AsGeoJSON(ST_Buffer(geom, 0.1))::json geom")
+  .from("thing")
+  .getMany();
 ```
 
+## 列类型
 
-## Column types
-
-TypeORM supports all of the most commonly used database-supported column types.
-Column types are database-type specific - this provides more flexibility on how your database schema will look like.
-
-You can specify column type as first parameter of `@Column`
-or in the column options of `@Column`, for example:
+TypeORM支持所有最常用的数据库支持的列类型。
+列类型是特定于数据库类型的 - 这为数据库架构提供了更大的灵活性。
+你可以将列类型指定为`@ Column`的第一个参数
+或者在`@Column`的列选项中指定，例如：
 
 ```typescript
 @Column("int")
 ```
 
-or
+或
 
 ```typescript
 @Column({ type: "int" })
 ```
 
-If you want to specify additional type parameters you can do it via column options.
-For example:
+如果要指定其他类型参数，可以通过列选项来执行。
+例如:
 
 ```typescript
 @Column("varchar", { length: 200 })
 ```
 
-or
+或
 
 ```typescript
-@Column({ type: "int", width: 200 })
+@Column({ type: "int", length: 200 })
 ```
 
-### Column types for `mysql` / `mariadb`
+### `mysql` /`mariadb`的列类型
 
-`bit`, `int`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`,
-`double precision`, `dec`, `decimal`, `numeric`, `fixed`, `bool`, `boolean`, `date`, `datetime`,
-`timestamp`, `time`, `year`, `char`, `nchar`, `national char`, `varchar`, `nvarchar`, `national varchar`,
-`text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`,
-`json`, `binary`, `varbinary`, `geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`,
-`multipolygon`, `geometrycollection`
+`int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`, `dec`, `decimal`, `numeric`,
+`date`, `datetime`, `timestamp`, `time`, `year`, `char`, `varchar`, `nvarchar`, `text`, `tinytext`,
+`mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `json`, `binary`,
+`geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`, `multipolygon`,
+`geometrycollection`
 
-### Column types for `postgres`
+### `postgres`的列类型
 
 `int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`,
 `float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`,
@@ -306,79 +285,66 @@ or
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
 
-### Column types for `sqlite` / `cordova` / `react-native` / `expo`
+### `sqlite` / `cordova` / `react-native` / `expo`的列类型
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
 `character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`,
 `blob`, `text`, `clob`, `date`
 
-### Column types for `mssql`
+### `mssql`的列类型
 
 `int`, `bigint`, `bit`, `decimal`, `money`, `numeric`, `smallint`, `smallmoney`, `tinyint`, `float`,
 `real`, `date`, `datetime2`, `datetime`, `datetimeoffset`, `smalldatetime`, `time`, `char`, `varchar`,
 `text`, `nchar`, `nvarchar`, `ntext`, `binary`, `image`, `varbinary`, `hierarchyid`, `sql_variant`,
 `timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`, `rowversion`
 
-### Column types for `oracle`
+### `oracle`的列类型
 
 `char`, `nchar`, `nvarchar2`, `varchar2`, `long`, `raw`, `long raw`, `number`, `numeric`, `float`, `dec`,
 `decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
 `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
 `nclob`, `rowid`, `urowid`
 
-### `simple-array` column type
+### `simple-array`的列类型
 
-There is a special column type called `simple-array` which can store primitive array values in a single string column.
-All values are separated by a comma. For example:
+有一种称为`simple-array`的特殊列类型，它可以将原始数组值存储在单个字符串列中。
+所有值都以逗号分隔。 例如：
 
 ```typescript
 @Entity()
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column("simple-array")
-    names: string[];
-
+  @Column("simple-array")
+  names: string[];
 }
 ```
 
 ```typescript
 const user = new User();
-user.names = [
-    "Alexander",
-    "Alex",
-    "Sasha",
-    "Shurik"
-];
+user.names = ["Alexander", "Alex", "Sasha", "Shurik"];
 ```
+存储在单个数据库列中的`Alexander，Alex，Sasha，Shurik`值。
+当你从数据库加载数据时，name将作为names数组返回，就像之前存储它们一样。
 
-Will be stored in a single database column as `Alexander,Alex,Sasha,Shurik` value.
-When you'll load data from the database, the names will be returned as an array of names,
-just like you stored them.
+注意**不能**在值里面有任何逗号。
 
-Note you **MUST NOT** have any comma in values you write.
+### `simple-json` 列类型
 
-### `simple-json` column type
-
-There is a special column type called `simple-json` which can store any values which can be stored in database
-via JSON.stringify.
-Very useful when you do not have json type in your database and you want to store and load object
-without any hustle.
-For example:
+还有一个名为`simple-json`的特殊列类型，它可以存储任何可以通过JSON.stringify存储在数据库中的值。
+当你的数据库中没有json类型而你又想存储和加载对象，该类型就很有用了。
+例如:
 
 ```typescript
 @Entity()
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column("simple-json")
-    profile: { name: string, nickname: string };
-
+  @Column("simple-json")
+  profile: { name: string; nickname: string };
 }
 ```
 
@@ -386,38 +352,33 @@ export class User {
 const user = new User();
 user.profile = { name: "John", nickname: "Malkovich" };
 ```
+存储在单个数据库列中的`{“name”：“John”，“nickname”：“Malkovich”}`值
+当你从数据库加载数据时，将通过JSON.parse返回object/array/primitive。
 
-Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
-When you'll load data from the database, you will have your object/array/primitive back via JSON.parse
+### 具有生成值的列
 
-### Columns with generated values
-
-You can create column with generated value using `@Generated` decorator. For example:
+你可以使用`@Generated`装饰器创建具有生成值的列。 例如：
 
 ```typescript
 @Entity()
 export class User {
+  @PrimaryColumn()
+  id: number;
 
-    @PrimaryColumn()
-    id: number;
-
-    @Column()
-    @Generated("uuid")
-    uuid: string;
-
+  @Column()
+  @Generated("uuid")
+  uuid: string;
 }
 ```
 
-`uuid` value will be automatically generated and stored into the database.
+`uuid`值将自动生成并存储到数据库中。
 
-Besides "uuid" there is also "increment" generated type, however there are some limitations
-on some database platforms with this type of generation (for example some databases can only have one increment column,
-or some of them require increment to be a primary key).
+除了"uuid"之外，还有"increment"生成类型，但是对于这种类型的生成，某些数据库平台存在一些限制（例如，某些数据库只能有一个增量列，或者其中一些需要增量才能成为主键）。
 
-## Column options
+## 列选项
 
-Column options defines additional options for your entity columns.
-You can specify column options on `@Column`:
+列选项定义实体列的其他选项。
+你可以在`@ Column`上指定列选项：
 
 ```typescript
 @Column({
@@ -428,207 +389,189 @@ You can specify column options on `@Column`:
 })
 name: string;
 ```
+`ColumnOptions`中可用选项列表：
 
-List of available options in `ColumnOptions`:
+- `type: ColumnType` - 列类型。其中之一在[上面](#column-types).
+- `name: string` - 数据库表中的列名。
 
-* `type: ColumnType` - Column type. One of the type listed [above](#column-types).
-* `name: string` - Column name in the database table.
-By default the column name is generated from the name of the property.
-You can change it by specifying your own name.
+默认情况下，列名称是从属性的名称生成的。
+你也可以通过指定自己的名称来更改它。
 
-* `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
-* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
-* `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
-* `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object. Default value is `false`.
-* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
-* `default: string` - Adds database-level column's `DEFAULT` value.
-* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates unique constraint).
-* `comment: string` - Database's column comment. Not supported by all database types.
-* `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
- number of digits that are stored for the values. Used in some column types.
-* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
-* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
-* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
-* `charset: string` - Defines a column character set. Not supported by all database types.
-* `collation: string` - Defines a column collation.
-* `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
-* `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres column types which can be array (for example int[])
-* `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database.
+- `length: number` - 列类型的长度。 例如，如果要创建`varchar（150）`类型，请指定列类型和长度选项。
+- `width: number` - 列类型的显示范围。 仅用于[MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+- `onUpdate: string` - `ON UPDATE`触发器。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+- `nullable: boolean` - 在数据库中使列`NULL`或`NOT NULL`。 默认情况下，列是`nullable：false`。
+- `readonly: boolean` - 指示`save`操作是否未更新列值。 这意味着只有在第一次插入对象时才能写入此值。 默认值为`false`。
+- `select: boolean` - 定义在进行查询时是否默认隐藏此列。 设置为`false`时，列数据不会显示标准查询。 默认情况下，列是`select：true`
+- `default: string` - 添加数据库级列的`DEFAULT`值。
+- `primary: boolean` - 将列标记为主要列。 使用方式和`@ PrimaryColumn`相同。
+- `unique: boolean` - 将列标记为唯一列（创建唯一约束）。
+- `comment: string` - 数据库列备注，并非所有数据库类型都支持。
+- `precision: number` - 十进制（精确数字）列的精度（仅适用于十进制列），这是为值存储的最大位数。仅用于某些列类型。
+- `scale: number` - 十进制（精确数字）列的比例（仅适用于十进制列），表示小数点右侧的位数，且不得大于精度。 仅用于某些列类型。
+- `zerofill: boolean` - 将`ZEROFILL`属性设置为数字列。 仅在MySQL中使用。 如果是`true`，MySQL会自动将`UNSIGNED`属性添加到此列。
+- `unsigned: boolean` - 将`UNSIGNED`属性设置为数字列。 仅在MySQL中使用。
+- `charset: string` - 定义列字符集。 并非所有数据库类型都支持。
+- `collation: string` - 定义列排序规则。
+- `enum: string[]|AnyEnum` - 在`enum`列类型中使用，以指定允许的枚举值列表。 你也可以指定数组或指定枚举类。
+- `asExpression: string` - 生成的列表达式。 仅在[MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html)中使用。
+- `generatedType: "VIRTUAL"|"STORED"` - 生成的列类型。 仅在[MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html)中使用。
+- `hstoreType: "object"|"string"` -返回`HSTORE`列类型。 以字符串或对象的形式返回值。 仅在[Postgres]((https://www.postgresql.org/docs/9.6/static/hstore.html))中使用。
+- `array: boolean` - 用于可以是数组的postgres列类型（例如int []）
+- `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - 用于将任意类型`EntityType`的属性编组为数据库支持的类型`DatabaseType`。
 
-Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
+注意：大多数列选项都是特定于RDBMS的，并且在`MongoDB`中不可用。
 
-## Entity inheritance
+## 实体继承
 
-You can reduce duplication in your code by using entity inheritance.
+你可以使用实体继承减少代码中的重复。
 
-For example, you have `Photo`, `Question`, `Post` entities:
+例如，你有`Photo`, `Question`, `Post` 三个实体:
 
 ```typescript
 @Entity()
 export class Photo {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  title: string;
 
-    @Column()
-    title: string;
+  @Column()
+  description: string;
 
-    @Column()
-    description: string;
-
-    @Column()
-    size: string;
-
+  @Column()
+  size: string;
 }
 
 @Entity()
 export class Question {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  title: string;
 
-    @Column()
-    title: string;
+  @Column()
+  description: string;
 
-    @Column()
-    description: string;
-
-    @Column()
-    answersCount: number;
-
+  @Column()
+  answersCount: number;
 }
 
 @Entity()
 export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  title: string;
 
-    @Column()
-    title: string;
+  @Column()
+  description: string;
 
-    @Column()
-    description: string;
-
-    @Column()
-    viewCount: number;
-
+  @Column()
+  viewCount: number;
 }
 ```
-
-As you can see all those entities have common columns: `id`, `title`, `description`. To reduce duplication and produce a better abstraction we can create a base class called `Content` for them:
+正如你所看到的，所有这些实体都有共同的列：`id`，`title`，`description`。 为了减少重复并产生更好的抽象，我们可以为它们创建一个名为`Content`的基类：
 
 ```typescript
 export abstract class Content {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  title: string;
 
-    @Column()
-    title: string;
-
-    @Column()
-    description: string;
-
+  @Column()
+  description: string;
 }
 @Entity()
 export class Photo extends Content {
-
-    @Column()
-    size: string;
-
+  @Column()
+  size: string;
 }
 
 @Entity()
 export class Question extends Content {
-
-    @Column()
-    answersCount: number;
-
+  @Column()
+  answersCount: number;
 }
 
 @Entity()
 export class Post extends Content {
-
-    @Column()
-    viewCount: number;
-
+  @Column()
+  viewCount: number;
 }
 ```
 
-All columns (relations, embeds, etc.) from parent entities (parent can extend other entity as well)
-will be inherited and created in final entities.
+来自父实体的所有列（relations，embeds等）（父级也可以扩展其他实体）将在最终实体中继承和创建。
 
-## Tree entities
+## 树实体
 
-TypeORM supports the Adjacency list and Closure table patterns of storing tree structures.
+TypeORM支持存储树结构的Adjacency列表和Closure表模式。
 
-### Adjacency list
+### 邻接列表
 
-Adjacency list is a simple model with self-referencing.
-Benefit of this approach is simplicity,
-drawback is you can't load a big tree at once because of join limitations.
-Example:
+邻接列表是一个具有自引用的简单模型。
+这种方法的好处是简单，缺点是你不能因为连接限制而立刻加载一个树实体。
+
+例如:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Category {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  name: string;
 
-    @Column()
-    name: string;
+  @Column()
+  description: string;
 
-    @Column()
-    description: string;
+  @OneToMany(type => Category, category => category.children)
+  parent: Category;
 
-    @OneToMany(type => Category, category => category.children)
-    parent: Category;
-
-    @ManyToOne(type => Category, category => category.parent)
-    children: Category;
+  @ManyToOne(type => Category, category => category.parent)
+  children: Category;
 }
-
 ```
 
-### Closure table
+### Closure 表
 
-A closure table stores relations between parent and child in a separate table in a special way.
-Its efficient in both reads and writes.
-To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data).
-Example:
+closure表以特殊方式在单独的表中存储父和子之间的关系。
+它在读写方面都很有效。
+
+要了解有关closure表的更多信息，请查看 [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data).
+
+例如:
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import { Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn } from "typeorm";
 
 @Entity()
 @Tree("closure-table")
 export class Category {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  name: string;
 
-    @Column()
-    name: string;
+  @Column()
+  description: string;
 
-    @Column()
-    description: string;
+  @TreeChildren()
+  children: Category;
 
-    @TreeChildren()
-    children: Category[];
+  @TreeParent()
+  parent: Category;
 
-    @TreeParent()
-    parent: Category;
-
-    @TreeLevelColumn()
-    level: number;
+  @TreeLevelColumn()
+  level: number;
 }
 ```

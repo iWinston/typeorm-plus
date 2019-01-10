@@ -1,15 +1,15 @@
-# Entity Inheritance
+# 实体继承
 
-* [Concrete Table Inheritance](#concrete-table-inheritance)
-* [Single Table Inheritance](#single-table-inheritance)
-* [Using embeddeds](#using-embeddeds)
+* [具体表继承](#concrete-table-inheritance)
+* [单表继承](#single-table-inheritance)
+* [使用嵌入式](#using-embeddeds)
 
-## Concrete Table Inheritance
+## 具体表继承
 
-You can reduce duplication in your code by using entity inheritance patterns.
-The simplest and the most effective is concrete table inheritance.
+你可以使用实体继承模式减少代码中的重复。
+最简单和最有效的是具体的表继承。
 
-For example, you have `Photo`, `Question`, `Post` entities:
+例如，你有`Photo`，`Question`，`Post`三个实体：
   
 ```typescript
 @Entity()
@@ -68,8 +68,8 @@ export class Post {
 }
 ```
 
-As you can see all those entities have common columns: `id`, `title`, `description`.
-To reduce duplication and produce a better abstraction we can create a base class called `Content` for them:
+正如你所看到的，所有这些实体都有共同的列：`id`，`title`，`description`。
+为了减少重复并产生更好的抽象，我们可以为它们创建一个名为`Content`的基类：
 
 ```typescript
 export abstract class Content {
@@ -116,16 +116,14 @@ export class Post extends Content {
 }
 ```
 
-All columns (relations, embeds, etc.) from parent entities (parent can extend other entity as well)
-will be inherited and created in final entities.
+来自父实体的所有列（关系，嵌入等）（父级也可以扩展其他实体）将在最终实体中继承和创建。
 
-This example will create 3 tables - `photo`, `question` and `post`.
+这个例子将创建3个表  - `photo`, `question` 和 `post`.
 
-## Single Table Inheritance
+## 单表继承
 
-TypeORM also supports single table inheritance. 
-Single table inheritance is a pattern when you have multiple classes with their own properties,
-but in the database they are stored in the same table.
+TypeORM还支持单表继承。
+当您有多个具有自己属性的类时，单表继承是一种模式，但是在数据库中，它们存储在同一个表中。
 
 ```typescript
 @Entity()
@@ -174,10 +172,9 @@ export class Post extends Content {
 }
 ```
 
-This will create a single table called `content` and all instances of photos, questions and posts 
-will be saved into this table.
+这将创建一个名为`content`的表，所有photos，questions和posts的实例都将保存到此表中。
 
-## Using embeddeds
+## 使用嵌入式
 
-There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
-Read more about embedded entities [here](./embedded-entities.md).
+通过使用`embedded columns`，可以减少应用程序中的重复（使用组合而不是继承）。
+阅读有关嵌入实体的[更多信息](./embedded-entities.md)

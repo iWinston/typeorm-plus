@@ -1,10 +1,10 @@
-# Separating entity definition
+# 实体定义分离
 
-You can define an entity and its columns right in the model, using decorators. 
-But some people prefer to define an entity and its columns inside separate files
-which are called "entity schemas" in TypeORM.
+你可以使用装饰器在模型中定义实体及其列。
+但有些人更喜欢在单独的文件中定义实体及其列
+在TypeORM中称为"entity schemas"。
 
-Simple definition example:
+简单定义示例：
 
 ```ts
 import {EntitySchema} from "typeorm";
@@ -24,7 +24,7 @@ export const CategoryEntity = new EntitySchema({
 });
 ```
 
-Example with relations:
+关系示例：
 
 ```ts
 import {EntitySchema} from "typeorm";
@@ -53,7 +53,7 @@ export const PostEntity = new EntitySchema({
 });
 ```
 
-Complex example:
+复杂的例子：
 
 ```ts
 import {EntitySchema} from "typeorm";
@@ -106,7 +106,7 @@ export const PersonSchema = new EntitySchema({
 });
 ```
 
-If you want to make your entity typesafe, you can define a model and specify it in schema definition:
+如果要使实体类型安全，可以定义模型并在模式定义中指定它：
 
 ```ts
 import {EntitySchema} from "typeorm";

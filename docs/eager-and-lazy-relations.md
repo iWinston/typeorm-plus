@@ -1,119 +1,112 @@
-# Eager and Lazy Relations
+# Eager 和 Lazy 关系
 
-## Eager relations
+## Eager 关系
 
-Eager relations are loaded automatically each time you load entities from the database.
-For example:
+每次从数据库加载实体时，都会自动加载 Eager 关系。
+例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
-import {Question} from "./Question";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Question } from "./Question";
 
 @Entity()
 export class Category {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @ManyToMany(type => Question, question => question.categories)
-    questions: Question[];
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @ManyToMany(type => Question, question => question.categories)
+  questions: Question[];
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    title: string;
-    
-    @Column()
-    text: string;
-    
-    @ManyToMany(type => Category, category => category.questions, {
-        eager: true
-    })
-    @JoinTable()
-    categories: Category[];
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  text: string;
+
+  @ManyToMany(type => Category, category => category.questions, {
+    eager: true
+  })
+  @JoinTable()
+  categories: Category[];
 }
 ```
 
-Now when you load questions you don't need to join or specify relations you want to load.
-They will be loaded automatically:
+现在当你加载 questions 时，不需要加入或指定要加载的关系。它们将自动加载：
 
 ```typescript
 const questionRepository = connection.getRepository(Question);
 
-// questions will be loaded with its categories
+// questions 将加载其类别 categories
 const questions = await questionRepository.find();
 ```
 
-Eager relations only work when you use `find*` methods.
-If you use `QueryBuilder` eager relations are disabled and have to use `leftJoinAndSelect` to load the relation.
-Eager relations can only be used on one side of the relationship,
-using `eager: true` on both sides of relationship is disallowed.
+Eager 关系只有在使用`find *`方法时才有效。
+如果你使用`QueryBuilder`，则禁用 eager 关系，并且必须使用`leftJoinAndSelect`来加载。
+Eager 的关系只能用于关系的一方，在关系的两边使用`eager：true`是不允许的。
 
-## Lazy relations
+## Lazy 关系
 
-Entities in lazy relations are loaded once you access them. 
-Such relations must have `Promise` as type - you store your value in a promise,
-and when you load them promise is returned as well. Example:
+当你访问的时候会加载 Lazy 关系中的实体。
+这种关系必须有`Promise`作为类型 ，并且将值存储在一个 promise 中，
+当你加载它们时，也会返回 promise。 例如：
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
-import {Question} from "./Question";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Question } from "./Question";
 
 @Entity()
 export class Category {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @ManyToMany(type => Question, question => question.categories)
-    questions: Promise<Question[]>;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @ManyToMany(type => Question, question => question.categories)
+  questions: Promise<Question[]>;
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    title: string;
-    
-    @Column()
-    text: string;
-    
-    @ManyToMany(type => Category, category => category.questions)
-    @JoinTable()
-    categories: Promise<Category[]>;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  text: string;
+
+  @ManyToMany(type => Category, category => category.questions)
+  @JoinTable()
+  categories: Promise<Category[]>;
 }
 ```
 
-`categories` is a Promise. It means it is lazy and it can store only a promise with a value inside.
-Example how to save such relation:
+`categories` 是一个 Promise. 这意味着它是 lazy 的，它只能存储一个带有值的 promise。
+
+例如：
+
+保存这种关系：
 
 ```typescript
 const category1 = new Category();
@@ -129,7 +122,7 @@ question.categories = Promise.resolve([category1, category2]);
 await connection.manager.save(question);
 ```
 
-Example how to load objects inside lazy relations:
+如何在 Lazy 关系中加载对象：
 
 ```typescript
 const question = await connection.getRepository(Question).findOne(1);
@@ -137,7 +130,7 @@ const categories = await question.categories;
 // you'll have all question's categories inside "categories" variable now
 ```
 
-Note: if you came from other languages (Java, PHP, etc.) and are used to use lazy relations everywhere - be careful.
-Those languages aren't asynchronous and lazy loading is achieved different way, that's why you don't work with promises there.
-In JavaScript and Node.JS you have to use promises if you want to have lazy-loaded relations.
-This is non-standard technique and considered experimental in TypeORM. 
+注意：如果你来自其他语言（Java，PHP 等）并且习惯于在任何地方使用 lazy 关系，请小心使用。
+这些语言不是异步的，延迟加载是以不同的方式实现的，这就是为什么不能使用 promises 的原因。
+在 JavaScript 和 Node.JS 中，如果你想拥有延迟加载的关系，你必须使用 promises。
+但是这是非标准技术，而且在 TypeORM 中被认为是实验性的。

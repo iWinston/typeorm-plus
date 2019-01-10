@@ -1,56 +1,52 @@
-# Many-to-one / one-to-many relations
+# 多对一/一对多的关系
 
-Many-to-one / one-to-many is a relation where A contains multiple instances of B, but B contains only one instance of A.
-Let's take for example `User` and `Photo` entities.
-User can have multiple photos, but each photo is owned by only one single user.
+多对一/一对多是指 A 包含多个 B 实例的关系，但 B 只包含一个 A 实例。
+让我们以`User` 和 `Photo` 实体为例。
+User 可以拥有多张 photos，但每张 photo 仅由一位 user 拥有。
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
-import {User} from "./User";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { User } from "./User";
 
 @Entity()
 export class Photo {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    url: string;
-    
-    @ManyToOne(type => User, user => user.photos)
-    user: User;
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  url: string;
+
+  @ManyToOne(type => User, user => user.photos)
+  user: User;
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToMany} from "typeorm";
-import {Photo} from "./Photo";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class User {
-    
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    name: string;
-    
-    @OneToMany(type => Photo, photo => photo.user)
-    photos: Photo[];
-    
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @OneToMany(type => Photo, photo => photo.user)
+  photos: Photo[];
 }
 ```
 
-Here we added `@ManyToOne` to the `photos` property and specified the target relation type to be `Photo`.
-You can omit `@JoinColumn` in a `@ManyToOne` / `@OneToMany` relation.
-`@OneToMany` cannot exist without `@ManyToOne`.
-If you want to use `@OneToMany`, `@ManyToOne` is required.
-Where you set `@ManyToOne` - its related entity will have "relation id" and foreign key.
+这里我们将`@ManyToOne`添加到`photos`属性中，并将目标关系类型指定为`Photo`。
+你也可以在`@ManyToOne` /`@OneToMany`关系中省略`@JoinColumn`。
+没有`@ManyToOne`，`@OneToMany`就不可能存在。
+如果你想使用`@OneToMany`，则需要`@ManyToOne`。
+在你设置`@ManyToOne`的地方，相关实体将有"关联 id"和外键。
 
-This example will produce following tables:
+此示例将生成以下表：
 
-```shell
+```bash
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
@@ -67,7 +63,7 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 ```
 
-Example how to save such relation:
+如何保存这种关系：
 
 ```typescript
 const photo1 = new Photo();
@@ -84,7 +80,7 @@ user.photos = [photo1, photo2];
 await connection.manager.save(user);
 ```
 
-or alternative you can do:
+或者你可以选择：
 
 ```typescript
 const user = new User();
@@ -102,10 +98,10 @@ photo2.user = user;
 await connection.manager.save(photo2);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+启用级联后，只需一次`save`调用即可保存此关系。
 
-To load a user with photos inside you must specify the relation in `FindOptions`:
- 
+要在内部加载带有 photos 的 user，必须在`FindOptions`中指定关系：
+
 ```typescript
 const userRepository = connection.getRepository(User);
 const users = await userRepository.find({ relations: ["photos"] });
@@ -116,22 +112,22 @@ const photoRepository = connection.getRepository(Photo);
 const photos = await photoRepository.find({ relations: ["user"] });
 ```
 
-Or using `QueryBuilder` you can join them:
+或者使用`QueryBuilder`:
 
 ```typescript
 const users = await connection
-    .getRepository(User)
-    .createQueryBuilder("user")
-    .leftJoinAndSelect("user.photos", "photo")
-    .getMany();
+  .getRepository(User)
+  .createQueryBuilder("user")
+  .leftJoinAndSelect("user.photos", "photo")
+  .getMany();
 
 // or from inverse side
 
 const photos = await connection
-    .getRepository(Photo)
-    .createQueryBuilder("photo")
-    .leftJoinAndSelect("photo.user", "user")
-    .getMany();
+  .getRepository(Photo)
+  .createQueryBuilder("photo")
+  .leftJoinAndSelect("photo.user", "user")
+  .getMany();
 ```
 
-With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
+通过在关系上启用预先加载，你不必指定关系或手动加入,它将始终自动加载。
