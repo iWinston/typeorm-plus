@@ -1153,7 +1153,7 @@ let photos = await connection
 
 ## 贡献
 
-了解如何贡献[这里](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)以及如何设置开发环境[这里](https://github.com/typeorm/typeorm/blob/master/ DEVELOPER.md)。
+了解如何贡献[这里](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)以及如何设置开发环境[这里](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md)。
 
 感谢所有贡献者：
 
