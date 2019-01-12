@@ -439,6 +439,8 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+        } else if (columnMetadata.type === "enum") {
+            return "" + value;
         }
 
         return value;
@@ -471,6 +473,15 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (
+            columnMetadata.type === "enum"
+            && columnMetadata.enum
+            && !isNaN(value)
+            && columnMetadata.enum.indexOf(parseInt(value)) >= 0
+        ) {
+            // convert to number if that exists in poosible enum options
+            value = parseInt(value);
         }
 
         if (columnMetadata.transformer)
@@ -529,6 +540,10 @@ export class MysqlDriver implements Driver {
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
+
+        if (columnMetadata.type === "enum" && defaultValue !== undefined) {
+            return `'${defaultValue}'`;
+        }
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;

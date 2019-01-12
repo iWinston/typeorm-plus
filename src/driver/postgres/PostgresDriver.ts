@@ -411,6 +411,9 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "enum" && !columnMetadata.isArray) {
+            return "" + value;
         }
 
         return value;
@@ -459,11 +462,19 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+        } else if (columnMetadata.type === "enum" ) {
+            if (columnMetadata.isArray) {
+                // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
+                value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
+                // convert to number if that exists in poosible enum options
+                value = value.map((val: string) => {
+                    return !isNaN(+val) && columnMetadata.enum!.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
+                });
+            } else {
+                // convert to number if that exists in poosible enum options
+                value = !isNaN(+value) && columnMetadata.enum!.indexOf(parseInt(value)) >= 0 ? parseInt(value) : value;
+            }
         }
-
-        // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-        if (columnMetadata.enum && columnMetadata.isArray)
-            value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
 
         if (columnMetadata.transformer)
             value = columnMetadata.transformer.from(value);
@@ -586,6 +597,13 @@ export class PostgresDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
+
+        if (columnMetadata.type === "enum" && defaultValue !== undefined) {
+            if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+                return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+            }
+            return `'${defaultValue}'`;
+        }
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
