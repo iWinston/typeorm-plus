@@ -642,6 +642,7 @@ export class MongoEntityManager extends EntityManager {
      */
     protected applyEntityTransformationToCursor<Entity>(metadata: EntityMetadata, cursor: Cursor<Entity>|AggregationCursor<Entity>) {
         const ParentCursor = PlatformTools.load("mongodb").Cursor;
+        const queryRunner = this.queryRunner;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
                 ParentCursor.prototype.toArray.call(this, (error: MongoError, results: Entity[]): void => {
@@ -650,12 +651,12 @@ export class MongoEntityManager extends EntityManager {
                         return;
                     }
 
-                    const transformer = new DocumentToEntityTransformer();
+                    const transformer = new DocumentToEntityTransformer(queryRunner);
                     return callback(error, transformer.transformAll(results, metadata));
                 });
             } else {
                 return ParentCursor.prototype.toArray.call(this).then((results: Entity[]) => {
-                    const transformer = new DocumentToEntityTransformer();
+                    const transformer = new DocumentToEntityTransformer(queryRunner);
                     return transformer.transformAll(results, metadata);
                 });
             }
@@ -668,13 +669,13 @@ export class MongoEntityManager extends EntityManager {
                         return;
                     }
 
-                    const transformer = new DocumentToEntityTransformer();
+                    const transformer = new DocumentToEntityTransformer(queryRunner);
                     return callback(error, transformer.transform(result, metadata));
                 });
             } else {
                 return ParentCursor.prototype.next.call(this).then((result: Entity) => {
                     if (!result) return result;
-                    const transformer = new DocumentToEntityTransformer();
+                    const transformer = new DocumentToEntityTransformer(queryRunner);
                     return transformer.transform(result, metadata);
                 });
             }
