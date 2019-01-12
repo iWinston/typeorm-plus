@@ -183,7 +183,6 @@ export class DocumentToEntityTransformer {
         });*/
         const broadcastResult = new BroadcasterResult();
         this.queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
-        if (broadcastResult.promises.length > 0) console.log("Promise.all(broadcastResult.promises).then(entity => entity)");
         if (broadcastResult.promises.length > 0) Promise.all(broadcastResult.promises).then(entity => entity);
 
         return hasData ? entity : null;
