@@ -56,7 +56,7 @@ You can also specify some additional entity options:
 * `database` - database name in selected DB server.
 * `schema` - schema name.
 * `engine` - database engine to be set during table creation (works only in some databases).
-* `skipSync` - entities marked with this decorator are skipped from schema updates.
+* `synchronize` - entities marked with `false` are skipped from schema updates.
 * `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
 
 Example:
@@ -67,7 +67,7 @@ Example:
     engine: "MyISAM",
     database: 'example_dev',
     schema: 'schema_with_best_tables',
-    skipSync: true,
+    synchronize: false,
     orderBy: {
         name: "ASC",
         id: "DESC"
