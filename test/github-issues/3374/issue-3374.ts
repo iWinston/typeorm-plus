@@ -10,11 +10,12 @@ describe("github issues > #3374 Synchronize issue with UUID (MySQL)", () => {
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+        enabledDrivers: ["mysql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("should not drop primary column again", () => Promise.all(connections.map(async function(connection) {
+    it("should not drop primary column again", () => Promise.all(connections.map(async function(connection) {
 
         const post = new Post();
         post.id = 1;
