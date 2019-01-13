@@ -522,7 +522,7 @@ Steps to run this project:
                 packageJson.dependencies["pg"] = "^7.3.0";
                 break;
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^3.1.10";
+                packageJson.dependencies["sqlite3"] = "^4.0.3";
                 break;
             case "oracle":
                 packageJson.dependencies["oracledb"] = "^1.13.1";
