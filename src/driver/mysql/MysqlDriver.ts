@@ -710,11 +710,17 @@ export class MysqlDriver implements Driver {
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
+
+            let columnMetadataLength = columnMetadata.length;
+            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
+                columnMetadataLength = this.getColumnLength(columnMetadata);
+            }
 
             return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
+                || tableColumn.length !== columnMetadataLength
                 || tableColumn.width !== columnMetadata.width
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
