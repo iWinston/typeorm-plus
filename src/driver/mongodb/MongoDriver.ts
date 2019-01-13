@@ -429,7 +429,9 @@ export class MongoDriver implements Driver {
         for (let index = 0; index < this.validOptionNames.length; index++) {
             const optionName = this.validOptionNames[index];
 
-            if (optionName in this.options) {
+            if (this.options.extra && optionName in this.options.extra) {
+                mongoOptions[optionName] = this.options.extra[optionName];
+            } else if (optionName in this.options) {
                 mongoOptions[optionName] = (this.options as any)[optionName];
             }
         }
