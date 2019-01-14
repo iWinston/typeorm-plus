@@ -16,8 +16,8 @@
     "type": "mariadb",
     "host": "localhost",
     "port": 3307,
-  "username": "root",
-  "password": "admin",
+    "username": "root",
+    "password": "admin",
     "database": "test",
     "logging": false
   },
