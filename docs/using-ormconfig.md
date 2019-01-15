@@ -203,7 +203,6 @@ variables `TYPEORM_CONNECTION` or `TYPEORM_URL` are set, Typeorm will use this m
 Note that Typeorm will use the first valid method found and will not load the others. For example, Typeorm will not load the
 `ormconfig.[format]` files if the configuration was found in the environment.
 
-
 ## Overriding options defined in ormconfig
 
 Sometimes you want to override values defined in your ormconfig file,
