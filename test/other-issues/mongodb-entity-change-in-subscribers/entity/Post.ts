@@ -1,13 +1,13 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
 import {Column} from "../../../../src/decorator/columns/Column";
 import {UpdateDateColumn} from "../../../../src/decorator/columns/UpdateDateColumn";
-import {ObjectIdColumn} from "../../../../src";
+import {ObjectID, ObjectIdColumn} from "../../../../src";
 
 @Entity()
 export class Post {
 
     @ObjectIdColumn()
-    id: number;
+    id: ObjectID;
 
     @Column()
     title: string;
@@ -18,7 +18,8 @@ export class Post {
     @UpdateDateColumn()
     updateDate: Date;
 
-    updatedColumns: number = 0;
+    @Column()
+    updatedColumns: number|string[] = 0;
 
     loaded: boolean = false;
 }
