@@ -12,8 +12,8 @@ export class Post {
     @Column()
     title: string;
 
-    @Column({default: false})
-    active: boolean;
+    @Column()
+    active: boolean = false;
 
     @UpdateDateColumn()
     updateDate: Date;

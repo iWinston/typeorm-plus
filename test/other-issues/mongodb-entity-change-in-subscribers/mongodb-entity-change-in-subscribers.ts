@@ -9,7 +9,8 @@ describe("other issues > mongodb entity change in subscribers should affect pers
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        subscribers: [__dirname + "/subscriber/*{.js,.ts}"]
+        subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
+        enabledDrivers: ["mongodb"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -23,8 +24,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
         // check if it was inserted correctly
         const loadedPost = await connection.manager.findOne(Post);
         expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.active).should.be.equal(false);
-        expect(loadedPost!.loaded).should.be.equal(true);
+        loadedPost!.active.should.be.equal(false);
 
         // now update some property and let update subscriber trigger
         loadedPost!.active = true;
@@ -35,7 +35,6 @@ describe("other issues > mongodb entity change in subscribers should affect pers
         const loadedUpdatedPost = await connection.manager.findOne(Post);
 
         expect(loadedUpdatedPost).not.to.be.empty;
-        expect(loadedUpdatedPost!.loaded).should.be.equal(true);
         expect(loadedUpdatedPost!.updatedColumns).to.equals(2);
 
         await connection.manager.save(loadedPost!);
@@ -52,7 +51,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
         const loadedPost = await connection.manager.findOne(Post);
 
         expect(loadedPost).not.to.be.empty;
-        expect(loadedPost!.loaded).should.be.equal(true);
+        loadedPost!.loaded.should.be.equal(true);
 
         await connection.manager.save(loadedPost!);
 
