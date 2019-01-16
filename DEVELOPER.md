@@ -149,15 +149,6 @@ describe.only('your describe test', ....)
 >
 >This is useful when trying to get a specific test or subset of tests to pass.
 
->**Hint:** you can use the `--grep` flag to pass a Regex to `gulp-mocha`. Only the tests have have `describe`/`it`
->statements that match the Regex will be run. For example:
->
->```shell
->npm test -- --grep="github issues > #363"
->```
->
->This is useful when trying to get a specific test or subset of tests to pass.
-
 ## Using Docker
 
 To run your tests you need dbms installed on your machine. Alternatively, you can use docker
