@@ -36,6 +36,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {PromiseUtils} from "../";
+import {IsolationLevel} from "../driver/types/IsolationLevel";
 
 /**
  * Connection is a single database ORM connection to a specific database.
@@ -355,8 +356,16 @@ export class Connection {
      * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
      */
-    async transaction<T>(runInTransaction: (entityManager: EntityManager) => Promise<T>): Promise<T> {
-        return this.manager.transaction(runInTransaction);
+    async transaction<T>(runInTransaction: (entityManager: EntityManager) => Promise<T>): Promise<T>;
+    async transaction<T>(isolationLevel: IsolationLevel, runInTransaction: (entityManager: EntityManager) => Promise<T>): Promise<T>;
+    async transaction<T>(
+        isolationOrRunInTransaction: IsolationLevel | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>
+    ): Promise<any> {
+        return this.manager.transaction(
+            isolationOrRunInTransaction as any,
+            runInTransactionParam as any
+        );
     }
 
     /**
