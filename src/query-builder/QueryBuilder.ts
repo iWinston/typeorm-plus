@@ -18,6 +18,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {EntitySchema} from "../";
 import {FindOperator} from "../find-options/FindOperator";
+import {In} from "../find-options/operator/In";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -697,14 +698,30 @@ export abstract class QueryBuilder<Entity> {
      * Creates "WHERE" expression and variables for the given "ids".
      */
     protected createWhereIdsExpression(ids: any|any[]): string {
-        ids = ids instanceof Array ? ids : [ids];
         const metadata = this.expressionMap.mainAlias!.metadata;
+        const normalized = (Array.isArray(ids) ? ids : [ids]).map(id => metadata.ensureEntityIdMap(id));
+
+        // using in(...ids) for single primary key entities
+        if (!metadata.hasMultiplePrimaryKeys
+            && metadata.embeddeds.length === 0
+        ) {
+            const primaryColumn = metadata.primaryColumns[0];
+
+            // getEntityValue will try to transform `In`, it is a bug
+            // todo: remove this transformer check after #2390 is fixed
+            if (!primaryColumn.transformer) {
+                return this.computeWhereParameter({
+                    [primaryColumn.propertyName]: In(
+                        normalized.map(id => primaryColumn.getEntityValue(id, false))
+                    )
+                });
+            }
+        }
 
         // create shortcuts for better readability
         const alias = this.expressionMap.aliasNamePrefixingEnabled ? this.escape(this.expressionMap.mainAlias!.name) + "." : "";
         let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
-        const whereStrings = (ids as any[]).map((id, index) => {
-            id = metadata.ensureEntityIdMap(id);
+        const whereStrings = normalized.map((id, index) => {
             const whereSubStrings: string[] = [];
             metadata.primaryColumns.forEach((primaryColumn, secondIndex) => {
                 const parameterName = "id_" + index + "_" + secondIndex;
