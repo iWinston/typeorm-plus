@@ -657,6 +657,7 @@ export class MongoEntityManager extends EntityManager {
                     const transformer = new DocumentToEntityTransformer();
                     const entities = transformer.transformAll(results, metadata);
 
+                    // broadcast "load" events
                     const broadcastResult = new BroadcasterResult();
                     queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
 
@@ -667,6 +668,7 @@ export class MongoEntityManager extends EntityManager {
                     const transformer = new DocumentToEntityTransformer();
                     const entities = transformer.transformAll(results, metadata);
 
+                    // broadcast "load" events
                     const broadcastResult = new BroadcasterResult();
                     queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
 
@@ -685,6 +687,7 @@ export class MongoEntityManager extends EntityManager {
                     const transformer = new DocumentToEntityTransformer();
                     const entity = transformer.transform(result, metadata);
 
+                    // broadcast "load" events
                     const broadcastResult = new BroadcasterResult();
                     queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
 
@@ -697,6 +700,7 @@ export class MongoEntityManager extends EntityManager {
                     const transformer = new DocumentToEntityTransformer();
                     const entity = transformer.transform(result, metadata);
 
+                    // broadcast "load" events
                     const broadcastResult = new BroadcasterResult();
                     queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
 
