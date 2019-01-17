@@ -1,4 +1,4 @@
-/**
+    /**
  * Common driver utility functions.
  */
 export class DriverUtils {
@@ -14,27 +14,18 @@ export class DriverUtils {
     static buildDriverOptions(options: any, buildOptions?: { useSid: boolean }): any {
         if (options.url) {
             const parsedUrl = this.parseConnectionUrl(options.url);
+            let urlDriverOptions: any = {
+                type: parsedUrl.type,
+                host: parsedUrl.host,
+                username: parsedUrl.username,
+                password: parsedUrl.password,
+                port: parsedUrl.port,
+                database: parsedUrl.database
+            };
             if (buildOptions && buildOptions.useSid) {
-                const urlDriverOptions: any = {
-                    type: options.type || parsedUrl.type,
-                    host: options.host || parsedUrl.host,
-                    username: options.username || parsedUrl.username,
-                    password: options.password || parsedUrl.password,
-                    port: options.port || parsedUrl.port,
-                    sid: options.sid || options.database || parsedUrl.database
-                };
-                return Object.assign(urlDriverOptions, options);
-            } else {
-                const urlDriverOptions: any = {
-                    type: options.type || parsedUrl.type,
-                    host: options.host || parsedUrl.host,
-                    username: options.username || parsedUrl.username,
-                    password: options.password || parsedUrl.password,
-                    port: options.port || parsedUrl.port,
-                    database: options.database || parsedUrl.database
-                };
-                return Object.assign(urlDriverOptions, options);
+                urlDriverOptions.sid = parsedUrl.database;
             }
+            return Object.assign({}, options, urlDriverOptions);
         }
         return Object.assign({}, options);
     }
