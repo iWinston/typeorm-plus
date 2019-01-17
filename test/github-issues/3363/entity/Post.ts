@@ -8,9 +8,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({
-        type: "text",
-    })
+    @Column()
     title: string;
 
 }

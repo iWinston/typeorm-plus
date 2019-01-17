@@ -10,8 +10,7 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
-        enabledDrivers: ["mysql"],
+        subscribers: [__dirname + "/subscriber/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
