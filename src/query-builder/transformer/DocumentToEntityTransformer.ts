@@ -13,12 +13,10 @@ export class DocumentToEntityTransformer {
     // -------------------------------------------------------------------------
 
     constructor(// private selectionMap: AliasMap,
-        // private joinMappings: JoinMapping[],
-        // private relationCountMetas: RelationCountAttribute[],
-        // private queryRunner: MongoQueryRunner,
-        private enableRelationIdValues: boolean = false
+                // private joinMappings: JoinMapping[],
+                // private relationCountMetas: RelationCountAttribute[],
+                private enableRelationIdValues: boolean = false
     ) {
-        // this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------
