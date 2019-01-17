@@ -5,7 +5,7 @@
   - [实体列](#%E5%AE%9E%E4%BD%93%E5%88%97)
     - [主列](#%E4%B8%BB%E5%88%97)
     - [特殊列](#%E7%89%B9%E6%AE%8A%E5%88%97)
-    - [Spatial columns](#spatial-columns)
+    - [Spatial 列](#spatial-%E5%88%97)
   - [列类型](#%E5%88%97%E7%B1%BB%E5%9E%8B)
     - [`mysql` /`mariadb`的列类型](#mysql-mariadb%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
     - [`postgres`的列类型](#postgres%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
@@ -190,18 +190,17 @@ const user = await connection.getRepository(User).findOne({ firstName: "Timber",
 
 -   `@VersionColumn` 是一个特殊列，在每次调用实体管理器或存储库的`save`时自动增长实体版本（增量编号）。无需设置此列，该值将自动设置。
 
-### Spatial columns
+### Spatial 列
 
-MS SQL，MySQL / MariaDB 和 PostgreSQL 都支持 Spatial columns。由于各数据库列名不同，TypeORM 对数据库的支持略有差异。
+MS SQL，MySQL/MariaDB 和 PostgreSQL 都支持 Spatial 列。由于各数据库列名不同，TypeORM 对数据库的支持略有差异。
 
-MS SQL 和 MySQL / MariaDB 的 TypeORM 支持[well-known text(WKT)](https://en.wikipedia.org/wiki/Well-known_text)的 geometries，因此 geometry columns 应该是用`string`类型标记。
+MS SQL 和 MySQL/MariaDB 的 TypeORM 支持[well-known text(WKT)](https://en.wikipedia.org/wiki/Well-known_text)的 geometries，因此 geometry 列 应该是用`string`类型标记。
 
-MS SQL and MySQL / MariaDB's TypeORM support exposes (and expects) geometries to
-be provided as [well-known text
-(WKT)](https://en.wikipedia.org/wiki/Well-known_text), so geometry columns
-should be tagged with the `string` type.
+TypeORM 的 PostgreSQL 支持使用[GeoJSON](http://geojson.org/)作为交换格式，因此 geometry 列应在导入后标记为`object`或`Geometry`（或子类，例如`Point`）。
 
-TypeORM 的 PostgreSQL 支持使用[GeoJSON](http://geojson.org/)作为交换格式，因此 geometry columns 应在导入后标记为`object`或`Geometry`（或子类，例如`Point`）。
+TypeORM 尝试做正确的事情，但并不总是能够确定何时插入的值或 PostGIS 函数的结果应被视为几何。
+因此，你可能会发现自己编写的代码类似于以下代码，其中的值将转换为 PostGIS 的`geometry`
+GeoJSON 和 GeoJSON 作为`json`：
 
 TypeORM tries to do the right thing, but it's not always possible to determine
 when a value being inserted or the result of a PostGIS function should be

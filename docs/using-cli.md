@@ -1,6 +1,7 @@
 # 使用 CLI
 
 - [使用 CLI](#%E4%BD%BF%E7%94%A8-cli)
+  - [关于 TypeScript 编写实体的说明](#%E5%85%B3%E4%BA%8E-typescript-%E7%BC%96%E5%86%99%E5%AE%9E%E4%BD%93%E7%9A%84%E8%AF%B4%E6%98%8E)
   - [初始化一个新的 TypeORM 项目](#%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%80%E4%B8%AA%E6%96%B0%E7%9A%84-typeorm-%E9%A1%B9%E7%9B%AE)
   - [创建一个新实体](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E5%AE%9E%E4%BD%93)
   - [创建一个新订阅者](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E8%AE%A2%E9%98%85%E8%80%85)
@@ -15,6 +16,39 @@
   - [清除缓存](#%E6%B8%85%E9%99%A4%E7%BC%93%E5%AD%98)
   - [检查版本](#%E6%A3%80%E6%9F%A5%E7%89%88%E6%9C%AC)
 
+## 关于 TypeScript 编写实体的说明
+
+此 CLI 工具使用 javascript 编写，并在 node 上运行。如果你的实体文件是 TypeScript 编写，则需要在使用 CLI 之前将它们转换为 javascript。如果只使用 javascript，则可以跳过此部分。
+
+全局安装 ts-node：
+
+你可以在项目中设置 ts-node 以简化操作，如下所示：
+
+```
+npm install -g ts-node
+```
+
+在 package.json 中的 scripts 下添加 typeorm 命令
+
+```
+"script" {
+    ...
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js"
+}
+```
+
+然后运行如下命令：
+
+```
+npm run typeorm migration:run
+```
+
+如果你需要将带有破折号的参数传递给 npm 脚本，则需要在`--`之后添加。例如，如果需要生成，则命令如下：
+
+```
+npm run typeorm migration:generate -- -n migrationNameHere
+```
+
 ## 初始化一个新的 TypeORM 项目
 
 你可以使用已设置的所有内容创建新项目：
@@ -25,13 +59,13 @@ typeorm init
 
 它使用 TypeORM 创建基本项目所需的所有文件：
 
-- .gitignore
-- package.json
-- README.md
-- tsconfig.json
-- ormconfig.json
-- src/entity/User.ts
-- src/index.ts
+-   .gitignore
+-   package.json
+-   README.md
+-   tsconfig.json
+-   ormconfig.json
+-   src/entity/User.ts
+-   src/index.ts
 
 然后你可以运行`npm install`来安装所有依赖项。
 一旦安装了所有依赖项，你需要修改`ormconfig.json`并插入您自己的数据库设置。
