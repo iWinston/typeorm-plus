@@ -20,7 +20,7 @@ export class Post {
     updateDate: Date;
 
     @BeforeUpdate()
-    beforeUpdate() {
+    async beforeUpdate() {
         this.title += "!";
     }
 

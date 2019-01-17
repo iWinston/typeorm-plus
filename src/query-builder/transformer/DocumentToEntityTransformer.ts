@@ -1,8 +1,6 @@
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {EmbeddedMetadata} from "../../metadata/EmbeddedMetadata";
-import {MongoQueryRunner} from "../../driver/mongodb/MongoQueryRunner";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 /**
  * Transforms raw document into entity object.
@@ -17,10 +15,10 @@ export class DocumentToEntityTransformer {
     constructor(// private selectionMap: AliasMap,
         // private joinMappings: JoinMapping[],
         // private relationCountMetas: RelationCountAttribute[],
-        private queryRunner: MongoQueryRunner,
+        // private queryRunner: MongoQueryRunner,
         private enableRelationIdValues: boolean = false
     ) {
-        this.queryRunner = queryRunner;
+        // this.queryRunner = queryRunner;
     }
 
     // -------------------------------------------------------------------------
@@ -181,9 +179,6 @@ export class DocumentToEntityTransformer {
                 }
             });
         });*/
-        const broadcastResult = new BroadcasterResult();
-        this.queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
-        if (broadcastResult.promises.length > 0) Promise.all(broadcastResult.promises).then(entity => entity);
 
         return hasData ? entity : null;
     }
