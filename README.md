@@ -4,18 +4,18 @@
   </a>
   <br>
   <br>
-    <a href="https://travis-ci.org/typeorm/typeorm">
-        <img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
-    </a>
-    <a href="https://badge.fury.io/js/typeorm">
-        <img src="https://badge.fury.io/js/typeorm.svg">
-    </a>
-    <a href="https://david-dm.org/typeorm/typeorm">
-        <img src="https://david-dm.org/typeorm/typeorm.svg">
-    </a>
-    <a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY">
-        <img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
-    </a>
+	<a href="https://travis-ci.org/typeorm/typeorm">
+		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	</a>
+	<a href="https://badge.fury.io/js/typeorm">
+		<img src="https://badge.fury.io/js/typeorm.svg">
+	</a>
+	<a href="https://david-dm.org/typeorm/typeorm">
+		<img src="https://david-dm.org/typeorm/typeorm.svg">
+	</a>
+	<a href="https://join.slack.com/t/typeorm/shared_invite/enQtNDQ1MzA3MDA5MTExLTFiNDEyOGUxZGQyYWIwOTA0NDQxODdkOGQ0OTUxNzFjYjUwY2E0ZmFlODc5OTYyYzAzNGM3MGZjYzhjYTBiZTY">
+		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
+	</a>
   <br>
   <br>
 </div>
@@ -616,7 +616,7 @@ createConnection(/*...*/).then(connection => {
     photo.views = 1;
     photo.isPublished = true;
 
-    return connection.manager
+    return connection.manager
             .save(photo)
             .then(photo => {
                 console.log("Photo has been saved. Photo id is", photo.id);
