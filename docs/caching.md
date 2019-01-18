@@ -135,4 +135,33 @@ Example:
 
 "options" can be [node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
 
+
+In case you want to connect to a redis-cluster using IORedis's cluster functionality, you can do that as well by doing the following:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    cache: {
+        type: "ioredis/cluster",
+        options: [
+            {
+                host: 'localhost',
+                port: 7000,
+            },
+            {
+                host: 'localhost',
+                port: 7001,
+            },
+            {
+                host: 'localhost',
+                port: 7002,
+            }
+        ],
+    }
+}
+```
+Just specify all the nodes in the cluster inside an array with their hosts  and ports.
+
 You can use `typeorm cache:clear` to clear everything stored in the cache.
