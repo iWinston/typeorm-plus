@@ -7,8 +7,10 @@ feel free to ask us and community.
 
 ## 0.2.12
 
+* queries are simplified in `findByIds` and `whereInIds` for simple entities with single primary key
 * fixed broken findOne method with custom join column name
 * fixed issue with uuid in mysql
+* fixed issue with logical operator precedence in `QueryBuilder` `whereInIds` (#2103)
 
 ## 0.2.11
 
