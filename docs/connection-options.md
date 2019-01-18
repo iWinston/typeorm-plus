@@ -1,9 +1,8 @@
 # Connection 选项
 
-- [Connection 选项](#connection-%E9%80%89%E9%A1%B9)
-  - [什么是 `ConnectionOptions`](#%E4%BB%80%E4%B9%88%E6%98%AF-connectionoptions)
-  - [常用的连接选项](#%E5%B8%B8%E7%94%A8%E7%9A%84%E8%BF%9E%E6%8E%A5%E9%80%89%E9%A1%B9)
-  - [`mysql` / `mariadb`](#mysql--mariadb)
+  - [什么是`ConnectionOptions`](#什么是`ConnectionOptions`)
+  - [常用的连接选项](#常用的连接选项)
+  - [`mysql`/`mariadb`](#mysql--mariadb)
   - [`postgres`](#postgres)
   - [`sqlite`](#sqlite)
   - [`cordova`](#cordova)
@@ -13,9 +12,9 @@
   - [`mongodb`](#mongodb)
   - [`sql.js`](#sqljs)
   - [`expo`](#expo)
-  - [连接选项示例](#%E8%BF%9E%E6%8E%A5%E9%80%89%E9%A1%B9%E7%A4%BA%E4%BE%8B)
+  - [连接选项示例](#连接选项示例)
 
-## 什么是 `ConnectionOptions`
+## 什么是`ConnectionOptions`
 
 连接选项是你传递给`createConnection`或在`ormconfig`文件中定义的连接配置。不同的数据库有自己的特定连接选项。
 
@@ -65,7 +64,7 @@
 
 - `cli.subscribersDir` - CLI 默认情况下创建订阅者的目录。
 
-## `mysql` / `mariadb`
+## `mysql`/`mariadb`
 
 - `url` - 连接 URL
 

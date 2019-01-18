@@ -1,9 +1,9 @@
 # 多个连接，数据库，模式和主从复制设置
 
-* [Using multiple connections](#using-multiple-connections)
-* [Using multiple databases in a single connection](#using-multiple-databases-in-a-single-connection)
-* [Using multiple schemas in a single connection](#using-multiple-schemas-in-a-single-connection)
-* [Replication](#replication)
+* [使用多个连接](#使用多个连接)
+* [在单个连接中使用多个数据库](#在单个连接中使用多个数据库)
+* [在单个连接中使用多个模式](#在单个连接中使用多个模式)
+* [主从复制](#主从复制)
 
 
 ## 使用多个连接

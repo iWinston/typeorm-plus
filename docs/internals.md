@@ -1,6 +1,6 @@
 # Internals
 
-This guide explains how things are working in TypeORM. 
-It will be useful for our contributors.
+本指南解释了TypeORM中的工作原理。
+这对我们的贡献者很有用。
 
-TBD. 
+待定。

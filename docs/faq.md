@@ -1,17 +1,16 @@
 ## FAQ
 
-- [FAQ](#faq)
-- [如何更新数据库架构？](#%E5%A6%82%E4%BD%95%E6%9B%B4%E6%96%B0%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84)
-- [如何更改数据库中的列名？](#%E5%A6%82%E4%BD%95%E6%9B%B4%E6%94%B9%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%AD%E7%9A%84%E5%88%97%E5%90%8D)
-- [如何将默认值设置为某个函数，例如`NOW（）`？](#%E5%A6%82%E4%BD%95%E5%B0%86%E9%BB%98%E8%AE%A4%E5%80%BC%E8%AE%BE%E7%BD%AE%E4%B8%BA%E6%9F%90%E4%B8%AA%E5%87%BD%E6%95%B0%E4%BE%8B%E5%A6%82now)
-- [怎么做验证？](#%E6%80%8E%E4%B9%88%E5%81%9A%E9%AA%8C%E8%AF%81)
-- [关系中的"owner side"意味着什么或为什么我们需要使用`@JoinColumn`和`@JoinTable`？](#%E5%85%B3%E7%B3%BB%E4%B8%AD%E7%9A%84%22owner-side%22%E6%84%8F%E5%91%B3%E7%9D%80%E4%BB%80%E4%B9%88%E6%88%96%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E4%BB%AC%E9%9C%80%E8%A6%81%E4%BD%BF%E7%94%A8joincolumn%E5%92%8Cjointable)
-- [如何在多对多（联结）表中添加额外的列？](#%E5%A6%82%E4%BD%95%E5%9C%A8%E5%A4%9A%E5%AF%B9%E5%A4%9A%E8%81%94%E7%BB%93%E8%A1%A8%E4%B8%AD%E6%B7%BB%E5%8A%A0%E9%A2%9D%E5%A4%96%E7%9A%84%E5%88%97)
-- [如何使用 TypeORM 与依赖注入工具？](#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-typeorm-%E4%B8%8E%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E5%B7%A5%E5%85%B7)
-- [如何处理 TypeScript 编译器的 outDir 选项？](#%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86-typescript-%E7%BC%96%E8%AF%91%E5%99%A8%E7%9A%84-outdir-%E9%80%89%E9%A1%B9)
-- [如何将 TypeORM 和 ts-node 一起使用？](#%E5%A6%82%E4%BD%95%E5%B0%86-typeorm-%E5%92%8C-ts-node-%E4%B8%80%E8%B5%B7%E4%BD%BF%E7%94%A8)
-- [后端如何使用 Webpack？](#%E5%90%8E%E7%AB%AF%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-webpack)
-  - [打包迁移文件](#%E6%89%93%E5%8C%85%E8%BF%81%E7%A7%BB%E6%96%87%E4%BB%B6)
+- [如何更新数据库架构？](#如何更新数据库架构？)
+- [如何更改数据库中的列名？](#如何更改数据库中的列名？)
+- [如何将默认值设置为某个函数，例如`NOW()`？](#如何将默认值设置为某个函数，例如`NOW()`？)
+- [怎么做验证？](#怎么做验证？)
+- [关系中的"owner side"意味着什么或为什么我们需要使用`@JoinColumn`和`@JoinTable`？](#关系中的"owner-side"意味着什么或为什么我们需要使用`@JoinColumn`和`@JoinTable`？)
+- [如何在多对多（联结）表中添加额外的列？](#如何在多对多（联结）表中添加额外的列？)
+- [如何使用TypeORM与依赖注入工具？](#如何使用TypeORM与依赖注入工具？)
+- [如何处理TypeScript编译器的outDir选项？](#如何处理TypeScript编译器的outDir选项？)
+- [如何将TypeORM和ts-node一起使用？](#如何将TypeORM和ts-node一起使用？)
+- [后端如何使用Webpack？](#后端如何使用Webpack？)
+  - [打包迁移文件](#打包迁移文件)
 
 ## 如何更新数据库架构？
 
@@ -52,7 +51,7 @@ first check how fast it is.
 isActive: boolean;
 ```
 
-## 如何将默认值设置为某个函数，例如`NOW（）`？
+## 如何将默认值设置为某个函数，例如`NOW()`？
 
 `default`列选项支持一个函数。
 如果要传递一个返回字符串的函数，它将使用该字符串作为默认值而不去转义它。
@@ -123,7 +122,7 @@ TypeORM 无法为你决定。
 无法在由多对多关系创建的表中添加额外的列。
 你需要创建一个单独的实体并使用与目标实体的两个多对一关系绑定它（效果与创建多对多表相同），并在其中添加额外的列。
 
-## 如何使用 TypeORM 与依赖注入工具？
+## 如何使用TypeORM与依赖注入工具？
 
 在 TypeORM 中，你可以使用服务容器。 服务容器允许你在某些地方注入自定义服务，例如订阅者或自定义命名策略。 例如，你可以使用服务容器从任何位置访问 ConnectionManager。
 
@@ -140,7 +139,7 @@ createConnection({
 });
 ```
 
-## 如何处理 TypeScript 编译器的 outDir 选项？
+## 如何处理TypeScript编译器的outDir选项？
 
 当你使用`outDir`选项时，不要忘记将应用程序使用的 assets 和 resources 复制到输出目录中。
 否则，请确保设置这些资源的正确路径。
@@ -152,7 +151,7 @@ createConnection({
 这可能是错误的根源。
 这就是为什么当你删除并移动启用了`utDir`的实体时，强烈建议删除输出目录并重新编译项目。
 
-## 如何将 TypeORM 和 ts-node 一起使用？
+## 如何将TypeORM和ts-node一起使用？
 
 你可以使用[ts-node](https://github.com/TypeStrong/ts-node)阻止每次编译文件。
 如果你使用的是 ts-node，则可以在连接选项中指定`ts`实体：
@@ -172,7 +171,7 @@ createConnection({
 ts-node ./node_modules/bin/typeorm schema:sync
 ```
 
-## 后端如何使用 Webpack？
+## 后端如何使用Webpack？
 
 由于缺少 require 语句，Webpack 会产生警告 - 对 TypeORM 支持的所有驱动程序都需要语句。 要禁用未使用的驱动程序的这些警告，你需要编辑 webpack 配置文件。
 

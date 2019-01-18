@@ -1,12 +1,12 @@
-# Connection
+# 数据库连接
 
-- [Connection](#connection)
-  - [什么是 `Connection`](#%E4%BB%80%E4%B9%88%E6%98%AF-connection)
-  - [创建新的连接](#%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%BF%9E%E6%8E%A5)
-  - [使用 `ConnectionManager`](#%E4%BD%BF%E7%94%A8-connectionmanager)
-  - [使用连接](#%E4%BD%BF%E7%94%A8%E8%BF%9E%E6%8E%A5)
+  * [连接](#connection)
+  * [什么是`Connection`](#什么是`Connection`)
+  * [创建新的连接](#创建新的连接)
+  * [使用`ConnectionManager`](#使用`ConnectionManager`)
+  * [使用连接](#使用连接)
 
-## 什么是 `Connection`
+## 什么是`Connection`
 
 只有在建立连接后才能与数据库进行交互。
 TypeORM 的`Connection`不会像看起来那样设置单个数据库连接，而是设置连接池。
@@ -104,7 +104,7 @@ const secondConnection = getConnection("test2-connection");
 
 应避免额外创建 classes/services 来存储和管理连接。此功能已嵌入到 TypeORM 中 - 无需过度工程并创建无用的抽象。
 
-## 使用 `ConnectionManager`
+## 使用`ConnectionManager`
 
 你可以使用`ConnectionManager`类创建连接。例如：
 

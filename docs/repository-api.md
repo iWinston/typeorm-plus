@@ -1,11 +1,10 @@
 # Repository API
 
-- [Repository API](#repository-api)
-  - [`Repository` API](#repository-api)
-  - [`TreeRepository` API](#treerepository-api)
-  - [`MongoRepository` API](#mongorepository-api)
+  * [`Repository`API](#repository-api)
+  * [`TreeRepository`API](#treerepository-api)
+  * [`MongoRepository`API](#mongorepository-api)
 
-## `Repository` API
+## `Repository`API
 
 - `manager` - 存储库使用的`EntityManager`。
 
@@ -209,10 +208,10 @@ const rawData = await repository.query(`SELECT * FROM USERS`);
 await repository.clear();
 ```
 
-## `TreeRepository` API
+## `TreeRepository`API
 
 对于 `TreeRepository` API 请参考 [Tree Entities 文档](./tree-entities.md#working-with-tree-entities).
 
-## `MongoRepository` API
+## `MongoRepository`API
 
 对于 `MongoRepository` API 请参考 [MongoDB 文档](./mongodb.md).

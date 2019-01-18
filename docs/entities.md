@@ -1,26 +1,21 @@
 # 实体
 
-- [实体](#%E5%AE%9E%E4%BD%93)
-  - [实体是什么?](#%E5%AE%9E%E4%BD%93%E6%98%AF%E4%BB%80%E4%B9%88)
-  - [实体列](#%E5%AE%9E%E4%BD%93%E5%88%97)
-    - [主列](#%E4%B8%BB%E5%88%97)
-    - [特殊列](#%E7%89%B9%E6%AE%8A%E5%88%97)
-    - [Spatial 列](#spatial-%E5%88%97)
-  - [列类型](#%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`mysql` /`mariadb`的列类型](#mysql-mariadb%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`postgres`的列类型](#postgres%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`sqlite` / `cordova` / `react-native` / `expo`的列类型](#sqlite--cordova--react-native--expo%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`mssql`的列类型](#mssql%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`oracle`的列类型](#oracle%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`enum` 列类型](#enum-%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`simple-array`的列类型](#simple-array%E7%9A%84%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [`simple-json` 列类型](#simple-json-%E5%88%97%E7%B1%BB%E5%9E%8B)
-    - [具有生成值的列](#%E5%85%B7%E6%9C%89%E7%94%9F%E6%88%90%E5%80%BC%E7%9A%84%E5%88%97)
-  - [列选项](#%E5%88%97%E9%80%89%E9%A1%B9)
-  - [实体继承](#%E5%AE%9E%E4%BD%93%E7%BB%A7%E6%89%BF)
-  - [树实体](#%E6%A0%91%E5%AE%9E%E4%BD%93)
-    - [邻接列表](#%E9%82%BB%E6%8E%A5%E5%88%97%E8%A1%A8)
-    - [Closure 表](#closure-%E8%A1%A8)
+* [实体是什么?](#实体是什么)
+* [实体列](#实体列)
+  * [主列](#主列)
+  * [特殊列](#特殊列)
+  * [空间列](#空间列)
+* [列类型](#列类型)
+  * [`mysql`/`mariadb`的列类型](#`mysql`/`mariadb`的列类型)
+  * [`postgres`的列类型](#`postgres`的列类型)
+  * [`sqlite`/`cordova`/`react-native`/`expo`的列类型](#sqlite`/`cordova`/`react-native`/`expo`的列类型)
+  *   [`mssql`的列类型](#`mssql`的列类型)
+  *   [`oracle`的列类型](#`oracle`的列类型)
+  *   [`enum`列类型](#`enum`列类型)
+  *   [`simple-array`的列类型](#`simple-array`的列类型)
+  *   [`simple-json`列类型](#`simple-json`列类型)
+  *   [具有生成值的列](#具有生成值的列)
+* [列选项](#列选项)
 
 ## 实体是什么?
 
@@ -113,7 +108,8 @@ const connection: Connection = await createConnection({
 有几种类型的主要列：
 
 -   `@PrimaryColumn()` 创建一个主列，它可以获取任何类型的任何值。你也可以指定列类型。 如果未指定列类型，则将从属性类型自动推断。
-    下面的示例将使用`int`类型创建 id，你必须在保存之前手动分配。
+
+下面的示例将使用`int`类型创建 id，你必须在保存之前手动分配。
 
 ```typescript
 import { Entity, PrimaryColumn } from "typeorm";
@@ -190,7 +186,7 @@ const user = await connection.getRepository(User).findOne({ firstName: "Timber",
 
 -   `@VersionColumn` 是一个特殊列，在每次调用实体管理器或存储库的`save`时自动增长实体版本（增量编号）。无需设置此列，该值将自动设置。
 
-### Spatial 列
+### 空间列
 
 MS SQL，MySQL/MariaDB 和 PostgreSQL 都支持 Spatial 列。由于各数据库列名不同，TypeORM 对数据库的支持略有差异。
 
@@ -198,15 +194,7 @@ MS SQL 和 MySQL/MariaDB 的 TypeORM 支持[well-known text(WKT)](https://en.wik
 
 TypeORM 的 PostgreSQL 支持使用[GeoJSON](http://geojson.org/)作为交换格式，因此 geometry 列应在导入后标记为`object`或`Geometry`（或子类，例如`Point`）。
 
-TypeORM 尝试做正确的事情，但并不总是能够确定何时插入的值或 PostGIS 函数的结果应被视为几何。
-因此，你可能会发现自己编写的代码类似于以下代码，其中的值将转换为 PostGIS 的`geometry`
-GeoJSON 和 GeoJSON 作为`json`：
-
-TypeORM tries to do the right thing, but it's not always possible to determine
-when a value being inserted or the result of a PostGIS function should be
-treated as a geometry. As a result, you may find yourself writing code similar
-to the following, where values are converted into PostGIS `geometry`s from
-GeoJSON and into GeoJSON as `json`:
+TypeORM尝试做正确的事情，但并不总是能够确定何时插入的值或PostGIS函数的结果应被视为几何。 因此，你可能会发现自己编写的代码类似于以下代码，其中值从GeoJSON转换为PostGIS `geometry`,并作为`json`转换为GeoJSON：
 
 ```typescript
 const origin = {
@@ -224,7 +212,7 @@ await getManager()
         }
     })
     .setParameters({
-        // stringify GeoJSON
+        // 字符串化 GeoJSON
         origin: JSON.stringify(origin)
     })
     .getMany();
@@ -267,7 +255,7 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 @Column({ type: "int", length: 200 })
 ```
 
-### `mysql` /`mariadb`的列类型
+### `mysql`/`mariadb`的列类型
 
 `int`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`, `dec`, `decimal`, `numeric`,
 `date`, `datetime`, `timestamp`, `time`, `year`, `char`, `varchar`, `nvarchar`, `text`, `tinytext`,
@@ -286,7 +274,7 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
 
-### `sqlite` / `cordova` / `react-native` / `expo`的列类型
+### `sqlite`/`cordova`/`react-native`/`expo`的列类型
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
 `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
@@ -308,6 +296,57 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 `nclob`, `rowid`, `urowid`
 
 ### `enum` 列类型
+
+`postgres`和`mysql`都支持`enum`列类型。 并有多种列定义方式：
+
+使用typescript枚举：
+
+```typescript
+export enum UserRole {
+    ADMIN = "admin",
+    EDITOR = "editor"
+    GHOST = "ghost"
+}
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({
+        type: "enum",
+        enum: UserRole,
+        default: UserRole.GHOST
+    })
+    role: UserRole
+
+}
+```
+
+> 注意：支持字符串，数字和异构枚举。
+
+使用带枚举值的数组：
+
+```typescript
+export type UserRoleType = "admin" | "editor" | "ghost",
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({
+        type: "enum",
+        enum: ["admin", "editor", "ghost"],
+        default: "ghost"
+    })
+    role: UserRoleType
+}
+```
+
+### `simple-array` column type
 
 `postgres`和`mysql`支持`enum`列类型。 有多种列定义方式：
 

@@ -1,11 +1,10 @@
 # 关系
 
-- [关系](#%E5%85%B3%E7%B3%BB)
-  - [什么是关系](#%E4%BB%80%E4%B9%88%E6%98%AF%E5%85%B3%E7%B3%BB)
-  - [关系选项](#%E5%85%B3%E7%B3%BB%E9%80%89%E9%A1%B9)
-  - [级联](#%E7%BA%A7%E8%81%94)
-  - [`@JoinColumn` 选项](#joincolumn-%E9%80%89%E9%A1%B9)
-  - [`@JoinTable` 选项](#jointable-%E9%80%89%E9%A1%B9)
+  * [什么是关系](#什么是关系)
+  * [关系选项](#关系选项)
+  * [级联](#级联)
+  * [`@JoinColumn`选项](#`@JoinColumn`选项)
+  * [`@JoinTable`选项](#`@JoinTable`选项)
 
 ## 什么是关系
 
@@ -91,7 +90,7 @@ await connection.manager.save(question);
 但是当一些不需要的对象被保存到数据库中时，它们也可能带来错误和安全问题。
 此外，它们提供了一种将新对象保存到数据库中的不太明确的方法。
 
-## `@JoinColumn` 选项
+## `@JoinColumn`选项
 
 `@ JoinColumn`不仅定义了关系的哪一侧包含带有外键的连接列，还允许自定义连接列名和引用的列名。
 
@@ -126,7 +125,7 @@ category: Category;
 该关系现在引用`Category`实体的`name`，而不是`id`。
 该关系的列名将变为`categoryName`
 
-## `@JoinTable` 选项
+## `@JoinTable`选项
 
 `@ JoinTable`用于“多对多”关系，并描述"junction"表的连接列。
 联结表是由 TypeORM 自动创建的一个特殊的单独表，其中的列引用相关实体。

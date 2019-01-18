@@ -1,15 +1,13 @@
 # 实体监听器和订阅者
-
-- [实体监听器和订阅者](#%E5%AE%9E%E4%BD%93%E7%9B%91%E5%90%AC%E5%99%A8%E5%92%8C%E8%AE%A2%E9%98%85%E8%80%85)
-  - [监听器](#%E7%9B%91%E5%90%AC%E5%99%A8)
-    - [`@AfterLoad`](#afterload)
-    - [`@BeforeInsert`](#beforeinsert)
-    - [`@AfterInsert`](#afterinsert)
-    - [`@BeforeUpdate`](#beforeupdate)
-    - [`@AfterUpdate`](#afterupdate)
-    - [`@BeforeRemove`](#beforeremove)
-    - [`@AfterRemove`](#afterremove)
-  - [订阅者](#%E8%AE%A2%E9%98%85%E8%80%85)
+* [监听器](#监听器)
+  * [`@AfterLoad`](#afterload)
+  * [`@BeforeInsert`](#beforeinsert)
+  * [`@AfterInsert`](#afterinsert)
+  * [`@BeforeUpdate`](#beforeupdate)
+  * [`@AfterUpdate`](#afterupdate)
+  * [`@BeforeRemove`](#beforeremove)
+  * [`@AfterRemove`](#afterremove)
+* [订阅者](#订阅者)
 
 ## 监听器
 

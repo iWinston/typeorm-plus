@@ -1,12 +1,11 @@
 # 支持的平台
 
-- [支持的平台](#%E6%94%AF%E6%8C%81%E7%9A%84%E5%B9%B3%E5%8F%B0)
-  - [NodeJS](#nodejs)
-  - [Browser](#browser)
-  - [Cordova / PhoneGap / Ionic apps](#cordova--phonegap--ionic-apps)
-  - [React Native](#react-native)
-  - [Expo](#expo)
-  - [NativeScript](#nativescript)
+  * [NodeJS](#nodejs)
+  * [Browser](#browser)
+  * [Cordova/PhoneGap/Ionic apps](#cordova--phonegap--ionic-apps)
+  * [React Native](#react-native)
+  * [Expo](#expo)
+  * [NativeScript](#nativescript)
 
 ## NodeJS
 

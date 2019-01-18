@@ -1,32 +1,31 @@
 # 使用 Query Builder 查询
 
-- [使用 Query Builder 查询](#%E4%BD%BF%E7%94%A8-query-builder-%E6%9F%A5%E8%AF%A2)
-  - [什么是 `QueryBuilder`](#%E4%BB%80%E4%B9%88%E6%98%AF-querybuilder)
-  - [如何创建和使用 `QueryBuilder`](#%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E5%92%8C%E4%BD%BF%E7%94%A8-querybuilder)
-  - [使用 `QueryBuilder` 获取值](#%E4%BD%BF%E7%94%A8-querybuilder-%E8%8E%B7%E5%8F%96%E5%80%BC)
-  - [什么是别名？](#%E4%BB%80%E4%B9%88%E6%98%AF%E5%88%AB%E5%90%8D)
-  - [使用参数来转义数据](#%E4%BD%BF%E7%94%A8%E5%8F%82%E6%95%B0%E6%9D%A5%E8%BD%AC%E4%B9%89%E6%95%B0%E6%8D%AE)
-  - [添加 `WHERE` 表达式](#%E6%B7%BB%E5%8A%A0-where-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
-  - [添加 `HAVING` 表达式](#%E6%B7%BB%E5%8A%A0-having-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
-  - [添加 `ORDER BY` 表达式](#%E6%B7%BB%E5%8A%A0-order-by-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
-  - [添加 `GROUP BY` 表达式](#%E6%B7%BB%E5%8A%A0-group-by-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
-  - [添加 `LIMIT` 表达式](#%E6%B7%BB%E5%8A%A0-limit-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
-  - [添加 `OFFSET` 表达式](#%E6%B7%BB%E5%8A%A0-offset-%E8%A1%A8%E8%BE%BE%E5%BC%8F)
-  - [联查](#%E8%81%94%E6%9F%A5)
-  - [内联 和 左联](#%E5%86%85%E8%81%94-%E5%92%8C-%E5%B7%A6%E8%81%94)
-  - [不使用条件的联查](#%E4%B8%8D%E4%BD%BF%E7%94%A8%E6%9D%A1%E4%BB%B6%E7%9A%84%E8%81%94%E6%9F%A5)
-  - [联查任何实体或表](#%E8%81%94%E6%9F%A5%E4%BB%BB%E4%BD%95%E5%AE%9E%E4%BD%93%E6%88%96%E8%A1%A8)
-  - [联查和映射功能](#%E8%81%94%E6%9F%A5%E5%92%8C%E6%98%A0%E5%B0%84%E5%8A%9F%E8%83%BD)
-  - [获取生成的 sql 查询语句](#%E8%8E%B7%E5%8F%96%E7%94%9F%E6%88%90%E7%9A%84-sql-%E6%9F%A5%E8%AF%A2%E8%AF%AD%E5%8F%A5)
-  - [获得原始结果](#%E8%8E%B7%E5%BE%97%E5%8E%9F%E5%A7%8B%E7%BB%93%E6%9E%9C)
-  - [流数据](#%E6%B5%81%E6%95%B0%E6%8D%AE)
-  - [使用分页](#%E4%BD%BF%E7%94%A8%E5%88%86%E9%A1%B5)
-  - [加锁](#%E5%8A%A0%E9%94%81)
-  - [查询部分字段](#%E6%9F%A5%E8%AF%A2%E9%83%A8%E5%88%86%E5%AD%97%E6%AE%B5)
-  - [使用子查询](#%E4%BD%BF%E7%94%A8%E5%AD%90%E6%9F%A5%E8%AF%A2)
-  - [隐藏列](#%E9%9A%90%E8%97%8F%E5%88%97)
+  * [什么是`QueryBuilder`](#什么是`QueryBuilder`)
+  * [如何创建和使用`QueryBuilder`](#如何创建和使用`QueryBuilder`)
+  * [使用`QueryBuilder`获取值](#使用`QueryBuilder`获取值)
+  * [什么是别名？](#什么是别名？)
+  * [使用参数来转义数据](#使用参数来转义数据)
+  * [添加`WHERE`表达式](#添加`WHERE`表达式)
+  * [添加`HAVING`表达式](#添加`HAVING`表达式)
+  * [添加`ORDER BY`表达式](#添加`ORDER-BY`表达式)
+  * [添加`GROUP BY`表达式](#添加`GROUP-BY`表达式)
+  * [添加`LIMIT`表达式](#添加`LIMIT`表达式)
+  * [添加`OFFSET`表达式](#添加`OFFSET`表达式)
+  * [联查](#联查)
+  * [内联和左联](#内联和左联)
+  * [不使用条件的联查](#不使用条件的联查)
+  * [联查任何实体或表](#联查任何实体或表)
+  * [联查和映射功能](#联查和映射功能)
+  * [获取生成的sql查询语句](#获取生成的sql查询语句)
+  * [获得原始结果](#获得原始结果)
+  * [流数据](#流数据)
+  * [分页](#分页)
+  * [加锁](#加锁)
+  * [查询部分字段](#查询部分字段)
+  * [使用子查询](#使用子查询)
+  * [隐藏列](#隐藏列)
 
-## 什么是 `QueryBuilder`
+## 什么是`QueryBuilder`
 
 `QueryBuilder`是 TypeORM 最强大的功能之一 ，它允许你使用优雅便捷的语法构建 SQL 查询，执行并获得自动转换的实体。
 
@@ -61,7 +60,7 @@ User {
 }
 ```
 
-## 如何创建和使用 `QueryBuilder`
+## 如何创建和使用`QueryBuilder`
 
 有几种方法可以创建`Query Builder`：
 
@@ -158,7 +157,7 @@ User {
 
 你可以在其中切换任何不同类型的查询构建器，一旦执行，则将获得一个新的查询构建器实例（与所有其他方法不同）。
 
-## 使用 `QueryBuilder` 获取值
+## 使用`QueryBuilder`获取值
 
 要从数据库中获取单个结果，例如通过 id 或 name 获取用户，必须使用`getOne`：
 
@@ -265,7 +264,7 @@ SELECT ... FROM users user WHERE user.name = 'Timber'
 .setParameter("name", "Timber")
 ```
 
-## 添加 `WHERE` 表达式
+## 添加`WHERE`表达式
 
 添加 `WHERE` 表达式就像：
 
@@ -328,7 +327,7 @@ SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'T
 注意：小心`orWhere` - 如果你使用带有`AND`和`OR`表达式的复杂表达式，请记住他们将无限制的叠加。
 有时你只需要创建一个 where 字符串，避免使用`orWhere`。
 
-## 添加 `HAVING` 表达式
+## 添加`HAVING`表达式
 
 添加`HAVING`表达式很简单：
 
@@ -373,7 +372,7 @@ SELECT ... FROM users user HAVING user.firstName = 'Timber' OR user.lastName = '
 你可以根据需要组合尽可能多的`AND`和`OR`表达式。
 如果使用多个`.having`，后面的将覆盖所有之前的`HAVING`表达式。
 
-## 添加 `ORDER BY` 表达式
+## 添加`ORDER BY`表达式
 
 添加 `ORDER BY` 很简单：
 
@@ -414,7 +413,7 @@ createQueryBuilder("user").orderBy({
 
 如果你使用了多个`.orderBy`，后面的将覆盖所有之前的`ORDER BY`表达式。
 
-## 添加 `GROUP BY` 表达式
+## 添加`GROUP BY`表达式
 
 添加 `GROUP BY` 表达式很简单：
 
@@ -438,7 +437,7 @@ createQueryBuilder("user")
 
 如果使用了多个`.groupBy` ，则后面的将会覆盖之前所有的 `ORDER BY` 表达式。
 
-## 添加 `LIMIT` 表达式
+## 添加`LIMIT`表达式
 
 添加 `LIMIT` 表达式很简单：
 
@@ -456,7 +455,7 @@ SELECT ... FROM users user LIMIT 10
 注意：如果你使用带有连接或子查询的复杂查询，LIMIT 可能无法正常工作。
 如果使用分页，建议使用`take`代替。
 
-## 添加 `OFFSET` 表达式
+## 添加`OFFSET`表达式
 
 添加 SQL`OFFSET`表达式很简单：
 
@@ -575,7 +574,7 @@ SELECT user.*, photo.* FROM users user
     WHERE user.name = 'Timber'
 ```
 
-## 内联 和 左联
+## 内联和左联
 
 如果你想使用`INNER JOIN`而不是`LEFT JOIN`，只需使用`innerJoinAndSelect`：
 
@@ -660,7 +659,7 @@ const user = await createQueryBuilder("user")
 如果要加载并映射单个实体，请使用`leftJoinAndMapOne`。
 如果要加载和映射多个实体，请使用`leftJoinAndMapMany`。
 
-## 获取生成的 sql 查询语句
+## 获取生成的sql查询语句
 
 有时你可能想要获取`QueryBuilder`生成的 SQL 查询。
 为此，请使用`getSql`：

@@ -1,11 +1,9 @@
 # 从 Sequelize 迁移到 TypeORM
 
-- [从 Sequelize 迁移到 TypeORM](#%E4%BB%8E-sequelize-%E8%BF%81%E7%A7%BB%E5%88%B0-typeorm)
-  - [建立连接](#%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5)
-  - [架构同步](#%E6%9E%B6%E6%9E%84%E5%90%8C%E6%AD%A5)
-  - [创建模型](#%E5%88%9B%E5%BB%BA%E6%A8%A1%E5%9E%8B)
-  - [其他模型设置](#%E5%85%B6%E4%BB%96%E6%A8%A1%E5%9E%8B%E8%AE%BE%E7%BD%AE)
-    - [使用模型](#%E4%BD%BF%E7%94%A8%E6%A8%A1%E5%9E%8B)
+  * [建立连接](#建立连接)
+  * [架构同步](#架构同步)
+  * [创建模型](#创建模型)
+  * [其他模型设置](#其他模型设置)
 
 ## 建立连接
 

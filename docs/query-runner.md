@@ -1,5 +1,5 @@
 # Query Runner
 
-`QueryRunner` is used to perform database-related queries.
+`QueryRunner`用于执行与数据库相关的查询。
 
-TBD.
+待定

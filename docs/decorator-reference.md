@@ -1,40 +1,39 @@
 # 装饰器参考
 
-- [装饰器参考](#%E8%A3%85%E9%A5%B0%E5%99%A8%E5%8F%82%E8%80%83)
-  - [实体装饰器](#%E5%AE%9E%E4%BD%93%E8%A3%85%E9%A5%B0%E5%99%A8)
-      - [`@Entity`](#entity)
-  - [列装饰器](#%E5%88%97%E8%A3%85%E9%A5%B0%E5%99%A8)
-      - [`@Column`](#column)
-      - [`@PrimaryColumn`](#primarycolumn)
-      - [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
-      - [`@ObjectIdColumn`](#objectidcolumn)
-      - [`@CreateDateColumn`](#createdatecolumn)
-      - [`@UpdateDateColumn`](#updatedatecolumn)
-      - [`@VersionColumn`](#versioncolumn)
-      - [`@Generated`](#generated)
-  - [关系装饰器](#%E5%85%B3%E7%B3%BB%E8%A3%85%E9%A5%B0%E5%99%A8)
-      - [`@OneToOne`](#onetoone)
-      - [`@ManyToOne`](#manytoone)
-      - [`@OneToMany`](#onetomany)
-      - [`@ManyToMany`](#manytomany)
-      - [`@JoinColumn`](#joincolumn)
-      - [`@JoinTable`](#jointable)
-      - [`@RelationId`](#relationid)
-  - [订阅者和监听者装饰器](#%E8%AE%A2%E9%98%85%E8%80%85%E5%92%8C%E7%9B%91%E5%90%AC%E8%80%85%E8%A3%85%E9%A5%B0%E5%99%A8)
-      - [`@AfterLoad`](#afterload)
-      - [`@BeforeInsert`](#beforeinsert)
-      - [`@AfterInsert`](#afterinsert)
-      - [`@BeforeUpdate`](#beforeupdate)
-      - [`@AfterUpdate`](#afterupdate)
-      - [`@BeforeRemove`](#beforeremove)
-      - [`@AfterRemove`](#afterremove)
-      - [`@EventSubscriber`](#eventsubscriber)
-  - [其他装饰器](#%E5%85%B6%E4%BB%96%E8%A3%85%E9%A5%B0%E5%99%A8)
-      - [`@Index`](#index)
-      - [`@Unique`](#unique)
-      - [`@Check`](#check)
-      - [`@Transaction`, `@TransactionManager` 和 `@TransactionRepository`](#transaction-transactionmanager-%E5%92%8C-transactionrepository)
-      - [`@EntityRepository`](#entityrepository)
+* [实体装饰器](#实体装饰器)
+    * [`@Entity`](#entity)
+* [列装饰器](#列装饰器)
+    * [`@Column`](#column)
+    * [`@PrimaryColumn`](#primarycolumn)
+    * [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
+    * [`@ObjectIdColumn`](#objectidcolumn)
+    * [`@CreateDateColumn`](#createdatecolumn)
+    * [`@UpdateDateColumn`](#updatedatecolumn)
+    * [`@VersionColumn`](#versioncolumn)
+    * [`@Generated`](#generated)
+* [关系装饰器](#关系装饰器)
+    * [`@OneToOne`](#onetoone)
+    * [`@ManyToOne`](#manytoone)
+    * [`@OneToMany`](#onetomany)
+    * [`@ManyToMany`](#manytomany)
+    * [`@JoinColumn`](#joincolumn)
+    * [`@JoinTable`](#jointable)
+    * [`@RelationId`](#relationid)
+* [订阅者和监听者装饰器](#订阅者和监听者装饰器)
+    * [`@AfterLoad`](#afterload)
+    * [`@BeforeInsert`](#beforeinsert)
+    * [`@AfterInsert`](#afterinsert)
+    * [`@BeforeUpdate`](#beforeupdate)
+    * [`@AfterUpdate`](#afterupdate)
+    * [`@BeforeRemove`](#beforeremove)
+    * [`@AfterRemove`](#afterremove)
+    * [`@EventSubscriber`](#eventsubscriber)
+* [其他装饰器](#其他装饰器)
+    * [`@Index`](#index)
+    * [`@Unique`](#unique)
+    * [`@Check`](#check)
+    * [`@Transaction`, `@TransactionManager` 和 `@TransactionRepository`](#transaction-transactionmanager-%E5%92%8C-transactionrepository)
+    * [`@EntityRepository`](#entityrepository)
 
 ## 实体装饰器
 
@@ -52,12 +51,13 @@ export class User {
 
 你还可以指定一些其他实体选项：
 
-- `name` - 表名。 如果未指定，则从实体类名生成表名。
-- `database` - 所选 DB 服务器中的数据库名称。
-- `schema` - 架构名称。
-- `engine` - 在表创建期间设置的数据库引擎（仅在某些数据库中有效）。
-- `skipSync` - 标有此装饰器的实体将从架构更新中跳过。
-- `orderBy` - 使用`find`操作和`QueryBuilder`指定实体的默认排序。
+-   `name` - 表名。 如果未指定，则从实体类名生成表名。
+-   `database` - 所选 DB 服务器中的数据库名称。
+-   `schema` - 架构名称。
+-   `engine` - 在表创建期间设置的数据库引擎（仅在某些数据库中有效）。
+-   `synchronize` - 架构更新中跳过标有`false`的实体。
+-   `skipSync` - 标有此装饰器的实体将从架构更新中跳过。
+-   `orderBy` - 使用`find`操作和`QueryBuilder`指定实体的默认排序。
 
 例子:
 
@@ -67,7 +67,7 @@ export class User {
     engine: "MyISAM",
     database: 'example_dev',
     schema: 'schema_with_best_tables',
-    skipSync: true,
+    synchronize: false,
     orderBy: {
         name: "ASC",
         id: "DESC"
@@ -88,53 +88,53 @@ export class User {
 ```typescript
 @Entity("users")
 export class User {
-  @Column({ primary: true })
-  id: number;
+    @Column({ primary: true })
+    id: number;
 
-  @Column({ type: "varchar", length: 200, unique: true })
-  firstName: string;
+    @Column({ type: "varchar", length: 200, unique: true })
+    firstName: string;
 
-  @Column({ nullable: true })
-  lastName: string;
+    @Column({ nullable: true })
+    lastName: string;
 
-  @Column({ default: false })
-  isActive: string;
+    @Column({ default: false })
+    isActive: string;
 }
 ```
 
 `@Column` 接受可以使用的几个选项：
 
-- `type: ColumnType` - 列类型。受支持的[supported column types](entities.md#column-types)其中之一。
-- `name: string` -数据库表中的列名。
-  默认情况下，列名称是从属性的名称生成的。你也可以自定义命名。
-- `length: string|number` - 列类型的长度。 例如，如果要创建`varchar（150）`类型，请指定列类型和长度选项。
-- `width: number` - 列类型的显示宽度。 仅用于 [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
-- `onUpdate: string` - `ON UPDATE` 触发器。仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-- `nullable: boolean` - 设置列值`NULL`或`NOT NULL`。
-  默认值是 `nullable: false`.
-- `readonly: boolean` - 指示"save"操作是否未更新列值。 这意味着只有在第一次插入对象时才能写入此值。
-  默认值是 `false`。
-- `select: boolean` - 定义在进行查询时是否默认隐藏此列。 设置为`false`时，列数据不会显示标准查询。 默认值`select：true`。
-- `default: string` - 添加数据库级列的`DEFAULT`值。
-- `primary: boolean` - 将列标记为主列。 与`@PrimaryColumn`使用相同。
-- `unique: boolean` - 将列标记为唯一列（创建唯一约束）。
-- `comment: string` - 列的注释。 并非所有数据库类型都支持。
-- `precision: number` - 十进制（精确数字）列的精度（仅适用于十进制列），这是为值存储的最大位数。用于某些列类型。
-- `scale: number` - 十进制（精确数字）列的比例（仅适用于十进制列），表示小数点右侧的位数，且不得大于精度。用于某些列类型。
-- `zerofill: boolean` - 将`ZEROFILL`属性设置为数字列。 仅在 MySQL 中使用。
-  如果是`true`，MySQL 会自动将`UNSIGNED`属性添加到此列。
-- `unsigned: boolean` - 将`UNSIGNED`属性设置为数字列。 仅在 MySQL 中使用。
-- `charset: string` - 定义列字符集。 并非所有数据库类型都支持。
-- `collation: string` - 定义列排序规则。
-- `enum: string[]|AnyEnum` - 在`enum`列类型中使用，以指定允许的枚举值列表。
-  你可以指定值数组或指定枚举类。
-- `asExpression: string` - 生成的列表达式。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-- `generatedType: "VIRTUAL"|"STORED"` - 生成的列类型。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-- `hstoreType: "object"|"string"` - 返回类型`HSTORE`列。 以字符串或对象的形式返回值。 仅用于 [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-- `array: boolean` - 用于可以是数组的 postgres 列类型（例如 int []）。
-- `transformer: ValueTransformer` - 指定在读取或写入数据库时用于封送/取消封送此列的值转换器。
-- `spatialFeatureType: string` - 可选的要素类型（`Point`，`Polygon`，`LineString`，`Geometry`）用作空间列的约束。 如果没有指定，默认为`Geometry`。 仅在 PostgreSQL 中使用。
-- `srid: number` - 可选的 [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) 用作空间列约束。如果未指定，则默认为`0`。 标准地理坐标（WGS84 基准面中的纬度/经度）对应于[EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/)。 仅在 PostgreSQL 中使用。
+-   `type: ColumnType` - 列类型。受支持的[supported column types](entities.md#column-types)其中之一。
+-   `name: string` -数据库表中的列名。
+    默认情况下，列名称是从属性的名称生成的。你也可以自定义命名。
+-   `length: string|number` - 列类型的长度。 例如，如果要创建`varchar（150）`类型，请指定列类型和长度选项。
+-   `width: number` - 列类型的显示宽度。 仅用于 [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+-   `onUpdate: string` - `ON UPDATE` 触发器。仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+-   `nullable: boolean` - 设置列值`NULL`或`NOT NULL`。
+    默认值是 `nullable: false`.
+-   `readonly: boolean` - 指示"save"操作是否未更新列值。 这意味着只有在第一次插入对象时才能写入此值。
+    默认值是 `false`。
+-   `select: boolean` - 定义在进行查询时是否默认隐藏此列。 设置为`false`时，列数据不会显示标准查询。 默认值`select：true`。
+-   `default: string` - 添加数据库级列的`DEFAULT`值。
+-   `primary: boolean` - 将列标记为主列。 与`@PrimaryColumn`使用相同。
+-   `unique: boolean` - 将列标记为唯一列（创建唯一约束）。
+-   `comment: string` - 列的注释。 并非所有数据库类型都支持。
+-   `precision: number` - 十进制（精确数字）列的精度（仅适用于十进制列），这是为值存储的最大位数。用于某些列类型。
+-   `scale: number` - 十进制（精确数字）列的比例（仅适用于十进制列），表示小数点右侧的位数，且不得大于精度。用于某些列类型。
+-   `zerofill: boolean` - 将`ZEROFILL`属性设置为数字列。 仅在 MySQL 中使用。
+    如果是`true`，MySQL 会自动将`UNSIGNED`属性添加到此列。
+-   `unsigned: boolean` - 将`UNSIGNED`属性设置为数字列。 仅在 MySQL 中使用。
+-   `charset: string` - 定义列字符集。 并非所有数据库类型都支持。
+-   `collation: string` - 定义列排序规则。
+-   `enum: string[]|AnyEnum` - 在`enum`列类型中使用，以指定允许的枚举值列表。
+    你可以指定值数组或指定枚举类。
+-   `asExpression: string` - 生成的列表达式。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+-   `generatedType: "VIRTUAL"|"STORED"` - 生成的列类型。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+-   `hstoreType: "object"|"string"` - 返回类型`HSTORE`列。 以字符串或对象的形式返回值。 仅用于 [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
+-   `array: boolean` - 用于可以是数组的 postgres 列类型（例如 int []）。
+-   `transformer: ValueTransformer` - 指定在读取或写入数据库时用于封送/取消封送此列的值转换器。
+-   `spatialFeatureType: string` - 可选的要素类型（`Point`，`Polygon`，`LineString`，`Geometry`）用作空间列的约束。 如果没有指定，默认为`Geometry`。 仅在 PostgreSQL 中使用。
+-   `srid: number` - 可选的 [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) 用作空间列约束。如果未指定，则默认为`0`。 标准地理坐标（WGS84 基准面中的纬度/经度）对应于[EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/)。 仅在 PostgreSQL 中使用。
 
 了解有关[entity columns](entities.md#entity-columns)的更多信息。
 
@@ -147,8 +147,8 @@ export class User {
 ```typescript
 @Entity()
 export class User {
-  @PrimaryColumn()
-  id: number;
+    @PrimaryColumn()
+    id: number;
 }
 ```
 
@@ -163,23 +163,23 @@ export class User {
 ```typescript
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 }
 ```
 
 有两种策略：
 
-- `increment` - 使用 AUTO_INCREMENT / SERIAL / SEQUENCE（取决于数据库类型）生成增量编号。
-- `uuid` - 生成唯一的`uuid`字符串。
+-   `increment` - 使用 AUTO_INCREMENT / SERIAL / SEQUENCE（取决于数据库类型）生成增量编号。
+-   `uuid` - 生成唯一的`uuid`字符串。
 
 默认生成策略是`increment`，将其更改为`uuid`，只需将其作为 decorator 的第一个参数传递：
 
 ```typescript
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn("uuid")
-  id: number;
+    @PrimaryGeneratedColumn("uuid")
+    id: number;
 }
 ```
 
@@ -195,8 +195,8 @@ MongoDB 中的每个实体都必须具有 ObjectID 列。
 ```typescript
 @Entity()
 export class User {
-  @ObjectIdColumn()
-  id: ObjectID;
+    @ObjectIdColumn()
+    id: ObjectID;
 }
 ```
 
@@ -211,8 +211,8 @@ export class User {
 ```typescript
 @Entity()
 export class User {
-  @CreateDateColumn()
-  createdDate: Date;
+    @CreateDateColumn()
+    createdDate: Date;
 }
 ```
 
@@ -224,8 +224,8 @@ export class User {
 ```typescript
 @Entity()
 export class User {
-  @UpdateDateColumn()
-  updatedDate: Date;
+    @UpdateDateColumn()
+    updatedDate: Date;
 }
 ```
 
@@ -237,8 +237,8 @@ export class User {
 ```typescript
 @Entity()
 export class User {
-  @VersionColumn()
-  version: number;
+    @VersionColumn()
+    version: number;
 }
 ```
 
@@ -249,9 +249,9 @@ export class User {
 ```typescript
 @Entity()
 export class User {
-  @Column()
-  @Generated("uuid")
-  uuid: string;
+    @Column()
+    @Generated("uuid")
+    uuid: string;
 }
 ```
 
@@ -272,9 +272,9 @@ import { Profile } from "./Profile";
 
 @Entity()
 export class User {
-  @OneToOne(type => Profile, profile => profile.user)
-  @JoinColumn()
-  profile: Profile;
+    @OneToOne(type => Profile, profile => profile.user)
+    @JoinColumn()
+    profile: Profile;
 }
 ```
 
@@ -293,14 +293,14 @@ import { User } from "./User";
 
 @Entity()
 export class Photo {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  url: string;
+    @Column()
+    url: string;
 
-  @ManyToOne(type => User, user => user.photos)
-  user: User;
+    @ManyToOne(type => User, user => user.photos)
+    user: User;
 }
 ```
 
@@ -319,14 +319,14 @@ import { Photo } from "./Photo";
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  name: string;
+    @Column()
+    name: string;
 
-  @OneToMany(type => Photo, photo => photo.user)
-  photos: Photo[];
+    @OneToMany(type => Photo, photo => photo.user)
+    photos: Photo[];
 }
 ```
 
@@ -345,18 +345,18 @@ import { Category } from "./Category";
 
 @Entity()
 export class Question {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  title: string;
+    @Column()
+    title: string;
 
-  @Column()
-  text: string;
+    @Column()
+    text: string;
 
-  @ManyToMany(type => Category)
-  @JoinTable()
-  categories: Category[];
+    @ManyToMany(type => Category)
+    @JoinTable()
+    categories: Category[];
 }
 ```
 
@@ -371,12 +371,12 @@ export class Question {
 ```typescript
 @Entity()
 export class Post {
-  @ManyToOne(type => Category)
-  @JoinColumn({
-    name: "cat_id",
-    referencedColumnName: "name"
-  })
-  category: Category;
+    @ManyToOne(type => Category)
+    @JoinColumn({
+        name: "cat_id",
+        referencedColumnName: "name"
+    })
+    category: Category;
 }
 ```
 
@@ -391,19 +391,19 @@ Junction 是由 TypeORM 自动创建的一个特殊的独立表，其中列引�
 ```typescript
 @Entity()
 export class Post {
-  @ManyToMany(type => Category)
-  @JoinTable({
-    name: "question_categories",
-    joinColumn: {
-      name: "question",
-      referencedColumnName: "id"
-    },
-    inverseJoinColumn: {
-      name: "category",
-      referencedColumnName: "id"
-    }
-  })
-  categories: Category[];
+    @ManyToMany(type => Category)
+    @JoinTable({
+        name: "question_categories",
+        joinColumn: {
+            name: "question",
+            referencedColumnName: "id"
+        },
+        inverseJoinColumn: {
+            name: "category",
+            referencedColumnName: "id"
+        }
+    })
+    categories: Category[];
 }
 ```
 
@@ -418,11 +418,11 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @ManyToOne(type => Category)
-  category: Category;
+    @ManyToOne(type => Category)
+    category: Category;
 
-  @RelationId((post: Post) => post.category) // 需要指定目标关系
-  categoryId: number;
+    @RelationId((post: Post) => post.category) // 需要指定目标关系
+    categoryId: number;
 }
 ```
 
@@ -431,11 +431,11 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @ManyToMany(type => Category)
-  categories: Category[];
+    @ManyToMany(type => Category)
+    categories: Category[];
 
-  @RelationId((post: Post) => post.categories)
-  categoryIds: number[];
+    @RelationId((post: Post) => post.categories)
+    categoryIds: number[];
 }
 ```
 
@@ -452,10 +452,10 @@ Relation id 仅用于表现。
 ```typescript
 @Entity()
 export class Post {
-  @AfterLoad()
-  updateCounters() {
-    if (this.likesCount === undefined) this.likesCount = 0;
-  }
+    @AfterLoad()
+    updateCounters() {
+        if (this.likesCount === undefined) this.likesCount = 0;
+    }
 }
 ```
 
@@ -469,10 +469,10 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @BeforeInsert()
-  updateDates() {
-    this.createdDate = new Date();
-  }
+    @BeforeInsert()
+    updateDates() {
+        this.createdDate = new Date();
+    }
 }
 ```
 
@@ -486,10 +486,10 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @AfterInsert()
-  resetCounters() {
-    this.counters = 0;
-  }
+    @AfterInsert()
+    resetCounters() {
+        this.counters = 0;
+    }
 }
 ```
 
@@ -503,10 +503,10 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @BeforeUpdate()
-  updateDates() {
-    this.updatedDate = new Date();
-  }
+    @BeforeUpdate()
+    updateDates() {
+        this.updatedDate = new Date();
+    }
 }
 ```
 
@@ -520,10 +520,10 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @AfterUpdate()
-  updateCounters() {
-    this.counter = 0;
-  }
+    @AfterUpdate()
+    updateCounters() {
+        this.counter = 0;
+    }
 }
 ```
 
@@ -537,10 +537,10 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @BeforeRemove()
-  updateStatus() {
-    this.status = "removed";
-  }
+    @BeforeRemove()
+    updateStatus() {
+        this.status = "removed";
+    }
 }
 ```
 
@@ -554,10 +554,10 @@ export class Post {
 ```typescript
 @Entity()
 export class Post {
-  @AfterRemove()
-  updateStatus() {
-    this.status = "removed";
-  }
+    @AfterRemove()
+    updateStatus() {
+        this.status = "removed";
+    }
 }
 ```
 
@@ -572,19 +572,19 @@ export class Post {
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
-  /**
-   * 表示此订阅者仅侦听Post事件。
-   */
-  listenTo() {
-    return Post;
-  }
+    /**
+     * 表示此订阅者仅侦听Post事件。
+     */
+    listenTo() {
+        return Post;
+    }
 
-  /**
-   * 在POST INSERTED之前调用。
-   */
-  beforeInsert(event: InsertEvent<Post>) {
-    console.log(`BEFORE POST INSERTED: `, event.entity);
-  }
+    /**
+     * 在POST INSERTED之前调用。
+     */
+    beforeInsert(event: InsertEvent<Post>) {
+        console.log(`BEFORE POST INSERTED: `, event.entity);
+    }
 }
 ```
 
@@ -594,12 +594,12 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface {
-  /**
-   * 在ENTITY INSERTED之前
-   */
-  beforeInsert(event: InsertEvent<any>) {
-    console.log(`BEFORE ENTITY INSERTED: `, event.entity);
-  }
+    /**
+     * 在ENTITY INSERTED之前
+     */
+    beforeInsert(event: InsertEvent<any>) {
+        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
+    }
 }
 ```
 
@@ -618,13 +618,13 @@ export class PostSubscriber implements EntitySubscriberInterface {
 ```typescript
 @Entity()
 export class User {
-  @Index()
-  @Column()
-  firstName: string;
+    @Index()
+    @Column()
+    firstName: string;
 
-  @Index({ unique: true })
-  @Column()
-  lastName: string;
+    @Index({ unique: true })
+    @Column()
+    lastName: string;
 }
 ```
 
@@ -634,14 +634,14 @@ export class User {
 @Index(["lastName", "middleName"])
 @Index(["firstName", "lastName", "middleName"], { unique: true })
 export class User {
-  @Column()
-  firstName: string;
+    @Column()
+    firstName: string;
 
-  @Column()
-  lastName: string;
+    @Column()
+    lastName: string;
 
-  @Column()
-  middleName: string;
+    @Column()
+    middleName: string;
 }
 ```
 
@@ -660,14 +660,14 @@ export class User {
 @Unique(["lastName", "middleName"])
 @Unique("UQ_NAMES", ["firstName", "lastName", "middleName"])
 export class User {
-  @Column()
-  firstName: string;
+    @Column()
+    firstName: string;
 
-  @Column()
-  lastName: string;
+    @Column()
+    lastName: string;
 
-  @Column()
-  middleName: string;
+    @Column()
+    middleName: string;
 }
 ```
 
@@ -685,14 +685,14 @@ export class User {
 @Check(`"firstName" <> 'John' AND "lastName" <> 'Doe'`)
 @Check(`"age" > 18`)
 export class User {
-  @Column()
-  firstName: string;
+    @Column()
+    firstName: string;
 
-  @Column()
-  lastName: string;
+    @Column()
+    lastName: string;
 
-  @Column()
-  age: number;
+    @Column()
+    age: number;
 }
 ```
 
@@ -740,7 +740,7 @@ save(@QueryParam("name") name: string, @TransactionRepository() userRepository: 
 ```typescript
 @EntityRepository()
 export class UserRepository {
-  /// ... 定制存储库方法 ...
+    /// ... 定制存储库方法 ...
 }
 ```
 

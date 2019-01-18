@@ -1,11 +1,11 @@
 # MongoDB
 
-- [MongoDB support](#mongodb-support)
-- [Defining entities and columns](#defining-entities-and-columns)
-- [Defining subdocuments (embed documents)](#defining-subdocuments-embed-documents)
-- [Using `MongoEntityManager` and `MongoRepository`](#using-mongoentitymanager-and-mongorepository)
+* [MongoDB支持](#MongoDB支持)
+* [定义实体和列](#定义实体和列)
+* [定义subdocuments(embed documents)](#定义subdocuments(embed-documents))
+* [使用`MongoEntityManager`和`MongoRepository`](#使用`MongoEntityManager`和`MongoRepository`)
 
-## MongoDB 支持
+## MongoDB支持
 
 TypeORM 具有基本的 MongoDB 支持。
 TypeORM 大多数功能都是特定于 RDBMS 的，
@@ -46,7 +46,7 @@ const connection: Connection = await createConnection({
 });
 ```
 
-## 定义 subdocuments (embed documents)
+## 定义subdocuments(embed documents)
 
 由于 MongoDB 存储对象和对象内的对象（或文档内的文档），因此你可以在 TypeORM 中执行相同的操作：
 
@@ -155,7 +155,7 @@ await manager.save(user);
 }
 ```
 
-## 使用 `MongoEntityManager` 和 `MongoRepository`
+## 使用`MongoEntityManager`和`MongoRepository`
 
 你可以使用`EntityManager`中的大多数方法（除了特定于 RDBMS 的方法，如`query`和`transaction`）。
 例如：

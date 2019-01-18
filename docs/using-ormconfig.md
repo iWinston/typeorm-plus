@@ -1,13 +1,12 @@
 # 使用 ormconfig.json
 
-- [使用 ormconfig.json](#%E4%BD%BF%E7%94%A8-ormconfigjson)
-  - [从配置文件创建新连接](#%E4%BB%8E%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%88%9B%E5%BB%BA%E6%96%B0%E8%BF%9E%E6%8E%A5)
-  - [使用 `ormconfig.json`](#%E4%BD%BF%E7%94%A8-ormconfigjson)
-  - [使用 `ormconfig.js`](#%E4%BD%BF%E7%94%A8-ormconfigjs)
-  - [使用环境变量](#%E4%BD%BF%E7%94%A8%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)
-  - [使用 `ormconfig.yml`](#%E4%BD%BF%E7%94%A8-ormconfigyml)
-  - [使用 `ormconfig.xml`](#%E4%BD%BF%E7%94%A8-ormconfigxml)
-  - [覆盖 ormconfig 中定义的选项](#%E8%A6%86%E7%9B%96-ormconfig-%E4%B8%AD%E5%AE%9A%E4%B9%89%E7%9A%84%E9%80%89%E9%A1%B9)
+  * [从配置文件创建新连接](#从配置文件创建新连接)
+  * [使用`ormconfig.json`](#使用`ormconfig.json`)
+  * [使用`ormconfig.js`](#使用`ormconfig.js`)
+  * [使用环境变量](#使用环境变量)
+  * [使用`ormconfig.yml`](#使用`ormconfig.yml`)
+  * [使用`ormconfig.xml`](#使用`ormconfig.xml`)
+  * [覆盖ormconfig中定义的选项](#覆盖ormconfig中定义的选项)
 
 ## 从配置文件创建新连接
 
@@ -22,7 +21,7 @@ const connection = await createConnection();
 
 支持的 ormconfig 文件格式有：`.json`, `.js`, `.env`, `.yml` 和 `.xml`.
 
-## 使用 `ormconfig.json`
+## 使用`ormconfig.json`
 
 在项目根目录（`package.json`附近）中创建`ormconfig.json`，并包含以下内容：
 
@@ -64,7 +63,7 @@ const connection = await createConnection();
 ]
 ```
 
-## 使用 `ormconfig.js`
+## 使用`ormconfig.js`
 
 在项目根目录（`package.json`附近）中创建`ormconfig.js`，并包含以下内容：
 
@@ -130,7 +129,7 @@ TYPEORM_ENTITIES = entity/.*js,modules/**/entity/.*js
 
 你无法使用`env`文件或环境变量定义多个连接。如果你的应用需要有多个连接，请使用其他配置替代。
 
-## 使用 `ormconfig.yml`
+## 使用`ormconfig.yml`
 
 在项目根目录（`package.json`附近）中创建`ormconfig.yml`，并包含以下内容：
 
@@ -152,7 +151,7 @@ second-connection: # 其他连接
 
 你可以使用任一连接。
 
-## 使用 `ormconfig.xml`
+## 使用`ormconfig.xml`
 
 在项目根目录（`package.json`附近）中创建`ormconfig.xml`，并包含以下内容：
 
@@ -177,9 +176,19 @@ second-connection: # 其他连接
 </connections>
 ```
 
-你可以使用任一连接。
+你可以使用任何可用的连接选项。
 
-## 覆盖 ormconfig 中定义的选项
+## Typeorm使用哪个配置文件
+
+有时你可能希望使用不同格式的多个配置。 当调用`getConnectionOptions()`或尝试在没有连接选项的情况下使用`createConnection()`时，Typeorm将尝试按以下顺序加载配置：
+
+1. 来自环境变量。 Typeorm将尝试使用dotEnv加载`.env`文件（如果存在）。 如果设置了环境变量`TYPEORM_CONNECTION`或`TYPEORM_URL`，Typeorm将使用此方法。
+2. 来自`ormconfig.env`。
+3. 从另一个`ormconfig.[format]`文件，按此顺序：`[js，ts，json，yml，yaml，xml]`。
+
+注意，Typeorm将使用找到的第一个有效方法，而不会加载其他方法。 例如，如果在环境中找到配置，Typeorm将不会加载`ormconfig.[format]`文件。
+
+## 覆盖ormconfig中定义的选项
 
 有时你希望覆盖 ormconfig 文件中定义的值，或者可能会在配置中附加一些 TypeScript / JavaScript 逻辑。
 在这种情况下，你可以从 ormconfig 加载选项并构建`ConnectionOptions`，然后在将它们传递给`createConnection`函数之前，使用这些选项执行任何操作：

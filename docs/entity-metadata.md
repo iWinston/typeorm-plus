@@ -1,7 +1,5 @@
-# Entity Metadata
+# 实体元数据
 
-Entity metadata and all related metadata classes contain information about entities,
-their columns, indices, relations and other entity-related information you can use
-to create more complex applications or extensions for TypeORM.
+实体元数据和所有相关元数据类包含有关实体，其列、索引、关系以及可用于为TypeORM创建更复杂的应用程序或扩展的其他实体相关信息的信息。
 
-TBD.
+待定。

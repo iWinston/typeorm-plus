@@ -1,9 +1,8 @@
 # 使用 TypeORM 和 Express 的示例
 
-- [使用 TypeORM 和 Express 的示例](#%E4%BD%BF%E7%94%A8-typeorm-%E5%92%8C-express-%E7%9A%84%E7%A4%BA%E4%BE%8B)
-  - [初始设置](#%E5%88%9D%E5%A7%8B%E8%AE%BE%E7%BD%AE)
-  - [将 Express 添加到应用程序](#%E5%B0%86-express-%E6%B7%BB%E5%8A%A0%E5%88%B0%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
-  - [将 TypeORM 添加到应用程序](#%E5%B0%86-typeorm-%E6%B7%BB%E5%8A%A0%E5%88%B0%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F)
+  * [初始设置](#初始设置)
+  * [将Express添加到应用程序](#将Express添加到应用程序)
+  * [将TypeORM添加到应用程序](#将TypeORM添加到应用程序)
 
 ## 初始设置
 
@@ -78,7 +77,7 @@ node src/app.js
 每次进行更改时都必须编译文件。
 或者，你可以设置监听程序或安装[ts-node](http://github.com/ts-node/ts-node)以避免每次手动编译。
 
-## 将 Express 添加到应用程序
+## 将Express添加到应用程序
 
 将 Express 添加到应用程序中。 首先，需要安装依赖包：d:
 
@@ -132,7 +131,7 @@ app.listen(3000);
 此时你应该有一个启动的 express 服务，并且有可以工作的路由。
 但是，这些路由目前并未返回任何内容。
 
-## 将 TypeORM 添加到应用程序
+## 将TypeORM添加到应用程序
 
 最后，让我们将 TypeORM 添加到应用程序中。
 在这个例子中，我们将使用`mysql`驱动程序。

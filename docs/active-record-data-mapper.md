@@ -1,11 +1,10 @@
 # Active Record 与 Data Mapper
 
-- [Active Record 与 Data Mapper](#active-record-%E4%B8%8E-data-mapper)
-  - [什么是 Active Record 模式？](#%E4%BB%80%E4%B9%88%E6%98%AF-active-record-%E6%A8%A1%E5%BC%8F)
-  - [什么是 Data Mapper 模式？](#%E4%BB%80%E4%B9%88%E6%98%AF-data-mapper-%E6%A8%A1%E5%BC%8F)
-  - [我应该选择哪一个？](#%E6%88%91%E5%BA%94%E8%AF%A5%E9%80%89%E6%8B%A9%E5%93%AA%E4%B8%80%E4%B8%AA)
+  * [什么是Active Record模式？](#什么是Active-Record模式？)
+  * [什么是Data Mapper模式？](#什么是Data-Mapper模式？)
+  * [我应该选择哪一个？](#我应该选择哪一个？)
 
-## 什么是 Active Record 模式？
+## 什么是Active Record模式？
 
 在 TypeORM 中，你可以使用 Active Record 和 Data Mapper 模式。
 
@@ -14,7 +13,7 @@
 简单来说，Active Record 模式是一种在模型中访问数据库的方法。
 你可以在[Wikipedia](https://en.wikipedia.org/wiki/Active_record_pattern)上查看有关 Active Record 模式的更多信息。
 
-Example:
+例如:
 
 ```typescript
 import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "typeorm";
@@ -94,7 +93,7 @@ export class User extends BaseEntity {
 const timber = await User.findByName("Timber", "Saw");
 ```
 
-## 什么是 Data Mapper 模式？
+## 什么是Data Mapper模式？
 
 在 TypeORM 中，您可以使用 Active Record 和 Data Mapper 模式。
 
@@ -104,7 +103,7 @@ const timber = await User.findByName("Timber", "Saw");
 简单来说，数据映射器是一种在存储库而不是模型中访问数据库的方法。
 你可以在[Wikipedia](https://en.wikipedia.org/wiki/Data_mapper_pattern)上查看更多关于 data mapper 的信息。
 
-Example:
+例如:
 
 ```typescript
 import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from "typeorm";

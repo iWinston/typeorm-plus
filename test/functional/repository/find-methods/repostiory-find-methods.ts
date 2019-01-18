@@ -503,6 +503,30 @@ describe("repository > find methods", () => {
 
     });
 
+    describe("findByIds", function() {
+
+        it("should return entities by given ids", () => Promise.all(connections.map(async connection => {
+            const userRepository = connection.getRepository<User>("User");
+
+            const users = [1, 2, 3, 4, 5].map(id => {
+                return {
+                    id,
+                    firstName: `name #${id}`,
+                    secondName: "Doe"
+                };
+            });
+
+            const savedUsers = await userRepository.save(users);
+            savedUsers.length.should.be.equal(users.length); // check if they all are saved
+
+            const loadIds = [1, 2, 4];
+            const loadedUsers = (await userRepository.findByIds(loadIds))!;
+
+            loadedUsers.map(user => user.id).should.be.eql(loadIds);
+        })));
+
+    });
+
     describe("findOneOrFail", function() {
 
         it("should return entity by a given id", () => Promise.all(connections.map(async connection => {

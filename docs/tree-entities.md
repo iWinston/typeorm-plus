@@ -3,11 +3,11 @@
 TypeORM支持用于存储树结构的Adjacency列表和Closure表模式。
 要了解有关层次结构表的更多信息，请查看[this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data)。
 
-* [邻接清单](#adjacency-list)
-* [Nested set](#nested-set)
-* [Materialized Path (aka Path Enumeration)](#nested-set-aka-path-enumeration)
-* [Closure table](#closure-table)
-* [Working with tree entities](#working-with-tree-entities)
+* [邻接清单](#邻接清单)
+* [嵌套集](#嵌套集)
+* [物化路径(又名路径枚举)](#物化路径(又名路径枚举))
+* [闭合表](#闭合表)
+* [使用树实体](#使用树实体)
 
 ## 邻接清单
 
@@ -69,7 +69,7 @@ export class Category {
 }
 ```
 
-## 物化路径（又名路径枚举）
+## 物化路径(又名路径枚举)
 
 物化路径（也称为路径枚举）是在数据库中存储树结构的另一种模式。
 它简单有效。
@@ -96,9 +96,9 @@ export class Category {
 }
 ```
 
-## Closure 表
+## 闭合表
 
-Closure表以特殊方式在单独的表中存储父和子之间的关系。
+闭合表以特殊方式在单独的表中存储父和子之间的关系。
 它在读取和写入方面都很有效。
 例如：
 

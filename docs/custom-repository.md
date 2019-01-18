@@ -1,4 +1,4 @@
-# 自定义 repositories
+# 自定义存储库
 
 你可以创建一个自定义存储库，其中应包含使用数据库的方法。
 通常为单个实体创建自定义存储库，并包含其特定查询。
@@ -8,13 +8,12 @@
 
 有几种方法可以创建自定义存储库。
 
-- [自定义 repositories](#%E8%87%AA%E5%AE%9A%E4%B9%89-repositories)
-  - [扩展了标准 repository 的定制 repository](#%E6%89%A9%E5%B1%95%E4%BA%86%E6%A0%87%E5%87%86-repository-%E7%9A%84%E5%AE%9A%E5%88%B6-repository)
-  - [扩展了标准 AbstractRepository 的自定义 repository](#%E6%89%A9%E5%B1%95%E4%BA%86%E6%A0%87%E5%87%86-abstractrepository-%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89-repository)
-  - [没有扩展的自定义 repository](#%E6%B2%A1%E6%9C%89%E6%89%A9%E5%B1%95%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89-repository)
-  - [在事务中使用自定义存储库或为什么自定义存储库不能是服务](#%E5%9C%A8%E4%BA%8B%E5%8A%A1%E4%B8%AD%E4%BD%BF%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AD%98%E5%82%A8%E5%BA%93%E6%88%96%E4%B8%BA%E4%BB%80%E4%B9%88%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AD%98%E5%82%A8%E5%BA%93%E4%B8%8D%E8%83%BD%E6%98%AF%E6%9C%8D%E5%8A%A1)
+  - [扩展了标准存储库的定制存储库](#扩展了标准存储库的定制存储库)
+  - [扩展了标准AbstractRepository的自定义存储库](#扩展了标准AbstractRepository的自定义存储库)
+  - [没有扩展的自定义存储库](#没有扩展的自定义存储库)
+  - [在事务中使用自定义存储库或为什么自定义存储库不能是服务](#在事务中使用自定义存储库或为什么自定义存储库不能是服务)
 
-## 扩展了标准 repository 的定制 repository
+## 扩展了标准存储库的定制存储库
 
 创建自定义 repository 的第一种方法是扩展`Repository`。
 例如：
@@ -49,7 +48,7 @@ const timber = await userRepository.findByName("Timber", "Saw");
 如你所见，你也可以使用`getCustomRepository` 获取 repository，
 并且可以访问在其中创建的任何方法以及标准实体 repository 中的任何方法。
 
-## 扩展了标准 AbstractRepository 的自定义 repository
+## 扩展了标准AbstractRepository的自定义存储库
 
 创建自定义 repository 的第二种方法是扩展`AbstractRepository`：
 
@@ -87,7 +86,7 @@ const timber = await userRepository.findByName("Timber", "Saw");
 `AbstractRepository`没有任何公共方法，它只有受保护的方法，比如`manager`和`repository`，你可以在自己的公共方法中使用它们。
 如果你不希望将标准`Repository`所有方法公开给 public，那么扩展`AbstractRepository`将非常有用。
 
-## 没有扩展的自定义 repository
+## 没有扩展的自定义存储库
 
 创建存储库的第三种方法是不扩展任何东西，
 但是需要定义一个总是接受实体管理器(entity manager)实例的构造函数：

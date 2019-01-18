@@ -1,22 +1,21 @@
 # 使用 CLI
 
-- [使用 CLI](#%E4%BD%BF%E7%94%A8-cli)
-  - [关于 TypeScript 编写实体的说明](#%E5%85%B3%E4%BA%8E-typescript-%E7%BC%96%E5%86%99%E5%AE%9E%E4%BD%93%E7%9A%84%E8%AF%B4%E6%98%8E)
-  - [初始化一个新的 TypeORM 项目](#%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%80%E4%B8%AA%E6%96%B0%E7%9A%84-typeorm-%E9%A1%B9%E7%9B%AE)
-  - [创建一个新实体](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E5%AE%9E%E4%BD%93)
-  - [创建一个新订阅者](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E8%AE%A2%E9%98%85%E8%80%85)
-  - [创建新迁移](#%E5%88%9B%E5%BB%BA%E6%96%B0%E8%BF%81%E7%A7%BB)
-  - [从现有表模式生成迁移](#%E4%BB%8E%E7%8E%B0%E6%9C%89%E8%A1%A8%E6%A8%A1%E5%BC%8F%E7%94%9F%E6%88%90%E8%BF%81%E7%A7%BB)
-  - [运行迁移](#%E8%BF%90%E8%A1%8C%E8%BF%81%E7%A7%BB)
-  - [还原迁移](#%E8%BF%98%E5%8E%9F%E8%BF%81%E7%A7%BB)
-  - [同步数据库架构](#%E5%90%8C%E6%AD%A5%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84)
-  - [记录同步数据库架构查询而不运行](#%E8%AE%B0%E5%BD%95%E5%90%8C%E6%AD%A5%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84%E6%9F%A5%E8%AF%A2%E8%80%8C%E4%B8%8D%E8%BF%90%E8%A1%8C)
-  - [删除数据库架构](#%E5%88%A0%E9%99%A4%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84)
-  - [运行任意 SQL 查询](#%E8%BF%90%E8%A1%8C%E4%BB%BB%E6%84%8F-sql-%E6%9F%A5%E8%AF%A2)
-  - [清除缓存](#%E6%B8%85%E9%99%A4%E7%BC%93%E5%AD%98)
-  - [检查版本](#%E6%A3%80%E6%9F%A5%E7%89%88%E6%9C%AC)
+  * [关于TypeScript编写实体的说明](#关于TypeScript编写实体的说明)
+  * [初始化一个新的TypeORM项目](#初始化一个新的TypeORM项目)
+  * [创建一个新实体](#创建一个新实体)
+  * [创建一个新订阅者](#创建一个新订阅者)
+  * [创建新迁移](#创建新迁移)
+  * [从现有表结构生成迁移](#从现有表结构生成迁移)
+  * [运行迁移](#运行迁移)
+  * [还原迁移](#还原迁移)
+  * [同步数据库架构](#同步数据库架构)
+  * [记录同步数据库架构查询而不运行](#记录同步数据库架构查询而不运行)
+  * [删除数据库架构](#删除数据库架构)
+  * [运行任意SQL查询](#运行任意SQL查询)
+  * [清除缓存](#清除缓存)
+  * [检查版本](#检查版本)
 
-## 关于 TypeScript 编写实体的说明
+## 关于TypeScript编写实体的说明
 
 此 CLI 工具使用 javascript 编写，并在 node 上运行。如果你的实体文件是 TypeScript 编写，则需要在使用 CLI 之前将它们转换为 javascript。如果只使用 javascript，则可以跳过此部分。
 
@@ -49,7 +48,7 @@ npm run typeorm migration:run
 npm run typeorm migration:generate -- -n migrationNameHere
 ```
 
-## 初始化一个新的 TypeORM 项目
+## 初始化一个新的TypeORM项目
 
 你可以使用已设置的所有内容创建新项目：
 
@@ -186,7 +185,7 @@ typeorm migration:create -n UserMigration -d src/user/migration
 
 了解有关[Migrations](./migrations.md)的更多信息。
 
-## 从现有表模式生成迁移
+## 从现有表结构生成迁移
 
 自动迁移生成会创建新的迁移文件并编写必须执行的所有 sql 查询以更新数据库。
 
@@ -248,7 +247,7 @@ typeorm schema:drop
 
 在生产环境时要谨慎使用这个命令，因为它会完全删除数据库中的数据。
 
-## 运行任意 SQL 查询
+## 运行任意SQL查询
 
 你可以使用以下命令直接在数据库中执行想要的任何 SQL 查询：
 

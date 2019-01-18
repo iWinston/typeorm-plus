@@ -1,23 +1,21 @@
-# Naming strategy
+# 命名策略
 
-* Specify custom table name
-* Specify custom column name
-* Specify custom foreign column name
-* Specify custom many-to-many junction table name
-* Creating your own `NamingStrategy`
+* 自定义表名称
+* 自定义列名称
+* 自定义外联列名称
+* 自定义多对多联结表名称
+* 创建自己的`NamingStrategy`
 
-## Creating your own `NamingStrategy`
+## 创建自己的`NamingStrategy`
 
-If you defined your connection options in the `ormconfig` file,
-then you can simply use it and override it following way:
+如果在`ormconfig`文件中定义了连接选项，
+那么你可以简单地使用它并按照以下方式覆盖它：
 
 ```typescript
 import {createConnection, getConnectionOptions} from "typeorm";
 import {MyNamingStrategy} from "./logger/MyNamingStrategy";
 
-// getConnectionOptions will read options from your ormconfig file
-// and return it in connectionOptions object
-// then you can simply append additional properties to it
+//getConnectionOptions将读取ormconfig文件中的选项并将其返回到connectionOptions对象中，然后你只需向其附加其他属性
 getConnectionOptions().then(connectionOptions => {
     return createConnection(Object.assign(connectionOptions, {
         namingStrategy: new MyNamingStrategy()
@@ -25,5 +23,5 @@ getConnectionOptions().then(connectionOptions => {
 });
 ```
 
-Naming Strategy is a subject to change.
-Expect detailed documentation once its API gets stabilized.
+命名策略是一个需要改变的主题。
+一旦API稳定下来，就会获得详细的文档。
