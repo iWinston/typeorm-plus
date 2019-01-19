@@ -733,7 +733,9 @@ export abstract class QueryBuilder<Entity> {
             return whereSubStrings.join(" AND ");
         });
 
-        return whereStrings.length > 1 ? whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") : whereStrings[0];
+        return whereStrings.length > 1
+            ? "(" + whereStrings.map(whereString => "(" + whereString + ")").join(" OR ") + ")"
+            : whereStrings[0];
     }
 
     /**
