@@ -126,5 +126,34 @@ await connection.queryResultCache.remove(["users_admins"]);
 ```
 
 "options" 可以是[node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) 或者
-[ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)，取决于你使用的类型
+[ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options)，具体取决于你使用的类型。
+
+如果你想使用IORedis的集群功能连接到redis-cluster，则可以通过方式下操作来执行此操作：
+
+ ```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    cache: {
+        type: "ioredis/cluster",
+        options: [
+            {
+                host: 'localhost',
+                port: 7000,
+            },
+            {
+                host: 'localhost',
+                port: 7001,
+            },
+            {
+                host: 'localhost',
+                port: 7002,
+            }
+        ],
+    }
+}
+```
+只需在一个数组中指定集群中的所有节点及其主机和端口。
+
 你可以使用`typeorm cache：clear`来清除存储在缓存中的所有内容。
