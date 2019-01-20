@@ -528,14 +528,10 @@ describe("repository > find options > operators", () => {
         person.name = "Timber";
         await connection.manager.save(person);
 
-        const loadedPerson = await PersonAR.find({
+        const loadedPeople = await PersonAR.find({
             name: In(["Timber"])
         });
-
-        expect(loadedPerson).to.be.eql([{
-            id: 1,
-            name: "Timber"
-        }]);
+        expect(loadedPeople[0].name).to.be.equal("Timber");
 
     })));
 
