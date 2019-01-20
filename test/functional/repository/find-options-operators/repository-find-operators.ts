@@ -4,6 +4,8 @@ import {Any, Between, Connection, Equal, In, IsNull, LessThan, LessThanOrEqual, 
 import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../src/driver/postgres/PostgresDriver";
 import {Raw} from "../../../../src/find-options/operator/Raw";
+import {PersonAR} from "./entity/PersonAR";
+import {expect} from "chai";
 
 describe("repository > find options > operators", () => {
 
@@ -516,6 +518,23 @@ describe("repository > find options > operators", () => {
             likes: Raw(columnAlias => "1 + " + columnAlias + " = 4")
         });
         loadedPosts.should.be.eql([{ id: 2, likes: 3, title: "About #2" }]);
+
+    })));
+
+    it.only("should work with ActiveRecord model", () => Promise.all(connections.map(async connection => {
+
+        const person = new PersonAR();
+        person.name = "Timber";
+        await connection.manager.save(person);
+
+        const loadedPerson = await PersonAR.find({
+            name: In(["Timber"])
+        });
+
+        expect(loadedPerson).to.be.eql([{
+            id: 1,
+            name: "Timber"
+        }]);
 
     })));
 

@@ -19,6 +19,7 @@ import {LimitOnUpdateNotSupportedError} from "../error/LimitOnUpdateNotSupported
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
+import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -130,7 +131,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Values needs to be updated.
      */
-    set(values: ObjectLiteral): this {
+    set(values: QueryDeepPartialEntity<Entity>): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
