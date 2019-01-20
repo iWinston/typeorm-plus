@@ -521,7 +521,8 @@ describe("repository > find options > operators", () => {
 
     })));
 
-    it.only("should work with ActiveRecord model", () => Promise.all(connections.map(async connection => {
+    it("should work with ActiveRecord model", () => Promise.all(connections.map(async connection => {
+        PersonAR.useConnection(connection);
 
         const person = new PersonAR();
         person.name = "Timber";
