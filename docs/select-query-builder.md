@@ -274,6 +274,19 @@ is a shortcut for:
 .setParameter("name", "Timber")
 ```
 
+Note: a set of parameters is unique per-query. A parameter's value will be overriden if you set it multiple times:
+
+```typescript
+.where("user.name = :myParameter", { myParameter: "Timber" })
+.andWhere("user.lastName = :myParameter", { myParameter: "Saw" });
+```
+
+will result in following query:
+
+```sql
+SELECT ... FROM users user WHERE user.name = 'Saw' AND user.lastName = 'Saw'
+```
+
 ## Adding `WHERE` expression
 
 Adding a `WHERE` expression is as easy as:
