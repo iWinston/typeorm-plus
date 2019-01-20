@@ -252,7 +252,7 @@ describe("many-to-many", function() {
     });
 
     describe("cascade updates should not be executed when cascadeUpdate option is not set", function() {
-        let newPost: Post, details: PostDetails, savedPost: Post;
+        let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
@@ -270,8 +270,7 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .save(newPost)
-                .then(post => savedPost = post as Post);
+                .save(newPost);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
@@ -291,7 +290,7 @@ describe("many-to-many", function() {
     });
 
     describe("cascade remove should not be executed when cascadeRemove option is not set", function() {
-        let newPost: Post, details: PostDetails, savedPost: Post;
+        let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
@@ -309,8 +308,7 @@ describe("many-to-many", function() {
             newPost.details.push(details);
 
             return postRepository
-                .save(newPost)
-                .then(post => savedPost = post as Post);
+                .save(newPost);
         });
 
         it("should remove relation however should not remove details itself", function () {

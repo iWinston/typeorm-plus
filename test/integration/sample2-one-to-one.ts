@@ -249,7 +249,7 @@ describe("one-to-one", function() {
     });
 
     describe("cascade updates should not be executed when cascadeUpdate option is not set", function() {
-        let newPost: Post, details: PostDetails, savedPost: Post;
+        let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
@@ -265,9 +265,7 @@ describe("one-to-one", function() {
             newPost.title = "this is post title";
             newPost.details = details;
 
-            return postRepository
-                .save(newPost)
-                .then(post => savedPost = post as Post);
+            return postRepository.save(newPost);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
@@ -287,7 +285,7 @@ describe("one-to-one", function() {
     });
 
     describe("cascade remove should not be executed when cascadeRemove option is not set", function() {
-        let newPost: Post, details: PostDetails, savedPost: Post;
+        let newPost: Post, details: PostDetails;
 
         before(reloadDatabase);
 
@@ -303,9 +301,7 @@ describe("one-to-one", function() {
             newPost.title = "this is post title";
             newPost.details = details;
 
-            return postRepository
-                .save(newPost)
-                .then(post => savedPost = post as Post);
+            return postRepository.save(newPost);
         });
 
         it("should ignore updates in the model and do not update the db when entity is updated", function () {
