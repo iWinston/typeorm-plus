@@ -51,6 +51,7 @@ import {RemoveOptions} from "../repository/RemoveOptions";
 import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {EntitySchema} from "../index";
+import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -642,6 +643,7 @@ export class MongoEntityManager extends EntityManager {
      */
     protected applyEntityTransformationToCursor<Entity>(metadata: EntityMetadata, cursor: Cursor<Entity>|AggregationCursor<Entity>) {
         const ParentCursor = PlatformTools.load("mongodb").Cursor;
+        const queryRunner = this.queryRunner;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
                 ParentCursor.prototype.toArray.call(this, (error: MongoError, results: Entity[]): void => {
@@ -651,12 +653,24 @@ export class MongoEntityManager extends EntityManager {
                     }
 
                     const transformer = new DocumentToEntityTransformer();
-                    return callback(error, transformer.transformAll(results, metadata));
+                    const entities = transformer.transformAll(results, metadata);
+
+                    // broadcast "load" events
+                    const broadcastResult = new BroadcasterResult();
+                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
+
+                    Promise.all(broadcastResult.promises).then(() => callback(error, entities));
                 });
             } else {
                 return ParentCursor.prototype.toArray.call(this).then((results: Entity[]) => {
                     const transformer = new DocumentToEntityTransformer();
-                    return transformer.transformAll(results, metadata);
+                    const entities = transformer.transformAll(results, metadata);
+
+                    // broadcast "load" events
+                    const broadcastResult = new BroadcasterResult();
+                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
+
+                    return Promise.all(broadcastResult.promises).then(() => entities);
                 });
             }
         };
@@ -669,13 +683,26 @@ export class MongoEntityManager extends EntityManager {
                     }
 
                     const transformer = new DocumentToEntityTransformer();
-                    return callback(error, transformer.transform(result, metadata));
+                    const entity = transformer.transform(result, metadata);
+
+                    // broadcast "load" events
+                    const broadcastResult = new BroadcasterResult();
+                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
+
+                    Promise.all(broadcastResult.promises).then(() => callback(error, entity));
                 });
             } else {
                 return ParentCursor.prototype.next.call(this).then((result: Entity) => {
                     if (!result) return result;
+
                     const transformer = new DocumentToEntityTransformer();
-                    return transformer.transform(result, metadata);
+                    const entity = transformer.transform(result, metadata);
+
+                    // broadcast "load" events
+                    const broadcastResult = new BroadcasterResult();
+                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
+
+                    return Promise.all(broadcastResult.promises).then(() => entity);
                 });
             }
         };
