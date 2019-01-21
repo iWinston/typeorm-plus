@@ -16,7 +16,6 @@ import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import {SqliteDriver} from "../driver/sqlite/SqliteDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
