@@ -5,11 +5,15 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
-## Unreleased
+## 0.2.13 (unreleased)
 
 ### Bug Fixes
 
+* fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
+
 ### Features
+
+## 0.2.12
 
 ## 0.2.12 (2019-01-20)
 

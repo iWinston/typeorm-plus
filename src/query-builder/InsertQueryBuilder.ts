@@ -1,7 +1,7 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
-import {QueryPartialEntity} from "./QueryPartialEntity";
+import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
@@ -149,7 +149,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Values needs to be inserted into table.
      */
-    values(values: QueryPartialEntity<Entity>|QueryPartialEntity<Entity>[]): this {
+    values(values: QueryDeepPartialEntity<Entity>|QueryDeepPartialEntity<Entity>[]): this {
         this.expressionMap.valuesSet = values;
         return this;
     }
