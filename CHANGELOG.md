@@ -13,8 +13,6 @@ feel free to ask us and community.
 
 ### Features
 
-## 0.2.12
-
 ## 0.2.12 (2019-01-20)
 
 ### Bug Fixes
