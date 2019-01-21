@@ -274,18 +274,7 @@ is a shortcut for:
 .setParameter("name", "Timber")
 ```
 
-Note: a set of parameters is unique per-query. A parameter's value will be overriden if you set it multiple times:
-
-```typescript
-.where("user.name = :myParameter", { myParameter: "Timber" })
-.andWhere("user.lastName = :myParameter", { myParameter: "Saw" });
-```
-
-will result in following query:
-
-```sql
-SELECT ... FROM users user WHERE user.name = 'Saw' AND user.lastName = 'Saw'
-```
+Note: do not use the same parameter name for different values across the query builder. Values will be overriden if you set them multiple times.
 
 ## Adding `WHERE` expression
 
