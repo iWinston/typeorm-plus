@@ -682,11 +682,11 @@ export class EntityManager {
             throw new Error(`Value "${value}" is not a number.`);
 
         return this
-            .createQueryBuilder<any>(entityClass, "entity")
+            .createQueryBuilder(entityClass, "entity")
             .update(entityClass)
             .set({
                 [propertyPath]: () => this.connection.driver.escape(column.databaseName) + " + " + value
-            })
+            } as QueryDeepPartialEntity<Entity>)
             .where(conditions)
             .execute();
     }
