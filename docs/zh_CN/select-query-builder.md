@@ -264,6 +264,8 @@ SELECT ... FROM users user WHERE user.name = 'Timber'
 .setParameter("name", "Timber")
 ```
 
+注意：不要在查询构建器中为不同的值使用相同的参数名称。如果多次设置则后值将会把前面的覆盖。
+
 ## 添加`WHERE`表达式
 
 添加 `WHERE` 表达式就像：
