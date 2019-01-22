@@ -249,7 +249,7 @@ export const Routes = [{
     action: "save"
 }, {
     method: "delete",
-    route: "/users",
+    route: "/users/:id",
     controller: UserController,
     action: "remove"
 }];`;
