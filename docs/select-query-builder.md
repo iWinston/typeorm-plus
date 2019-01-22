@@ -274,6 +274,8 @@ is a shortcut for:
 .setParameter("name", "Timber")
 ```
 
+Note: do not use the same parameter name for different values across the query builder. Values will be overriden if you set them multiple times.
+
 ## Adding `WHERE` expression
 
 Adding a `WHERE` expression is as easy as:
