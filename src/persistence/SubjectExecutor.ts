@@ -492,7 +492,10 @@ export class SubjectExecutor {
 
             // mongo _id remove
             if (this.queryRunner instanceof MongoQueryRunner) {
-                if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.databaseName) {
+                if (subject.metadata.objectIdColumn
+                    && subject.metadata.objectIdColumn.databaseName
+                    && subject.metadata.objectIdColumn.databaseName !== subject.metadata.objectIdColumn.propertyName
+                ) {
                     delete subject.entity[subject.metadata.objectIdColumn.databaseName];
                 }
             }

@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Bug Fixes
 
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
+* fixed undefined object id field in case property name is `_id` ([3517](https://github.com/typeorm/typeorm/issues/3517))
 
 ### Features
 
