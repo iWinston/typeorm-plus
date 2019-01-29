@@ -1912,7 +1912,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (column.default !== undefined && column.default !== null)
             c += " DEFAULT " + column.default;
         if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
-            c += " DEFAULT uuid_generate_v4()";
+            c += " DEFAULT gen_random_uuid()";
 
         return c;
     }
