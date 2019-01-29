@@ -150,7 +150,7 @@ describe("schema builder > change column", () => {
         const queryRunner = connection.createQueryRunner();
 
         if (connection.driver instanceof PostgresDriver)
-            await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+            await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
 
         const postMetadata = connection.getMetadata(Post);
         const idColumn = postMetadata.findColumnWithPropertyName("id")!;
@@ -171,7 +171,7 @@ describe("schema builder > change column", () => {
         const postTable = await queryRunner.getTable("post");
         await queryRunner.release();
 
-        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
+        if (connection.driver instanceof SqlServerDriver) {
             postTable!.findColumnByName("id")!.isGenerated.should.be.true;
             postTable!.findColumnByName("id")!.generationStrategy!.should.be.equal("uuid");
 
@@ -215,7 +215,7 @@ describe("schema builder > change column", () => {
         const teacherTable = await queryRunner.getTable("teacher");
         await queryRunner.release();
 
-        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
+        if (connection.driver instanceof SqlServerDriver) {
             teacherTable!.findColumnByName("id")!.isGenerated.should.be.true;
             teacherTable!.findColumnByName("id")!.generationStrategy!.should.be.equal("uuid");
 
