@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections} from "../../utils/tes
 import {Post} from "./entity/Post";
 import {PromiseUtils} from "../../../src";
 
-describe.only("github issues > #3496 jsonb comparison doesn't work", () => {
+describe("github issues > #3496 jsonb comparison doesn't work", () => {
 
     let connections: Connection[];
     before(async () => {
