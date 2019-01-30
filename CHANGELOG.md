@@ -9,6 +9,7 @@ feel free to ask us and community.
 
 ### Bug Fixes
 
+* fixed json/jsonb column data types comparison ([#3496](https://github.com/typeorm/typeorm/issues/3496))
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
 
 ### Features
