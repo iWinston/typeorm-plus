@@ -1469,8 +1469,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
-
-                        } else if (/^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
+                        } else if (dbColumn["column_default"] === "gen_random_uuid()") {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
 
