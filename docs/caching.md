@@ -145,6 +145,33 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
     username: "test",
     cache: {
         type: "ioredis/cluster",
+        options: [
+            {
+                host: 'localhost',
+                port: 7000,
+            },
+            {
+                host: 'localhost',
+                port: 7001,
+            },
+            {
+                host: 'localhost',
+                port: 7002,
+            }
+        ]
+    }
+}
+```
+
+or
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    cache: {
+        type: "ioredis/cluster",
         options: {
             startupNodes: [
                 {
