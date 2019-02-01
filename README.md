@@ -591,7 +591,7 @@ Now if you run your `index.ts`, a connection with database will be initialized a
 |                         photo                           |
 +-------------+--------------+----------------------------+
 | id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| name        | varchar(500) |                            |
+| name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
 | views       | int(11)      |                            |
