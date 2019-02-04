@@ -16,12 +16,12 @@ describe("github issues > #3551 array of embedded documents through multiple lev
     });
     after(() => closeTestingConnections(connections));
 
-    it('should return entity with all these embedded documents', () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should return entity with all these embedded documents", () => PromiseUtils.runInSequence(connections, async connection => {
         const bookInput = {
-            title: 'Book 1',
+            title: "Book 1",
             chapters: [
                 {
-                    title: 'Chapter 1',
+                    title: "Chapter 1",
                     pages: [
                         {
                             number: 1
@@ -32,7 +32,7 @@ describe("github issues > #3551 array of embedded documents through multiple lev
                     ]
                 },
                 {
-                    title: 'Chapter 2',
+                    title: "Chapter 2",
                     pages: [
                         {
                             number: 3
