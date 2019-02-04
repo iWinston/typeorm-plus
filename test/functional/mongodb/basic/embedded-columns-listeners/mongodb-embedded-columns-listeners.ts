@@ -16,10 +16,10 @@ describe("mongodb > embedded columns listeners", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should entity listeners with embedded correctly", () => Promise.all(connections.map(async connection => {
+    it("should work listeners in entity embeddeds correctly", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
 
-        // save few posts
+        // save posts with embeddeds
         const post = new Post();
         post.title = "Post";
         post.text = "Everything about post";
@@ -31,12 +31,12 @@ describe("mongodb > embedded columns listeners", () => {
 
         expect(loadedPost).to.be.not.empty;
         expect(loadedPost!.counters).to.be.not.empty;
+        expect(loadedPost!.counters!.information).to.be.not.empty;
         loadedPost!.should.be.instanceOf(Post);
         loadedPost!.title.should.be.equal("Post");
         loadedPost!.text.should.be.equal("Everything about post");
 
         post.title = "Updated post";
-        post.counters.information.description = "Hello updated post";
         await postRepository.save(post);
 
         const loadedUpdatedPost = await postRepository.findOne({title: "Updated post"});
@@ -44,6 +44,7 @@ describe("mongodb > embedded columns listeners", () => {
         expect(loadedUpdatedPost).to.be.not.empty;
         expect(loadedUpdatedPost!.counters).to.be.not.empty;
         expect(loadedUpdatedPost!.counters!.likes).to.be.eq(100);
+        expect(loadedUpdatedPost!.counters!.information!.comments).to.be.eq(1);
         expect(loadedUpdatedPost!.counters!.information!.description).to.be.not.empty;
         loadedUpdatedPost!.should.be.instanceOf(Post);
         loadedUpdatedPost!.title.should.be.equal("Updated post");
@@ -53,10 +54,10 @@ describe("mongodb > embedded columns listeners", () => {
 
     })));
 
-    it("should store results in correct camelCase format", () => Promise.all(connections.map(async connection => {
+    it("should not work listeners in entity embeddeds if property is optional", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getMongoRepository(Post);
 
-        // save few posts
+        // save posts without embeddeds
         const post = new Post();
         post.title = "Post";
         post.text = "Everything about post";
