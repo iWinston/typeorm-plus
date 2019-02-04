@@ -18,6 +18,8 @@ feel free to ask us and community.
 
 ## 0.2.13 (2019-02-10)
 
+* added `useLocalforage` option to Sql.js connection options, which enables asynchronous load and save operations of the datatbase from the indexedDB ([#3554](https://github.com/typeorm/typeorm/issues/3554))
+
 ### Bug Fixes
 
 * fixed undefined object id field in case property name is `_id` ([3517](https://github.com/typeorm/typeorm/issues/3517))
