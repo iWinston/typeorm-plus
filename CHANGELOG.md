@@ -9,6 +9,7 @@ feel free to ask us and community.
 
 ### Bug Fixes
 
+* fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
 
 ### Features
