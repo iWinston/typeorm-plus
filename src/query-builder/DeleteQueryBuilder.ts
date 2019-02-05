@@ -74,6 +74,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     break;
                 }
                 case "mssql":
+                case "cockroachdb":
                 case "postgres": {
                     deleteResult.raw = result[0] ? result[0] : null;
                     // don't return 0 because it could confuse. null means that we did not receive this value

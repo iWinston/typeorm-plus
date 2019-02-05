@@ -49,21 +49,23 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
 /**
  * Column types where column length is used.
  */
-export type WithLengthColumnType = "character varying" // postgres
+export type WithLengthColumnType = "character varying" // postgres, cockroachdb
     |"varying character" // sqlite
+    |"char varying" // cockroachdb
     |"nvarchar" // mssql, mysql
     |"national varchar" // mysql
-    |"character" // mysql, postgres, sqlite
+    |"character" // mysql, postgres, sqlite, cockroachdb
     |"native character" // sqlite
-    |"varchar" // mysql, postgres, mssql, sqlite
-    |"char" // mysql, postgres, mssql, oracle
+    |"varchar" // mysql, postgres, mssql, sqlite, cockroachdb
+    |"char" // mysql, postgres, mssql, oracle, cockroachdb
     |"nchar" // mssql, oracle, sqlite, mysql
     |"national char" // mysql
     |"varchar2" // oracle
     |"nvarchar2" // oracle, sqlite
     |"raw" // oracle
     |"binary" // mssql
-    |"varbinary"; // mssql
+    |"varbinary" // mssql
+    |"string"; // cockroachdb
 
 export type WithWidthColumnType = "tinyint" // mysql
     |"smallint" // mysql
@@ -103,12 +105,13 @@ export type SimpleColumnType =
     |"mediumblob" // mysql
     |"mediumtext" // mysql
     |"blob" // mysql, oracle, sqlite
-    |"text" // mysql, postgres, mssql, sqlite
+    |"text" // mysql, postgres, mssql, sqlite, cockroachdb
     |"ntext" // mssql
     |"citext" // postgres
     |"hstore" // postgres
     |"longblob" // mysql
     |"longtext" // mysql
+    |"bytes" // cockroachdb
     |"bytea" // postgres
     |"long" // oracle
     |"raw" // oracle
@@ -173,7 +176,8 @@ export type SimpleColumnType =
     |"rowid" // oracle
     |"urowid" // oracle
     |"uniqueidentifier" // mssql
-    |"rowversion"; // mssql
+    |"rowversion" // mssql
+    |"array"; // cockroachdb
 
 /**
  * Any column type column can be.

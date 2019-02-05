@@ -123,6 +123,16 @@ export class InitCommand implements yargs.CommandModule {
                     "database": "test",
                 });
                 break;
+            case "cockroachdb":
+                Object.assign(options, {
+                    "type": "cockroachdb",
+                    "host": "localhost",
+                    "port": 26257,
+                    "username": "root",
+                    "password": "",
+                    "database": "defaultdb",
+                });
+                break;
             case "mssql":
                 Object.assign(options, {
                     "type": "mssql",
@@ -519,6 +529,7 @@ Steps to run this project:
                 packageJson.dependencies["mysql"] = "^2.14.1";
                 break;
             case "postgres":
+            case "cockroachdb":
                 packageJson.dependencies["pg"] = "^7.3.0";
                 break;
             case "sqlite":
