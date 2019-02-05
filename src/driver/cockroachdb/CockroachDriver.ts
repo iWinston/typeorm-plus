@@ -17,6 +17,7 @@ import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {CockroachQueryRunner} from "./CockroachQueryRunner";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -85,18 +86,44 @@ export class CockroachDriver implements Driver {
     supportedDataTypes: ColumnType[] = [
         "array",
         "bool",
+        "boolean",
         "bytes",
+        "bytea",
+        "blob",
         "date",
+        "numeric",
         "decimal",
+        "dec",
         "float",
+        "float4",
+        "float8",
+        "double precision",
+        "real",
         "inet",
         "int",
+        "integer",
+        "int2",
+        "int8",
+        "int64",
+        "smallint",
+        "bigint",
         "interval",
         // "serial",
         "string",
+        "character varying",
+        "character",
+        "char",
+        "char varying",
+        "varchar",
+        "text",
         "time",
+        "time without time zone",
         "timestamp",
         "timestamptz",
+        "timestamp without time zone",
+        "timestamp with time zone",
+        "json",
+        "jsonb",
         "uuid",
     ];
 
@@ -115,6 +142,7 @@ export class CockroachDriver implements Driver {
         "character",
         "char",
         "string",
+        "text",
     ];
 
     /**
@@ -123,11 +151,11 @@ export class CockroachDriver implements Driver {
     withPrecisionColumnTypes: ColumnType[] = [
         "numeric",
         "decimal",
-        "interval",
-        "time without time zone",
-        "time with time zone",
-        "timestamp without time zone",
-        "timestamp with time zone"
+        "dec",
+        "float",
+        "float4",
+        "float8",
+        "double precision",
     ];
 
     /**
@@ -135,7 +163,8 @@ export class CockroachDriver implements Driver {
      */
     withScaleColumnTypes: ColumnType[] = [
         "numeric",
-        "decimal"
+        "decimal",
+        "dec"
     ];
 
     /**
@@ -150,14 +179,14 @@ export class CockroachDriver implements Driver {
         version: "int4",
         treeLevel: "int4",
         migrationId: "int4",
-        migrationName: "string",
-        migrationTimestamp: "int8",
+        migrationName: "character varying",
+        migrationTimestamp: "bigint",
         cacheId: "int4",
-        cacheIdentifier: "string",
-        cacheTime: "int8",
+        cacheIdentifier: "character varying",
+        cacheTime: "bigint",
         cacheDuration: "int4",
-        cacheQuery: "string",
-        cacheResult: "string",
+        cacheQuery: "text",
+        cacheResult: "text",
     };
 
     /**
@@ -166,12 +195,6 @@ export class CockroachDriver implements Driver {
      */
     dataTypeDefaults: DataTypeDefaults = {
         "character": { length: 1 },
-        "bit": { length: 1 },
-        "interval": { precision: 6 },
-        "time without time zone": { precision: 6 },
-        "time with time zone": { precision: 6 },
-        "timestamp without time zone": { precision: 6 },
-        "timestamp with time zone": { precision: 6 },
     };
 
     // -------------------------------------------------------------------------
@@ -284,23 +307,12 @@ export class CockroachDriver implements Driver {
         } else if (["json", "jsonb", ...this.spatialTypes].indexOf(columnMetadata.type) >= 0) {
             return JSON.stringify(value);
 
-        } else if (columnMetadata.type === "hstore") {
-            if (typeof value === "string") {
-                return value;
-            } else {
-                return Object.keys(value).map(key => {
-                    return `"${key}"=>"${value[key]}"`;
-                }).join(", ");
-            }
-
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value);
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
 
-        } else if (columnMetadata.type === "enum" && !columnMetadata.isArray) {
-            return "" + value;
         }
 
         return value;
@@ -313,7 +325,10 @@ export class CockroachDriver implements Driver {
         if (value === null || value === undefined)
             return value;
 
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Number && !columnMetadata.isArray) {
+            value = parseInt(value);
+
+        } else if (columnMetadata.type === Boolean) {
             value = value ? true : false;
 
         } else if (columnMetadata.type === "datetime"
@@ -329,38 +344,12 @@ export class CockroachDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value);
 
-        } else if (columnMetadata.type === "hstore") {
-            if (columnMetadata.hstoreType === "object") {
-                const regexp = /"(.*?)"=>"(.*?[^\\"])"/gi;
-                const matchValue = value.match(regexp);
-                const object: ObjectLiteral = {};
-                let match;
-                while (match = regexp.exec(matchValue)) {
-                    object[match[1].replace(`\\"`, `"`)] = match[2].replace(`\\"`, `"`);
-                }
-                return object;
-
-            } else {
-                return value;
-            }
-
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value);
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
-        } else if (columnMetadata.type === "enum" ) {
-            if (columnMetadata.isArray) {
-                // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-                value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
-                // convert to number if that exists in poosible enum options
-                value = value.map((val: string) => {
-                    return !isNaN(+val) && columnMetadata.enum!.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
-                });
-            } else {
-                // convert to number if that exists in poosible enum options
-                value = !isNaN(+value) && columnMetadata.enum!.indexOf(parseInt(value)) >= 0 ? parseInt(value) : value;
-            }
+
         }
 
         if (columnMetadata.transformer)
@@ -428,37 +417,34 @@ export class CockroachDriver implements Driver {
         if (column.type === Number || column.type === "int" || column.type === "int4") {
             return "integer";
 
-        } else if (column.type === String || column.type === "varchar") {
+        } else if (column.type === String || column.type === "varchar" || column.type === "char varying") {
             return "character varying";
 
-        } else if (column.type === Date || column.type === "timestamp") {
-            return "timestamp without time zone";
+        } else if (column.type === Date || column.type === "timestamp without time zone") {
+            return "timestamp";
 
         } else if (column.type === "timestamptz") {
             return "timestamp with time zone";
 
-        } else if (column.type === "time") {
-            return "time without time zone";
-
-        } else if (column.type === "timetz") {
-            return "time with time zone";
+        } else if (column.type === "time without time zone") {
+            return "time";
 
         } else if (column.type === Boolean || column.type === "bool") {
             return "boolean";
 
-        } else if (column.type === "simple-array") {
+        } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
-        } else if (column.type === "simple-json") {
-            return "text";
+        } else if (column.type === "bytes" || column.type === "blob") {
+            return "bytea";
 
         } else if (column.type === "int2") {
             return "smallint";
 
-        } else if (column.type === "int8") {
+        } else if (column.type === "int8" || column.type === "int64") {
             return "bigint";
 
-        } else if (column.type === "decimal") {
+        } else if (column.type === "decimal" || column.type === "dec") {
             return "numeric";
 
         } else if (column.type === "float8" || column.type === "float") {
@@ -470,8 +456,8 @@ export class CockroachDriver implements Driver {
         } else if (column.type === "char") {
             return "character";
 
-        } else if (column.type === "varbit") {
-            return "bit varying";
+        } else if (column.type === "json") {
+            return "jsonb";
 
         } else {
             return column.type as string || "";
@@ -484,13 +470,6 @@ export class CockroachDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
-
-        if (columnMetadata.type === "enum" && defaultValue !== undefined) {
-            if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-                return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
-            }
-            return `'${defaultValue}'`;
-        }
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
@@ -543,29 +522,8 @@ export class CockroachDriver implements Driver {
             type +=  "(" + column.precision + ")";
         }
 
-        // if (column.type === "time without time zone") {
-        //     type = "TIME" + (column.precision !== null && column.precision !== undefined ? "(" + column.precision + ")" : "");
-        //
-        // } else if (column.type === "time with time zone") {
-        //     type = "TIME" + (column.precision !== null && column.precision !== undefined ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
-        //
-        // } else if (column.type === "timestamp without time zone") {
-        //     type = "TIMESTAMP" + (column.precision !== null && column.precision !== undefined ? "(" + column.precision + ")" : "");
-        //
-        // } else if (column.type === "timestamp with time zone") {
-        //     type = "TIMESTAMP" + (column.precision !== null && column.precision !== undefined ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
-        // } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
-        //   if (column.spatialFeatureType != null && column.srid != null) {
-        //     type = `${column.type}(${column.spatialFeatureType},${column.srid})`;
-        //   } else if (column.spatialFeatureType != null) {
-        //     type = `${column.type}(${column.spatialFeatureType})`;
-        //   } else {
-        //     type = column.type;
-        //   }
-        // }
-        //
-        // if (column.isArray)
-        //     type += " array";
+        if (column.isArray)
+            type += " array";
 
         return type;
     }
@@ -628,24 +586,37 @@ export class CockroachDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            return  tableColumn.name !== columnMetadata.databaseName
+            // console.log("table:", columnMetadata.entityMetadata.tableName);
+            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("width:", tableColumn.width, columnMetadata.width);
+            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
+            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("==========================================");
+
+            return tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment // todo
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNessesary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum))
-                || tableColumn.isGenerated !== columnMetadata.isGenerated
-                || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
-                || tableColumn.srid !== columnMetadata.srid;
+                || tableColumn.isGenerated !== columnMetadata.isGenerated;
         });
     }
-    private lowerDefaultValueIfNessesary(value: string | undefined) {
-        // Postgres saves function calls in default value as lowercase #2733
+
+    private lowerDefaultValueIfNecessary(value: string | undefined) {
         if (!value) {
             return value;
         }

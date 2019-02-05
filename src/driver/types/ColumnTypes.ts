@@ -2,15 +2,14 @@
  * Column types used for @PrimaryGeneratedColumn() decorator.
  */
 export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
-    |"int2" // postgres, sqlite
-    |"int2" // postgres, sqlite
-    |"int4" // postgres
-    |"int8" // postgres, sqlite
-    |"integer" // postgres, oracle, sqlite, mysql
+    |"int2" // postgres, sqlite, cockroachdb
+    |"int4" // postgres, cockroachdb
+    |"int8" // postgres, sqlite, cockroachdb
+    |"integer" // postgres, oracle, sqlite, mysql, cockroachdb
     |"tinyint" // mysql, mssql, sqlite
-    |"smallint" // mysql, postgres, mssql, oracle, sqlite
+    |"smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb
     |"mediumint" // mysql, sqlite
-    |"bigint" // mysql, postgres, mssql, sqlite
+    |"bigint" // mysql, postgres, mssql, sqlite, cockroachdb
     |"dec" // oracle, mssql
     |"decimal" // mysql, postgres, mssql, sqlite
     |"fixed" // mysql
@@ -32,18 +31,18 @@ export type WithPrecisionColumnType = "float" // mysql, mssql, oracle, sqlite
     |"decimal" // mysql, postgres, mssql, sqlite
     |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite, mysql
-    |"real" // mysql, postgres, mssql, oracle, sqlite
-    |"double precision" // postgres, oracle, sqlite, mysql
+    |"real" // mysql, postgres, mssql, oracle, sqlite, cockroachdb
+    |"double precision" // postgres, oracle, sqlite, mysql, cockroachdb
     |"number" // oracle
     |"datetime" // mssql, mysql, sqlite
     |"datetime2" // mssql
     |"datetimeoffset" // mssql
-    |"time" // mysql, postgres, mssql
-    |"time with time zone" // postgres
+    |"time" // mysql, postgres, mssql, cockroachdb
+    |"time with time zone" // postgres, cockroachdb
     |"time without time zone" // postgres
-    |"timestamp" // mysql, postgres, mssql, oracle
-    |"timestamp without time zone" // postgres
-    |"timestamp with time zone" // postgres, oracle
+    |"timestamp" // mysql, postgres, mssql, oracle, cockroachdb
+    |"timestamp without time zone" // postgres, cockroachdb
+    |"timestamp with time zone" // postgres, oracle, cockroachdb
     |"timestamp with local time zone"; // oracle
 
 /**
@@ -85,26 +84,27 @@ export type SimpleColumnType =
 
     // numeric types
     |"bit" // mssql
-    |"int2" // postgres, sqlite
-    |"integer" // postgres, oracle, sqlite
-    |"int4" // postgres
-    |"int8" // postgres, sqlite
+    |"int2" // postgres, sqlite, cockroachdb
+    |"integer" // postgres, oracle, sqlite, cockroachdb
+    |"int4" // postgres, cockroachdb
+    |"int8" // postgres, sqlite, cockroachdb
+    |"int64" // cockroachdb
     |"unsigned big int" // sqlite
-    |"float4" // postgres
-    |"float8" // postgres
+    |"float4" // postgres, cockroachdb
+    |"float8" // postgres, cockroachdb
     |"smallmoney" // mssql
     |"money" // postgres, mssql
 
     // boolean types
-    |"boolean" // postgres, sqlite, mysql
-    |"bool" // postgres, mysql
+    |"boolean" // postgres, sqlite, mysql, cockroachdb
+    |"bool" // postgres, mysql, cockroachdb
 
     // text/binary types
     |"tinyblob" // mysql
     |"tinytext" // mysql
     |"mediumblob" // mysql
     |"mediumtext" // mysql
-    |"blob" // mysql, oracle, sqlite
+    |"blob" // mysql, oracle, sqlite, cockroachdb
     |"text" // mysql, postgres, mssql, sqlite, cockroachdb
     |"ntext" // mssql
     |"citext" // postgres
@@ -112,7 +112,7 @@ export type SimpleColumnType =
     |"longblob" // mysql
     |"longtext" // mysql
     |"bytes" // cockroachdb
-    |"bytea" // postgres
+    |"bytea" // postgres, cockroachdb
     |"long" // oracle
     |"raw" // oracle
     |"long raw" // oracle
@@ -122,14 +122,14 @@ export type SimpleColumnType =
     |"image" // mssql
 
     // date types
-    |"timetz"
-    |"timestamptz"
+    |"timetz" // postgres
+    |"timestamptz" // postgres, cockroachdb
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite
     |"interval year to month" // oracle
     |"interval day to second" // oracle
-    |"interval" // postgres
+    |"interval" // postgres, cockroachdb
     |"year" // mysql
 
     // geometric types
@@ -159,17 +159,17 @@ export type SimpleColumnType =
     // other types
     |"enum" // mysql, postgres
     |"cidr" // postgres
-    |"inet" // postgres
+    |"inet" // postgres, cockroachdb
     |"macaddr"// postgres
     |"bit" // postgres
     |"bit varying" // postgres
     |"varbit"// postgres
     |"tsvector" // postgres
     |"tsquery" // postgres
-    |"uuid" // postgres
+    |"uuid" // postgres, cockroachdb
     |"xml" // mssql, postgres
-    |"json" // mysql, postgres
-    |"jsonb" // postgres
+    |"json" // mysql, postgres, cockroachdb
+    |"jsonb" // postgres, cockroachdb
     |"varbinary" // mssql
     |"hierarchyid" // mssql
     |"sql_variant" // mssql

@@ -159,7 +159,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 const metadataFK = metadata.foreignKeys.find(metadataForeignKey => metadataForeignKey.name === tableForeignKey.name);
                 return !metadataFK
                     || metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete
-                    || metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate;
+                    || metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate; // TODO: bug, fix later (messer)
             });
             if (tableForeignKeysToDrop.length === 0)
                 return;

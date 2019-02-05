@@ -7,7 +7,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {PostgresDriver} from "./PostgresDriver";
+import {CockroachDriver} from "./CockroachDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {Broadcaster} from "../../subscriber/Broadcaster";
@@ -24,7 +24,7 @@ import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 /**
  * Runs queries on a single postgres database connection.
  */
-export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner {
+export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -33,7 +33,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Database driver used by connection.
      */
-    driver: PostgresDriver;
+    driver: CockroachDriver;
 
     // -------------------------------------------------------------------------
     // Protected Properties
@@ -53,7 +53,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: PostgresDriver, mode: "master"|"slave" = "master") {
+    constructor(driver: CockroachDriver, mode: "master"|"slave" = "master") {
         super();
         this.driver = driver;
         this.connection = driver.connection;
@@ -267,7 +267,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
     /**
      * Creates a new database.
-     * Postgres does not supports database creation inside a transaction block.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
         await Promise.resolve();
@@ -275,7 +274,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
     /**
      * Drops database.
-     * Postgres does not supports database drop inside a transaction block.
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
         return Promise.resolve();
@@ -1286,7 +1284,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
         }).join(" OR ");
         const tablesSql = `SELECT * FROM "information_schema"."tables" WHERE ` + tablesCondition;
-        const columnsSql = `SELECT *, ("udt_schema" || '.' || "udt_name")::"regtype" AS "regtype" FROM "information_schema"."columns" WHERE ` + tablesCondition;
+        const columnsSql = `SELECT * FROM "information_schema"."columns" WHERE "is_hidden" = 'NO' AND ` + tablesCondition;
 
         const constraintsCondition = tableNames.map(tableName => {
             let [schema, name] = tableName.split(".");
@@ -1374,18 +1372,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["column_name"];
-                    tableColumn.type = dbColumn["regtype"].toLowerCase();
+                    tableColumn.type = dbColumn["data_type"];
 
-                    if (tableColumn.type === "numeric" || tableColumn.type === "decimal" || tableColumn.type === "float") {
-                        // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
-                        // we set 'undefined' in to unspecified property to avoid changing column on sync
+                    if (tableColumn.type === "numeric" || tableColumn.type === "decimal") {
                         if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
-                            tableColumn.precision = dbColumn["numeric_precision"];
+                            tableColumn.precision = parseInt(dbColumn["numeric_precision"]);
                         } else if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["numeric_scale"])) {
                             tableColumn.precision = undefined;
                         }
                         if (dbColumn["numeric_scale"] !== null && !this.isDefaultColumnScale(table, tableColumn, dbColumn["numeric_scale"])) {
-                            tableColumn.scale = dbColumn["numeric_scale"];
+                            tableColumn.scale = parseInt(dbColumn["numeric_scale"]);
                         } else if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {
                             tableColumn.scale = undefined;
                         }
@@ -1393,60 +1389,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     if (dbColumn["data_type"].toLowerCase() === "array") {
                         tableColumn.isArray = true;
-                        const type = tableColumn.type.replace("[]", "");
+                        const type = dbColumn["crdb_sql_type"].replace("[]", "").toLowerCase();
                         tableColumn.type = this.connection.driver.normalizeType({type: type});
-                    }
-
-                    if (tableColumn.type === "interval"
-                        || tableColumn.type === "time without time zone"
-                        || tableColumn.type === "time with time zone"
-                        || tableColumn.type === "timestamp without time zone"
-                        || tableColumn.type === "timestamp with time zone") {
-                        tableColumn.precision = !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["datetime_precision"]) ? dbColumn["datetime_precision"] : undefined;
-                    }
-
-                    if (tableColumn.type.indexOf("enum") !== -1) {
-                        tableColumn.type = "enum";
-                        const sql = `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
-                            `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
-                            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                            `WHERE "n"."nspname" = '${dbTable["table_schema"]}' AND "t"."typname" = '${this.buildEnumName(table, tableColumn.name, false, true)}'`;
-                        const results: ObjectLiteral[] = await this.query(sql);
-                        tableColumn.enum = results.map(result => result["value"]);
-                    }
-
-                    if (tableColumn.type === "geometry") {
-                      const geometryColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geometry_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geometry_columns"
-                      ) AS _
-                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
-
-                      const results: ObjectLiteral[] = await this.query(geometryColumnSql);
-                      tableColumn.spatialFeatureType = results[0].type;
-                      tableColumn.srid = results[0].srid;
-                    }
-
-                    if (tableColumn.type === "geography") {
-                      const geographyColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geography_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geography_columns"
-                      ) AS _
-                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
-
-                      const results: ObjectLiteral[] = await this.query(geographyColumnSql);
-                      tableColumn.spatialFeatureType = results[0].type;
-                      tableColumn.srid = results[0].srid;
                     }
 
                     // check only columns that have length property
