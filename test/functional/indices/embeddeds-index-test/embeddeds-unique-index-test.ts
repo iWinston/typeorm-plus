@@ -8,8 +8,7 @@ describe("indices > embeds index test", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["postgres"]
+        entities: [__dirname + "/entity/*{.js,.ts}"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
