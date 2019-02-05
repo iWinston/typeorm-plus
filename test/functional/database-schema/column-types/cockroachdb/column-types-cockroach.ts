@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
@@ -12,13 +12,12 @@ describe.only("database schema > column types > cockroachdb", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
-            schemaCreate: true
         });
     });
-    // beforeEach(() => reloadTestingDatabases(connections));
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it.only("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
+    it("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
         const queryRunner = connection.createQueryRunner();
@@ -61,6 +60,8 @@ describe.only("database schema > column types > cockroachdb", () => {
         post.timestamp.setMilliseconds(0);
         post.timestampWithTimeZone = new Date();
         post.timestampWithTimeZone.setMilliseconds(0);
+        post.timestampWithoutTimeZone = new Date();
+        post.timestampWithoutTimeZone.setMilliseconds(0);
         post.timestamptz = new Date();
         post.timestamptz.setMilliseconds(0);
         post.boolean = true;
@@ -111,6 +112,7 @@ describe.only("database schema > column types > cockroachdb", () => {
         loadedPost.timeWithoutTimeZone.should.be.equal(post.timeWithoutTimeZone);
         loadedPost.timestamp.valueOf().should.be.equal(post.timestamp.valueOf());
         loadedPost.timestampWithTimeZone.getTime().should.be.equal(post.timestampWithTimeZone.getTime());
+        loadedPost.timestampWithoutTimeZone.getTime().should.be.equal(post.timestampWithoutTimeZone.getTime());
         loadedPost.timestamptz.valueOf().should.be.equal(post.timestamptz.valueOf());
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.bool.should.be.equal(post.bool);
@@ -126,50 +128,51 @@ describe.only("database schema > column types > cockroachdb", () => {
         loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2]);
         loadedPost.simpleJson.param.should.be.equal(post.simpleJson.param);
 
-        table!.findColumnByName("id")!.type.should.be.equal("integer");
-        table!.findColumnByName("name")!.type.should.be.equal("character varying");
-        table!.findColumnByName("integer")!.type.should.be.equal("integer");
-        table!.findColumnByName("int4")!.type.should.be.equal("integer");
-        table!.findColumnByName("int")!.type.should.be.equal("integer");
-        table!.findColumnByName("smallint")!.type.should.be.equal("smallint");
-        table!.findColumnByName("int2")!.type.should.be.equal("smallint");
-        table!.findColumnByName("bigint")!.type.should.be.equal("bigint");
-        table!.findColumnByName("int8")!.type.should.be.equal("bigint");
-        table!.findColumnByName("int64")!.type.should.be.equal("bigint");
-        table!.findColumnByName("doublePrecision")!.type.should.be.equal("double precision");
-        table!.findColumnByName("float8")!.type.should.be.equal("double precision");
-        table!.findColumnByName("real")!.type.should.be.equal("real");
-        table!.findColumnByName("float4")!.type.should.be.equal("real");
-        table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
-        table!.findColumnByName("decimal")!.type.should.be.equal("numeric");
-        table!.findColumnByName("dec")!.type.should.be.equal("numeric");
-        table!.findColumnByName("char")!.type.should.be.equal("character");
-        table!.findColumnByName("character")!.type.should.be.equal("character");
-        table!.findColumnByName("varchar")!.type.should.be.equal("character varying");
-        table!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
-        table!.findColumnByName("charVarying")!.type.should.be.equal("character varying");
-        table!.findColumnByName("text")!.type.should.be.equal("text");
-        table!.findColumnByName("string")!.type.should.be.equal("text");
-        table!.findColumnByName("bytes")!.type.should.be.equal("bytea");
-        table!.findColumnByName("bytea")!.type.should.be.equal("bytea");
-        table!.findColumnByName("blob")!.type.should.be.equal("bytea");
+        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("name")!.type.should.be.equal("varchar");
+        table!.findColumnByName("integer")!.type.should.be.equal("int");
+        table!.findColumnByName("int4")!.type.should.be.equal("int");
+        table!.findColumnByName("int")!.type.should.be.equal("int");
+        table!.findColumnByName("smallint")!.type.should.be.equal("int2");
+        table!.findColumnByName("int2")!.type.should.be.equal("int2");
+        table!.findColumnByName("bigint")!.type.should.be.equal("int8");
+        table!.findColumnByName("int8")!.type.should.be.equal("int8");
+        table!.findColumnByName("int64")!.type.should.be.equal("int8");
+        table!.findColumnByName("doublePrecision")!.type.should.be.equal("float8");
+        table!.findColumnByName("float8")!.type.should.be.equal("float8");
+        table!.findColumnByName("real")!.type.should.be.equal("float4");
+        table!.findColumnByName("float4")!.type.should.be.equal("float4");
+        table!.findColumnByName("numeric")!.type.should.be.equal("decimal");
+        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
+        table!.findColumnByName("dec")!.type.should.be.equal("decimal");
+        table!.findColumnByName("char")!.type.should.be.equal("char");
+        table!.findColumnByName("character")!.type.should.be.equal("char");
+        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
+        table!.findColumnByName("characterVarying")!.type.should.be.equal("varchar");
+        table!.findColumnByName("charVarying")!.type.should.be.equal("varchar");
+        table!.findColumnByName("text")!.type.should.be.equal("string");
+        table!.findColumnByName("string")!.type.should.be.equal("string");
+        table!.findColumnByName("bytes")!.type.should.be.equal("bytes");
+        table!.findColumnByName("bytea")!.type.should.be.equal("bytes");
+        table!.findColumnByName("blob")!.type.should.be.equal("bytes");
         table!.findColumnByName("date")!.type.should.be.equal("date");
         table!.findColumnByName("interval")!.type.should.be.equal("interval");
         table!.findColumnByName("time")!.type.should.be.equal("time");
         table!.findColumnByName("timeWithoutTimeZone")!.type.should.be.equal("time");
         table!.findColumnByName("timestamp")!.type.should.be.equal("timestamp");
-        table!.findColumnByName("timestampWithTimeZone")!.type.should.be.equal("timestamp with time zone");
-        table!.findColumnByName("timestamptz")!.type.should.be.equal("timestamp with time zone");
-        table!.findColumnByName("boolean")!.type.should.be.equal("boolean");
-        table!.findColumnByName("bool")!.type.should.be.equal("boolean");
+        table!.findColumnByName("timestampWithTimeZone")!.type.should.be.equal("timestamptz");
+        table!.findColumnByName("timestampWithoutTimeZone")!.type.should.be.equal("timestamp");
+        table!.findColumnByName("timestamptz")!.type.should.be.equal("timestamptz");
+        table!.findColumnByName("boolean")!.type.should.be.equal("bool");
+        table!.findColumnByName("bool")!.type.should.be.equal("bool");
         table!.findColumnByName("inet")!.type.should.be.equal("inet");
         table!.findColumnByName("uuid")!.type.should.be.equal("uuid");
         table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb");
         table!.findColumnByName("json")!.type.should.be.equal("jsonb");
-        table!.findColumnByName("array")!.type.should.be.equal("integer");
+        table!.findColumnByName("array")!.type.should.be.equal("int");
         table!.findColumnByName("array")!.isArray!.should.be.true;
-        table!.findColumnByName("simpleArray")!.type.should.be.equal("text");
-        table!.findColumnByName("simpleJson")!.type.should.be.equal("text");
+        table!.findColumnByName("simpleArray")!.type.should.be.equal("string");
+        table!.findColumnByName("simpleJson")!.type.should.be.equal("string");
 
     })));
 
@@ -204,27 +207,27 @@ describe.only("database schema > column types > cockroachdb", () => {
         loadedPost.charVarying.should.be.equal(post.charVarying);
         loadedPost.string.should.be.equal(post.string);
 
-        table!.findColumnByName("id")!.type.should.be.equal("integer");
-        table!.findColumnByName("numeric")!.type.should.be.equal("numeric");
+        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("numeric")!.type.should.be.equal("decimal");
         table!.findColumnByName("numeric")!.precision!.should.be.equal(5);
         table!.findColumnByName("numeric")!.scale!.should.be.equal(2);
-        table!.findColumnByName("decimal")!.type.should.be.equal("numeric");
+        table!.findColumnByName("decimal")!.type.should.be.equal("decimal");
         table!.findColumnByName("decimal")!.precision!.should.be.equal(5);
         table!.findColumnByName("decimal")!.scale!.should.be.equal(2);
-        table!.findColumnByName("dec")!.type.should.be.equal("numeric");
+        table!.findColumnByName("dec")!.type.should.be.equal("decimal");
         table!.findColumnByName("dec")!.precision!.should.be.equal(5);
         table!.findColumnByName("dec")!.scale!.should.be.equal(2);
-        table!.findColumnByName("char")!.type.should.be.equal("character");
+        table!.findColumnByName("char")!.type.should.be.equal("char");
         table!.findColumnByName("char")!.length!.should.be.equal("3");
-        table!.findColumnByName("character")!.type.should.be.equal("character");
+        table!.findColumnByName("character")!.type.should.be.equal("char");
         table!.findColumnByName("character")!.length!.should.be.equal("3");
-        table!.findColumnByName("varchar")!.type.should.be.equal("character varying");
+        table!.findColumnByName("varchar")!.type.should.be.equal("varchar");
         table!.findColumnByName("varchar")!.length!.should.be.equal("30");
-        table!.findColumnByName("characterVarying")!.type.should.be.equal("character varying");
+        table!.findColumnByName("characterVarying")!.type.should.be.equal("varchar");
         table!.findColumnByName("characterVarying")!.length!.should.be.equal("30");
-        table!.findColumnByName("charVarying")!.type.should.be.equal("character varying");
+        table!.findColumnByName("charVarying")!.type.should.be.equal("varchar");
         table!.findColumnByName("charVarying")!.length!.should.be.equal("30");
-        table!.findColumnByName("string")!.type.should.be.equal("text");
+        table!.findColumnByName("string")!.type.should.be.equal("string");
         table!.findColumnByName("string")!.length!.should.be.equal("30");
 
     })));
@@ -250,9 +253,9 @@ describe.only("database schema > column types > cockroachdb", () => {
         loadedPost.boolean.should.be.equal(post.boolean);
         loadedPost.datetime.valueOf().should.be.equal(post.datetime.valueOf());
 
-        table!.findColumnByName("id")!.type.should.be.equal("integer");
-        table!.findColumnByName("name")!.type.should.be.equal("character varying");
-        table!.findColumnByName("boolean")!.type.should.be.equal("boolean");
+        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("name")!.type.should.be.equal("varchar");
+        table!.findColumnByName("boolean")!.type.should.be.equal("bool");
         table!.findColumnByName("datetime")!.type.should.be.equal("timestamp");
 
     })));

@@ -1372,7 +1372,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["column_name"];
-                    tableColumn.type = dbColumn["data_type"];
+
+                    tableColumn.type = dbColumn["crdb_sql_type"].toLowerCase();
+                    if (tableColumn.type.indexOf("(") !== -1)
+                        tableColumn.type = tableColumn.type.substr(0, tableColumn.type.indexOf("("));
 
                     if (tableColumn.type === "numeric" || tableColumn.type === "decimal") {
                         if (dbColumn["numeric_precision"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["numeric_precision"])) {

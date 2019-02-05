@@ -120,6 +120,9 @@ export class Post {
     @Column("timestamp with time zone")
     timestampWithTimeZone: Date;
 
+    @Column("timestamp without time zone")
+    timestampWithoutTimeZone: Date;
+
     @Column("timestamptz")
     timestamptz: Date;
 

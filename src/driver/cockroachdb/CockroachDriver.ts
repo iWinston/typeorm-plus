@@ -142,7 +142,6 @@ export class CockroachDriver implements Driver {
         "character",
         "char",
         "string",
-        "text",
     ];
 
     /**
@@ -152,10 +151,6 @@ export class CockroachDriver implements Driver {
         "numeric",
         "decimal",
         "dec",
-        "float",
-        "float4",
-        "float8",
-        "double precision",
     ];
 
     /**
@@ -172,21 +167,21 @@ export class CockroachDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "timestamp",
+        createDate: "timestamptz",
         createDateDefault: "now()",
-        updateDate: "timestamp",
+        updateDate: "timestamptz",
         updateDateDefault: "now()",
-        version: "int4",
-        treeLevel: "int4",
-        migrationId: "int4",
-        migrationName: "character varying",
-        migrationTimestamp: "bigint",
-        cacheId: "int4",
-        cacheIdentifier: "character varying",
-        cacheTime: "bigint",
-        cacheDuration: "int4",
-        cacheQuery: "text",
-        cacheResult: "text",
+        version: "int",
+        treeLevel: "int",
+        migrationId: "int",
+        migrationName: "varchar",
+        migrationTimestamp: "int8",
+        cacheId: "int",
+        cacheIdentifier: "varchar",
+        cacheTime: "int8",
+        cacheDuration: "int",
+        cacheQuery: "string",
+        cacheResult: "string",
     };
 
     /**
@@ -194,7 +189,7 @@ export class CockroachDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
-        "character": { length: 1 },
+        "char": { length: 1 },
     };
 
     // -------------------------------------------------------------------------
@@ -300,6 +295,7 @@ export class CockroachDriver implements Driver {
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamptz"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToDate(value);
@@ -334,6 +330,7 @@ export class CockroachDriver implements Driver {
         } else if (columnMetadata.type === "datetime"
             || columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
+            || columnMetadata.type === "timestamptz"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
             value = DateUtils.normalizeHydratedDate(value);
@@ -414,47 +411,47 @@ export class CockroachDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number, isArray?: boolean }): string {
-        if (column.type === Number || column.type === "int" || column.type === "int4") {
-            return "integer";
+        if (column.type === Number || column.type === "integer" || column.type === "int4") {
+            return "int";
 
-        } else if (column.type === String || column.type === "varchar" || column.type === "char varying") {
-            return "character varying";
+        } else if (column.type === String || column.type === "character varying" || column.type === "char varying") {
+            return "varchar";
 
         } else if (column.type === Date || column.type === "timestamp without time zone") {
             return "timestamp";
 
-        } else if (column.type === "timestamptz") {
-            return "timestamp with time zone";
+        } else if (column.type === "timestamp with time zone") {
+            return "timestamptz";
 
         } else if (column.type === "time without time zone") {
             return "time";
 
-        } else if (column.type === Boolean || column.type === "bool") {
-            return "boolean";
+        } else if (column.type === Boolean || column.type === "boolean") {
+            return "bool";
 
-        } else if (column.type === "simple-array" || column.type === "simple-json") {
-            return "text";
+        } else if (column.type === "simple-array" || column.type === "simple-json" || column.type === "text") {
+            return "string";
 
-        } else if (column.type === "bytes" || column.type === "blob") {
-            return "bytea";
+        } else if (column.type === "bytea" || column.type === "blob") {
+            return "bytes";
 
-        } else if (column.type === "int2") {
-            return "smallint";
+        } else if (column.type === "smallint") {
+            return "int2";
 
-        } else if (column.type === "int8" || column.type === "int64") {
-            return "bigint";
+        } else if (column.type === "bigint" || column.type === "int64") {
+            return "int8";
 
-        } else if (column.type === "decimal" || column.type === "dec") {
-            return "numeric";
+        } else if (column.type === "numeric" || column.type === "dec") {
+            return "decimal";
 
-        } else if (column.type === "float8" || column.type === "float") {
-            return "double precision";
+        } else if (column.type === "double precision" || column.type === "float") {
+            return "float8";
 
-        } else if (column.type === "float4") {
-            return "real";
+        } else if (column.type === "real") {
+            return "float4";
 
-        } else if (column.type === "char") {
-            return "character";
+        } else if (column.type === "character") {
+            return "char";
 
         } else if (column.type === "json") {
             return "jsonb";
