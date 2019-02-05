@@ -3,6 +3,7 @@ import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * Index metadata contains all information about table's index.
@@ -174,8 +175,13 @@ export class IndexMetadata {
 
         this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
             const column = this.entityMetadata.columns.find(column => column.propertyPath === key);
-            if (column)
-                updatedMap[column.databaseName] = map[key];
+            if (column) {
+                if (this.entityMetadata.connection.driver instanceof MongoDriver) {
+                    updatedMap[column.databasePath] = map[key];
+                } else {
+                    updatedMap[column.databaseName] = map[key];
+                }
+            }
             return updatedMap;
         }, {} as { [key: string]: number });
         this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
