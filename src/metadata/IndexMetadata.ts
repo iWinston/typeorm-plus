@@ -175,13 +175,9 @@ export class IndexMetadata {
 
         this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
             const column = this.entityMetadata.columns.find(column => column.propertyPath === key);
-            if (column) {
-                if (this.entityMetadata.connection.driver instanceof MongoDriver) {
-                    updatedMap[column.databasePath] = map[key];
-                } else {
-                    updatedMap[column.databaseName] = map[key];
-                }
-            }
+            if (column)
+                updatedMap[column.databasePath] = map[key];
+
             return updatedMap;
         }, {} as { [key: string]: number });
         this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
