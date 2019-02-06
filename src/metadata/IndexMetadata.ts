@@ -3,7 +3,6 @@ import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 
 /**
  * Index metadata contains all information about table's index.
