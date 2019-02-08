@@ -6,24 +6,24 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {Question} from "./entity/Question";
 
-describe("uuid-postgres", () => {
+describe("uuid-cockroach", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["cockroachdb"],
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should make correct schema with Postgres' uuid type", () => Promise.all(connections.map(async connection => {
+    it("should make correct schema with CockroachDB uuid type", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
-        const schema = await queryRunner.getTable("record");
+        const table = await queryRunner.getTable("record");
         await queryRunner.release();
-        expect(schema).not.to.be.empty;
-        expect(schema!.columns.find(tableColumn => tableColumn.name === "id" && tableColumn.type === "uuid" && tableColumn.isGenerated)).to.be.not.empty;
+        expect(table).not.to.be.empty;
+        expect(table!.columns.find(tableColumn => tableColumn.name === "id" && tableColumn.type === "uuid" && tableColumn.isGenerated)).to.be.not.empty;
     })));
 
     it("should persist uuid correctly", () => Promise.all(connections.map(async connection => {

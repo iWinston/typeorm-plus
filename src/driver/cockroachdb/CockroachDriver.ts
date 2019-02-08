@@ -321,7 +321,8 @@ export class CockroachDriver implements Driver {
         if (value === null || value === undefined)
             return value;
 
-        if (columnMetadata.type === Number && !columnMetadata.isArray) {
+        // unique_rowid() generates bigint value and should not be converted to number
+        if (columnMetadata.type === Number && !columnMetadata.isArray && !columnMetadata.isGenerated) {
             value = parseInt(value);
 
         } else if (columnMetadata.type === Boolean) {
@@ -410,7 +411,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number, isArray?: boolean }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number, isArray?: boolean, isGenerated?: boolean, generationStrategy?: "increment"|"uuid" }): string {
         if (column.type === Number || column.type === "integer" || column.type === "int4") {
             return "int";
 

@@ -1289,6 +1289,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.name = dbColumn["column_name"];
 
                     tableColumn.type = dbColumn["crdb_sql_type"].toLowerCase();
+                    if (dbColumn["crdb_sql_type"].indexOf("COLLATE") !== -1) {
+                        tableColumn.collation = dbColumn["crdb_sql_type"].substr(dbColumn["crdb_sql_type"].indexOf("COLLATE") + "COLLATE".length + 1, dbColumn["crdb_sql_type"].length);
+                        tableColumn.type = tableColumn.type.substr(0, dbColumn["crdb_sql_type"].indexOf("COLLATE") - 1);
+                    }
+
                     if (tableColumn.type.indexOf("(") !== -1)
                         tableColumn.type = tableColumn.type.substr(0, tableColumn.type.indexOf("("));
 
@@ -1332,7 +1337,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
 
-                        } else if (/^uuid_generate_v\d\(\)/.test(dbColumn["column_default"])) {
+                        } else if (dbColumn["column_default"] === "gen_random_uuid()") {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "uuid";
 
@@ -1344,8 +1349,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["character_set_name"])
                         tableColumn.charset = dbColumn["character_set_name"];
-                    if (dbColumn["collation_name"])
-                        tableColumn.collation = dbColumn["collation_name"];
+
                     return tableColumn;
                 }));
 
@@ -1689,7 +1693,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (column.default !== undefined && column.default !== null)
             c += " DEFAULT " + column.default;
         if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
-            c += " DEFAULT uuid_generate_v4()";
+            c += " DEFAULT gen_random_uuid()";
 
         return c;
     }

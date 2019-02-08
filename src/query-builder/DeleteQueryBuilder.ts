@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
@@ -258,7 +259,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
             return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression !== "" && this.connection.driver instanceof SqlServerDriver) {
