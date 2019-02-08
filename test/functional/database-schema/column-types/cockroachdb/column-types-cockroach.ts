@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {PostWithOptions} from "./entity/PostWithOptions";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 
-describe.only("database schema > column types > cockroachdb", () => {
+describe("database schema > column types > cockroachdb", () => {
 
     let connections: Connection[];
     before(async () => {

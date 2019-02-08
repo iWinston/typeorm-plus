@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {UniqueMetadata} from "../metadata/UniqueMetadata";
 import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
@@ -75,7 +76,8 @@ export class RelationJoinColumnBuilder {
         if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
             return { foreignKey, uniqueConstraint: undefined };
 
-        if (referencedColumns.length > 0 && relation.isOneToOne) {
+        // CockroachDB requires UNIQUE constraints on referenced columns
+        if (referencedColumns.length > 0 && (relation.isOneToOne || this.connection.driver instanceof CockroachDriver)) {
             const uniqueConstraint = new UniqueMetadata({
                 entityMetadata: relation.entityMetadata,
                 columns: foreignKey.columns,

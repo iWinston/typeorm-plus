@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {Table} from "../../../src/schema-builder/table/Table";
@@ -21,6 +22,10 @@ describe("query runner > rename table", () => {
     after(() => closeTestingConnections(connections));
 
     it("should correctly rename table and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // CockroachDB does not support renaming constraints and removing PK.
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
 

@@ -234,7 +234,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
-        return Promise.resolve(false);
+        const result = await this.query(`SELECT * FROM "pg_database" WHERE "datname" = '${database}'`);
+        return result.length ? true : false;
     }
 
     /**
@@ -269,14 +270,18 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new database.
      */
     async createDatabase(database: string, ifNotExist?: boolean): Promise<void> {
-        await Promise.resolve();
+        const up = `CREATE DATABASE ${ifNotExist ? "IF NOT EXISTS " : ""} "${database}"`;
+        const down = `DROP DATABASE "${database}"`;
+        await this.executeQueries(up, down);
     }
 
     /**
      * Drops database.
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
-        return Promise.resolve();
+        const up = `DROP DATABASE ${ifExist ? "IF EXISTS " : ""} "${database}"`;
+        const down = `CREATE DATABASE "${database}"`;
+        await this.executeQueries(up, down);
     }
 
     /**
@@ -309,18 +314,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        // if table have column with ENUM type, we must create this type in postgres.
-        await Promise.all(table.columns
-            .filter(column => column.type === "enum")
-            .map(async column => {
-                const hasEnum = await this.hasEnumType(table, column);
-                if (!hasEnum) {
-                    upQueries.push(this.createEnumTypeSql(table, column));
-                    downQueries.push(this.dropEnumTypeSql(table, column));
-                }
-                return Promise.resolve();
-            }));
-
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
 
@@ -330,14 +323,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             table.foreignKeys.forEach(foreignKey => downQueries.push(this.dropForeignKeySql(table, foreignKey)));
 
         if (createIndices) {
-            table.indices.forEach(index => {
+            table.indices
+                .filter(index => !index.isUnique)
+                .forEach(index => {
 
-                // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
-                upQueries.push(this.createIndexSql(table, index));
-                downQueries.push(this.dropIndexSql(table, index));
-            });
+                    // new index may be passed without name. In this case we generate index name manually.
+                    if (!index.name)
+                        index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
+                    upQueries.push(this.createIndexSql(table, index));
+                    downQueries.push(this.dropIndexSql(table, index));
+                });
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -445,14 +440,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             foreignKey.name = newForeignKeyName;
         });
 
-        // rename ENUM types
-        newTable.columns
-            .filter(column => column.type === "enum")
-            .forEach(column => {
-                upQueries.push(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`);
-                downQueries.push(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`);
-            });
-
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -465,14 +452,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        if (column.type === "enum") {
-            const hasEnum = await this.hasEnumType(table, column);
-            if (!hasEnum) {
-                upQueries.push(this.createEnumTypeSql(table, column));
-                downQueries.push(this.dropEnumTypeSql(table, column));
-            }
-        }
-
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
 
@@ -480,6 +459,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (column.isPrimary) {
             const primaryColumns = clonedTable.primaryColumns;
             // if table already have primary key, me must drop it and recreate again
+            // todo: altering pk is not supported yet https://github.com/cockroachdb/cockroach/issues/19141
             if (primaryColumns.length > 0) {
                 const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                 const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
@@ -497,8 +477,20 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         // create column index
         const columnIndex = clonedTable.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
-            upQueries.push(this.createIndexSql(table, columnIndex));
-            downQueries.push(this.dropIndexSql(table, columnIndex));
+            // CockroachDB stores unique indices as UNIQUE constraints
+            if (columnIndex.isUnique) {
+                const unique = new TableUnique({
+                    name: this.connection.namingStrategy.uniqueConstraintName(table.name, columnIndex.columnNames),
+                    columnNames: columnIndex.columnNames
+                });
+                upQueries.push(this.createUniqueConstraintSql(table, unique));
+                downQueries.push(this.dropIndexSql(table, unique));
+                clonedTable.uniques.push(unique);
+
+            } else {
+                upQueries.push(this.createIndexSql(table, columnIndex));
+                downQueries.push(this.dropIndexSql(table, columnIndex));
+            }
         }
 
         // create unique constraint
@@ -508,8 +500,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 columnNames: [column.name]
             });
             clonedTable.uniques.push(uniqueConstraint);
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${column.name}")`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`);
+            upQueries.push(this.createUniqueConstraintSql(table, uniqueConstraint));
+            downQueries.push(this.dropIndexSql(table, uniqueConstraint.name!)); // CockroachDB creates indices for unique constraints
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -574,12 +566,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`);
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
 
-                // rename ENUM type
-                if (oldColumn.type === "enum") {
-                    upQueries.push(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`);
-                    downQueries.push(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`);
-                }
-
                 // rename column primary key constraint
                 if (oldColumn.isPrimary === true) {
                     const primaryColumns = clonedTable.primaryColumns;
@@ -597,21 +583,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
-                }
-
-                // rename column sequence
-                if (oldColumn.isGenerated === true && newColumn.generationStrategy === "increment") {
-                    const schema = this.extractSchema(table);
-
-                    // building sequence name. Sequence without schema needed because it must be supplied in RENAME TO without
-                    // schema name, but schema needed in ALTER SEQUENCE argument.
-                    const seqName = this.buildSequenceName(table, oldColumn.name, undefined, true, true);
-                    const newSeqName = this.buildSequenceName(table, newColumn.name, undefined, true, true);
-
-                    const up = schema ? `ALTER SEQUENCE "${schema}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
-                    const down = schema ? `ALTER SEQUENCE "${schema}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
-                    upQueries.push(up);
-                    downQueries.push(down);
                 }
 
                 // rename unique constraints
@@ -673,46 +644,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
             }
 
-            if (newColumn.type === "enum" && oldColumn.type === "enum" && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)) {
-                const enumName = this.buildEnumName(table, newColumn);
-                const enumNameWithoutSchema = this.buildEnumName(table, newColumn, false);
-                const arraySuffix = newColumn.isArray ? "[]" : "";
-                const oldEnumName = this.buildEnumName(table, newColumn, true, false, true);
-                const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
-
-                // rename old ENUM
-                upQueries.push(`ALTER TYPE ${enumName} RENAME TO ${oldEnumNameWithoutSchema}`);
-                downQueries.push(`ALTER TYPE ${oldEnumName} RENAME TO ${enumNameWithoutSchema}`);
-
-                // create new ENUM
-                upQueries.push(this.createEnumTypeSql(table, newColumn));
-                downQueries.push(this.dropEnumTypeSql(table, oldColumn));
-
-                // if column have default value, we must drop it to avoid issues with type casting
-                if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
-                }
-
-                // build column types
-                const upType = `${enumName}${arraySuffix} USING "${newColumn.name}"::"text"::${enumName}${arraySuffix}`;
-                const downType = `${oldEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumName}${arraySuffix}`;
-
-                // update column to use new type
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`);
-
-                // if column have default value and we dropped it before, we must bring it back
-                if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
-                }
-
-                // remove old ENUM
-                upQueries.push(this.dropEnumTypeSql(table, newColumn, oldEnumName));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumName));
-            }
-
             if (oldColumn.isNullable !== newColumn.isNullable) {
                 if (newColumn.isNullable) {
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`);
@@ -768,39 +699,37 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             }
 
             if (newColumn.isUnique !== oldColumn.isUnique) {
-                if (newColumn.isUnique === true) {
+                if (newColumn.isUnique) {
                     const uniqueConstraint = new TableUnique({
                         name: this.connection.namingStrategy.uniqueConstraintName(table.name, [newColumn.name]),
                         columnNames: [newColumn.name]
                     });
                     clonedTable.uniques.push(uniqueConstraint);
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`);
+                    upQueries.push(this.createUniqueConstraintSql(table, uniqueConstraint));
+                    // CockroachDB creates index for UNIQUE constraint.
+                    // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
+                    downQueries.push(this.dropIndexSql(table, uniqueConstraint));
 
                 } else {
                     const uniqueConstraint = clonedTable.uniques.find(unique => {
                         return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
                     });
                     clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint!.name}"`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`);
+                    // CockroachDB creates index for UNIQUE constraint.
+                    // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
+                    upQueries.push(this.dropIndexSql(table, uniqueConstraint!));
+                    downQueries.push(this.createUniqueConstraintSql(table, uniqueConstraint!));
                 }
             }
 
             if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
-                if (newColumn.isGenerated === true) {
-                    upQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`);
-                    downQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`);
-
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`);
+                if (newColumn.isGenerated) {
+                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT unique_rowid()`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
 
                 } else {
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`);
-
-                    upQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`);
-                    downQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`);
+                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT unique_rowid()`);
                 }
             }
 
@@ -818,11 +747,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
                     downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`);
                 }
-            }
-
-            if ((newColumn.spatialFeatureType || "").toLowerCase() !== (oldColumn.spatialFeatureType || "").toLowerCase() || newColumn.srid !== oldColumn.srid) {
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
             }
 
         }
@@ -852,6 +776,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const downQueries: string[] = [];
 
         // drop primary key constraint
+        // todo: altering pk is not supported yet https://github.com/cockroachdb/cockroach/issues/19141
         if (column.isPrimary) {
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
             const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
@@ -891,21 +816,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const columnUnique = clonedTable.uniques.find(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
         if (columnUnique) {
             clonedTable.uniques.splice(clonedTable.uniques.indexOf(columnUnique), 1);
-            upQueries.push(this.dropUniqueConstraintSql(table, columnUnique));
+            upQueries.push(this.dropIndexSql(table, columnUnique.name!)); // CockroachDB creates indices for unique constraints
             downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
         }
 
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
-
-        // drop enum type
-        if (column.type === "enum") {
-            const hasEnum = await this.hasEnumType(table, column);
-            if (hasEnum) {
-                upQueries.push(this.dropEnumTypeSql(table, column));
-                downQueries.push(this.createEnumTypeSql(table, column));
-            }
-        }
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -997,7 +913,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table.name, uniqueConstraint.columnNames);
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint);
-        const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
+        // CockroachDB creates index for UNIQUE constraint.
+        // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
+        const down = this.dropIndexSql(table, uniqueConstraint);
         await this.executeQueries(up, down);
         table.addUniqueConstraint(uniqueConstraint);
     }
@@ -1018,7 +936,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!uniqueConstraint)
             throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
 
-        const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
+        // CockroachDB creates index for UNIQUE constraint.
+        // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
+        const up = this.dropIndexSql(table, uniqueConstraint);
         const down = this.createUniqueConstraintSql(table, uniqueConstraint);
         await this.executeQueries(up, down);
         table.removeUniqueConstraint(uniqueConstraint);
@@ -1082,47 +1002,28 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-
-        // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!exclusionConstraint.name)
-            exclusionConstraint.name = this.connection.namingStrategy.exclusionConstraintName(table.name, exclusionConstraint.expression!);
-
-        const up = this.createExclusionConstraintSql(table, exclusionConstraint);
-        const down = this.dropExclusionConstraintSql(table, exclusionConstraint);
-        await this.executeQueries(up, down);
-        table.addExclusionConstraint(exclusionConstraint);
+        throw new Error(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
      * Creates new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        const promises = exclusionConstraints.map(exclusionConstraint => this.createExclusionConstraint(tableOrName, exclusionConstraint));
-        await Promise.all(promises);
+        throw new Error(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const exclusionConstraint = exclusionOrName instanceof TableExclusion ? exclusionOrName : table.exclusions.find(c => c.name === exclusionOrName);
-        if (!exclusionConstraint)
-            throw new Error(`Supplied exclusion constraint was not found in table ${table.name}`);
-
-        const up = this.dropExclusionConstraintSql(table, exclusionConstraint);
-        const down = this.createExclusionConstraintSql(table, exclusionConstraint);
-        await this.executeQueries(up, down);
-        table.removeExclusionConstraint(exclusionConstraint);
+        throw new Error(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        const promises = exclusionConstraints.map(exclusionConstraint => this.dropExclusionConstraint(tableOrName, exclusionConstraint));
-        await Promise.all(promises);
+        throw new Error(`CockroachDB does not support exclusion constraints.`);
     }
 
     /**
@@ -1180,10 +1081,25 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!index.name)
             index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
 
-        const up = this.createIndexSql(table, index);
-        const down = this.dropIndexSql(table, index);
-        await this.executeQueries(up, down);
-        table.addIndex(index);
+        // CockroachDB stores unique indices and UNIQUE constraints
+        if (index.isUnique) {
+            const unique = new TableUnique({
+                name: this.connection.namingStrategy.uniqueConstraintName(table.name, index.columnNames),
+                columnNames: index.columnNames
+            });
+            const up = this.createUniqueConstraintSql(table, unique);
+            // CockroachDB also creates index for UNIQUE constraints.
+            // We can't drop UNIQUE constraint with DROP CONSTRAINT. We must use DROP INDEX ... CASCADE instead.
+            const down = this.dropIndexSql(table, unique);
+            await this.executeQueries(up, down);
+            table.addUniqueConstraint(unique);
+
+        } else {
+            const up = this.createIndexSql(table, index);
+            const down = this.dropIndexSql(table, index);
+            await this.executeQueries(up, down);
+            table.addIndex(index);
+        }
     }
 
     /**
@@ -1247,7 +1163,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND tablename NOT IN ('spatial_ref_sys')`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
-            await this.dropEnumTypes(schemaNamesString);
 
             await this.commitTransaction();
 
@@ -1413,7 +1328,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
 
                     if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
-                        if (dbColumn["column_default"].replace(/"/gi, "") === `nextval('${this.buildSequenceName(table, dbColumn["column_name"], currentSchema, true)}'::regclass)`) {
+                        if (dbColumn["column_default"] === "unique_rowid()") {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
 
@@ -1422,7 +1337,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.generationStrategy = "uuid";
 
                         } else {
-                            tableColumn.default = dbColumn["column_default"].replace(/::.*/, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
                         }
                     }
 
@@ -1538,6 +1453,15 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     }));
             });
 
+        table.indices
+            .filter(index => index.isUnique)
+            .forEach(index => {
+                table.uniques.push(new TableUnique({
+                    name: this.connection.namingStrategy.uniqueConstraintName(table.name, index.columnNames),
+                    columnNames: index.columnNames
+                }));
+            });
+
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques.map(unique => {
                 const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table.name, unique.columnNames);
@@ -1555,15 +1479,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             }).join(", ");
 
             sql += `, ${checksSql}`;
-        }
-
-        if (table.exclusions.length > 0) {
-            const exclusionsSql = table.exclusions.map(exclusion => {
-                const exclusionName = exclusion.name ? exclusion.name : this.connection.namingStrategy.exclusionConstraintName(table.name, exclusion.expression!);
-                return `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`;
-            }).join(", ");
-
-            sql += `, ${exclusionsSql}`;
         }
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
@@ -1606,50 +1521,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Drops ENUM type from given schemas.
-     */
-    protected async dropEnumTypes(schemaNames: string): Promise<void> {
-        const selectDropsQuery = `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '" CASCADE;' as "query" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
-    }
-
-    /**
-     * Checks if enum with the given name exist in the database.
-     */
-    protected async hasEnumType(table: Table, column: TableColumn): Promise<boolean> {
-        const schema = this.parseTableName(table).schema;
-        const enumName = this.buildEnumName(table, column, false, true);
-        const sql = `SELECT "n"."nspname", "t"."typname" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" = ${schema} AND "t"."typname" = '${enumName}'`;
-        const result = await this.query(sql);
-        return result.length ? true : false;
-    }
-
-    /**
-     * Builds create ENUM type sql.
-     */
-    protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): string {
-        if (!enumName)
-            enumName = this.buildEnumName(table, column);
-        const enumValues = column.enum!.map(value => `'${value}'`).join(", ");
-        return `CREATE TYPE ${enumName} AS ENUM(${enumValues})`;
-    }
-
-    /**
-     * Builds create ENUM type sql.
-     */
-    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): string {
-        if (!enumName)
-            enumName = this.buildEnumName(table, column);
-        return `DROP TYPE ${enumName}`;
-    }
-
-    /**
      * Builds drop table sql.
      */
     protected dropTableSql(tableOrPath: Table|string): string {
@@ -1658,19 +1529,19 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
     /**
      * Builds create index sql.
+     * UNIQUE indices creates as UNIQUE constraints.
      */
     protected createIndexSql(table: Table, index: TableIndex): string {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)} ${index.isSpatial ? "USING GiST " : ""}(${columns}) ${index.where ? "WHERE " + index.where : ""}`;
+        return `CREATE INDEX "${index.name}" ON ${this.escapeTableName(table)} (${columns}) ${index.where ? "WHERE " + index.where : ""}`;
     }
 
     /**
      * Builds drop index sql.
      */
-    protected dropIndexSql(table: Table, indexOrName: TableIndex|string): string {
-        let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        const schema = this.extractSchema(table);
-        return schema ? `DROP INDEX "${schema}"."${indexName}"` : `DROP INDEX "${indexName}"`;
+    protected dropIndexSql(table: Table, indexOrName: TableIndex|TableUnique|string): string {
+        let indexName = (indexOrName instanceof TableIndex || indexOrName instanceof TableUnique) ? indexOrName.name : indexOrName;
+        return `DROP INDEX ${this.escapeTableName(table)}@"${indexName}" CASCADE`;
     }
 
     /**
@@ -1694,7 +1565,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Builds create unique constraint sql.
      */
-    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): string {
+    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique|TableIndex): string {
         const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
         return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
     }
@@ -1720,21 +1591,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): string {
         const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
         return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${checkName}"`;
-    }
-
-    /**
-     * Builds create exclusion constraint sql.
-     */
-    protected createExclusionConstraintSql(table: Table, exclusionConstraint: TableExclusion): string {
-        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${exclusionConstraint.name}" EXCLUDE ${exclusionConstraint.expression}`;
-    }
-
-    /**
-     * Builds drop exclusion constraint sql.
-     */
-    protected dropExclusionConstraintSql(table: Table, exclusionOrName: TableExclusion|string): string {
-        const exclusionName = exclusionOrName instanceof TableExclusion ? exclusionOrName.name : exclusionOrName;
-        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${exclusionName}"`;
     }
 
     /**
@@ -1785,21 +1641,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Builds ENUM type name from given table and column.
-     */
-    protected buildEnumName(table: Table, columnOrName: TableColumn|string, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
-        const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
-        const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
-        const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
-        let enumName = schema && withSchema ? `${schema}.${tableName}_${columnName.toLowerCase()}_enum` : `${tableName}_${columnName.toLowerCase()}_enum`;
-        if (toOld)
-            enumName = enumName + "_old";
-        return enumName.split(".").map(i => {
-            return disableEscape ? i : `"${i}"`;
-        }).join(".");
-    }
-
-    /**
      * Escapes given table path.
      */
     protected escapeTableName(target: Table|string, disableEscape?: boolean): string {
@@ -1834,27 +1675,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true && column.generationStrategy !== "uuid") {
-            if (column.type === "integer" || column.type === "int" || column.type === "int4")
-                c += " SERIAL";
-            if (column.type === "smallint" || column.type === "int2")
-                c += " SMALLSERIAL";
-            if (column.type === "bigint" || column.type === "int8")
-                c += " BIGSERIAL";
-        }
-        if (column.type === "enum") {
-            c += " " + this.buildEnumName(table, column);
-            if (column.isArray)
-                c += " array";
 
-        } else if (!column.isGenerated || column.type === "uuid") {
+        if (column.isGenerated && column.generationStrategy !== "uuid")
+            c += " INT DEFAULT unique_rowid()";
+        if (!column.isGenerated || column.type === "uuid")
             c += " " + this.connection.driver.createFullType(column);
-        }
         if (column.charset)
             c += " CHARACTER SET \"" + column.charset + "\"";
         if (column.collation)
             c += " COLLATE \"" + column.collation + "\"";
-        if (column.isNullable !== true)
+        if (!column.isNullable)
             c += " NOT NULL";
         if (column.default !== undefined && column.default !== null)
             c += " DEFAULT " + column.default;
