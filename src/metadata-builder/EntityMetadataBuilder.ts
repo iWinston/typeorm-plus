@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {IndexMetadata} from "../metadata/IndexMetadata";
@@ -443,9 +444,6 @@ export class EntityMetadataBuilder {
 
             return new RelationCountMetadata({ entityMetadata, args });
         });
-        entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
-            return new IndexMetadata({ entityMetadata, args });
-        });
         entityMetadata.ownListeners = this.metadataArgsStorage.filterListeners(entityMetadata.inheritanceTree).map(args => {
             return new EntityListenerMetadata({ entityMetadata: entityMetadata, args: args });
         });
@@ -457,6 +455,33 @@ export class EntityMetadataBuilder {
         if (this.connection.driver instanceof PostgresDriver) {
             entityMetadata.exclusions = this.metadataArgsStorage.filterExclusions(entityMetadata.inheritanceTree).map(args => {
                 return new ExclusionMetadata({ entityMetadata, args });
+            });
+        }
+
+        // Mysql stores unique indices constraints as unique constrains.
+        if (this.connection.driver instanceof CockroachDriver) {
+            entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
+                .filter(args => !args.unique)
+                .map(args => {
+                    return new IndexMetadata({entityMetadata, args});
+                });
+
+            const uniques = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
+                .filter(args => args.unique)
+                .map(args => {
+                    return new UniqueMetadata({
+                        entityMetadata: entityMetadata,
+                        args: {
+                            target: args.target,
+                            columns: args.columns,
+                        }
+                    });
+                });
+            entityMetadata.uniques.push(...uniques);
+
+        } else {
+            entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
+                return new IndexMetadata({entityMetadata, args});
             });
         }
 
@@ -477,9 +502,10 @@ export class EntityMetadataBuilder {
             entityMetadata.ownIndices.push(...indices);
 
         } else {
-            entityMetadata.uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
+            const uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new UniqueMetadata({ entityMetadata, args });
             });
+            entityMetadata.uniques.push(...uniques);
         }
     }
 

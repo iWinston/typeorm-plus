@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
+import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {PromiseUtils} from "../../../src";
 import {IndexMetadata} from "../../../src/metadata/IndexMetadata";
@@ -74,6 +75,8 @@ describe("schema builder > change index", () => {
 
     it("should ignore index synchronization when `synchronize` set to false", () => PromiseUtils.runInSequence(connections, async connection => {
 
+        // You can not disable synchronization for unique index in CockroachDB, because unique indices are stored as UNIQUE constraints
+
         const queryRunner = connection.createQueryRunner();
         let teacherTable = await queryRunner.getTable("teacher");
         teacherTable!.indices.length.should.be.equal(0);
@@ -82,14 +85,28 @@ describe("schema builder > change index", () => {
         await queryRunner.createIndex(teacherTable!, index);
 
         teacherTable = await queryRunner.getTable("teacher");
-        teacherTable!.indices.length.should.be.equal(1);
-        teacherTable!.indices[0].isUnique!.should.be.true;
+        // CockroachDB stores unique indices as UNIQUE constraints
+        if (connection.driver instanceof CockroachDriver) {
+            teacherTable!.indices.length.should.be.equal(0);
+            teacherTable!.uniques.length.should.be.equal(1);
+            teacherTable!.findColumnByName("name")!.isUnique.should.be.true;
+        } else {
+            teacherTable!.indices.length.should.be.equal(1);
+            teacherTable!.indices[0].isUnique!.should.be.true;
+        }
 
         await connection.synchronize();
 
         teacherTable = await queryRunner.getTable("teacher");
-        teacherTable!.indices.length.should.be.equal(1);
-        teacherTable!.indices[0].isUnique!.should.be.true;
+        // CockroachDB stores unique indices as UNIQUE constraints
+        if (connection.driver instanceof CockroachDriver) {
+            teacherTable!.indices.length.should.be.equal(0);
+            teacherTable!.uniques.length.should.be.equal(0);
+            teacherTable!.findColumnByName("name")!.isUnique.should.be.false;
+        } else {
+            teacherTable!.indices.length.should.be.equal(1);
+            teacherTable!.indices[0].isUnique!.should.be.true;
+        }
 
         await queryRunner.release();
 
