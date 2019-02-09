@@ -17,6 +17,8 @@ feel free to ask us and community.
 
 ### Features
 
+* Injection 2nd parameter(options) of constructor to `ioredis/cluster` is now possible([#3538](https://github.com/typeorm/typeorm/issues/3538))
+
 ## 0.2.12 (2019-01-20)
 
 ### Bug Fixes
