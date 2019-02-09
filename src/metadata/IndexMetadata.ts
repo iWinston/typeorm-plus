@@ -53,6 +53,18 @@ export class IndexMetadata {
     isSparse?: boolean;
 
     /**
+     * Builds the index in the background so that building an index an does not block other database activities.
+     * This option is only supported for mongodb database.
+     */
+    isBackground?: boolean;
+
+    /**
+     * Specifies a time to live, in seconds.
+     * This option is only supported for mongodb database.
+     */
+    expireAfterSeconds?: number;
+
+    /**
      * Target class to which metadata is applied.
      */
     target?: Function|string;
@@ -114,6 +126,8 @@ export class IndexMetadata {
             this.isFulltext = !!options.args.fulltext;
             this.where = options.args.where;
             this.isSparse = options.args.sparse;
+            this.isBackground = options.args.background;
+            this.expireAfterSeconds = options.args.expireAfterSeconds;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
         }
