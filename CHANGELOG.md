@@ -9,6 +9,9 @@ feel free to ask us and community.
 
 ### Bug Fixes
 
+* fixed undefined object id field in case property name is `_id` ([3517](https://github.com/typeorm/typeorm/issues/3517))
+* allow to use mongodb index options in `Index` decorator ([#3592](https://github.com/typeorm/typeorm/pull/3592))
+* fixed entity embeddeds indices in mongodb ([#3585](https://github.com/typeorm/typeorm/pull/3585))
 * fixed json/jsonb column data types comparison ([#3496](https://github.com/typeorm/typeorm/issues/3496))
 * fixed increment/decrement value of embedded entity ([#3182](https://github.com/typeorm/typeorm/issues/3182))
 * fixed missing call `transformer.from()` in case column is NULL ([#3395](https://github.com/typeorm/typeorm/issues/3395))
@@ -17,6 +20,8 @@ feel free to ask us and community.
 * handle embedded documents through multiple levels in mongodb ([#3551](https://github.com/typeorm/typeorm/issues/3551))
 
 ### Features
+
+* Injection 2nd parameter(options) of constructor to `ioredis/cluster` is now possible([#3538](https://github.com/typeorm/typeorm/issues/3538))
 
 ## 0.2.12 (2019-01-20)
 
