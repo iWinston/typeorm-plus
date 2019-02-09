@@ -9,6 +9,8 @@ feel free to ask us and community.
 
 ### Bug Fixes
 
+* allow to use mongodb index options in `Index` decorator ([#3592](https://github.com/typeorm/typeorm/pull/3592))
+* fixed entity embeddeds indices in mongodb ([#3585](https://github.com/typeorm/typeorm/pull/3585))
 * fixed json/jsonb column data types comparison ([#3496](https://github.com/typeorm/typeorm/issues/3496))
 * fixed increment/decrement value of embedded entity ([#3182](https://github.com/typeorm/typeorm/issues/3182))
 * fixed missing call `transformer.from()` in case column is NULL ([#3395](https://github.com/typeorm/typeorm/issues/3395))
