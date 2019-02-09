@@ -9,6 +9,7 @@ feel free to ask us and community.
 
 ### Bug Fixes
 
+* fixed undefined object id field in case property name is `_id` ([3517](https://github.com/typeorm/typeorm/issues/3517))
 * allow to use mongodb index options in `Index` decorator ([#3592](https://github.com/typeorm/typeorm/pull/3592))
 * fixed entity embeddeds indices in mongodb ([#3585](https://github.com/typeorm/typeorm/pull/3585))
 * fixed json/jsonb column data types comparison ([#3496](https://github.com/typeorm/typeorm/issues/3496))
