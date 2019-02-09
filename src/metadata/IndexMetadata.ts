@@ -175,7 +175,8 @@ export class IndexMetadata {
         this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
             const column = this.entityMetadata.columns.find(column => column.propertyPath === key);
             if (column)
-                updatedMap[column.databaseName] = map[key];
+                updatedMap[column.databasePath] = map[key];
+
             return updatedMap;
         }, {} as { [key: string]: number });
         this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
