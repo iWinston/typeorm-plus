@@ -4,6 +4,7 @@ import { Connection } from "../../../../src/connection/Connection";
 import { Post } from "./entity/Post";
 import { expect } from "chai";
 import {PostInformation} from "./entity/PostInformation";
+import {PostCounter} from "./entity/PostCounter";
 
 describe("other issues > entity listeners must work in optional embeddeds as well", () => {
 
@@ -28,6 +29,13 @@ describe("other issues > entity listeners must work in optional embeddeds as wel
         post2.information = new PostInformation();
         await connection.manager.save(post2);
 
+        const post3 = new Post();
+        post3.title = "Third title";
+        post3.text = "About this post";
+        post3.information = new PostInformation();
+        post3.information.counters = new PostCounter();
+        await connection.manager.save(post3);
+
         const loadedPosts = await connection
             .manager
             .createQueryBuilder(Post, "post")
@@ -41,7 +49,12 @@ describe("other issues > entity listeners must work in optional embeddeds as wel
         loadedPosts[0]!.text.should.be.equal("About this post");
 
         expect(loadedPosts[1]).not.to.be.empty;
+        loadedPosts[1]!.title.should.be.equal("Second title");
         loadedPosts[1]!.information!.description!.should.be.equal("default post description");
+
+        expect(loadedPosts[2]).not.to.be.empty;
+        loadedPosts[2]!.title.should.be.equal("Third title");
+        loadedPosts[2]!.information!.counters!.likes!.should.be.equal(0);
 
     })));
 
