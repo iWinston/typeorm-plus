@@ -26,6 +26,11 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
+     * Underlying mongodb library.
+     */
+    mongodb: any;
+
+    /**
      * Mongodb does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
@@ -110,11 +115,6 @@ export class MongoDriver implements Driver {
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
-
-    /**
-     * Underlying mongodb library.
-     */
-    protected mongodb: any;
 
     /**
      * Valid mongo connection options
