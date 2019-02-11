@@ -46,7 +46,7 @@ describe("persistence > partial persist", () => {
         await postRepository.save(newPost);
 
         // load a post
-        const loadedPost = await postRepository.findOne(1, {
+        const loadedPost = await postRepository.findOne(newPost.id, {
             join: {
                 alias: "post",
                 leftJoinAndSelect: {

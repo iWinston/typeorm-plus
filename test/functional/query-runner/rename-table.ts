@@ -49,6 +49,10 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table with all constraints depend to that table and revert rename", () => Promise.all(connections.map(async connection => {
 
+        // CockroachDB does not support renaming constraints and removing PK.
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
@@ -78,6 +82,10 @@ describe("query runner > rename table", () => {
     })));
 
     it("should correctly rename table with custom schema and database and all its dependencies and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // CockroachDB does not support renaming constraints and removing PK.
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
         let table: Table|undefined;

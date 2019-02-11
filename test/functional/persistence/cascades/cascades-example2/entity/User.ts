@@ -1,12 +1,12 @@
+import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Question} from "./Question";
 import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
 
 @Entity()
 export class User {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number;
 
     @ManyToOne(type => Question, {

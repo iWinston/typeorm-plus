@@ -18,17 +18,23 @@ describe("persistence > cascades > example 2", () => {
     it("should insert everything by cascades properly", () => Promise.all(connections.map(async connection => {
 
         const photo = new Photo();
+        photo.id = 1;
+
         const user = new User();
+        user.id = 1;
 
         const answer1 = new Answer();
+        answer1.id = 1;
         answer1.photo = photo;
         answer1.user = user;
 
         const answer2 = new Answer();
+        answer2.id = 2;
         answer2.photo = photo;
         answer2.user = user;
 
         const question = new Question();
+        question.id = 1;
         question.answers = [answer1, answer2];
         user.question = question;
 

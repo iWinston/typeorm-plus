@@ -128,14 +128,14 @@ export class EntityMetadataBuilder {
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
                     if (uniqueConstraint) {
-                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver) {
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof CockroachDriver) {
                             const index = new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
                                 args: {
                                     target: uniqueConstraint.target!,
                                     name: uniqueConstraint.name,
-                                    unique: true,
+                                    unique: !(this.connection.driver instanceof CockroachDriver), // CockroachDB stores unique indices as unique constraints
                                     synchronize: true
                                 }
                             });

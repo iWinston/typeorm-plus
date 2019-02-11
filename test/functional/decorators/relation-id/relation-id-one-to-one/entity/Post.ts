@@ -13,6 +13,9 @@ export class Post {
     id: number;
 
     @Column()
+    code: number;
+
+    @Column()
     title: string;
     
     @OneToOne(type => Category)

@@ -23,7 +23,7 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
         const loadedPost = await connection
             .manager
             .createQueryBuilder(Post, "post")
-            .where("post.id = :id", { id: 1 })
+            .where("post.id = :id", { id: post.id })
             .getOne();
 
         expect(loadedPost).not.to.be.empty;
