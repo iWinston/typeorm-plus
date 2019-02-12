@@ -11,11 +11,11 @@
   },
   "main": "./index.js",
   "browser": {
-      "./browser/driver/postgres/PostgresDriver.js": false,
-      "./browser/driver/oracle/OracleDriver.ts": false,
-      "./browser/driver/mysql/MysqlDriver.js": false,
-      "./browser/driver/sqlserver/SqlServerDriver.ts": false,
-      "./browser/driver/mongodb/MongoDriver.js": false,
+      "./browser/driver/postgres/PostgresDriver.js": "./browser/driver/DummyDriver.js",
+      "./browser/driver/oracle/OracleDriver.ts": "./browser/driver/DummyDriver.js",
+      "./browser/driver/mysql/MysqlDriver.js": "./browser/driver/DummyDriver.js",
+      "./browser/driver/sqlserver/SqlServerDriver.ts": "./browser/driver/DummyDriver.js",
+      "./browser/driver/mongodb/MongoDriver.js": "./browser/driver/DummyDriver.js",
       "./index.js": "./browser/index.js"
   },
   "repository": {
