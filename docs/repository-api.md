@@ -183,7 +183,7 @@ const timbers = await repository.find({ firstName: "Timber" });
 
 * `findAndCount` - Finds entities that match given find options.
 Also counts all entities that match given conditions,
-but ignores pagination settings (`from` and `take` options).
+but ignores pagination settings (`skip` and `take` options).
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timber" });
