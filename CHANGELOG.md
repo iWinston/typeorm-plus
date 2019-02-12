@@ -5,6 +5,11 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
+## Unreleased
+
+* added browser entry point to `package.json` ([3583](https://github.com/typeorm/typeorm/issues/3583))
+* replaced backend-only drivers by dummy driver in browser builds
+
 ## 0.2.13 (2019-02-10)
 
 ### Bug Fixes
