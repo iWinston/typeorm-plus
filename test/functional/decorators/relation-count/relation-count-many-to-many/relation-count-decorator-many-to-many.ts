@@ -251,6 +251,8 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
             .addOrderBy("post.id, categories.id")
             .getMany();
 
+        // console.log(loadedPosts);
+
         expect(loadedPosts![0].categoryCount).to.be.equal(3);
         expect(loadedPosts![0].categories[0].postCount).to.be.equal(2);
         expect(loadedPosts![0].categories[1].postCount).to.be.equal(1);

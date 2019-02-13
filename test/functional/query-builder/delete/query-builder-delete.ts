@@ -17,6 +17,7 @@ describe("query builder > delete", () => {
     it("should perform deletion correctly", () => Promise.all(connections.map(async connection => {
 
         const user1 = new User();
+        user1.id = 1;
         user1.name = "Alex Messer";
         await connection.manager.save(user1);
 
@@ -30,6 +31,7 @@ describe("query builder > delete", () => {
         expect(loadedUser1).to.not.exist;
 
         const user2 = new User();
+        user1.id = 2;
         user2.name = "Alex Messer";
         await connection.manager.save(user2);
 
@@ -47,8 +49,9 @@ describe("query builder > delete", () => {
     it("should be able to delete entities by embed criteria", () => Promise.all(connections.map(async connection => {
 
         // save few photos
-        await connection.manager.save(Photo, { url: "1.jpg" });
+        await connection.manager.save(Photo, { id: 1, url: "1.jpg" });
         await connection.manager.save(Photo, {
+            id: 2,
             url: "2.jpg",
             counters: {
                 likes: 2,
@@ -56,7 +59,7 @@ describe("query builder > delete", () => {
                 comments: 1,
             }
         });
-        await connection.manager.save(Photo, { url: "3.jpg" });
+        await connection.manager.save(Photo, { id: 3, url: "3.jpg" });
 
         // make sure photo with likes = 2 exist
         const loadedPhoto1 = await connection.getRepository(Photo).findOne({ counters: { likes: 2 } });

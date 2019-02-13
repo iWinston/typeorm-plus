@@ -12,14 +12,13 @@ describe("embedded > embedded-many-to-many-case1", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["cockroachdb"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     describe("owner side", () => {
 
-        it.only("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation", () => Promise.all(connections.map(async connection => {
+        it("should insert, load, update and remove entities with embeddeds when embedded entity having ManyToMany relation", () => Promise.all(connections.map(async connection => {
 
             const user1 = new User();
             user1.id = 1;

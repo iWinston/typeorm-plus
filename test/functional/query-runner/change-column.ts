@@ -81,6 +81,9 @@ describe("query runner > change column", () => {
 
     it("should correctly change column 'isGenerated' property and revert change", () => Promise.all(connections.map(async connection => {
 
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const queryRunner = connection.createQueryRunner();
         let table = await queryRunner.getTable("post");
         let idColumn = table!.findColumnByName("id")!;
@@ -101,34 +104,31 @@ describe("query runner > change column", () => {
         table!.findColumnByName("id")!.isGenerated.should.be.false;
         expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
 
-        // CockroachDB does not allow changing primary key
-        if (!(connection.driver instanceof CockroachDriver)) {
-            table = await queryRunner.getTable("post");
-            idColumn = table!.findColumnByName("id")!;
-            changedIdColumn = idColumn.clone();
-            changedIdColumn.isPrimary = false;
-            await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
+        table = await queryRunner.getTable("post");
+        idColumn = table!.findColumnByName("id")!;
+        changedIdColumn = idColumn.clone();
+        changedIdColumn.isPrimary = false;
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
 
-            // check case when both primary and generated properties set to true
-            table = await queryRunner.getTable("post");
-            idColumn = table!.findColumnByName("id")!;
-            changedIdColumn = idColumn.clone();
-            changedIdColumn.isPrimary = true;
-            changedIdColumn.isGenerated = true;
-            changedIdColumn.generationStrategy = "increment";
-            await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
+        // check case when both primary and generated properties set to true
+        table = await queryRunner.getTable("post");
+        idColumn = table!.findColumnByName("id")!;
+        changedIdColumn = idColumn.clone();
+        changedIdColumn.isPrimary = true;
+        changedIdColumn.isGenerated = true;
+        changedIdColumn.generationStrategy = "increment";
+        await queryRunner.changeColumn(table!, idColumn, changedIdColumn);
 
-            table = await queryRunner.getTable("post");
-            table!.findColumnByName("id")!.isGenerated.should.be.true;
-            table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.true;
+        table!.findColumnByName("id")!.generationStrategy!.should.be.equal("increment");
 
-            await queryRunner.executeMemoryDownSql();
-            queryRunner.clearSqlMemory();
+        await queryRunner.executeMemoryDownSql();
+        queryRunner.clearSqlMemory();
 
-            table = await queryRunner.getTable("post");
-            table!.findColumnByName("id")!.isGenerated.should.be.false;
-            expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
-        }
+        table = await queryRunner.getTable("post");
+        table!.findColumnByName("id")!.isGenerated.should.be.false;
+        expect(table!.findColumnByName("id")!.generationStrategy).to.be.undefined;
 
         await queryRunner.release();
 

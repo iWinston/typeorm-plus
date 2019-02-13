@@ -314,6 +314,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
+        table.columns
+            .filter(column => column.isGenerated && column.generationStrategy === "increment")
+            .forEach(column => {
+                upQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, column)}`);
+                downQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, column)}`);
+            });
+
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
 
@@ -368,6 +375,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         upQueries.push(this.dropTableSql(table));
         downQueries.push(this.createTableSql(table, createForeignKeys));
+
+        table.columns
+            .filter(column => column.isGenerated && column.generationStrategy === "increment")
+            .forEach(column => {
+                upQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, column)}`);
+                downQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, column)}`);
+            });
 
         await this.executeQueries(upQueries, downQueries);
     }
@@ -451,6 +465,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const clonedTable = table.clone();
         const upQueries: string[] = [];
         const downQueries: string[] = [];
+
+        if (column.generationStrategy === "increment") {
+            throw new Error(`Adding sequential generated columns into existing table is not supported`);
+        }
 
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
@@ -724,8 +742,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
             if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
                 if (newColumn.isGenerated) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT unique_rowid()`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                    if (newColumn.generationStrategy === "increment") {
+                        throw new Error(`Adding sequential generated columns into existing table is not supported`);
+
+                    } else if (newColumn.generationStrategy === "rowid") {
+                        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT unique_rowid()`);
+                        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                    }
 
                 } else {
                     upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
@@ -822,6 +845,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
+
+        if (column.generationStrategy === "increment") {
+            upQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, column)}`);
+            downQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, column)}`);
+        }
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -1084,7 +1112,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         // CockroachDB stores unique indices and UNIQUE constraints
         if (index.isUnique) {
             const unique = new TableUnique({
-                name: this.connection.namingStrategy.uniqueConstraintName(table.name, index.columnNames),
+                name: index.name,
                 columnNames: index.columnNames
             });
             const up = this.createUniqueConstraintSql(table, unique);
@@ -1158,11 +1186,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.startTransaction();
         try {
-            // ignore spatial_ref_sys; it's a special table supporting PostGIS
-            // TODO generalize this as this.driver.ignoreTables
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND tablename NOT IN ('spatial_ref_sys')`;
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || table_schema || '"."' || table_name || '" CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
+
+            const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE "' || sequence_schema || '"."' || sequence_name || '";' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`;
+            const sequenceDropQueries: ObjectLiteral[] = await this.query(selectSequenceDropsQuery);
+            await Promise.all(sequenceDropQueries.map(q => this.query(q["query"])));
 
             await this.commitTransaction();
 
@@ -1334,6 +1364,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
                     if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         if (dbColumn["column_default"] === "unique_rowid()") {
+                            tableColumn.isGenerated = true;
+                            tableColumn.generationStrategy = "rowid";
+
+                        } else if (dbColumn["column_default"].indexOf("nextval") !== -1) {
                             tableColumn.isGenerated = true;
                             tableColumn.generationStrategy = "increment";
 
@@ -1624,24 +1658,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Builds sequence name from given table and column.
      */
-    protected buildSequenceName(table: Table, columnOrName: TableColumn|string, currentSchema?: string, disableEscape?: true, skipSchema?: boolean): string {
+    protected buildSequenceName(table: Table, columnOrName: TableColumn|string, disableEscape?: true): string {
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
-        let schema: string|undefined = undefined;
-        let tableName: string|undefined = undefined;
-
-        if (table.name.indexOf(".") === -1) {
-            tableName = table.name;
-        } else {
-            schema = table.name.split(".")[0];
-            tableName = table.name.split(".")[1];
-        }
-
-        if (schema && schema !== currentSchema && !skipSchema) {
-            return disableEscape ? `${schema}.${tableName}_${columnName}_seq` : `"${schema}"."${tableName}_${columnName}_seq"`;
-
-        } else {
-            return disableEscape ? `${tableName}_${columnName}_seq` : `"${tableName}_${columnName}_seq"`;
-        }
+        return disableEscape ? `${table.name}_${columnName}_seq` : `"${table.name}_${columnName}_seq"`;
     }
 
     /**
@@ -1680,9 +1699,18 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
 
-        if (column.isGenerated && column.generationStrategy !== "uuid")
-            c += " INT DEFAULT unique_rowid()";
-        if (!column.isGenerated || column.type === "uuid")
+        if (column.isGenerated) {
+            if (column.generationStrategy === "increment") {
+                c += ` INT DEFAULT nextval('${this.buildSequenceName(table, column)}')`;
+
+            } else if (column.generationStrategy === "rowid") {
+                c += " INT DEFAULT unique_rowid()";
+
+            } else if (column.generationStrategy === "uuid") {
+                c += " UUID DEFAULT gen_random_uuid()";
+            }
+        }
+        if (!column.isGenerated)
             c += " " + this.connection.driver.createFullType(column);
         if (column.charset)
             c += " CHARACTER SET \"" + column.charset + "\"";
@@ -1690,10 +1718,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             c += " COLLATE \"" + column.collation + "\"";
         if (!column.isNullable)
             c += " NOT NULL";
-        if (column.default !== undefined && column.default !== null)
+        if (!column.isGenerated && column.default !== undefined && column.default !== null)
             c += " DEFAULT " + column.default;
-        if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
-            c += " DEFAULT gen_random_uuid()";
 
         return c;
     }

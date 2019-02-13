@@ -171,15 +171,15 @@ export class CockroachDriver implements Driver {
         createDateDefault: "now()",
         updateDate: "timestamptz",
         updateDateDefault: "now()",
-        version: "int",
-        treeLevel: "int",
-        migrationId: "int",
+        version: Number,
+        treeLevel: Number,
+        migrationId: Number,
         migrationName: "varchar",
         migrationTimestamp: "int8",
-        cacheId: "int",
+        cacheId: Number,
         cacheIdentifier: "varchar",
         cacheTime: "int8",
-        cacheDuration: "int",
+        cacheDuration: Number,
         cacheQuery: "string",
         cacheResult: "string",
     };
@@ -322,7 +322,7 @@ export class CockroachDriver implements Driver {
             return value;
 
         // unique_rowid() generates bigint value and should not be converted to number
-        if (columnMetadata.type === Number && !columnMetadata.isArray && !columnMetadata.isGenerated) {
+        if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
             value = parseInt(value);
 
         } else if (columnMetadata.type === Boolean) {
@@ -411,7 +411,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number, isArray?: boolean, isGenerated?: boolean, generationStrategy?: "increment"|"uuid" }): string {
+    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number, isArray?: boolean, isGenerated?: boolean, generationStrategy?: "increment"|"uuid"|"rowid" }): string {
         if (column.type === Number || column.type === "integer" || column.type === "int4") {
             return "int";
 
@@ -568,7 +568,7 @@ export class CockroachDriver implements Driver {
         return Object.keys(insertResult).reduce((map, key) => {
             const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
             }
             return map;
         }, {} as ObjectLiteral);

@@ -473,6 +473,7 @@ export class EntityMetadataBuilder {
                         entityMetadata: entityMetadata,
                         args: {
                             target: args.target,
+                            name: args.name,
                             columns: args.columns,
                         }
                     });

@@ -1,5 +1,5 @@
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
+import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
 import {Photo} from "./Photo";
 import {User} from "./User";
@@ -8,7 +8,7 @@ import {Question} from "./Question";
 @Entity()
 export class Answer {
 
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number;
 
     @ManyToOne(type => Question, question => question.answers, {

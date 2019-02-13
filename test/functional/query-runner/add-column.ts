@@ -36,7 +36,7 @@ describe("query runner > add column", () => {
             column1.isPrimary = true;
 
         // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof CockroachDriver)) {
             column1.isGenerated = true;
             column1.generationStrategy = "increment";
         }
@@ -62,7 +62,7 @@ describe("query runner > add column", () => {
             column1!.isPrimary.should.be.true;
 
         // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver)) {
+        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof CockroachDriver)) {
             column1!.isGenerated.should.be.true;
             column1!.generationStrategy!.should.be.equal("increment");
         }

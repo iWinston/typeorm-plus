@@ -36,6 +36,7 @@ describe("entity-model", () => {
         Category.useConnection(connection);
 
         const category = Category.create();
+        category.id = 1;
         category.name = "Persistence";
         await category.save();
 

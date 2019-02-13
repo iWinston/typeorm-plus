@@ -17,14 +17,11 @@ describe("persistence > cascades > example 1", () => {
     it("should insert everything by cascades properly", () => Promise.all(connections.map(async connection => {
 
         const photo = new Photo();
-        photo.id = 1;
 
         const profile = new Profile();
-        profile.id = 1;
         profile.photo = photo;
 
         const user = new User();
-        user.id = 1;
         user.profile = profile;
 
         await connection.manager.save(user);
