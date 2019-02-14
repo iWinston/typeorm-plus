@@ -7,7 +7,7 @@ import {
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
     CollectionOptions,
@@ -296,7 +296,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    bulkWrite<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    bulkWrite<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.bulkWrite(metadata.tableName, operations, options);
     }

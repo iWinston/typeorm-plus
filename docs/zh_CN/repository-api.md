@@ -170,7 +170,7 @@ const timbers = await repository.find({ firstName: "Timber" });
 ```
 
 - `findAndCount` - 查找指定条件的实体。还会计算与给定条件匹配的所有实体数量，
-  但是忽略分页设置 (`from` 和 `take` 选项).
+  但是忽略分页设置 (`skip` 和 `take` 选项)。
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({ firstName: "Timber" });

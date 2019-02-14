@@ -5,7 +5,13 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
-## Unreleased
+## 0.2.14 (unreleased)
+
+### Bug fixes
+
+* fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
+
+### Features
 
 * added browser entry point to `package.json` ([3583](https://github.com/typeorm/typeorm/issues/3583))
 * replaced backend-only drivers by dummy driver in browser builds

@@ -8,7 +8,7 @@ import {
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
     CollectionOptions,
@@ -133,7 +133,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    bulkWrite(operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    bulkWrite(operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         return this.manager.bulkWrite(this.metadata.target, operations, options);
     }
 
