@@ -13,6 +13,9 @@ feel free to ask us and community.
 
 ### Features
 
+* added browser entry point to `package.json` ([3583](https://github.com/typeorm/typeorm/issues/3583))
+* replaced backend-only drivers by dummy driver in browser builds
+
 ## 0.2.13 (2019-02-10)
 
 ### Bug Fixes
