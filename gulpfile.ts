@@ -81,6 +81,16 @@ export class Gulpfile {
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
+    /**
+     * Adds dummy classes for disabled drivers (replacement is done via browser entry point in package.json)
+     */
+    @Task()
+    browserCopyDisabledDriversDummy() {
+        return gulp.src("./src/platform/BrowserDisabledDriversDummy.template")
+            .pipe(rename("BrowserDisabledDriversDummy.ts"))
+            .pipe(gulp.dest("./build/browser/src/platform"));
+    }
+
     @MergedTask()
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
@@ -217,7 +227,7 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools"],
+            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
             [
