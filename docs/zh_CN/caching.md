@@ -137,6 +137,40 @@ await connection.queryResultCache.remove(["users_admins"]);
     username: "test",
     cache: {
         type: "ioredis/cluster",
+        options: {
+            startupNodes: [
+                {
+                    host: 'localhost',
+                    port: 7000,
+                },
+                {
+                    host: 'localhost',
+                    port: 7001,
+                },
+                {
+                    host: 'localhost',
+                    port: 7002,
+                }
+            ],
+            options: {
+                scaleReads: 'all',
+                clusterRetryStrategy: function (times) { return null },
+                redisOptions: {
+                    maxRetriesPerRequest: 1
+                }
+            }
+        }
+    }
+}
+```
+
+请注意，你仍然可以使用选项作为IORedis的集群构造函数的第一个参数。
+
+``` typescript
+{
+    ...
+    cache: {
+        type: "ioredis/cluster",
         options: [
             {
                 host: 'localhost',
@@ -150,10 +184,10 @@ await connection.queryResultCache.remove(["users_admins"]);
                 host: 'localhost',
                 port: 7002,
             }
-        ],
-    }
+        ]
+    },
+    ...
 }
 ```
-只需在一个数组中指定集群中的所有节点及其主机和端口。
 
 你可以使用`typeorm cache：clear`来清除存储在缓存中的所有内容。
