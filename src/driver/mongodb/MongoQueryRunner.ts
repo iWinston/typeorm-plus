@@ -10,7 +10,7 @@ import {
     Code,
     Collection,
     CollectionAggregationOptions,
-    CollectionBluckWriteOptions,
+    CollectionBulkWriteOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
     CollectionOptions,
@@ -128,7 +128,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBluckWriteOptions): Promise<BulkWriteOpResultObject> {
+    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
         return await this.getCollection(collectionName).bulkWrite(operations, options);
     }
 
