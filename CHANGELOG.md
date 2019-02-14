@@ -23,7 +23,6 @@ feel free to ask us and community.
 * fixed json/jsonb column data types comparison ([#3496](https://github.com/typeorm/typeorm/issues/3496))
 * fixed increment/decrement value of embedded entity ([#3182](https://github.com/typeorm/typeorm/issues/3182))
 * fixed missing call `transformer.from()` in case column is NULL ([#3395](https://github.com/typeorm/typeorm/issues/3395))
-* fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
 * handle embedded documents through multiple levels in mongodb ([#3551](https://github.com/typeorm/typeorm/issues/3551))
 * fixed hanging connections in `mssql` driver ([#3327](https://github.com/typeorm/typeorm/pull/3327))
