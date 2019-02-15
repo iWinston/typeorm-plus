@@ -39,5 +39,5 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
      * Enables the usage of the localforage library to save & load the database asynchronously from the
      * indexedDB instead of using the synchron local storage methods in a browser environment.
      */
-    readonly useLocalforage?: boolean;
+    readonly useLocalForage?: boolean;
 }
