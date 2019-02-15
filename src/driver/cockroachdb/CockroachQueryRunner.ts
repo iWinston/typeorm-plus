@@ -362,6 +362,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
+        // foreign keys must be dropped before indices, because fk's rely on indices
+        if (dropForeignKeys)
+            table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
 
         if (dropIndices) {
             table.indices.forEach(index => {
@@ -369,9 +372,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 downQueries.push(this.createIndexSql(table, index));
             });
         }
-
-        if (dropForeignKeys)
-            table.foreignKeys.forEach(foreignKey => upQueries.push(this.dropForeignKeySql(table, foreignKey)));
 
         upQueries.push(this.dropTableSql(table));
         downQueries.push(this.createTableSql(table, createForeignKeys));
