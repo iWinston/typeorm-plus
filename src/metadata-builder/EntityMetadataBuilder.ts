@@ -158,11 +158,10 @@ export class EntityMetadataBuilder {
                             columns: foreignKey.columns,
                             args: {
                                 target: relation.entityMetadata.target!,
-                                name: this.connection.namingStrategy.indexName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
                                 synchronize: true
                             }
                         });
-
+                        index.build(this.connection.namingStrategy);
                         entityMetadata.ownIndices.push(index);
                     }
                 });

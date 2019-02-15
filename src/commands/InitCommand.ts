@@ -445,6 +445,17 @@ services:
       POSTGRES_DB: "test"
 
 `;
+            case "cockroachdb":
+                return `version: '3'
+services:
+
+  cockroachdb:
+    image: "cockroachdb/cockroach:v2.1.4"
+    command: start --insecure
+    ports:
+      - "26257:26257"
+
+`;
             case "sqlite":
                 return `version: '3'
 services:
