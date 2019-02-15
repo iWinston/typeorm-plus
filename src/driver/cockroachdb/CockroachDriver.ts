@@ -108,7 +108,6 @@ export class CockroachDriver implements Driver {
         "smallint",
         "bigint",
         "interval",
-        // "serial",
         "string",
         "character varying",
         "character",

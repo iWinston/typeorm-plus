@@ -3,7 +3,7 @@
 * [What is `ConnectionOptions`](#what-is-connectionoptions)
 * [Common connection options](#common-connection-options)
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
-* [`postgres` connection options](#postgres-connection-options)
+* [`postgres` / `cockroachdb` connection options](#postgres-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
 * [`react-native` connection options](#react-native-connection-options)
@@ -22,7 +22,7 @@ Connection options is a connection configuration you pass to `createConnection`
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "mariadb", "sqlite", "cordova", "nativescript",
+ Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "cordova", "nativescript",
  "oracle", "mssql", "mongodb", "sqljs", "react-native".
  This option is **required**.
 
@@ -160,7 +160,7 @@ of SQL injection attacks. (Default: `false`)
 * `ssl` -  object with ssl parameters or a string containing the name of ssl profile. 
 See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
-## `postgres` connection options
+## `postgres` / `cockroachdb` connection options
 
 * `url` - Connection url where perform connection to. Please note that other connection options will override parameters set from url.
 
