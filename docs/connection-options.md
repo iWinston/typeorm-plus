@@ -465,7 +465,7 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `location`: The file location to load and save the database to.
 
-* `useLocalforage`: Enables the usage of the localforage library (https://github.com/localForage/localForage) to save & load the database asynchronously from the indexedDB instead of using the synchron local storage methods in a browser environment. The localforage node module needs to be added to your project and the localforage.js should be imported in your page.
+* `useLocalForage`: Enables the usage of the localforage library (https://github.com/localForage/localForage) to save & load the database asynchronously from the indexedDB instead of using the synchron local storage methods in a browser environment. The localforage node module needs to be added to your project and the localforage.js should be imported in your page.
 
 ## `expo` connection options
 
