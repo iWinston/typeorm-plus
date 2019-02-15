@@ -1,4 +1,3 @@
-
 import "reflect-metadata";
 import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";

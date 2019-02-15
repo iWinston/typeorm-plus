@@ -128,14 +128,14 @@ export class EntityMetadataBuilder {
                         entityMetadata.foreignKeys.push(foreignKey);
                     }
                     if (uniqueConstraint) {
-                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof CockroachDriver) {
+                        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof SqlServerDriver) {
                             const index = new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
                                 args: {
                                     target: uniqueConstraint.target!,
                                     name: uniqueConstraint.name,
-                                    unique: !(this.connection.driver instanceof CockroachDriver), // CockroachDB stores unique indices as unique constraints
+                                    unique: true,
                                     synchronize: true
                                 }
                             });
@@ -150,6 +150,20 @@ export class EntityMetadataBuilder {
                         } else {
                             entityMetadata.uniques.push(uniqueConstraint);
                         }
+                    }
+
+                    if (foreignKey && this.connection.driver instanceof CockroachDriver) {
+                        const index = new IndexMetadata({
+                            entityMetadata: relation.entityMetadata,
+                            columns: foreignKey.columns,
+                            args: {
+                                target: relation.entityMetadata.target!,
+                                name: this.connection.namingStrategy.indexName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                                synchronize: true
+                            }
+                        });
+
+                        entityMetadata.ownIndices.push(index);
                     }
                 });
 
@@ -458,7 +472,6 @@ export class EntityMetadataBuilder {
             });
         }
 
-        // Mysql stores unique indices constraints as unique constrains.
         if (this.connection.driver instanceof CockroachDriver) {
             entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree)
                 .filter(args => !args.unique)

@@ -7,6 +7,7 @@ import {IndexMetadata} from "../../../src/metadata/IndexMetadata";
 import {Teacher} from "./entity/Teacher";
 import {Student} from "./entity/Student";
 import {TableIndex} from "../../../src/schema-builder/table/TableIndex";
+import {expect} from "chai";
 
 describe("schema builder > change index", () => {
 
@@ -57,20 +58,25 @@ describe("schema builder > change index", () => {
         const studentTable = await queryRunner.getTable("student");
         await queryRunner.release();
 
-        studentTable!.indices[0].name!.should.be.equal("changed_index");
+        const index = studentTable!.indices.find(i => i.name === "changed_index");
+        expect(index).not.be.undefined;
     }));
 
     it("should correctly drop removed index", () => PromiseUtils.runInSequence(connections, async connection => {
         const studentMetadata = connection.getMetadata(Student);
-        studentMetadata.indices = [];
+        studentMetadata.indices.splice(0, 1);
 
         await connection.synchronize();
 
         const queryRunner = connection.createQueryRunner();
         const studentTable = await queryRunner.getTable("student");
         await queryRunner.release();
-
-        studentTable!.indices.length.should.be.equal(0);
+        // CockroachDB also stores indices for relation columns
+        if (connection.driver instanceof CockroachDriver) {
+            studentTable!.indices.length.should.be.equal(2);
+        } else {
+            studentTable!.indices.length.should.be.equal(0);
+        }
     }));
 
     it("should ignore index synchronization when `synchronize` set to false", () => PromiseUtils.runInSequence(connections, async connection => {
