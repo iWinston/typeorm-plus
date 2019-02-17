@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils";
 import { User } from "./entity/User";
 
-describe.only("github issues > #3654 Should be able compare buffer type", () => {
+describe("github issues > #3654 Should be able compare buffer type", () => {
     let connections: Connection[];
     before(
         async () =>
