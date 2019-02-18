@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src";
 
-@Entity()
+@Entity({ name: "Session" })
 export class Session {
 
     @PrimaryGeneratedColumn()
@@ -11,7 +11,7 @@ export class Session {
         precision: 3,
         default: () => "CURRENT_TIMESTAMP(3)",
         onUpdate: "CURRENT_TIMESTAMP(3)",
-      })
-    title: Date;
+    })
+    ts: Date;
 
 }
