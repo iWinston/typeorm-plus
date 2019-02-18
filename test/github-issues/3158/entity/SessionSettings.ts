@@ -1,7 +1,6 @@
 import { Entity, OneToOne, JoinColumn } from "../../../../src";
 import { Session } from "./Session";
 
-
 @Entity({
     name: "SessionSettings"
 })

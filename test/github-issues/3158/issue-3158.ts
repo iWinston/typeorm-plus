@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Connection } from "../../../src/connection/Connection";
 import { expect } from "chai";
-it.only("github issues > #3158 Cannot run sync a second time", async () => {
+it("github issues > #3158 Cannot run sync a second time", async () => {
     let connections: Connection[];
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],

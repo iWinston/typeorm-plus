@@ -243,10 +243,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         if (indexMetadata.isUnique !== tableIndex.isUnique)
                             return true;
 
-                        if (indexMetadata.isSpatial !== tableIndex.isSpatial)
+                        if (indexMetadata.isSpatial !== !!tableIndex.isSpatial)
                             return true;
 
-                        if (indexMetadata.isFulltext !== tableIndex.isFulltext)
+                        if (indexMetadata.isFulltext !== !!tableIndex.isFulltext)
                             return true;
 
                         if (indexMetadata.columns.length !== tableIndex.columnNames.length)
