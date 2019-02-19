@@ -376,6 +376,8 @@
 
 - `location`: 要加载和保存数据库的文件位置。
 
+- `useLocalForage`: 允许使用localforage库(https://github.com/localForage/localForage)从indexedDB异步保存和加载数据库，而不是在浏览器环境中使用synchron本地存储方法。 需要将localforage模块添加到项目中，并且应在页面中导入localforage.js。
+
 ## `expo`
 
 - `database` - 数据库名， 例如 "mydb".
