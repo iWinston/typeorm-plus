@@ -228,7 +228,7 @@ const userMetadata = connection.getMetadata(User);
 
 * `getRepository` - Gets `Repository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about [Repositories](working-with-entity-manager.md).
+Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const repository = connection.getRepository(User);
@@ -238,7 +238,7 @@ const users = await repository.findOne(1);
 
 * `getTreeRepository` - Gets `TreeRepository` of the given entity.
 You can also specify a table name and if repository for given table is found it will be returned.
-Learn more about [Repositories](working-with-entity-manager.md).
+Learn more about [Repositories](working-with-repository.md).
 
 ```typescript
 const repository = connection.getTreeRepository(Category);
@@ -259,7 +259,7 @@ const category2 = await categoryCursor.next();
 ```
 
 * `getCustomRepository` - Gets customly defined repository.
-Learn more about [custom repositories](working-with-entity-manager.md).
+Learn more about [custom repositories](custom-repository.md).
 
 ```typescript
 const userRepository = connection.getCustomRepository(UserRepository);

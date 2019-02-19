@@ -266,6 +266,18 @@ SELECT ... FROM users user WHERE user.name = 'Timber'
 
 注意：不要在查询构建器中为不同的值使用相同的参数名称。如果多次设置则后值将会把前面的覆盖。
 
+还可以提供一组值，并使用特殊的扩展语法将它们转换为SQL语句中的值列表：
+
+``` typescript
+.where("user.name IN (:...names)", { names: [ "Timber", "Cristal", "Lina" ] })
+```
+
+该语句将生成：
+
+``` sql
+WHERE user.name IN ('Timber', 'Cristal', 'Lina')
+```
+
 ## 添加`WHERE`表达式
 
 添加 `WHERE` 表达式就像：
