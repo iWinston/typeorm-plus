@@ -9,6 +9,7 @@ it("github issues > #3158 Cannot run sync a second time", async () => {
             schemaCreate: true,
             dropSchema: true,
             enabledDrivers: ["mysql", "mariadb", "oracle", "mssql", "sqljs", "sqlite"],
+            // todo(AlexMesser): check why tests are failing under postgres driver
         });
         await reloadTestingDatabases(connections);
         await Promise.all(connections.map(async connection => {
