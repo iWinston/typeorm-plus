@@ -338,6 +338,7 @@ export class Photo {
     description: string;
     filename: string;
     views: number;
+    isPublished: boolean;
 }
 ```
 
