@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Bug fixes
 
 * fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
+* fixes returning invalid delete result
 
 ### Features
 
