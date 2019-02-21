@@ -350,7 +350,7 @@ Using typescript enums:
 ```typescript
 export enum UserRole {
     ADMIN = "admin",
-    EDITOR = "editor"
+    EDITOR = "editor",
     GHOST = "ghost"
 }
 
