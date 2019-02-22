@@ -349,6 +349,9 @@ export class CockroachDriver implements Driver {
 
         }
 
+        if (columnMetadata.transformer)
+            value = columnMetadata.transformer.from(value);
+
         return value;
     }
 
