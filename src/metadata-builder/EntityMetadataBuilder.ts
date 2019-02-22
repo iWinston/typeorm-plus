@@ -146,9 +146,21 @@ export class EntityMetadataBuilder {
                                 }).join(" AND ");
                             }
 
-                            entityMetadata.indices.push(index);
+                            if (relation.embeddedMetadata) {
+                                relation.embeddedMetadata.indices.push(index);
+                            } else {
+                                relation.entityMetadata.ownIndices.push(index);
+                            }
+                            this.computeEntityMetadataStep2(entityMetadata);
+
                         } else {
-                            entityMetadata.uniques.push(uniqueConstraint);
+                            // todo: fix missing uniques in embedded metadata
+                            // if (relation.embeddedMetadata) {
+                            //     relation.embeddedMetadata.uniques.push(index);
+                            // } else {
+                            relation.entityMetadata.uniques.push(uniqueConstraint); // todo: ownUniques is missing
+                            // }
+                            this.computeEntityMetadataStep2(entityMetadata);
                         }
                     }
 
@@ -161,8 +173,12 @@ export class EntityMetadataBuilder {
                                 synchronize: true
                             }
                         });
-                        index.build(this.connection.namingStrategy);
-                        entityMetadata.ownIndices.push(index);
+                        if (relation.embeddedMetadata) {
+                            relation.embeddedMetadata.indices.push(index);
+                        } else {
+                            relation.entityMetadata.ownIndices.push(index);
+                        }
+                        this.computeEntityMetadataStep2(entityMetadata);
                     }
                 });
 

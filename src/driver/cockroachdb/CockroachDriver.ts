@@ -318,7 +318,7 @@ export class CockroachDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return value;
+            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
         if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
@@ -348,9 +348,6 @@ export class CockroachDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value);
 
         }
-
-        if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
 
         return value;
     }
