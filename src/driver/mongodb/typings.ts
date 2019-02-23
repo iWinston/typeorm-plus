@@ -73,7 +73,7 @@ export declare class MongoClient extends EventEmitter {
 
     /**
      * Close the db and its underlying connections.
-     * @param callback The callback result.
+     * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
      */
     close(callback: MongoCallback<void>): void;
@@ -88,22 +88,32 @@ export declare class MongoClient extends EventEmitter {
     /**
      * Close the db and its underlying connections.
      * @param force Force close, emitting no events.
-     * @param callback The callback result.
+     * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
      */
     close(force: boolean, callback: MongoCallback<void>): void;
 
     /**
+     * Create a new Db instance sharing the current socket connections. Be aware that the new db instances are
+     * related in a parent-child relationship to the original instance so that events are correctly emitted on child
+     * db instances. Child db instances are cached so performing db('db1') twice will return the same instance.
+     * You can control these behaviors with the options noListener and returnNonCachedInstance.
+     * @param dbName The name of the database we want to use. If not provided, use database name from connection string.
+     * @param options Optional settings.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#db
      */
     db(dbName?: string, options?: MongoClientCommonOption): Db;
 
     /**
+     * Check if MongoClient is connected.
+     * @param options Optional settings.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#isConnected
      */
     isConnected(options?: MongoClientCommonOption): boolean;
 
     /**
+     * Logout user from server, fire off on all connections and remove all auth info.
+     * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#logout
      */
     logout(callback: MongoCallback<any>): void;
@@ -111,22 +121,34 @@ export declare class MongoClient extends EventEmitter {
     logout(options: { dbName?: string }, callback: MongoCallback<any>): void;
 
     /**
+     * Starts a new session on the server.
+     * @param options Optional settings.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#startSession
      */
     startSession(options?: SessionOptions): ClientSession;
 
     /**
-     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
+     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this cluster.
+     * Will ignore all changes to system collections, as well as the local, admin, and config databases.
      * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
      * @param options Optional settings.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
      */
     watch(pipeline?: Object[], options?: ChangeStreamOptions & { startAtClusterTime?: Timestamp, session?: ClientSession }): ChangeStream;
 
-    /** http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession */
+    /**
+     * Runs a given operation with an implicitly created session. The lifetime of the session will be handled without the need for user interaction.
+     * @param operation An operation to execute with an implicitly created session. The signature of this MUST be `(session) => {}`
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession
+     */
     withSession(operation: (session: ClientSession) => Promise<any>): Promise<void>;
 
-    /** http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession */
+    /**
+     * Runs a given operation with an implicitly created session. The lifetime of the session will be handled without the need for user interaction.
+     * @param options Optional settings to be appled to implicitly created session.
+     * @param operation An operation to execute with an implicitly created session. The signature of this MUST be `(session) => {}`
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession
+     */
     withSession(options: SessionOptions, operation: (session: ClientSession) => Promise<any>): Promise<void>;
 }
 
@@ -5395,6 +5417,7 @@ export interface MongoClientCommonOption {
      * Do not make the db an event listener to the original connection.
      */
     noListener?: boolean;
+
     /**
      * Control if you want to return a cached instance or have a new one created
      */
