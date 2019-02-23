@@ -815,7 +815,7 @@ export declare class Db extends EventEmitter {
      * @param name The collection name we wish to access.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
      */
-    collection(name: string): Collection;
+    collection(name: string): Collection<any>;
 
     /**
      * Fetch a specific collection (containing the actual collection information). If the application does not use strict mode you can
@@ -825,7 +825,7 @@ export declare class Db extends EventEmitter {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
      */
-    collection(name: string, callback: MongoCallback<Collection>): Collection;
+    collection(name: string, callback: MongoCallback<Collection<any>>): Collection<any>;
 
     /**
      * Fetch a specific collection (containing the actual collection information). If the application does not use strict mode you can
@@ -836,14 +836,14 @@ export declare class Db extends EventEmitter {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
      */
-    collection(name: string, options: DbCollectionOptions, callback: MongoCallback<Collection>): Collection;
+    collection(name: string, options: DbCollectionOptions, callback: MongoCallback<Collection<any>>): Collection<any>;
 
     /**
      * Fetch all collections for the current db.
      *
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collections
      */
-    collections(): Promise<Collection[]>;
+    collections(): Promise<Collection<any>[]>;
 
     /**
      * Fetch all collections for the current db.
@@ -851,7 +851,7 @@ export declare class Db extends EventEmitter {
      * @param callback The results callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collections
      */
-    collections(callback: MongoCallback<Collection[]>): void;
+    collections(callback: MongoCallback<Collection<any>[]>): void;
 
     /**
      * Execute a command.
@@ -888,7 +888,7 @@ export declare class Db extends EventEmitter {
      * @param callback The results callback
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
      */
-    createCollection(name: string, callback: MongoCallback<Collection>): void;
+    createCollection(name: string, callback: MongoCallback<Collection<any>>): void;
 
     /**
      * Create a new collection on a server with the specified options. Use this to create capped collections.
@@ -897,7 +897,7 @@ export declare class Db extends EventEmitter {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
      */
-    createCollection(name: string, options?: CollectionCreateOptions): Promise<Collection>;
+    createCollection(name: string, options?: CollectionCreateOptions): Promise<Collection<any>>;
 
     /**
      * Create a new collection on a server with the specified options. Use this to create capped collections.
@@ -907,7 +907,7 @@ export declare class Db extends EventEmitter {
      * @param callback The results callback
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
      */
-    createCollection(name: string, options: CollectionCreateOptions, callback: MongoCallback<Collection>): void;
+    createCollection(name: string, options: CollectionCreateOptions, callback: MongoCallback<Collection<any>>): void;
 
     /**
      * Creates an index on the db and collection collection.
@@ -1124,7 +1124,7 @@ export declare class Db extends EventEmitter {
      * @param callback The results callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#renameCollection
      */
-    renameCollection(fromCollection: string, toCollection: string, callback: MongoCallback<Collection>): void;
+    renameCollection(fromCollection: string, toCollection: string, callback: MongoCallback<Collection<any>>): void;
 
     /**
      * Rename a collection.
@@ -1134,7 +1134,7 @@ export declare class Db extends EventEmitter {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#renameCollection
      */
-    renameCollection(fromCollection: string, toCollection: string, options?: { dropTarget?: boolean }): Promise<Collection>;
+    renameCollection(fromCollection: string, toCollection: string, options?: { dropTarget?: boolean }): Promise<Collection<any>>;
 
     /**
      * Rename a collection.
@@ -1145,7 +1145,7 @@ export declare class Db extends EventEmitter {
      * @param callback The results callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#renameCollection
      */
-    renameCollection(fromCollection: string, toCollection: string, options: { dropTarget?: boolean }, callback: MongoCallback<Collection>): void;
+    renameCollection(fromCollection: string, toCollection: string, options: { dropTarget?: boolean }, callback: MongoCallback<Collection<any>>): void;
 
     /**
      * Get all the db statistics.
@@ -2566,7 +2566,7 @@ export interface CollectionDistinctOptions {
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html
  */
-export interface Collection {
+export interface Collection<T> {
 
     /**
      * Get the collection name.
@@ -2666,7 +2666,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
      */
-    count(query: Object, callback: MongoCallback<number>): void;
+    count(query: FilterQuery<T>, callback: MongoCallback<number>): void;
 
     /**
      * Count number of matching documents in the db to a query.
@@ -2675,7 +2675,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
      */
-    count(query: Object, options?: MongoCountPreferences): Promise<number>;
+    count(query: FilterQuery<T>, options?: MongoCountPreferences): Promise<number>;
 
     /**
      * Count number of matching documents in the db to a query.
@@ -2685,7 +2685,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
      */
-    count(query: Object, options: MongoCountPreferences, callback: MongoCallback<number>): void;
+    count(query: FilterQuery<T>, options: MongoCountPreferences, callback: MongoCallback<number>): void;
 
     /**
      * Count number of matching documents in the db to a query.
@@ -2694,7 +2694,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocumentst
      */
-    countDocuments(query: Object, callback: MongoCallback<number>): void;
+    countDocuments(query: FilterQuery<T>, callback: MongoCallback<number>): void;
 
     /**
      * Count number of matching documents in the db to a query.
@@ -2703,7 +2703,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocuments
      */
-    countDocuments(query: Object, options?: MongoCountPreferences): Promise<number>;
+    countDocuments(query: FilterQuery<T>, options?: MongoCountPreferences): Promise<number>;
 
     /**
      * Count number of matching documents in the db to a query.
@@ -2713,7 +2713,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocuments
      */
-    countDocuments(query: Object, options: MongoCountPreferences, callback: MongoCallback<number>): void;
+    countDocuments(query: FilterQuery<T>, options: MongoCountPreferences, callback: MongoCallback<number>): void;
 
     /**
      * Creates an index on the db and collection collection.
@@ -2767,7 +2767,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
      */
-    deleteMany(filter: Object, callback: MongoCallback<DeleteWriteOpResultObject>): void;
+    deleteMany(filter: FilterQuery<T>, callback: MongoCallback<DeleteWriteOpResultObject>): void;
 
     /**
      * Delete multiple documents on MongoDB.
@@ -2776,7 +2776,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
      */
-    deleteMany(filter: Object, options?: CollectionOptions): Promise<DeleteWriteOpResultObject>;
+    deleteMany(filter: FilterQuery<T>, options?: CollectionOptions): Promise<DeleteWriteOpResultObject>;
 
     /**
      * Delete multiple documents on MongoDB.
@@ -2786,7 +2786,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
      */
-    deleteMany(filter: Object, options: CollectionOptions, callback: MongoCallback<DeleteWriteOpResultObject>): void;
+    deleteMany(filter: FilterQuery<T>, options: CollectionOptions, callback: MongoCallback<DeleteWriteOpResultObject>): void;
 
     /**
      * Delete a document on MongoDB.
@@ -2795,7 +2795,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteOne
      */
-    deleteOne(filter: Object, callback: MongoCallback<DeleteWriteOpResultObject>): void;
+    deleteOne(filter: FilterQuery<T>, callback: MongoCallback<DeleteWriteOpResultObject>): void;
 
     /**
      * Delete a document on MongoDB.
@@ -2804,7 +2804,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteOne
      */
-    deleteOne(filter: Object, options?: CollectionDeleteOneOptions): Promise<DeleteWriteOpResultObject>;
+    deleteOne(filter: FilterQuery<T>, options?: CollectionDeleteOneOptions): Promise<DeleteWriteOpResultObject>;
 
     /**
      * Delete a document on MongoDB.
@@ -2814,7 +2814,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteOne
      */
-    deleteOne(filter: Object, options: CollectionDeleteOneOptions, callback: MongoCallback<DeleteWriteOpResultObject>): void;
+    deleteOne(filter: FilterQuery<T>, options: CollectionDeleteOneOptions, callback: MongoCallback<DeleteWriteOpResultObject>): void;
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
@@ -2824,7 +2824,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#distinct
      */
-    distinct(key: string, query: Object, callback: MongoCallback<any>): void;
+    distinct(key: string, query: FilterQuery<T>, callback: MongoCallback<any>): void;
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
@@ -2834,7 +2834,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#distinct
      */
-    distinct(key: string, query: Object, options?: CollectionDistinctOptions): Promise<any>;
+    distinct(key: string, query: FilterQuery<T>, options?: CollectionDistinctOptions): Promise<any>;
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
@@ -2845,7 +2845,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#distinct
      */
-    distinct(key: string, query: Object, options: CollectionDistinctOptions, callback: MongoCallback<any>): void;
+    distinct(key: string, query: FilterQuery<T>, options: CollectionDistinctOptions, callback: MongoCallback<any>): void;
 
     /**
      * Drop the collection from the database, removing it permanently. New accesses will create a new collection.
@@ -2919,10 +2919,10 @@ export interface Collection {
      * @param query The cursor query object.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#find
      */
-    find<T>(query?: Object): Cursor<T>;
+    find<T>(query?: FilterQuery<T>): Cursor<T>;
 
     /** @deprecated */
-    find(query: Object, fields?: Object, skip?: number, limit?: number, timeout?: number): Cursor<any>;
+    find(query: FilterQuery<T>, fields?: Object, skip?: number, limit?: number, timeout?: number): Cursor<any>;
 
     /**
      * Fetches the first document that matches the query.
@@ -2932,7 +2932,7 @@ export interface Collection {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
      * @deprecated use find().limit(1).next(function(err, doc){}).
      */
-    findOne(query: Object, callback: MongoCallback<any>): void;
+    findOne(query: FilterQuery<T>, callback: MongoCallback<any>): void;
 
     /**
      * Fetches the first document that matches the query.
@@ -2942,7 +2942,7 @@ export interface Collection {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
      * @deprecated use find().limit(1).next(function(err, doc){}).
      */
-    findOne(query: Object, options?: MongodbFindOneOptions): Promise<any>;
+    findOne(query: FilterQuery<T>, options?: MongodbFindOneOptions): Promise<any>;
 
     /**
      * Fetches the first document that matches the query.
@@ -2953,7 +2953,7 @@ export interface Collection {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
      * @deprecated use find().limit(1).next(function(err, doc){}).
      */
-    findOne(query: Object, options: MongodbFindOneOptions, callback: MongoCallback<any>): void;
+    findOne(query: FilterQuery<T>, options: MongodbFindOneOptions, callback: MongoCallback<any>): void;
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
@@ -2962,7 +2962,7 @@ export interface Collection {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndDelete
      */
-    findOneAndDelete(filter: Object, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
+    findOneAndDelete(filter: FilterQuery<T>, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
@@ -2971,7 +2971,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndDelete
      */
-    findOneAndDelete(filter: Object, options?: FindOneAndDeleteOptions): Promise<FindAndModifyWriteOpResultObject>;
+    findOneAndDelete(filter: FilterQuery<T>, options?: FindOneAndDeleteOptions): Promise<FindAndModifyWriteOpResultObject>;
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
@@ -2981,7 +2981,7 @@ export interface Collection {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndDelete
      */
-    findOneAndDelete(filter: Object, options: FindOneAndDeleteOptions, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
+    findOneAndDelete(filter: FilterQuery<T>, options: FindOneAndDeleteOptions, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
@@ -2991,7 +2991,7 @@ export interface Collection {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
      */
-    findOneAndReplace(filter: Object, replacement: Object, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
+    findOneAndReplace(filter: FilterQuery<T>, replacement: Object, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
@@ -3001,7 +3001,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
      */
-    findOneAndReplace(filter: Object, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject>;
+    findOneAndReplace(filter: FilterQuery<T>, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject>;
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
@@ -3012,7 +3012,7 @@ export interface Collection {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
      */
-    findOneAndReplace(filter: Object, replacement: Object, options: FindOneAndReplaceOption, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
+    findOneAndReplace(filter: FilterQuery<T>, replacement: Object, options: FindOneAndReplaceOption, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
@@ -3022,7 +3022,7 @@ export interface Collection {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndUpdate
      */
-    findOneAndUpdate(filter: Object, update: Object, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
+    findOneAndUpdate(filter: FilterQuery<T>, update: UpdateQuery<T>, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
@@ -3032,7 +3032,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndUpdate
      */
-    findOneAndUpdate(filter: Object, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject>;
+    findOneAndUpdate(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject>;
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
@@ -3043,7 +3043,7 @@ export interface Collection {
      * @param callback The collection result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndUpdate
      */
-    findOneAndUpdate(filter: Object, update: Object, options: FindOneAndReplaceOption, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
+    findOneAndUpdate(filter: FilterQuery<T>, update: UpdateQuery<T>, options: FindOneAndReplaceOption, callback: MongoCallback<FindAndModifyWriteOpResultObject>): void;
 
     /**
      * Execute a geo search using a geo haystack index on a collection.
@@ -3415,7 +3415,7 @@ export interface Collection {
      * @param callback The results callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#rename
      */
-    rename(newName: string, callback: MongoCallback<Collection>): void;
+    rename(newName: string, callback: MongoCallback<Collection<T>>): void;
 
     /**
      * Rename the collection.
@@ -3424,7 +3424,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#rename
      */
-    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection>;
+    rename(newName: string, options?: { dropTarget?: boolean }): Promise<Collection<T>>;
 
     /**
      * Rename the collection.
@@ -3434,7 +3434,7 @@ export interface Collection {
      * @param callback The results callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#rename
      */
-    rename(newName: string, options: { dropTarget?: boolean }, callback: MongoCallback<Collection>): void;
+    rename(newName: string, options: { dropTarget?: boolean }, callback: MongoCallback<Collection<T>>): void;
 
     /**
      * Replace a document on MongoDB.
@@ -3444,7 +3444,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
      */
-    replaceOne(filter: Object, doc: Object, callback: MongoCallback<UpdateWriteOpResult>): void;
+    replaceOne(filter: FilterQuery<T>, doc: Object, callback: MongoCallback<UpdateWriteOpResult>): void;
 
     /**
      * Replace a document on MongoDB.
@@ -3454,7 +3454,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
      */
-    replaceOne(filter: Object, doc: Object, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult>;
+    replaceOne(filter: FilterQuery<T>, doc: Object, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult>;
 
     /**
      * Replace a document on MongoDB.
@@ -3465,7 +3465,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
      */
-    replaceOne(filter: Object, doc: Object, options: ReplaceOneOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
+    replaceOne(filter: FilterQuery<T>, doc: Object, options: ReplaceOneOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
 
     // http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#save
     /** @deprecated Use insertOne, insertMany, updateOne or updateMany */
@@ -3502,11 +3502,11 @@ export interface Collection {
 
     // http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#update
     /** @deprecated use updateOne, updateMany or bulkWrite */
-    update(filter: Object, update: Object, callback: MongoCallback<WriteOpResult>): void;
+    update(filter: FilterQuery<T>, update: UpdateQuery<T>, callback: MongoCallback<WriteOpResult>): void;
     /** @deprecated use updateOne, updateMany or bulkWrite */
-    update(filter: Object, update: Object, options?: ReplaceOneOptions & { multi?: boolean }): Promise<WriteOpResult>;
+    update(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: ReplaceOneOptions & { multi?: boolean }): Promise<WriteOpResult>;
     /** @deprecated use updateOne, updateMany or bulkWrite */
-    update(filter: Object, update: Object, options: ReplaceOneOptions & { multi?: boolean }, callback: MongoCallback<WriteOpResult>): void;
+    update(filter: FilterQuery<T>, update: UpdateQuery<T>, options: ReplaceOneOptions & { multi?: boolean }, callback: MongoCallback<WriteOpResult>): void;
 
     /**
      * Update multiple documents on MongoDB.
@@ -3516,7 +3516,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateMany
      */
-    updateMany(filter: Object, update: Object, callback: MongoCallback<UpdateWriteOpResult>): void;
+    updateMany(filter: FilterQuery<T>, update: UpdateQuery<T>, callback: MongoCallback<UpdateWriteOpResult>): void;
 
     /**
      * Update multiple documents on MongoDB.
@@ -3526,7 +3526,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateMany
      */
-    updateMany(filter: Object, update: Object, options?: UpdateManyOptions): Promise<UpdateWriteOpResult>;
+    updateMany(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: UpdateManyOptions): Promise<UpdateWriteOpResult>;
 
     /**
      * Update multiple documents on MongoDB.
@@ -3537,7 +3537,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateMany
      */
-    updateMany(filter: Object, update: Object, options: UpdateManyOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
+    updateMany(filter: FilterQuery<T>, update: UpdateQuery<T>, options: UpdateManyOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
 
     /**
      * Update a single document on MongoDB.
@@ -3547,7 +3547,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
      */
-    updateOne(filter: Object, update: Object, callback: MongoCallback<UpdateWriteOpResult>): void;
+    updateOne(filter: FilterQuery<T>, update: UpdateQuery<T>, callback: MongoCallback<UpdateWriteOpResult>): void;
 
     /**
      * Update a single document on MongoDB.
@@ -3557,7 +3557,7 @@ export interface Collection {
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
      */
-    updateOne(filter: Object, update: Object, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult>;
+    updateOne(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult>;
 
     /**
      * Update a single document on MongoDB.
@@ -3568,7 +3568,7 @@ export interface Collection {
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
      */
-    updateOne(filter: Object, update: Object, options: ReplaceOneOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
+    updateOne(filter: FilterQuery<T>, update: UpdateQuery<T>, options: ReplaceOneOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
 
     /**
      * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
@@ -3579,6 +3579,72 @@ export interface Collection {
     watch(pipeline?: Object[], options?: ChangeStreamOptions & { startAtClusterTime?: Timestamp, session?: ClientSession }): ChangeStream;
 
 }
+
+/**
+ * Condition.
+ */
+export type Condition<T, P extends keyof T> = {
+    $eq?: T[P];
+    $gt?: T[P];
+    $gte?: T[P];
+    $in?: T[P][];
+    $lt?: T[P];
+    $lte?: T[P];
+    $ne?: T[P];
+    $nin?: T[P][];
+    $and?: (FilterQuery<T[P]> | T[P])[];
+    $or?: (FilterQuery<T[P]> | T[P])[];
+    $not?: (FilterQuery<T[P]> | T[P])[] | T[P];
+    $expr?: any;
+    $jsonSchema?: any;
+    $mod?: [number, number];
+    $regex?: RegExp;
+    $options?: string;
+    $text?: {
+        $search: string;
+        $language?: string;
+        $caseSensitive?: boolean;
+        $diacraticSensitive?: boolean;
+    };
+    $where?: Object;
+    $geoIntersects?: Object;
+    $geoWithin?: Object;
+    $near?: Object;
+    $nearSphere?: Object;
+    $elemMatch?: Object;
+    $size?: number;
+    $bitsAllClear?: Object;
+    $bitsAllSet?: Object;
+    $bitsAnyClear?: Object;
+    $bitsAnySet?: Object;
+    [key: string]: any;
+};
+
+/**
+ * @see https://docs.mongodb.com/manual/reference/operator/update
+ */
+export type UpdateQuery<T> = {
+    $inc?: { [P in keyof T]?: number } | { [key: string]: number };
+    $min?: { [P in keyof T]?: number } | { [key: string]: number };
+    $max?: { [P in keyof T]?: number } | { [key: string]: number };
+    $mul?: { [P in keyof T]?: number } | { [key: string]: number };
+    $set?: Partial<T> | { [key: string]: any };
+    $setOnInsert?: Partial<T> | { [key: string]: any };
+    $unset?: { [P in keyof T]?: "" } | { [key: string]: "" };
+    $rename?: { [key: string]: keyof T } | { [key: string]: string };
+    $currentDate?: { [P in keyof T]?: (true | { $type: "date" | "timestamp" }) } | { [key: string]: (true | { $type: "date" | "timestamp" }) };
+    $addToSet?: Partial<T> | { [key: string]: any };
+    $pop?: { [P in keyof T]?: -1 | 1 } | { [key: string]: -1 | 1 };
+    $pull?: Partial<T> | { [key: string]: Condition<T, keyof T> };
+    $push?: Partial<T> | { [key: string]: any };
+    $pushAll?: Partial<T> | { [key: string]: Array<any> };
+    $each?: Partial<T> | { [key: string]: Array<any> };
+    $bit?: { [P in keyof T]?: any } | { [key: string]: any };
+};
+
+export type FilterQuery<T> = {
+    [P in keyof T]?: T[P] | Condition<T, P>;
+} | { [key: string]: any };
 
 /**
  * The name of the target collection.
@@ -4876,10 +4942,16 @@ export declare class Cursor<T> extends Readable {
     /**
      * Close the cursor, sending a KillCursor command and emitting close.
      * The result callback.
-     * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#close
      */
     close(): Promise<CursorResult>;
+
+    /**
+     * Close the cursor, sending a KillCursor command and emitting close.
+     * The result callback.
+     * @param callback The result callback.
+     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#close
+     */
     close(callback: MongoCallback<CursorResult>): void;
 
     /**
@@ -5184,7 +5256,7 @@ export interface CursorCommentOptions {
  */
 export declare class ChangeStream extends Readable {
 
-    constructor(changeDomain: MongoClient | Db | Collection, pipeline: Object[], options?: ChangeStreamOptions);
+    constructor(changeDomain: MongoClient | Db | Collection<any>, pipeline: Object[], options?: ChangeStreamOptions);
 
     /**
      * Close the Change Stream.
@@ -5808,6 +5880,7 @@ export declare class GridFSBucket {
     /**
      * Deletes a file with the given id.
      * @param id The id of the file doc
+     * @param callback The result callback
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#delete
      */
     delete(id: ObjectID, callback?: GridFSBucketErrorCallback): void;
@@ -5827,6 +5900,7 @@ export declare class GridFSBucket {
     /**
      * Returns a readable stream (GridFSBucketReadStream) for streaming file.
      * @param id The id of the file doc.
+     * @param options Optional settings
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openDownloadStream
      */
     openDownloadStream(id: ObjectID, options?: { start: number, end: number }): GridFSBucketReadStream;
@@ -5834,6 +5908,7 @@ export declare class GridFSBucket {
     /**
      * Returns a readable stream (GridFSBucketReadStream) for streaming file
      * @param filename The id of the file doc
+     * @param options Optional settings
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openDownloadStreamByName
      */
 
@@ -5843,6 +5918,7 @@ export declare class GridFSBucket {
      * Returns a writable stream (GridFSBucketWriteStream) for writing buffers to GridFS.
      * The stream's 'id' property contains the resulting file's id.
      * @param filename The value of the 'filename' key in the files doc.
+     * @param options Optional settings
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openUploadStream
      */
     openUploadStream(filename: string, options?: GridFSBucketOpenUploadStreamOptions): GridFSBucketWriteStream;
@@ -5852,6 +5928,7 @@ export declare class GridFSBucket {
      * The stream's 'id' property contains the resulting file's id.
      * @param id A custom id used to identify the file.
      * @param filename The value of the 'filename' key in the files doc.
+     * @param options Optional settings
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openUploadStreamWithId
      */
     openUploadStreamWithId(id: string | number | Object, filename: string, options?: GridFSBucketOpenUploadStreamOptions): GridFSBucketWriteStream;
@@ -5860,6 +5937,7 @@ export declare class GridFSBucket {
      * Renames the file with the given _id to the given string.
      * @param id the id of the file to rename.
      * @param filename new name for the file.
+     * @param callback The result callback
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#rename
      */
     rename(id: ObjectID, filename: string, callback?: GridFSBucketErrorCallback): void;
@@ -5979,7 +6057,7 @@ export declare class GridFSBucketReadStream extends Readable {
      * @param filter The query to use to find the file document.
      * @param options Optional settings.
      */
-    constructor(chunks: Collection, files: Collection, readPreference: Object, filter: Object, options?: GridFSBucketReadStreamOptions);
+    constructor(chunks: Collection<any>, files: Collection<any>, readPreference: Object, filter: Object, options?: GridFSBucketReadStreamOptions);
 }
 
 /**
