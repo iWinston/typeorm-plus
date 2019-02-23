@@ -7,6 +7,8 @@ import { TableIndex } from "../../schema-builder/table/TableIndex";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
+    ChangeStream,
+    ChangeStreamOptions,
     Code,
     Collection,
     CollectionAggregationOptions,
@@ -33,9 +35,7 @@ import {
     ReadPreference,
     ReplaceOneOptions,
     UnorderedBulkOperation,
-    UpdateWriteOpResult,
-    ChangeStream,
-    ChangeStreamOptions
+    UpdateWriteOpResult
 } from "./typings";
 import { Connection } from "../../connection/Connection";
 import { ReadStream } from "../../platform/PlatformTools";

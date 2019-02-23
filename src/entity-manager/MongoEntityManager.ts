@@ -1,10 +1,11 @@
-import { ChangeStreamOptions, ChangeStream } from "./../driver/mongodb/typings";
 import { Connection } from "../connection/Connection";
 import { EntityManager } from "./EntityManager";
 import { ObjectType } from "../common/ObjectType";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
+    ChangeStream,
+    ChangeStreamOptions,
     Code,
     Collection,
     CollectionAggregationOptions,
@@ -166,8 +167,8 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string,
-        optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
-        maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
+                          optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
+                          maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
         const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
@@ -572,8 +573,8 @@ export class MongoEntityManager extends EntityManager {
             return undefined;
 
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions))
-            // If where condition is passed as a string which contains sql we have to ignore
-            // as mongo is not a sql database
+        // If where condition is passed as a string which contains sql we have to ignore
+        // as mongo is not a sql database
             return typeof optionsOrConditions.where === "string"
                 ? {}
                 : optionsOrConditions.where;
@@ -589,8 +590,8 @@ export class MongoEntityManager extends EntityManager {
             return undefined;
 
         if (FindOptionsUtils.isFindOneOptions(optionsOrConditions))
-            // If where condition is passed as a string which contains sql we have to ignore
-            // as mongo is not a sql database
+        // If where condition is passed as a string which contains sql we have to ignore
+        // as mongo is not a sql database
             return typeof optionsOrConditions.where === "string"
                 ? {}
                 : optionsOrConditions.where;
