@@ -1,3 +1,4 @@
+import { ChangeStreamOptions, ChangeStream } from './../driver/mongodb/typings';
 import {Connection} from "../connection/Connection";
 import {EntityManager} from "./EntityManager";
 import {ObjectType} from "../common/ObjectType";
@@ -534,6 +535,11 @@ export class MongoEntityManager extends EntityManager {
     stats<Entity>(entityClassOrName: ObjectType<Entity>|EntitySchema<Entity>|string, options?: { scale: number }): Promise<CollStats> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.stats(metadata.tableName, options);
+    }
+
+    watch<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, pipeline: Object[], options?: ChangeStreamOptions): Promise<ChangeStream> {
+        const metadata = this.connection.getMetadata(entityClassOrName);
+        return this.queryRunner.watch(metadata.tableName, pipeline, options);
     }
 
     /**

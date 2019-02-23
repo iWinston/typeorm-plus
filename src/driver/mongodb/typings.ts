@@ -1,4 +1,4 @@
-import {EventEmitter, Readable, Writable} from "../../platform/PlatformTools";
+import { EventEmitter, Readable, Writable } from "../../platform/PlatformTools";
 
 /**
  * Creates a new MongoClient instance.
@@ -1085,6 +1085,14 @@ export declare class Db extends EventEmitter {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#stats
      */
     stats(options: { scale?: number }, callback: MongoCallback<any>): void;
+
+    /**
+     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
+     * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
+     * @param options Optional settings.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
+     */
+    watch(pipeline?: Object[], options?: ChangeStreamOptions & { startAtClusterTime?: Timestamp, session?: ClientSession }): ChangeStream;
 }
 
 /**
@@ -2593,7 +2601,7 @@ export interface Collection {
      */
     count(query: Object, options: MongoCountPreferences, callback: MongoCallback<number>): void;
 
-        /**
+    /**
      * Count number of matching documents in the db to a query.
      *
      * @param query The query for the countDocuments.
@@ -3475,6 +3483,15 @@ export interface Collection {
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
      */
     updateOne(filter: Object, update: Object, options: ReplaceOneOptions, callback: MongoCallback<UpdateWriteOpResult>): void;
+
+    /**
+     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
+     * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
+     * @param options Optional settings.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
+     */
+    watch(pipeline?: Object[], options?: ChangeStreamOptions & { startAtClusterTime?: Timestamp, session?: ClientSession }): ChangeStream;
+
 }
 
 /**
@@ -5073,6 +5090,259 @@ export interface CursorCommentOptions {
      * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
      */
     readPreference?: ReadPreference | string;
+}
+
+/**
+ * Creates a new Change Stream instance.
+ * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html
+ */
+export declare class ChangeStream extends Readable {
+
+    constructor(changeDomain: MongoClient | Db | Collection, pipeline: Object[], options?: ChangeStreamOptions);
+
+    /**
+     * Close the Change Stream.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#close
+     */
+    close(): Promise<any>;
+
+    /**
+     * Close the Change Stream.
+     * @param callback The result callback.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#close
+     */
+    close(callback: MongoCallback<any>): void;
+
+    /**
+     * Check if there is any document still available in the Change Stream.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#hasNext
+     */
+    hasNext(): Promise<any>;
+
+    /**
+     * Check if there is any document still available in the Change Stream.
+     * @param callback The result callback.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#hasNext
+     */
+    hasNext(callback: MongoCallback<any>): void;
+
+    /**
+     * Is the cursor closed.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#isClosed
+     */
+    isClosed(): boolean;
+
+    /**
+     * Get the next available document from the Change Stream, returns null if no more documents are available.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#next
+     */
+    next(): Promise<any>;
+
+    /**
+     * Get the next available document from the Change Stream, returns null if no more documents are available.
+     * @param callback The result callback.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#next
+     */
+    next(callback: MongoCallback<any>): void;
+
+    /**
+     * Return a modified Readable stream including a possible transform method.
+     * @param options Optional settings.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#stream
+     */
+    stream(options?: { transform: Function }): Cursor<any>;
+}
+
+/**
+ * ChangeStreamOptions
+ */
+export interface ChangeStreamOptions {
+
+    /**
+     * Allowed values: ‘default’, ‘updateLookup’. When set to ‘updateLookup’,
+     * the change stream will include both a delta describing the changes to the document,
+     * as well as a copy of the entire document that was changed from some time after the change occurred.
+     */
+    fullDocument?: string;
+
+    /**
+     * The maximum amount of time for the server to wait on new documents to satisfy a change stream query
+     */
+    maxAwaitTimeMS?: number;
+
+    /**
+     * Specifies the logical starting point for the new change stream.
+     * This should be the _id field from a previously returned change stream document.
+     */
+    resumeAfter?: Object;
+
+    /**
+     * The number of documents to return per batch.
+     */
+    batchSize?: number;
+
+    /**
+     * Specify collation settings for operation.
+     */
+    collation?: CollationDocument;
+
+    /**
+     * The read preference. Defaults to the read preference of the database or collection.
+     */
+    readPreference?: ReadPreference;
+}
+
+/**
+ * CollationDocument
+ */
+export interface CollationDocument {
+    locale: string;
+    strength?: number;
+    caseLevel?: boolean;
+    caseFirst?: string;
+    numericOrdering?: boolean;
+    alternate?: string;
+    maxVariable?: string;
+    backwards?: boolean;
+    normalization?: boolean;
+
+}
+
+/**
+ * A class representing a client session on the server.
+ * WARNING: not meant to be instantiated directly.
+ * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html
+ */
+export interface ClientSession extends EventEmitter {
+
+    /**
+     * The server id associated with this session
+     */
+    id: any;
+
+    /**
+     * Aborts the currently active transaction in this session.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#abortTransaction
+     */
+    abortTransaction(): Promise<void>;
+
+    /**
+     * Aborts the currently active transaction in this session.
+     * @param callback Optional callback for completion of this operation
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#abortTransaction
+     */
+    abortTransaction(callback?: MongoCallback<void>): Promise<void>;
+
+    /**
+     * Advances the operationTime for a ClientSession.
+     * @param operationTime the BSON.Timestamp of the operation type it is desired to advance to.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#advanceOperationTime
+     */
+    advanceOperationTime(operationTime: Timestamp): void;
+
+    /**
+     * Commits the currently active transaction in this session.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#commitTransaction
+     */
+    commitTransaction(): Promise<void>;
+
+    /**
+     * Commits the currently active transaction in this session.
+     * @param callback Optional callback for completion of this operation.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#commitTransaction
+     */
+    commitTransaction(callback?: MongoCallback<void>): Promise<void>;
+
+    /**
+     * Ends this session on the server.
+     * @param callback Optional callback for completion of this operation.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#endSession
+     */
+    endSession(callback?: MongoCallback<void>): void;
+
+    /**
+     * Ends this session on the server.
+     * @param options Optional settings. Currently reserved for future use.
+     * @param callback Optional callback for completion of this operation.
+     * @see @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#endSession
+     */
+    endSession(options?: any, callback?: MongoCallback<void>): void;
+
+    /**
+     * Used to determine if this session equals another.
+     * @param session A class representing a client session on the server.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#equals
+     */
+    equals(session: ClientSession): boolean;
+
+    /**
+     * Increment the transaction number on the internal ServerSession.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#incrementTransactionNumber
+     */
+    incrementTransactionNumber(): void;
+
+    /**
+     * Check this session is currently in a transaction or not.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#inTransaction
+     */
+    inTransaction(): boolean;
+
+    /**
+     * Starts a new transaction with the given options.
+     * @param options Optional settings.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#startTransaction
+     */
+    startTransaction(options?: TransactionOptions): void;
+
+}
+
+/**
+ * TransactionOptions
+ */
+export interface TransactionOptions {
+
+    readConcern?: ReadConcern;
+    writeConcern?: WriteConcern;
+    readPreference?: ReadPreference;
+}
+
+/**
+ * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
+ */
+type ReadConcernLevel = 'local' | 'available' | 'majority' | 'linearizable' | 'snapshot';
+
+/**
+ * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
+ * of the data read from replica sets and replica set shards.
+ * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
+ */
+export interface ReadConcern {
+    level: ReadConcernLevel;
+}
+
+/**
+ * A MongoDB WriteConcern, which describes the level of acknowledgement
+ * requested from MongoDB for write operations.
+ * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#WriteConcern
+ */
+export interface WriteConcern {
+
+    /**
+     * requests acknowledgement that the write operation has
+     * propagated to a specified number of mongod hosts
+     */
+    w?: number | 'majority' | string;
+
+    /**
+     * requests acknowledgement from MongoDB that the write operation has
+     * been written to the journal
+     */
+    j?: boolean;
+
+    /**
+     * a time limit, in milliseconds, for the write concern
+     */
+    wtimeout?: number;
 }
 
 /**
