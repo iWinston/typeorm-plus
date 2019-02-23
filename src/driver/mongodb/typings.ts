@@ -1173,7 +1173,7 @@ export declare class Db extends EventEmitter {
     stats(options: { scale?: number }, callback: MongoCallback<any>): void;
 
     /**
-     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
+     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this database. Will ignore all changes to system collections.
      * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
      * @param options Optional settings.
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch

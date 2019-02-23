@@ -340,10 +340,10 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Get all the collection statistics.
+     * Watching new changes as stream.
      */
-    async watch(collectionName: string, pipeline: Object[], options?: ChangeStreamOptions): Promise<ChangeStream> {
-        return await this.getCollection(collectionName).watch(pipeline, options);
+    watch(collectionName: string, pipeline?: Object[], options?: ChangeStreamOptions): ChangeStream {
+        return this.getCollection(collectionName).watch(pipeline, options);
     }
 
     /**
