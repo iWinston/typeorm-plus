@@ -5427,7 +5427,7 @@ export interface MongoClientCommonOption {
 /**
  * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
  */
-type ReadConcernLevel = "local" | "available" | "majority" | "linearizable" | "snapshot";
+export type ReadConcernLevel = "local" | "available" | "majority" | "linearizable" | "snapshot";
 
 /**
  * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
