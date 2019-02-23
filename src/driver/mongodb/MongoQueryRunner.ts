@@ -321,7 +321,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
         return await this.getCollection(collectionName).rename(newName, options);
     }
 
@@ -837,7 +837,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Gets collection from the database with a given name.
      */
-    protected getCollection(collectionName: string): Collection {
+    protected getCollection(collectionName: string): Collection<any> {
         return this.databaseConnection.db(this.connection.driver.database!).collection(collectionName);
     }
 

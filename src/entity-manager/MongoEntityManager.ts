@@ -518,7 +518,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    rename<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection> {
+    rename<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.rename(metadata.tableName, newName, options);
     }
