@@ -81,6 +81,8 @@ export type SimpleColumnType =
 
     |"simple-json" // typeorm-specific, automatically mapped to string
 
+    |"simple-enum" // typeorm-specific, automatically mapped to string
+
     // numeric types
     |"bit" // mssql
     |"int2" // postgres, sqlite

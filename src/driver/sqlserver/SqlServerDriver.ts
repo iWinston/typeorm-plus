@@ -381,6 +381,10 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+
+        } else if (columnMetadata.type === "simple-enum") {
+            return DateUtils.simpleEnumToString(value);
+
         }
 
         return value;
@@ -414,6 +418,10 @@ export class SqlServerDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if (columnMetadata.type === "simple-enum") {
+            value = DateUtils.stringToSimpleEnum(value, columnMetadata);
+
         }
 
         if (columnMetadata.transformer)
@@ -446,6 +454,9 @@ export class SqlServerDriver implements Driver {
 
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "ntext";
+
+        } else if (column.type === "simple-enum") {
+            return "nvarchar";
 
         } else if (column.type === "dec") {
             return "decimal";

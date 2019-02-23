@@ -87,6 +87,9 @@ export class SubjectChangedColumnsComputer {
                     } else if (column.type === "simple-array") {
                         normalizedValue = DateUtils.simpleArrayToString(entityValue);
                         databaseValue = DateUtils.simpleArrayToString(databaseValue);
+                    } else if (column.type === "simple-enum") {
+                        normalizedValue = DateUtils.simpleEnumToString(entityValue);
+                        databaseValue = DateUtils.simpleEnumToString(databaseValue);
                     }
                 }
 
