@@ -5,9 +5,9 @@ import { EventEmitter, Readable, Writable } from "../../platform/PlatformTools";
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/MongoClient.html
  */
-export declare class MongoClient {
+export declare class MongoClient extends EventEmitter {
 
-    constructor();
+    constructor(uri: string, options?: MongoClientOptions);
 
     /**
      * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
@@ -40,6 +40,12 @@ export declare class MongoClient {
     /**
      * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
      * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
+     */
+    connect(): void;
+
+    /**
+     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
+     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
      *
      * @param url The connection URI string.
      * @param callback The command result callback.
@@ -64,6 +70,64 @@ export declare class MongoClient {
      * @param callback The command result callback.
      */
     connect(url: string, options: MongoClientOptions, callback: MongoCallback<Db>): void;
+
+    /**
+     * Close the db and its underlying connections.
+     * @param callback The callback result.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
+     */
+    close(callback: MongoCallback<void>): void;
+
+    /**
+     * Close the db and its underlying connections.
+     * @param force Force close, emitting no events.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
+     */
+    close(force?: boolean): Promise<void>;
+
+    /**
+     * Close the db and its underlying connections.
+     * @param force Force close, emitting no events.
+     * @param callback The callback result.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
+     */
+    close(force: boolean, callback: MongoCallback<void>): void;
+
+    /**
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#db
+     */
+    db(dbName?: string, options?: MongoClientCommonOption): Db;
+
+    /**
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#isConnected
+     */
+    isConnected(options?: MongoClientCommonOption): boolean;
+
+    /**
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#logout
+     */
+    logout(callback: MongoCallback<any>): void;
+    logout(options?: { dbName?: string }): Promise<any>;
+    logout(options: { dbName?: string }, callback: MongoCallback<any>): void;
+
+    /**
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#startSession
+     */
+    startSession(options?: SessionOptions): ClientSession;
+
+    /**
+     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
+     * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
+     * @param options Optional settings.
+     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
+     */
+    watch(pipeline?: Object[], options?: ChangeStreamOptions & { startAtClusterTime?: Timestamp, session?: ClientSession }): ChangeStream;
+
+    /** http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession */
+    withSession(operation: (session: ClientSession) => Promise<any>): Promise<void>;
+
+    /** http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession */
+    withSession(options: SessionOptions, operation: (session: ClientSession) => Promise<any>): Promise<void>;
 }
 
 /**
@@ -231,7 +295,7 @@ export interface DbCreateOptions {
     /**
      * Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
      */
-    readConcern?: { level?: Object };
+    readConcern?: ReadConcern;
 }
 
 /**
@@ -626,7 +690,7 @@ export declare class Db extends EventEmitter {
     /**
      * The current write concern values.
      */
-    writeConcern: any;
+    writeConcern: WriteConcern;
 
     /**
      * Add a user to the database.
@@ -1307,7 +1371,7 @@ export interface DbCollectionOptions {
     /**
      * Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
      */
-    readConcern?: { level: Object };
+    readConcern?: ReadConcern;
 }
 
 /**
@@ -2495,12 +2559,12 @@ export interface Collection {
     /**
      * The current write concern values.
      */
-    writeConcern: any;
+    writeConcern: WriteConcern;
 
     /**
      * The current read concern values.
      */
-    readConcern: any;
+    readConcern: ReadConcern;
 
     /**
      * Get current index hint for collection.
@@ -5159,8 +5223,8 @@ export declare class ChangeStream extends Readable {
 export interface ChangeStreamOptions {
 
     /**
-     * Allowed values: ‘default’, ‘updateLookup’. When set to ‘updateLookup’,
-     * the change stream will include both a delta describing the changes to the document,
+     * Allowed values: ‘default’, ‘updateLookup’.
+     * When set to ‘updateLookup’, the change stream will include both a delta describing the changes to the document,
      * as well as a copy of the entire document that was changed from some time after the change occurred.
      */
     fullDocument?: string;
@@ -5297,6 +5361,23 @@ export interface ClientSession extends EventEmitter {
 }
 
 /**
+ * Options to pass when creating a Client Session
+ * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#SessionOptions
+ */
+export interface SessionOptions {
+
+    /**
+     * Whether causal consistency should be enabled on this session
+     */
+    causalConsistency?: boolean;
+
+    /**
+     * The default TransactionOptions to use for transactions started on this session.
+     */
+    defaultTransactionOptions?: TransactionOptions;
+}
+
+/**
  * TransactionOptions
  */
 export interface TransactionOptions {
@@ -5304,6 +5385,20 @@ export interface TransactionOptions {
     readConcern?: ReadConcern;
     writeConcern?: WriteConcern;
     readPreference?: ReadPreference;
+}
+
+/**
+ * MongoClientCommonOption
+ */
+export interface MongoClientCommonOption {
+    /**
+     * Do not make the db an event listener to the original connection.
+     */
+    noListener?: boolean;
+    /**
+     * Control if you want to return a cached instance or have a new one created
+     */
+    returnNonCachedInstance?: boolean;
 }
 
 /**
@@ -5317,7 +5412,7 @@ type ReadConcernLevel = 'local' | 'available' | 'majority' | 'linearizable' | 's
  * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
  */
 export interface ReadConcern {
-    level: ReadConcernLevel;
+    level?: ReadConcernLevel;
 }
 
 /**
@@ -5766,12 +5861,12 @@ export interface GridFSBucketOptions {
     /**
      * Optional write concern to be passed to write operations, for instance { w: 1 }.
      */
-    writeConcern?: Object;
+    writeConcern?: WriteConcern;
 
     /**
      * Optional read preference to be passed to read operations.
      */
-    ReadPreference?: Object;
+    ReadPreference?: ReadPreference;
 }
 
 /**
