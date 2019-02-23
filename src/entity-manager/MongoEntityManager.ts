@@ -539,7 +539,7 @@ export class MongoEntityManager extends EntityManager {
         return this.queryRunner.stats(metadata.tableName, options);
     }
 
-    watch<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, pipeline: Object[], options?: ChangeStreamOptions): Promise<ChangeStream> {
+    watch<Entity>(entityClassOrName: ObjectType<Entity> | EntitySchema<Entity> | string, pipeline: Object[], options?: ChangeStreamOptions): ChangeStream {
         const metadata = this.connection.getMetadata(entityClassOrName);
         return this.queryRunner.watch(metadata.tableName, pipeline, options);
     }
