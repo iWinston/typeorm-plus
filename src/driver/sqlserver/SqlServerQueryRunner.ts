@@ -1556,14 +1556,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     if (tableColumn.type === "nvarchar") {
                         // Check if this is an enum
                         const columnCheckConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "CHECK");
-                        if(columnCheckConstraints.length){
+                        if (columnCheckConstraints.length) {
                             const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
-                            for(const checkConstraint of columnCheckConstraints){
-                                if(isEnumRegexp.test(checkConstraint["definition"])){
+                            for (const checkConstraint of columnCheckConstraints) {
+                                if (isEnumRegexp.test(checkConstraint["definition"])) {
                                     // This is an enum constraint, make column into an enum
                                     tableColumn.type = "simple-enum";
                                     tableColumn.enum = [];
-                                    const enumValueRegexp = new RegExp("\\[" + tableColumn.name + "\\]='([^']+)'", 'g');
+                                    const enumValueRegexp = new RegExp("\\[" + tableColumn.name + "\\]='([^']+)'", "g");
                                     let result;
                                     while ((result = enumValueRegexp.exec(checkConstraint["definition"])) !== null) {
                                         tableColumn.enum.unshift(result[1]);

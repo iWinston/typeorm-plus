@@ -418,7 +418,7 @@ export class PostgresDriver implements Driver {
                 || columnMetadata.type === "simple-enum"
             )
             && !columnMetadata.isArray
-        ){
+        ) {
             return "" + value;
         }
 
@@ -612,8 +612,8 @@ export class PostgresDriver implements Driver {
             (
                 columnMetadata.type === "enum"
                 || columnMetadata.type === "simple-enum"
-            ) && defaultValue !== undefined)
-        {
+            ) && defaultValue !== undefined
+        ) {
             if (columnMetadata.isArray && Array.isArray(defaultValue)) {
                 return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
             }
