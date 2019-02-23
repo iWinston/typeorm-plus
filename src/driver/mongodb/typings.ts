@@ -41,7 +41,7 @@ export declare class MongoClient extends EventEmitter {
      * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
      * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
      */
-    connect(): void;
+    connect(): Promise<MongoClient>;
 
     /**
      * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
@@ -5427,7 +5427,7 @@ export interface MongoClientCommonOption {
 /**
  * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
  */
-type ReadConcernLevel = 'local' | 'available' | 'majority' | 'linearizable' | 'snapshot';
+type ReadConcernLevel = "local" | "available" | "majority" | "linearizable" | "snapshot";
 
 /**
  * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
@@ -5449,7 +5449,7 @@ export interface WriteConcern {
      * requests acknowledgement that the write operation has
      * propagated to a specified number of mongod hosts
      */
-    w?: number | 'majority' | string;
+    w?: number | "majority" | string;
 
     /**
      * requests acknowledgement from MongoDB that the write operation has
