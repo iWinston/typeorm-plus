@@ -112,7 +112,7 @@ export class TableColumn {
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[];
+    enum?: string[];
 
     /**
      * Generated column expression. Supports only in MySQL.

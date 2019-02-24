@@ -9,6 +9,7 @@ feel free to ask us and community.
 
 ### Bug fixes
 
+* fixed migration issue with postgres numeric enum type - change queries are not generated if enum is not modified ([#3587](https://github.com/typeorm/typeorm/issues/3587))
 * fixed mongodb entity listeners in optional embeddeds ([#3450](https://github.com/typeorm/typeorm/issues/3450))
 * fixes returning invalid delete result
 

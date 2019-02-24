@@ -146,8 +146,11 @@ export class ColumnMetadata {
 
     /**
      * Array of possible enumerated values.
+     *
+     * `postgres` and `mysql` store enum values as strings but we want to keep support
+     * for numeric and heterogeneous based typescript enums, so we need (string|number)[]
      */
-    enum?: any[];
+    enum?: (string|number)[];
 
     /**
      * Generated column expression. Supports only in MySQL.
