@@ -302,9 +302,9 @@ export class PostgresDriver implements Driver {
                         if (err) return fail(err);
                         if (hasUuidColumns)
                             try {
-                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
+                                await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "${this.options.uuidExtension || "uuid-ossp"}"`);
                             } catch (_) {
-                                logger.log("warn", "At least one of the entities has uuid column, but the 'pgcrypto' extension cannot be installed automatically. Please install it manually using superuser rights");
+                                logger.log("warn", `At least one of the entities has uuid column, but the '${this.options.uuidExtension || "uuid-ossp"}' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`);
                             }
                         if (hasCitextColumns)
                             try {
@@ -778,6 +778,10 @@ export class PostgresDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
+    }
+
+    get uuidGenerator(): string {
+        return this.options.uuidExtension === "pgcrypto" ? "gen_random_uuid()" : "uuid_generate_v4()";
     }
 
     /**

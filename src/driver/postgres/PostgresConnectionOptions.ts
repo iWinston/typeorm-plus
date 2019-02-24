@@ -33,4 +33,6 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
 
     };
 
+    readonly uuidExtension?: "pgcrypto" | "uuid-ossp";
+
 }

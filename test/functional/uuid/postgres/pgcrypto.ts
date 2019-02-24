@@ -6,13 +6,16 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {Question} from "./entity/Question";
 
-describe("uuid-postgres", () => {
+describe("pgcrypto", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
+            driverSpecific: {
+                uuidExtension: "pgcrypto"
+            }
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
