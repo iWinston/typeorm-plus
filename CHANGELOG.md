@@ -18,7 +18,6 @@ feel free to ask us and community.
 * added `useLocalForage` option to Sql.js connection options, which enables asynchronous load and save operations of the datatbase from the indexedDB ([#3554](https://github.com/typeorm/typeorm/issues/3554))
 * added `uuidExtension` option to Postgres connection options, which allows TypeORM to use the newer `pgcrypto` extension to generate UUIDs
 
-
 ## 0.2.13 (2019-02-10)
 
 ### Bug Fixes
@@ -32,7 +31,6 @@ feel free to ask us and community.
 * fixed signatures of `update`/`insert` methods, some `find*` methods in repositories, entity managers, BaseEntity and QueryBuilders
 * handle embedded documents through multiple levels in mongodb ([#3551](https://github.com/typeorm/typeorm/issues/3551))
 * fixed hanging connections in `mssql` driver ([#3327](https://github.com/typeorm/typeorm/pull/3327))
-
 
 ### Features
 
