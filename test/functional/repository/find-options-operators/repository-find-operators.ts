@@ -12,7 +12,7 @@ describe("repository > find options > operators", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["cockroachdb"]
+        // enabledDrivers: ["mssql"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -522,7 +522,7 @@ describe("repository > find options > operators", () => {
 
     })));
 
-    it("should work with ActiveRecord model", () => Promise.all(connections.map(async connection => {
+    it.only("should work with ActiveRecord model", () => Promise.all(connections.map(async connection => {
         PersonAR.useConnection(connection);
 
         const person = new PersonAR();
