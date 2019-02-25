@@ -1,3 +1,4 @@
+import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
@@ -71,7 +72,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (driver instanceof MysqlDriver) {
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
-            } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver) {
+            } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                 deleteResult.raw = result[0] ? result[0] : null;
                 // don't return 0 because it could confuse. null means that we did not receive this value
                 deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
@@ -249,7 +250,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        if (returningExpression && this.connection.driver instanceof PostgresDriver) {
+        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
             return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`;
 
         } else if (returningExpression !== "" && this.connection.driver instanceof SqlServerDriver) {

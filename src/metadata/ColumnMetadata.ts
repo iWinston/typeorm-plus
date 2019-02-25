@@ -103,7 +103,7 @@ export class ColumnMetadata {
     /**
      * Specifies generation strategy if this column will use auto increment.
      */
-    generationStrategy?: "uuid"|"increment";
+    generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
      * Column comment.
@@ -446,7 +446,7 @@ export class ColumnMetadata {
                 }
 
                 // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if (this.generationStrategy === "increment" && this.type === "bigint")
+                if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
                     value = String(value);
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] = value;
@@ -457,7 +457,7 @@ export class ColumnMetadata {
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
 
             // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if (this.generationStrategy === "increment" && this.type === "bigint")
+            if ((this.generationStrategy === "increment" || this.generationStrategy === "rowid") && this.type === "bigint")
                 value = String(value);
 
             return { [useDatabaseName ? this.databaseName : this.propertyName]: value };

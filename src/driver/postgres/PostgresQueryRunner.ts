@@ -1422,14 +1422,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (tableColumn.type === "geometry") {
                       const geometryColumnSql = `SELECT * FROM (
                         SELECT
-                          f_table_schema table_schema,
-                          f_table_name table_name,
-                          f_geometry_column column_name,
-                          srid,
-                          type
-                        FROM geometry_columns
+                          "f_table_schema" "table_schema",
+                          "f_table_name" "table_name",
+                          "f_geometry_column" "column_name",
+                          "srid",
+                          "type"
+                        FROM "geometry_columns"
                       ) AS _
-                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
                       const results: ObjectLiteral[] = await this.query(geometryColumnSql);
                       tableColumn.spatialFeatureType = results[0].type;
@@ -1439,14 +1439,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (tableColumn.type === "geography") {
                       const geographyColumnSql = `SELECT * FROM (
                         SELECT
-                          f_table_schema table_schema,
-                          f_table_name table_name,
-                          f_geography_column column_name,
-                          srid,
-                          type
-                        FROM geography_columns
+                          "f_table_schema" "table_schema",
+                          "f_table_name" "table_name",
+                          "f_geography_column" "column_name",
+                          "srid",
+                          "type"
+                        FROM "geography_columns"
                       ) AS _
-                      WHERE ${tablesCondition} AND column_name = '${tableColumn.name}'`;
+                      WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
                       const results: ObjectLiteral[] = await this.query(geographyColumnSql);
                       tableColumn.spatialFeatureType = results[0].type;

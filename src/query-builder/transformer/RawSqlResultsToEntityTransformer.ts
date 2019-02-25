@@ -332,9 +332,9 @@ export class RawSqlResultsToEntityTransformer {
         return columns.reduce((valueMap, column) => {
             rawSqlResults.forEach(rawSqlResult => {
                 if (relation.isManyToOne || relation.isOneToOneOwner) {
-                    valueMap[column.databaseName] = rawSqlResult[this.buildColumnAlias(parentAlias, column.databaseName)];
+                    valueMap[column.databaseName] = this.driver.prepareHydratedValue(rawSqlResult[this.buildColumnAlias(parentAlias, column.databaseName)], column);
                 } else {
-                    valueMap[column.databaseName] =  rawSqlResult[this.buildColumnAlias(parentAlias, column.referencedColumn!.databaseName)];
+                    valueMap[column.databaseName] =  this.driver.prepareHydratedValue(rawSqlResult[this.buildColumnAlias(parentAlias, column.referencedColumn!.databaseName)], column);
                 }
             });
             return valueMap;

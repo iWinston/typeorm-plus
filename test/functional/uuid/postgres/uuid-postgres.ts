@@ -47,14 +47,14 @@ describe("uuid-postgres", () => {
 
         const post = new Post();
         await postRepository.save(post);
-        const loadedPost = await postRepository.findOne(1);
+        const loadedPost = await postRepository.findOne(post.id);
         expect(loadedPost!.uuid).to.be.exist;
         postTable!.findColumnByName("uuid")!.type.should.be.equal("uuid");
 
         const post2 = new Post();
         post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895";
         await postRepository.save(post2);
-        const loadedPost2 = await postRepository.findOne(2);
+        const loadedPost2 = await postRepository.findOne(post2.id);
         expect(loadedPost2!.uuid).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");
 
         const question = new Question();

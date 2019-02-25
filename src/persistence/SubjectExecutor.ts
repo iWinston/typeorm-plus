@@ -103,6 +103,9 @@ export class SubjectExecutor {
         // recompute only in the case if any listener or subscriber was really executed
         if (broadcasterResult && broadcasterResult.count > 0) {
             // console.time(".recompute");
+            this.insertSubjects.forEach(subject => subject.recompute());
+            this.updateSubjects.forEach(subject => subject.recompute());
+            this.removeSubjects.forEach(subject => subject.recompute());
             this.recompute();
             // console.timeEnd(".recompute");
         }
