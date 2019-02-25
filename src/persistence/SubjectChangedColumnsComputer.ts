@@ -46,6 +46,11 @@ export class SubjectChangedColumnsComputer {
                 column.isCreateDate)
                 return;
 
+            const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
+            if (changeMap) {
+                subject.changeMaps.splice(subject.changeMaps.indexOf(changeMap), 1);
+            }
+
             // get user provided value - column value from the user provided persisted entity
             const entityValue = column.getEntityValue(subject.entity!);
 
@@ -96,7 +101,6 @@ export class SubjectChangedColumnsComputer {
             }
             subject.diffColumns.push(column);
             // find if there is already a column to be changed
-            const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
             if (changeMap) { // and update its value if it was found
                 changeMap.value = entityValue;
 

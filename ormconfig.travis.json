@@ -68,7 +68,8 @@
     "port": 26257,
     "username": "root",
     "password": "",
-    "database": "defaultdb"
+    "database": "defaultdb",
+    "logging": true
   },
   {
     "skip": false,
