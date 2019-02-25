@@ -412,7 +412,13 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
 
-        } else if (columnMetadata.type === "enum" && !columnMetadata.isArray) {
+        } else if (
+            (
+                columnMetadata.type === "enum"
+                || columnMetadata.type === "simple-enum"
+            )
+            && !columnMetadata.isArray
+        ) {
             return "" + value;
         }
 
@@ -462,7 +468,8 @@ export class PostgresDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
-        } else if (columnMetadata.type === "enum" ) {
+
+        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum" ) {
             if (columnMetadata.isArray) {
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
                 value = value !== "{}" ? (value as string).substr(1, (value as string).length - 2).split(",") : [];
@@ -565,6 +572,9 @@ export class PostgresDriver implements Driver {
         } else if (column.type === "simple-json") {
             return "text";
 
+        } else if (column.type === "simple-enum") {
+            return "enum";
+
         } else if (column.type === "int2") {
             return "smallint";
 
@@ -598,7 +608,12 @@ export class PostgresDriver implements Driver {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
-        if (columnMetadata.type === "enum" && defaultValue !== undefined) {
+        if (
+            (
+                columnMetadata.type === "enum"
+                || columnMetadata.type === "simple-enum"
+            ) && defaultValue !== undefined
+        ) {
             if (columnMetadata.isArray && Array.isArray(defaultValue)) {
                 return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
             }

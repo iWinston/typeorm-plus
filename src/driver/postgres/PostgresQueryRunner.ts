@@ -313,7 +313,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // if table have column with ENUM type, we must create this type in postgres.
         await Promise.all(table.columns
-            .filter(column => column.type === "enum")
+            .filter(column => column.type === "enum" || column.type === "simple-enum")
             .map(async column => {
                 const hasEnum = await this.hasEnumType(table, column);
                 if (!hasEnum) {
@@ -449,7 +449,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         // rename ENUM types
         newTable.columns
-            .filter(column => column.type === "enum")
+            .filter(column => column.type === "enum" || column.type === "simple-enum")
             .forEach(column => {
                 upQueries.push(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`);
                 downQueries.push(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`);
@@ -467,7 +467,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: string[] = [];
         const downQueries: string[] = [];
 
-        if (column.type === "enum") {
+        if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
             if (!hasEnum) {
                 upQueries.push(this.createEnumTypeSql(table, column));
@@ -577,7 +577,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
 
                 // rename ENUM type
-                if (oldColumn.type === "enum") {
+                if (oldColumn.type === "enum" || oldColumn.type === "simple-enum") {
                     upQueries.push(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`);
                     downQueries.push(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`);
                 }
@@ -675,7 +675,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
             }
 
-            if (newColumn.type === "enum" && oldColumn.type === "enum" && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)) {
+            if (
+                (newColumn.type === "enum" || newColumn.type === "simple-enum")
+                && (oldColumn.type === "enum" || newColumn.type === "simple-enum")
+                && !OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!)
+            ) {
                 const enumName = this.buildEnumName(table, newColumn);
                 const enumNameWithoutSchema = this.buildEnumName(table, newColumn, false);
                 const arraySuffix = newColumn.isArray ? "[]" : "";
@@ -901,7 +905,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
 
         // drop enum type
-        if (column.type === "enum") {
+        if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
             if (hasEnum) {
                 upQueries.push(this.dropEnumTypeSql(table, column));
@@ -1895,7 +1899,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (column.type === "bigint" || column.type === "int8")
                 c += " BIGSERIAL";
         }
-        if (column.type === "enum") {
+        if (column.type === "enum" || column.type === "simple-enum") {
             c += " " + this.buildEnumName(table, column);
             if (column.isArray)
                 c += " array";

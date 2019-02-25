@@ -439,7 +439,8 @@ export class MysqlDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
-        } else if (columnMetadata.type === "enum") {
+
+        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
             return "" + value;
         }
 
@@ -475,7 +476,10 @@ export class MysqlDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value);
 
         } else if (
-            columnMetadata.type === "enum"
+            (
+                columnMetadata.type === "enum"
+                || columnMetadata.type === "simple-enum"
+            )
             && columnMetadata.enum
             && !isNaN(value)
             && columnMetadata.enum.indexOf(parseInt(value)) >= 0
@@ -515,6 +519,9 @@ export class MysqlDriver implements Driver {
         } else if (column.type === "simple-array" || column.type === "simple-json") {
             return "text";
 
+        } else if (column.type === "simple-enum") {
+            return "enum";
+
         } else if (column.type === "double precision" || column.type === "real") {
             return "double";
 
@@ -541,7 +548,13 @@ export class MysqlDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
 
-        if (columnMetadata.type === "enum" && defaultValue !== undefined) {
+        if (
+            (
+                columnMetadata.type === "enum" ||
+                columnMetadata.type === "simple-enum"
+            ) &&
+            defaultValue !== undefined
+        ) {
             return `'${defaultValue}'`;
         }
 
