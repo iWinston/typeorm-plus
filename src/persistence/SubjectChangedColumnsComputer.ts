@@ -100,16 +100,10 @@ export class SubjectChangedColumnsComputer {
                     return;
             }
             subject.diffColumns.push(column);
-            // find if there is already a column to be changed
-            if (changeMap) { // and update its value if it was found
-                changeMap.value = entityValue;
-
-            } else { // if it wasn't found add a new column for change
-                subject.changeMaps.push({
-                    column: column,
-                    value: entityValue
-                });
-            }
+            subject.changeMaps.push({
+                column: column,
+                value: entityValue
+            });
         });
     }
 
