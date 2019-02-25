@@ -261,7 +261,13 @@ export class EntityMetadataBuilder {
                 if (generated) {
                     column.isGenerated = true;
                     column.generationStrategy = generated.strategy;
-                    column.type = generated.strategy === "increment" ? (column.type || Number) : "uuid";
+                    if (generated.strategy === "uuid") {
+                        column.type = "uuid";
+                    } else if (generated.strategy === "rowid") {
+                        column.type = "int";
+                    } else {
+                        column.type = column.type || Number;
+                    }
                     column.build(this.connection);
                     this.computeEntityMetadataStep2(entityMetadata);
                 }
