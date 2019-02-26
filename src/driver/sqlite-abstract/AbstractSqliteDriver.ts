@@ -246,6 +246,8 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value);
+        } else if (columnMetadata.type === "simple-enum") {
+            return DateUtils.simpleEnumToString(value);
         }
 
         return value;
@@ -288,6 +290,10 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
+
+        } else if ( columnMetadata.type === "simple-enum" ) {
+            value = DateUtils.stringToSimpleEnum(value, columnMetadata);
+
         }
 
         if (columnMetadata.transformer)
@@ -384,6 +390,9 @@ export abstract class AbstractSqliteDriver implements Driver {
 
         } else if (column.type === "simple-json") {
             return "text";
+
+        } else if (column.type === "simple-enum") {
+            return "varchar";
 
         } else {
             return column.type as string || "";

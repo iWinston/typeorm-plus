@@ -36,11 +36,11 @@ export class RelationIdLoader {
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
                     relationIdAttr.relation.joinColumns.forEach(joinColumn => {
-                        result[joinColumn.databaseName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.databaseName)];
+                        result[joinColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
                     });
 
                     relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                        result[primaryColumn.databaseName] = rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, primaryColumn.databaseName)];
+                        result[primaryColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[this.buildColumnAlias(relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
                     });
                     return result;
                 });
@@ -96,9 +96,19 @@ export class RelationIdLoader {
                 if (relationIdAttr.queryBuilderFactory)
                     relationIdAttr.queryBuilderFactory(qb);
 
+                const results = await qb.getRawMany();
+                results.forEach(result => {
+                    joinColumns.forEach(column => {
+                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column.referencedColumn!);
+                    });
+                    relation.inverseRelation!.entityMetadata.primaryColumns.forEach(column => {
+                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column);
+                    });
+                });
+
                 return {
                     relationIdAttribute: relationIdAttr,
-                    results: await qb.getRawMany()
+                    results
                 };
 
             } else {
@@ -166,9 +176,16 @@ export class RelationIdLoader {
                 if (relationIdAttr.queryBuilderFactory)
                     relationIdAttr.queryBuilderFactory(qb);
 
+                const results = await qb.getRawMany();
+                results.forEach(result => {
+                    [...joinColumns, ...inverseJoinColumns].forEach(column => {
+                        result[column.databaseName] = this.connection.driver.prepareHydratedValue(result[column.databaseName], column.referencedColumn!);
+                    });
+                });
+
                 return {
                     relationIdAttribute: relationIdAttr,
-                    results: await qb.getRawMany()
+                    results
                 };
             }
         });
