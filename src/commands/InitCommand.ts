@@ -481,7 +481,7 @@ services:
 services:
 
   mongodb:
-    image: "mongo:3.4.1"
+    image: "mongo:4.0.6"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
