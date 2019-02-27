@@ -7,10 +7,10 @@ import { Session } from "./Session";
 export class SessionSettings  {
 
     @PrimaryColumn()
-    id: number;
+    sessionId: number;
 
     @OneToOne(type => Session, session => session.id)
-    @JoinColumn({ name: "id", referencedColumnName: "id"})
+    @JoinColumn({ name: "sessionId", referencedColumnName: "id"})
     session?: Session;
 
 }
