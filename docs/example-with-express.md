@@ -37,7 +37,7 @@ compile and run. Create it using your favorite editor and put the following conf
 ```json
 {
   "compilerOptions": {
-    "lib": ["es5", "es6", "dom"], // NOTE that the "dom" is needed to run the 'console' in the example
+    "lib": ["es5", "es6", "dom"],
     "target": "es5",
     "module": "commonjs",
     "moduleResolution": "node",
