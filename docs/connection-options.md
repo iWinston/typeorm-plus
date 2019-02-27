@@ -178,6 +178,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
+* `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. Can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"

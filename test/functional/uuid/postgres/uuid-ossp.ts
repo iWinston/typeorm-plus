@@ -6,13 +6,16 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 import {Post} from "./entity/Post";
 import {Question} from "./entity/Question";
 
-describe("uuid-postgres", () => {
+describe("uuid-ossp", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
+            driverSpecific: {
+                uuidExtension: "uuid-ossp"
+            }
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -47,14 +50,14 @@ describe("uuid-postgres", () => {
 
         const post = new Post();
         await postRepository.save(post);
-        const loadedPost = await postRepository.findOne(post.id);
+        const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.uuid).to.be.exist;
         postTable!.findColumnByName("uuid")!.type.should.be.equal("uuid");
 
         const post2 = new Post();
         post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895";
         await postRepository.save(post2);
-        const loadedPost2 = await postRepository.findOne(post2.id);
+        const loadedPost2 = await postRepository.findOne(2);
         expect(loadedPost2!.uuid).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");
 
         const question = new Question();
