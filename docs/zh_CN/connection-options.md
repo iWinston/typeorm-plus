@@ -120,6 +120,8 @@
 
 - `ssl` - 带有 ssl 参数的对象。 详见 [TLS/SSL](https://node-postgres.com/features/ssl)。
 
+- `uuidExtension` - 生成UUID时使用的Postgres扩展。 默认为`uuid-ossp`。 如果`uuid-ossp`扩展不可用，可以更改为`pgcrypto`。
+
 ## `sqlite`
 
 - `database` - 数据库路径。 例如 "./mydb.sql"
