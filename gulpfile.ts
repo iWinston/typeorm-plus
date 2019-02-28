@@ -2,7 +2,7 @@
 ///<reference path="node_modules/@types/chai/index.d.ts"/>
 ///<reference path="node_modules/@types/mocha/index.d.ts"/>
 
-import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
+import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
 const gulp = require("gulp");
 const del = require("del");
@@ -12,7 +12,6 @@ const rename = require("gulp-rename");
 const mocha = require("gulp-mocha");
 const chai = require("chai");
 const tslint = require("gulp-tslint");
-const stylish = require("tslint-stylish");
 const sourcemaps = require("gulp-sourcemaps");
 const istanbul = require("gulp-istanbul");
 const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
@@ -21,7 +20,6 @@ const args = require("yargs").argv;
 
 @Gulpclass()
 export class Gulpfile {
-
     // -------------------------------------------------------------------------
     // General tasks
     // -------------------------------------------------------------------------
@@ -47,7 +45,8 @@ export class Gulpfile {
      */
     @Task()
     compile() {
-        return gulp.src("package.json", { read: false })
+        return gulp
+            .src("package.json", { read: false })
             .pipe(shell(["npm run compile"]));
     }
 
@@ -60,15 +59,16 @@ export class Gulpfile {
      */
     @Task()
     browserCopySources() {
-        return gulp.src([
-            "./src/**/*.ts",
-            "!./src/commands/*.ts",
-            "!./src/cli.ts",
-            "!./src/typeorm.ts",
-            "!./src/typeorm-model-shim.ts",
-            "!./src/platform/PlatformTools.ts"
-        ])
-        .pipe(gulp.dest("./build/browser/src"));
+        return gulp
+            .src([
+                "./src/**/*.ts",
+                "!./src/commands/*.ts",
+                "!./src/cli.ts",
+                "!./src/typeorm.ts",
+                "!./src/typeorm-model-shim.ts",
+                "!./src/platform/PlatformTools.ts"
+            ])
+            .pipe(gulp.dest("./build/browser/src"));
     }
 
     /**
@@ -76,7 +76,8 @@ export class Gulpfile {
      */
     @Task()
     browserCopyPlatformTools() {
-        return gulp.src("./src/platform/BrowserPlatformTools.template")
+        return gulp
+            .src("./src/platform/BrowserPlatformTools.template")
             .pipe(rename("PlatformTools.ts"))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
@@ -86,7 +87,8 @@ export class Gulpfile {
      */
     @Task()
     browserCopyDisabledDriversDummy() {
-        return gulp.src("./src/platform/BrowserDisabledDriversDummy.template")
+        return gulp
+            .src("./src/platform/BrowserDisabledDriversDummy.template")
             .pipe(rename("BrowserDisabledDriversDummy.ts"))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
@@ -95,26 +97,34 @@ export class Gulpfile {
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
             module: "es2015",
-            "lib": ["es5", "es6", "dom"],
+            lib: ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/src/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp
+            .src([
+                "./build/browser/src/**/*.ts",
+                "./node_modules/reflect-metadata/**/*.d.ts",
+                "./node_modules/@types/**/*.ts"
+            ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
         return [
             tsResult.dts.pipe(gulp.dest("./build/package/browser")),
             tsResult.js
-                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
+                .pipe(
+                    sourcemaps.write(".", {
+                        sourceRoot: "",
+                        includeContent: true
+                    })
+                )
                 .pipe(gulp.dest("./build/package/browser"))
         ];
     }
 
     @Task()
     browserClearPackageDirectory(cb: Function) {
-        return del([
-            "./build/browser/**"
-        ]);
+        return del(["./build/browser/**"]);
     }
 
     // -------------------------------------------------------------------------
@@ -126,10 +136,9 @@ export class Gulpfile {
      */
     @Task()
     packagePublish() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm publish"
-            ]));
+        return gulp
+            .src("package.json", { read: false })
+            .pipe(shell(["cd ./build/package && npm publish"]));
     }
 
     /**
@@ -137,10 +146,9 @@ export class Gulpfile {
      */
     @Task()
     packagePublishNext() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm publish --tag next"
-            ]));
+        return gulp
+            .src("package.json", { read: false })
+            .pipe(shell(["cd ./build/package && npm publish --tag next"]));
     }
 
     /**
@@ -148,15 +156,23 @@ export class Gulpfile {
      */
     @MergedTask()
     packageCompile() {
-        const tsProject = ts.createProject("tsconfig.json", { typescript: require("typescript") });
-        const tsResult = gulp.src(["./src/**/*.ts", "./node_modules/@types/**/*.ts"])
+        const tsProject = ts.createProject("tsconfig.json", {
+            typescript: require("typescript")
+        });
+        const tsResult = gulp
+            .src(["./src/**/*.ts", "./node_modules/@types/**/*.ts"])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
         return [
             tsResult.dts.pipe(gulp.dest("./build/package")),
             tsResult.js
-                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
+                .pipe(
+                    sourcemaps.write(".", {
+                        sourceRoot: "",
+                        includeContent: true
+                    })
+                )
                 .pipe(gulp.dest("./build/package"))
         ];
     }
@@ -166,7 +182,8 @@ export class Gulpfile {
      */
     @Task()
     packageMoveCompiledFiles() {
-        return gulp.src("./build/package/src/**/*")
+        return gulp
+            .src("./build/package/src/**/*")
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -175,7 +192,8 @@ export class Gulpfile {
      */
     @Task()
     packageReplaceReferences() {
-        return gulp.src("./build/package/**/*.d.ts")
+        return gulp
+            .src("./build/package/**/*.d.ts")
             .pipe(replace(`/// <reference types="node" />`, ""))
             .pipe(replace(`/// <reference types="chai" />`, ""))
             .pipe(gulp.dest("./build/package"));
@@ -186,9 +204,7 @@ export class Gulpfile {
      */
     @Task()
     packageClearPackageDirectory(cb: Function) {
-        return del([
-            "build/package/src/**"
-        ], cb);
+        return del(["build/package/src/**"], cb);
     }
 
     /**
@@ -196,8 +212,9 @@ export class Gulpfile {
      */
     @Task()
     packagePreparePackageFile() {
-        return gulp.src("./package.json")
-            .pipe(replace("\"private\": true,", "\"private\": false,"))
+        return gulp
+            .src("./package.json")
+            .pipe(replace('"private": true,', '"private": false,'))
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -206,7 +223,8 @@ export class Gulpfile {
      */
     @Task()
     packageCopyReadme() {
-        return gulp.src("./README.md")
+        return gulp
+            .src("./README.md")
             .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
             .pipe(gulp.dest("./build/package"));
     }
@@ -216,7 +234,11 @@ export class Gulpfile {
      */
     @Task()
     packageCopyShims() {
-        return gulp.src(["./extra/typeorm-model-shim.js", "./extra/typeorm-class-transformer-shim.js"])
+        return gulp
+            .src([
+                "./extra/typeorm-model-shim.js",
+                "./extra/typeorm-class-transformer-shim.js"
+            ])
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -227,7 +249,11 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy"],
+            [
+                "browserCopySources",
+                "browserCopyPlatformTools",
+                "browserCopyDisabledDriversDummy"
+            ],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
             [
@@ -237,7 +263,7 @@ export class Gulpfile {
                 "packagePreparePackageFile",
                 "packageCopyReadme",
                 "packageCopyShims"
-            ],
+            ]
         ];
     }
 
@@ -266,13 +292,20 @@ export class Gulpfile {
      */
     @Task()
     tslint() {
-        return gulp.src(["./src/**/*.ts", "./test/**/*.ts", "./sample/**/*.ts"])
-            .pipe(tslint())
-            .pipe(tslint.report(stylish, {
-                emitError: true,
-                sort: true,
-                bell: true
-            }));
+        return gulp
+            .src(["./src/**/*.ts", "./test/**/*.ts", "./sample/**/*.ts"])
+            .pipe(
+                tslint({
+                    formatter: "stylish"
+                })
+            )
+            .pipe(
+                tslint.report({
+                    emitError: true,
+                    sort: true,
+                    bell: true
+                })
+            );
     }
 
     /**
@@ -280,7 +313,8 @@ export class Gulpfile {
      */
     @Task()
     coveragePre() {
-        return gulp.src(["./build/compiled/src/**/*.js"])
+        return gulp
+            .src(["./build/compiled/src/**/*.js"])
             .pipe(istanbul())
             .pipe(istanbul.hookRequire());
     }
@@ -290,7 +324,8 @@ export class Gulpfile {
      */
     @Task()
     coveragePost() {
-        return gulp.src(["./build/compiled/test/**/*.js"])
+        return gulp
+            .src(["./build/compiled/test/**/*.js"])
             .pipe(istanbul.writeReports());
     }
 
@@ -303,17 +338,19 @@ export class Gulpfile {
         chai.use(require("sinon-chai"));
         chai.use(require("chai-as-promised"));
 
-        return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(mocha({
+        return gulp.src(["./build/compiled/test/**/*.js"]).pipe(
+            mocha({
                 bail: true,
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
                 timeout: 15000
-            }));
+            })
+        );
     }
 
     @Task()
     coverageRemap() {
-        return gulp.src("./coverage/coverage-final.json")
+        return gulp
+            .src("./coverage/coverage-final.json")
             .pipe(remapIstanbul())
             .pipe(gulp.dest("./coverage"));
     }
@@ -355,9 +392,9 @@ export class Gulpfile {
 
     @Task()
     createTravisOrmConfig() {
-        return gulp.src("./ormconfig.travis.json")
+        return gulp
+            .src("./ormconfig.travis.json")
             .pipe(rename("ormconfig.json"))
             .pipe(gulp.dest("./"));
     }
-
 }
