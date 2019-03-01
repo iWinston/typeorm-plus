@@ -9,6 +9,9 @@ feel free to ask us and community.
 
 ### Bug fixes
 
+* fixed bug in `connection.dropDatabase` method ([#1414](https://github.com/typeorm/typeorm/pull/3727))
+* updated all dependencies
+
 ### Features
 
 * added `uuidExtension` option to Postgres connection options, which allows TypeORM to use the newer `pgcrypto` extension to generate UUIDs
