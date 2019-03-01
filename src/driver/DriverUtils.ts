@@ -61,8 +61,8 @@ export class DriverUtils {
         return {
             type: type,
             host: host,
-            username: username,
-            password: password,
+            username: decodeURIComponent(username),
+            password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
             database: afterBase || undefined
         };
