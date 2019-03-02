@@ -1,7 +1,7 @@
 # FAQ
 
 * [How do I change a column name in the database?](#how-do-i-change-a-column-name-in-the-database)
-* [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-value-of-default-some-function-for-example-now)
+* [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-the-default-value-to-some-function-for-example-now)
 * [How to do validation?](#how-to-do-validation)
 * [What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?](#what-does-owner-side-in-a-relations-mean-or-why-we-need-to-use-joincolumn-and-jointable)
 * [How do I add extra columns into many-to-many (junction) table?](#how-do-i-add-extra-columns-into-many-to-many-junction-table)

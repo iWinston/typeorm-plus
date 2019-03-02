@@ -5,7 +5,7 @@ To learn more about hierarchy table take a look at [this awesome presentation by
 
 * [Adjacency list](#adjacency-list)
 * [Nested set](#nested-set)
-* [Materialized Path (aka Path Enumeration)](#nested-set-aka-path-enumeration)
+* [Materialized Path (aka Path Enumeration)](#materialized-path-aka-path-enumeration)
 * [Closure table](#closure-table)
 * [Working with tree entities](#working-with-tree-entities)
 
