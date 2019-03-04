@@ -197,7 +197,7 @@ some data or manipulate the database.
 
 ```ts
 // request data
-const categoryRepository = getRepository<Category>('CategoryEntity');
+const categoryRepository = getRepository<Category>(CategoryEntity);
 const category = await categoryRepository.findOne(1); // category is properly typed!
 
 // insert a new category into the database
