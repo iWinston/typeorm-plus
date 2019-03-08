@@ -87,8 +87,8 @@ describe("many-to-many", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.details[0].id).not.to.be.empty;
+            expect(savedPost.id).not.to.be.undefined;
+            expect(savedPost.details[0].id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
@@ -214,8 +214,8 @@ describe("many-to-many", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.categories[0].id).not.to.be.empty;
+            expect(savedPost.id).not.to.be.undefined;
+            expect(savedPost.categories[0].id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
@@ -337,7 +337,7 @@ describe("many-to-many", function() {
                     .setParameter("id", updatedPost.id)
                     .getOne();
             }).then(updatedPostReloaded => {
-                expect(updatedPostReloaded!.details).to.be.empty;
+                expect(updatedPostReloaded!.details).to.be.eql([]);
 
                 return postDetailsRepository
                     .createQueryBuilder("details")
@@ -346,8 +346,8 @@ describe("many-to-many", function() {
                     .setParameter("id", details.id)
                     .getOne()!;
             }).then(reloadedDetails => {
-                expect(reloadedDetails).not.to.be.empty;
-                expect(reloadedDetails!.posts).to.be.empty;
+                expect(reloadedDetails).not.to.be.undefined;
+                expect(reloadedDetails!.posts).to.be.eql([]);
             });
         });
     });
@@ -448,7 +448,7 @@ describe("many-to-many", function() {
                         .getOne();
 
                 }).then(reloadedPost => {
-                    expect(reloadedPost!.metadatas).to.be.empty;
+                    expect(reloadedPost!.metadatas).to.be.eql([]);
                 });
         });
 
@@ -483,8 +483,8 @@ describe("many-to-many", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedDetails.id).not.to.be.empty;
-            expect(details.id).not.to.be.empty;
+            expect(savedDetails.id).not.to.be.undefined;
+            expect(details.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {

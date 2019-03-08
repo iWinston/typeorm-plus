@@ -25,7 +25,7 @@ describe("pgcrypto", () => {
         const queryRunner = connection.createQueryRunner();
         const schema = await queryRunner.getTable("record");
         await queryRunner.release();
-        expect(schema).not.to.be.empty;
+        expect(schema).not.to.be.undefined;
         expect(schema!.columns.find(tableColumn => tableColumn.name === "id" && tableColumn.type === "uuid" && tableColumn.isGenerated)).to.be.not.empty;
     })));
 

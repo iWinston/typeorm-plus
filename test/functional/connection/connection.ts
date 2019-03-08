@@ -197,7 +197,7 @@ describe("Connection", () => {
             expect(loadedPost).to.be.eql(post);
             await connection.synchronize(true);
             const againLoadedPost = await postRepository.findOne(post.id);
-            expect(againLoadedPost).to.be.empty;
+            expect(againLoadedPost).to.be.undefined;
         })));
 
     });

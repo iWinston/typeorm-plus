@@ -26,7 +26,7 @@ describe("entity-schema > indices > basic", () => {
         expect(table!.indices[0].name).to.be.equal("IDX_TEST");
         expect(table!.indices[0].isUnique).to.be.false;
         expect(table!.indices[0].columnNames.length).to.be.equal(2);
-        expect(table!.indices[0].columnNames).to.include.members(["FirstName", "LastName"]);
+        expect(table!.indices[0].columnNames).to.deep.include.members(["FirstName", "LastName"]);
 
     })));
 
@@ -47,13 +47,13 @@ describe("entity-schema > indices > basic", () => {
             expect(table!.uniques.length).to.be.equal(1);
             expect(table!.uniques[0].name).to.be.equal("IDX_TEST");
             expect(table!.uniques[0].columnNames.length).to.be.equal(2);
-            expect(table!.uniques[0].columnNames).to.include.members(["FirstName", "LastName"]);
+            expect(table!.uniques[0].columnNames).to.deep.include.members(["FirstName", "LastName"]);
         } else {
             expect(table!.indices.length).to.be.equal(1);
             expect(table!.indices[0].name).to.be.equal("IDX_TEST");
             expect(table!.indices[0].isUnique).to.be.true;
             expect(table!.indices[0].columnNames.length).to.be.equal(2);
-            expect(table!.indices[0].columnNames).to.include.members(["FirstName", "LastName"]);
+            expect(table!.indices[0].columnNames).to.deep.include.members(["FirstName", "LastName"]);
         }
 
     })));
@@ -83,7 +83,7 @@ describe("entity-schema > indices > basic", () => {
         expect(table!.indices[0].name).to.be.equal("IDX_TEST");
         expect(table!.indices[0].isUnique).to.be.false;
         expect(table!.indices[0].columnNames.length).to.be.equal(2);
-        expect(table!.indices[0].columnNames).to.include.members(["FirstName", "LastName"]);
+        expect(table!.indices[0].columnNames).to.deep.include.members(["FirstName", "LastName"]);
 
     })));
 

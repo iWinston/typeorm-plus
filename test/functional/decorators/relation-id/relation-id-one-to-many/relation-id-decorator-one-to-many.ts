@@ -102,7 +102,7 @@ describe("decorators > relation-id > one-to-many", () => {
             .orderBy("category.id")
             .getMany();
 
-        expect(loadedCategories![0].removedPostIds).to.not.be.empty;
+        expect(loadedCategories![0].removedPostIds).to.not.be.eql([]);
         expect(loadedCategories![0].removedPostIds.length).to.be.equal(1);
         expect(loadedCategories![0].removedPostIds[0]).to.be.equal(2);
         expect(loadedCategories![1].removedPostIds[0]).to.be.equal(3);
@@ -112,7 +112,7 @@ describe("decorators > relation-id > one-to-many", () => {
             .where("category.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedCategory!.removedPostIds).to.not.be.empty;
+        expect(loadedCategory!.removedPostIds).to.not.be.eql([]);
         expect(loadedCategory!.removedPostIds.length).to.be.equal(1);
         expect(loadedCategory!.removedPostIds[0]).to.be.equal(2);
 

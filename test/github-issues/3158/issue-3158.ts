@@ -15,8 +15,8 @@ it("github issues > #3158 Cannot run sync a second time", async () => {
         await Promise.all(connections.map(async connection => {
             const schemaBuilder = connection.driver.createSchemaBuilder();
             const syncQueries = await schemaBuilder.log();
-            expect(syncQueries.downQueries).to.be.empty;
-            expect(syncQueries.upQueries).to.be.empty;
+            expect(syncQueries.downQueries).to.be.eql([]);
+            expect(syncQueries.upQueries).to.be.eql([]);
         }));
         await closeTestingConnections(connections);
 });

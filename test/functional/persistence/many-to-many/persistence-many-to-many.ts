@@ -55,9 +55,9 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser!).not.to.be.empty;
-        expect(loadedUser!.post).not.to.be.empty;
-        expect(loadedUser!.post.categories).not.to.be.empty;
+        expect(loadedUser!).not.to.be.undefined;
+        expect(loadedUser!.post).not.to.be.undefined;
+        expect(loadedUser!.post.categories).not.to.be.undefined;
 
     })));
 
@@ -100,9 +100,9 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser1!).not.to.be.empty;
-        expect(loadedUser1!.post).not.to.be.empty;
-        expect(loadedUser1!.post.categories).not.to.be.empty;
+        expect(loadedUser1!).not.to.be.undefined;
+        expect(loadedUser1!.post).not.to.be.undefined;
+        expect(loadedUser1!.post.categories).not.to.be.undefined;
         expect(loadedUser1!.post.categories!.length).to.be.equal(2);
 
         // now remove added categories
@@ -118,9 +118,9 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser2!).not.to.be.empty;
-        expect(loadedUser2!.post).not.to.be.empty;
-        expect(loadedUser2!.post.categories).not.to.be.empty;
+        expect(loadedUser2!).not.to.be.undefined;
+        expect(loadedUser2!.post).not.to.be.undefined;
+        expect(loadedUser2!.post.categories).not.to.be.undefined;
         expect(loadedUser2!.post.categories!.length).to.be.equal(1);
 
     })));
@@ -164,9 +164,9 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser1!).not.to.be.empty;
-        expect(loadedUser1!.post).not.to.be.empty;
-        expect(loadedUser1!.post.categories).not.to.be.empty;
+        expect(loadedUser1!).not.to.be.undefined;
+        expect(loadedUser1!.post).not.to.be.undefined;
+        expect(loadedUser1!.post.categories).not.to.be.undefined;
         expect(loadedUser1!.post.categories!.length).to.be.equal(2);
 
         // now remove added categories
@@ -182,8 +182,8 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser2!).not.to.be.empty;
-        expect(loadedUser2!.post).not.to.be.empty;
+        expect(loadedUser2!).not.to.be.undefined;
+        expect(loadedUser2!.post).not.to.be.undefined;
         expect(loadedUser2!.post.categories!.length).to.be.equal(0);
 
     })));
@@ -227,9 +227,9 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser1!).not.to.be.empty;
-        expect(loadedUser1!.post).not.to.be.empty;
-        expect(loadedUser1!.post.categories).not.to.be.empty;
+        expect(loadedUser1!).not.to.be.undefined;
+        expect(loadedUser1!.post).not.to.be.undefined;
+        expect(loadedUser1!.post.categories).not.to.be.undefined;
         expect(loadedUser1!.post.categories!.length).to.be.equal(2);
 
         // now remove added categories
@@ -245,8 +245,8 @@ describe("persistence > many-to-many", function() {
             }
         });
 
-        expect(loadedUser2!).not.to.be.empty;
-        expect(loadedUser2!.post).not.to.be.empty;
+        expect(loadedUser2!).not.to.be.undefined;
+        expect(loadedUser2!.post).not.to.be.undefined;
         expect(loadedUser2!.post.categories!.length).to.be.equal(0);
     })));
 
