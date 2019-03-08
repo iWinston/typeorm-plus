@@ -546,7 +546,7 @@ export class SubjectExecutor {
 
             // merge into entity all generated values returned by a database
             if (subject.generatedMap)
-                this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
+                this.queryRunner.manager.merge(subject.metadata.target as any, subject.entity, subject.generatedMap);
         });
     }
 
