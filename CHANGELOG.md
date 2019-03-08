@@ -10,7 +10,9 @@ feel free to ask us and community.
 ### Bug fixes
 
 * fixed bug in `connection.dropDatabase` method ([#1414](https://github.com/typeorm/typeorm/pull/3727))
+* fixed "deep relations" not loaded/mapped due to the built-in max length of Postgres ([#3118](https://github.com/typeorm/typeorm/issues/3118))
 * updated all dependencies
+* fixed types and issue with from [#3725](https://github.com/typeorm/typeorm/issues/3725)
 
 ### Features
 
