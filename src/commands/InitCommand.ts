@@ -38,11 +38,11 @@ export class InitCommand implements yargs.CommandModule {
 
     async handler(args: yargs.Arguments) {
         try {
-            const database = args.database || "mysql";
+            const database: string = args.database as any || "mysql";
             const isExpress = args.express !== undefined ? true : false;
             const isDocker = args.docker !== undefined ? true : false;
             const basePath = process.cwd() + (args.name ? ("/" + args.name) : "");
-            const projectName = args.name ? path.basename(args.name) : undefined;
+            const projectName = args.name ? path.basename(args.name as any) : undefined;
             await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);

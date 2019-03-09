@@ -21,8 +21,8 @@ describe("github issues > #3587 do not generate change queries for number based 
 
         const sqlInMemory = await connection.driver.createSchemaBuilder().log();
 
-        expect(sqlInMemory.downQueries).to.be.empty;
-        expect(sqlInMemory.upQueries).to.be.empty;
+        expect(sqlInMemory.downQueries).to.be.eql([]);
+        expect(sqlInMemory.upQueries).to.be.eql([]);
     })));
 
 });

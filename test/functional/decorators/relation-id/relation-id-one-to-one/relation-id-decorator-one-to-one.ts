@@ -55,13 +55,13 @@ describe("decorators > relation-id > one-to-one", () => {
             .addOrderBy("post.id")
             .getMany();
 
-        expect(loadedPosts![0].categoryId).to.not.be.empty;
+        expect(loadedPosts![0].categoryId).to.not.be.undefined;
         expect(loadedPosts![0].categoryId).to.be.equal(1);
-        expect(loadedPosts![0].categoryName).to.not.be.empty;
+        expect(loadedPosts![0].categoryName).to.not.be.undefined;
         expect(loadedPosts![0].categoryName).to.be.equal("BMW");
-        expect(loadedPosts![1].categoryId).to.not.be.empty;
+        expect(loadedPosts![1].categoryId).to.not.be.undefined;
         expect(loadedPosts![1].categoryId).to.be.equal(2);
-        expect(loadedPosts![1].categoryName).to.not.be.empty;
+        expect(loadedPosts![1].categoryName).to.not.be.undefined;
         expect(loadedPosts![1].categoryName).to.be.equal("Boeing");
 
         let loadedPost = await connection.manager
@@ -69,9 +69,9 @@ describe("decorators > relation-id > one-to-one", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categoryId).to.not.be.empty;
+        expect(loadedPost!.categoryId).to.not.be.undefined;
         expect(loadedPost!.categoryId).to.be.equal(1);
-        expect(loadedPost!.categoryName).to.not.be.empty;
+        expect(loadedPost!.categoryName).to.not.be.undefined;
         expect(loadedPost!.categoryName).to.be.equal("BMW");
     })));
 
@@ -104,9 +104,9 @@ describe("decorators > relation-id > one-to-one", () => {
             .addOrderBy("category.id")
             .getMany();
 
-        expect(loadedCategories![0].postId).to.not.be.empty;
+        expect(loadedCategories![0].postId).to.not.be.undefined;
         expect(loadedCategories![0].postId).to.be.equal(1);
-        expect(loadedCategories![1].postId).to.not.be.empty;
+        expect(loadedCategories![1].postId).to.not.be.undefined;
         expect(loadedCategories![1].postId).to.be.equal(2);
 
         let loadedCategory = await connection.manager
@@ -114,7 +114,7 @@ describe("decorators > relation-id > one-to-one", () => {
             .where("category.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedCategory!.postId).to.not.be.empty;
+        expect(loadedCategory!.postId).to.not.be.undefined;
         expect(loadedCategory!.postId).to.be.equal(1);
     })));
 

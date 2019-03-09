@@ -22,7 +22,7 @@ describe("uuid-cockroach", () => {
         const queryRunner = connection.createQueryRunner();
         const table = await queryRunner.getTable("record");
         await queryRunner.release();
-        expect(table).not.to.be.empty;
+        expect(table).not.to.be.undefined;
         expect(table!.columns.find(tableColumn => tableColumn.name === "id" && tableColumn.type === "uuid" && tableColumn.isGenerated)).to.be.not.empty;
     })));
 

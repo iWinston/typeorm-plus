@@ -49,10 +49,10 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .orderBy("post.id")
             .getMany();
 
-        expect(loadedPosts![0].categoryIds).to.not.be.empty;
+        expect(loadedPosts![0].categoryIds).to.not.be.eql([]);
         expect(loadedPosts![0].categoryIds[0]).to.be.equal(1);
         expect(loadedPosts![0].categoryIds[1]).to.be.equal(2);
-        expect(loadedPosts![1].categoryIds).to.not.be.empty;
+        expect(loadedPosts![1].categoryIds).to.not.be.eql([]);
         expect(loadedPosts![1].categoryIds[0]).to.be.equal(3);
 
         let loadedPost = await connection.manager
@@ -60,7 +60,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categoryIds).to.not.be.eql([]);
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
         expect(loadedPost!.categoryIds[1]).to.be.equal(2);
 
@@ -102,10 +102,10 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .orderBy("post.id")
             .getMany();
 
-        expect(loadedPosts![0].removedCategoryIds).to.not.be.empty;
+        expect(loadedPosts![0].removedCategoryIds).to.not.be.eql([]);
         expect(loadedPosts![0].removedCategoryIds.length).to.be.equal(1);
         expect(loadedPosts![0].removedCategoryIds[0]).to.be.equal(2);
-        expect(loadedPosts![1].removedCategoryIds).to.not.be.empty;
+        expect(loadedPosts![1].removedCategoryIds).to.not.be.eql([]);
         expect(loadedPosts![1].removedCategoryIds[0]).to.be.equal(3);
 
         let loadedPost = await connection.manager
@@ -113,7 +113,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.removedCategoryIds).to.not.be.empty;
+        expect(loadedPost!.removedCategoryIds).to.not.be.eql([]);
         expect(loadedPost!.removedCategoryIds.length).to.be.equal(1);
         expect(loadedPost!.removedCategoryIds[0]).to.be.equal(2);
 
@@ -142,7 +142,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.subcategoryIds).to.not.be.empty;
+        expect(loadedPost!.subcategoryIds).to.not.be.eql([]);
         expect(loadedPost!.subcategoryIds[0]).to.be.equal(1);
         expect(loadedPost!.subcategoryIds[1]).to.be.equal(2);
 
@@ -172,7 +172,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.removedSubcategoryIds).to.not.be.empty;
+        expect(loadedPost!.removedSubcategoryIds).to.not.be.eql([]);
         expect(loadedPost!.removedSubcategoryIds.length).to.be.equal(1);
         expect(loadedPost!.removedSubcategoryIds[0]).to.be.equal(2);
 
@@ -202,7 +202,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("category.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedCategory!.postIds).to.not.be.empty;
+        expect(loadedCategory!.postIds).to.not.be.eql([]);
         expect(loadedCategory!.postIds[0]).to.be.equal(1);
         expect(loadedCategory!.postIds[1]).to.be.equal(2);
 
@@ -233,7 +233,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("category.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedCategory!.removedPostIds).to.not.be.empty;
+        expect(loadedCategory!.removedPostIds).to.not.be.eql([]);
         expect(loadedCategory!.removedPostIds.length).to.be.equal(1);
         expect(loadedCategory!.removedPostIds[0]).to.be.equal(2);
 
@@ -291,20 +291,20 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getMany();
 
-        expect(loadedPosts![0].categories).to.not.be.empty;
-        expect(loadedPosts![0].categoryIds).to.not.be.empty;
+        expect(loadedPosts![0].categories).to.not.be.eql([]);
+        expect(loadedPosts![0].categoryIds).to.not.be.eql([]);
         expect(loadedPosts![0].categoryIds.length).to.be.equal(2);
         expect(loadedPosts![0].categoryIds[0]).to.be.equal(1);
         expect(loadedPosts![0].categoryIds[1]).to.be.equal(2);
-        expect(loadedPosts![0].categories[0].imageIds).to.not.be.empty;
+        expect(loadedPosts![0].categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPosts![0].categories[0].imageIds.length).to.be.equal(2);
         expect(loadedPosts![0].categories[0].imageIds[0]).to.be.equal(1);
         expect(loadedPosts![0].categories[0].imageIds[1]).to.be.equal(2);
-        expect(loadedPosts![1].categories).to.not.be.empty;
-        expect(loadedPosts![1].categoryIds).to.not.be.empty;
+        expect(loadedPosts![1].categories).to.not.be.eql([]);
+        expect(loadedPosts![1].categoryIds).to.not.be.eql([]);
         expect(loadedPosts![1].categoryIds.length).to.be.equal(1);
         expect(loadedPosts![1].categoryIds[0]).to.be.equal(3);
-        expect(loadedPosts![1].categories[0].imageIds).to.not.be.empty;
+        expect(loadedPosts![1].categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPosts![1].categories[0].imageIds.length).to.be.equal(1);
         expect(loadedPosts![1].categories[0].imageIds[0]).to.be.equal(3);
 
@@ -315,12 +315,12 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categories).to.not.be.empty;
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categories).to.not.be.eql([]);
+        expect(loadedPost!.categoryIds).to.not.be.eql([]);
         expect(loadedPost!.categoryIds.length).to.be.equal(2);
         expect(loadedPost!.categoryIds[0]).to.be.equal(1);
         expect(loadedPost!.categoryIds[1]).to.be.equal(2);
-        expect(loadedPost!.categories[0].imageIds).to.not.be.empty;
+        expect(loadedPost!.categories[0].imageIds).to.not.be.eql([]);
         expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2);
         expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1);
         expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2);
@@ -359,7 +359,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getOne();
 
-        expect(loadedPost!.categories).to.be.empty;
+        expect(loadedPost!.categories).to.be.eql([]);
 
     })));
 
@@ -419,18 +419,18 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .addOrderBy("post.id, categories.id")
             .getMany();
 
-        expect(loadedPosts![0].categories).to.not.be.empty;
-        expect(loadedPosts![0].categoryIds).to.not.be.empty;
+        expect(loadedPosts![0].categories).to.not.be.eql([]);
+        expect(loadedPosts![0].categoryIds).to.not.be.eql([]);
         expect(loadedPosts![0].removedCategoryIds.length).to.be.equal(1);
         expect(loadedPosts![0].removedCategoryIds[0]).to.be.equal(2);
-        expect(loadedPosts![0].categories[0].removedImageIds).to.not.be.empty;
+        expect(loadedPosts![0].categories[0].removedImageIds).to.not.be.eql([]);
         expect(loadedPosts![0].categories[0].removedImageIds.length).to.be.equal(1);
         expect(loadedPosts![0].categories[0].removedImageIds[0]).to.be.equal(2);
-        expect(loadedPosts![1].categories).to.not.be.empty;
-        expect(loadedPosts![1].categoryIds).to.not.be.empty;
+        expect(loadedPosts![1].categories).to.not.be.eql([]);
+        expect(loadedPosts![1].categoryIds).to.not.be.eql([]);
         expect(loadedPosts![1].removedCategoryIds.length).to.be.equal(1);
         expect(loadedPosts![1].removedCategoryIds[0]).to.be.equal(3);
-        expect(loadedPosts![1].categories[0].removedImageIds).to.not.be.empty;
+        expect(loadedPosts![1].categories[0].removedImageIds).to.not.be.eql([]);
         expect(loadedPosts![1].categories[0].removedImageIds.length).to.be.equal(1);
         expect(loadedPosts![1].categories[0].removedImageIds[0]).to.be.equal(3);
 
@@ -441,11 +441,11 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
             .where("post.id = :id", { id: 1 })
             .getOne();
 
-        expect(loadedPost!.categories).to.not.be.empty;
-        expect(loadedPost!.categoryIds).to.not.be.empty;
+        expect(loadedPost!.categories).to.not.be.eql([]);
+        expect(loadedPost!.categoryIds).to.not.be.eql([]);
         expect(loadedPost!.removedCategoryIds.length).to.be.equal(1);
         expect(loadedPost!.removedCategoryIds[0]).to.be.equal(2);
-        expect(loadedPost!.categories[0].removedImageIds).to.not.be.empty;
+        expect(loadedPost!.categories[0].removedImageIds).to.not.be.eql([]);
         expect(loadedPost!.categories[0].removedImageIds.length).to.be.equal(1);
         expect(loadedPost!.categories[0].removedImageIds[0]).to.be.equal(2);
 

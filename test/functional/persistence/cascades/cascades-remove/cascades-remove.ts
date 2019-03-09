@@ -34,14 +34,14 @@ describe.skip("persistence > cascades > remove", () => {
 
         const manyPhotoNames = loadedUser!.manyPhotos.map(photo => photo.name);
         manyPhotoNames.length.should.be.equal(2);
-        manyPhotoNames.should.include("one-to-many #1");
-        manyPhotoNames.should.include("one-to-many #2");
+        manyPhotoNames.should.deep.include("one-to-many #1");
+        manyPhotoNames.should.deep.include("one-to-many #2");
 
         const manyToManyPhotoNames = loadedUser!.manyToManyPhotos.map(photo => photo.name);
         manyToManyPhotoNames.length.should.be.equal(3);
-        manyToManyPhotoNames.should.include("many-to-many #1");
-        manyToManyPhotoNames.should.include("many-to-many #2");
-        manyToManyPhotoNames.should.include("many-to-many #3");
+        manyToManyPhotoNames.should.deep.include("many-to-many #1");
+        manyToManyPhotoNames.should.deep.include("many-to-many #2");
+        manyToManyPhotoNames.should.deep.include("many-to-many #3");
 
         await connection.manager.remove(user);
 

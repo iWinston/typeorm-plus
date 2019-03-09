@@ -87,8 +87,8 @@ describe("many-to-one", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.details.id).not.to.be.empty;
+            expect(savedPost.id).not.to.be.undefined;
+            expect(savedPost.details.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
@@ -224,8 +224,8 @@ describe("many-to-one", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedPost.id).not.to.be.empty;
-            expect(savedPost.category.id).not.to.be.empty;
+            expect(savedPost.id).not.to.be.undefined;
+            expect(savedPost.category.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {
@@ -482,8 +482,8 @@ describe("many-to-one", function() {
         });
 
         it("should have a new generated id after post is created", function () {
-            expect(savedDetails.id).not.to.be.empty;
-            expect(details.id).not.to.be.empty;
+            expect(savedDetails.id).not.to.be.undefined;
+            expect(details.id).not.to.be.undefined;
         });
 
         it("should have inserted post in the database", function() {

@@ -25,7 +25,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         const loadedCategory = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory).not.to.be.empty;
+        expect(loadedCategory).not.to.be.undefined;
         loadedCategory!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
     })));
 
@@ -36,7 +36,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         const loadedCategory = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory).not.to.be.empty;
+        expect(loadedCategory).not.to.be.undefined;
         loadedCategory!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
     })));
 
@@ -54,7 +54,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory1).not.to.be.empty;
+        expect(loadedCategory1).not.to.be.undefined;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Updated post" } });
 
         // update post from loaded category
@@ -62,7 +62,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(loadedCategory1);
 
         const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory2).not.to.be.empty;
+        expect(loadedCategory2).not.to.be.undefined;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Again Updated post" } });
     })));
 
@@ -77,7 +77,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
 
         // load and check if it was correctly saved
         const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory1).not.to.be.empty;
+        expect(loadedCategory1).not.to.be.undefined;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
         // remove post from loaded category
@@ -85,11 +85,11 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(loadedCategory1);
 
         const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory2).not.to.be.empty;
+        expect(loadedCategory2).not.to.be.undefined;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
         const loadedPost = await connection.manager.findOne(Post, 1);
-        expect(loadedPost).not.to.be.empty;
+        expect(loadedPost).not.to.be.undefined;
         loadedPost!.should.be.eql({ id: 1, title: "Hello Post" });
     })));
 
@@ -103,7 +103,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory1).not.to.be.empty;
+        expect(loadedCategory1).not.to.be.undefined;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
         // remove post from loaded category
@@ -111,7 +111,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(loadedCategory1);
 
         const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory2).not.to.be.empty;
+        expect(loadedCategory2).not.to.be.undefined;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: null });
     })));
 
@@ -125,7 +125,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
         await connection.manager.save(category);
 
         const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory1).not.to.be.empty;
+        expect(loadedCategory1).not.to.be.undefined;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post" } });
 
         // remove post from loaded category
@@ -133,7 +133,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
 
         // now lets load category and make sure post isn't set there
         const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory2).not.to.be.empty;
+        expect(loadedCategory2).not.to.be.undefined;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: null });
     })));
 
@@ -153,7 +153,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
 
         // check if category is saved with post set
         const loadedCategory1 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory1).not.to.be.empty;
+        expect(loadedCategory1).not.to.be.undefined;
         loadedCategory1!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 1, title: "Hello Post #1" } });
 
         // now update a category with another post
@@ -162,7 +162,7 @@ describe("persistence > many-to-one bi-directional relation", function() {
 
         // and check again if category is saved with new post
         const loadedCategory2 = await connection.manager.findOne(Category, 1, { relations: ["post"] });
-        expect(loadedCategory2).not.to.be.empty;
+        expect(loadedCategory2).not.to.be.undefined;
         loadedCategory2!.should.be.eql({ id: 1, name: "Hello Category", post: { id: 2, title: "Hello Post #2" } });
     })));
 

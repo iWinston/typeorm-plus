@@ -89,9 +89,9 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
         });
 
     });
@@ -126,9 +126,9 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
         });
 
     });
@@ -158,9 +158,9 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
         });
 
     });
@@ -208,11 +208,11 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-            expect(loadedPost.category.metadata).not.to.be.empty;
-            expect(loadedPost.category.metadataId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
+            expect(loadedPost.category.metadata).not.to.be.undefined;
+            expect(loadedPost.category.metadataId).not.to.be.undefined;
         });
 
     });
@@ -255,11 +255,11 @@ describe("persistence > custom-column-names", function() {
         });
 
         it("should contain attached category and metadata in the category", function () {
-            expect(loadedPost).not.to.be.empty;
-            expect(loadedPost.category).not.to.be.empty;
-            expect(loadedPost.categoryId).not.to.be.empty;
-            expect(loadedPost.category.metadata).not.to.be.empty;
-            expect(loadedPost.category.metadataId).not.to.be.empty;
+            expect(loadedPost).not.to.be.undefined;
+            expect(loadedPost.category).not.to.be.undefined;
+            expect(loadedPost.categoryId).not.to.be.undefined;
+            expect(loadedPost.category.metadata).not.to.be.undefined;
+            expect(loadedPost.category.metadataId).not.to.be.undefined;
         });
 
     });

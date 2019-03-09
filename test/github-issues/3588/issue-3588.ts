@@ -14,8 +14,8 @@ it("github issues > #3588 Migration:generate issue with onUpdate using mysql 8.0
         await Promise.all(connections.map(async connection => {
             const schemaBuilder = connection.driver.createSchemaBuilder();
             const syncQueries = await schemaBuilder.log();
-            expect(syncQueries.downQueries).to.be.empty;
-            expect(syncQueries.upQueries).to.be.empty;
+            expect(syncQueries.downQueries).to.be.eql([]);
+            expect(syncQueries.upQueries).to.be.eql([]);
         }));
         await closeTestingConnections(connections);
 });
