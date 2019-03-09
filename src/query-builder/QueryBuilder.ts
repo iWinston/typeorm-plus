@@ -316,6 +316,13 @@ export abstract class QueryBuilder<Entity> {
      */
     setParameters(parameters: ObjectLiteral): this {
 
+        // remove function parameters
+        Object.keys(parameters).forEach(key => {
+            if (parameters[key] instanceof Function) {
+                throw new Error(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+            }
+        });
+
         // set parent query builder parameters as well in sub-query mode
         if (this.expressionMap.parentQueryBuilder)
             this.expressionMap.parentQueryBuilder.setParameters(parameters);
