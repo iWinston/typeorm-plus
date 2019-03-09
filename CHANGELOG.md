@@ -12,7 +12,8 @@ feel free to ask us and community.
 * fixed bug in `connection.dropDatabase` method ([#1414](https://github.com/typeorm/typeorm/pull/3727))
 * fixed "deep relations" not loaded/mapped due to the built-in max length of Postgres ([#3118](https://github.com/typeorm/typeorm/issues/3118))
 * updated all dependencies
-* fixed types and issue with from [#3725](https://github.com/typeorm/typeorm/issues/3725)
+* fixed types issue from [#3725](https://github.com/typeorm/typeorm/issues/3725)
+* removed sql-function-support (`() => ` syntax) in parameters to prevent security considerations 
 
 ### Features
 
