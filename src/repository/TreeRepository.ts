@@ -253,10 +253,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             const joinColumnName = joinColumn.givenDatabaseName || joinColumn.databaseName;
             const id = rawResult[alias + "_" + this.metadata.primaryColumns[0].databaseName];
             const parentId = rawResult[alias + "_" + joinColumnName];
-            // CockroachDB returns numeric types as string
             return {
-                id: typeof id === "string" ? parseInt(id) : id,
-                parentId: typeof parentId === "string" ? parseInt(parentId) : parentId
+                id: this.manager.connection.driver.prepareHydratedValue(id, this.metadata.primaryColumns[0]),
+                parentId: this.manager.connection.driver.prepareHydratedValue(parentId, joinColumn),
             };
         });
     }
