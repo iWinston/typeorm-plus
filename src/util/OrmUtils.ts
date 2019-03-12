@@ -177,6 +177,11 @@ export class OrmUtils {
         if (x === y)
             return true;
 
+        // Unequal, but either is null or undefined (use case: jsonb comparasion)
+        // PR #3776, todo: add tests
+        if (x === null || y === null || x === undefined || y === undefined)
+          return false;
+
         // Fix the buffer compare bug.
         // See: https://github.com/typeorm/typeorm/issues/3654
         if ((typeof x.equals === "function" || x.equals instanceof Function) && x.equals(y))
