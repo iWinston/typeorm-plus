@@ -13,7 +13,8 @@ feel free to ask us and community.
 * fixed "deep relations" not loaded/mapped due to the built-in max length of Postgres ([#3118](https://github.com/typeorm/typeorm/issues/3118))
 * updated all dependencies
 * fixed types issue from [#3725](https://github.com/typeorm/typeorm/issues/3725)
-* removed sql-function-support (`() => ` syntax) in parameters to prevent security considerations 
+* removed sql-function-support (`() => ` syntax) in parameters to prevent security considerations
+* fix sync schema issue with postgres enum in case capital letters in entity name ([#3536](https://github.com/typeorm/typeorm/issues/3536))
 
 ### Features
 

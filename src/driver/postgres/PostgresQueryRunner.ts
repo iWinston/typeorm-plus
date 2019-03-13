@@ -1846,12 +1846,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
         const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
         const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
-        let enumName = schema && withSchema ? `${schema}.${tableName}_${columnName.toLowerCase()}_enum` : `${tableName}_${columnName.toLowerCase()}_enum`;
+        let enumName = schema && withSchema ? `${schema}.${tableName}_${columnName}_enum` : `${tableName}_${columnName}_enum`;
         if (toOld)
             enumName = enumName + "_old";
         return enumName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
-        }).join(".");
+        }).join(".").toLowerCase();
     }
 
     /**
