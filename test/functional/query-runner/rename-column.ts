@@ -23,6 +23,10 @@ describe("query runner > rename column", () => {
 
     it("should correctly rename column and revert rename", () => Promise.all(connections.map(async connection => {
 
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
+
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
@@ -52,6 +56,10 @@ describe("query runner > rename column", () => {
     })));
 
     it("should correctly rename column with all constraints and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
 
@@ -96,6 +104,10 @@ describe("query runner > rename column", () => {
     })));
 
     it("should correctly rename column with all constraints in custom table schema and database and revert rename", () => Promise.all(connections.map(async connection => {
+
+        // TODO: https://github.com/cockroachdb/cockroach/issues/32555
+        if (connection.driver instanceof CockroachDriver)
+            return;
 
         const queryRunner = connection.createQueryRunner();
         let table: Table|undefined;
