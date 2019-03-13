@@ -19,19 +19,19 @@ describe("database-schema > rowid-column", () => {
         const table = await queryRunner.getTable("person");
         await queryRunner.release();
 
-        table!.findColumnByName("id")!.type.should.be.equal("int");
+        table!.findColumnByName("id")!.type.should.be.equal("int8");
         table!.findColumnByName("id")!.isGenerated.should.be.equal(true);
         table!.findColumnByName("id")!.generationStrategy!.should.be.equal("rowid");
 
-        table!.findColumnByName("id2")!.type.should.be.equal("int");
+        table!.findColumnByName("id2")!.type.should.be.equal("int8");
         table!.findColumnByName("id2")!.isGenerated.should.be.equal(true);
         table!.findColumnByName("id2")!.generationStrategy!.should.be.equal("rowid");
 
-        table!.findColumnByName("id3")!.type.should.be.equal("int");
+        table!.findColumnByName("id3")!.type.should.be.equal("int8");
         table!.findColumnByName("id3")!.isGenerated.should.be.equal(true);
         table!.findColumnByName("id3")!.generationStrategy!.should.be.equal("rowid");
 
-        table!.findColumnByName("id4")!.type.should.be.equal("int");
+        table!.findColumnByName("id4")!.type.should.be.equal("int8");
         table!.findColumnByName("id4")!.isGenerated.should.be.equal(true);
         table!.findColumnByName("id4")!.generationStrategy!.should.be.equal("rowid");
 

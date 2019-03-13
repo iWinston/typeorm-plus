@@ -18,16 +18,17 @@ describe("schema builder > drop column", () => {
 
     it("should correctly drop column", () => Promise.all(connections.map(async connection => {
 
-        // TODO: https://github.com/cockroachdb/cockroach/issues/34710
-        if (connection.driver instanceof CockroachDriver)
-            return;
-
         const studentMetadata = connection.getMetadata("student");
         const removedColumns = studentMetadata.columns.filter(column => ["name", "faculty"].indexOf(column.propertyName) !== -1);
         removedColumns.forEach(column => {
             studentMetadata.columns.splice(studentMetadata.columns.indexOf(column), 1);
         });
-        studentMetadata.indices = [];
+
+        // in real sync indices removes automatically
+        studentMetadata.indices = studentMetadata.indices.filter(index => {
+            return !index.columns.find(column => ["name", "facultyId"].indexOf(column.databaseName) !== -1);
+        });
+
         const removedForeignKey = studentMetadata.foreignKeys.find(fk => {
             return !!fk.columns.find(column => column.propertyName === "faculty");
         });
@@ -41,7 +42,13 @@ describe("schema builder > drop column", () => {
 
         expect(studentTable!.findColumnByName("name")).to.be.undefined;
         expect(studentTable!.findColumnByName("faculty")).to.be.undefined;
-        studentTable!.indices.length.should.be.equal(0);
+
+        // CockroachDB creates indices for foreign keys
+        if (connection.driver instanceof CockroachDriver) {
+            studentTable!.indices.length.should.be.equal(1);
+        } else {
+            studentTable!.indices.length.should.be.equal(0);
+        }
         studentTable!.foreignKeys.length.should.be.equal(1);
 
     })));
