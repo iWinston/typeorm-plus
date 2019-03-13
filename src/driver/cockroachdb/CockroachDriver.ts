@@ -101,6 +101,7 @@ export class CockroachDriver implements Driver {
         "real",
         "inet",
         "int",
+        "int4",
         "integer",
         "int2",
         "int8",
@@ -417,8 +418,8 @@ export class CockroachDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number, isArray?: boolean, isGenerated?: boolean, generationStrategy?: "increment"|"uuid"|"rowid" }): string {
-        if (column.type === Number || column.type === "integer" || column.type === "int4") {
-            return "int";
+        if (column.type === Number || column.type === "integer" || column.type === "int" || column.type === "bigint" || column.type === "int64") {
+            return "int8";
 
         } else if (column.type === String || column.type === "character varying" || column.type === "char varying") {
             return "varchar";
@@ -443,9 +444,6 @@ export class CockroachDriver implements Driver {
 
         } else if (column.type === "smallint") {
             return "int2";
-
-        } else if (column.type === "bigint" || column.type === "int64") {
-            return "int8";
 
         } else if (column.type === "numeric" || column.type === "dec") {
             return "decimal";

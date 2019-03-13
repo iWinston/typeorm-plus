@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {Connection} from "../../../src/connection/Connection";
+import {Connection} from "../../../src";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
+import {Table} from "../../../src";
 import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
@@ -68,7 +68,9 @@ describe("query runner > rename column", () => {
         await queryRunner.renameColumn(table!, idColumn, "id2");
 
         // should successfully drop pk if pk constraint was correctly renamed.
-        await queryRunner.dropPrimaryKey(table!);
+        // CockroachDB does not allow to drop PK
+        if (!(connection.driver instanceof CockroachDriver))
+            await queryRunner.dropPrimaryKey(table!);
 
         table = await queryRunner.getTable("post");
         expect(table!.findColumnByName("id")).to.be.undefined;
