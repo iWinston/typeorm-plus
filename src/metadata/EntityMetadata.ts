@@ -401,6 +401,11 @@ export class EntityMetadata {
     uniques: UniqueMetadata[] = [];
 
     /**
+     * Entity's own uniques.
+     */
+    ownUniques: UniqueMetadata[] = [];
+
+    /**
      * Entity's check metadatas.
      */
     checks: CheckMetadata[] = [];

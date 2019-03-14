@@ -154,12 +154,11 @@ export class EntityMetadataBuilder {
                             this.computeEntityMetadataStep2(entityMetadata);
 
                         } else {
-                            // todo: fix missing uniques in embedded metadata
-                            // if (relation.embeddedMetadata) {
-                            //     relation.embeddedMetadata.uniques.push(index);
-                            // } else {
-                            relation.entityMetadata.uniques.push(uniqueConstraint); // todo: ownUniques is missing
-                            // }
+                            if (relation.embeddedMetadata) {
+                                relation.embeddedMetadata.uniques.push(uniqueConstraint);
+                            } else {
+                                relation.entityMetadata.ownUniques.push(uniqueConstraint);
+                            }
                             this.computeEntityMetadataStep2(entityMetadata);
                         }
                     }
@@ -512,7 +511,7 @@ export class EntityMetadataBuilder {
                         }
                     });
                 });
-            entityMetadata.uniques.push(...uniques);
+            entityMetadata.ownUniques.push(...uniques);
 
         } else {
             entityMetadata.ownIndices = this.metadataArgsStorage.filterIndices(entityMetadata.inheritanceTree).map(args => {
@@ -540,7 +539,7 @@ export class EntityMetadataBuilder {
             const uniques = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new UniqueMetadata({ entityMetadata, args });
             });
-            entityMetadata.uniques.push(...uniques);
+            entityMetadata.ownUniques.push(...uniques);
         }
     }
 
@@ -564,6 +563,9 @@ export class EntityMetadataBuilder {
             });
             embeddedMetadata.indices = this.metadataArgsStorage.filterIndices(targets).map(args => {
                 return new IndexMetadata({ entityMetadata, embeddedMetadata, args });
+            });
+            embeddedMetadata.uniques = this.metadataArgsStorage.filterUniques(targets).map(args => {
+                return new UniqueMetadata({ entityMetadata, embeddedMetadata, args });
             });
             embeddedMetadata.relationIds = this.metadataArgsStorage.filterRelationIds(targets).map(args => {
                 return new RelationIdMetadata({ entityMetadata, args });
@@ -610,6 +612,7 @@ export class EntityMetadataBuilder {
         entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === "before-update");
         entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === "before-remove");
         entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
+        entityMetadata.uniques = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");
