@@ -220,7 +220,7 @@ await timber.remove();
 
 ##### TypeScript configuration
 
-Also, make sure you are using TypeScript compiler version **2.3** or greater,
+Also, make sure you are using TypeScript compiler version **3.3** or greater,
 and you have enabled the following settings in `tsconfig.json`:
 
 ```json
