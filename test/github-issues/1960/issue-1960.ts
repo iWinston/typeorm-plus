@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src";
 
-describe("github issues > #1960 Migration generator produces duplicated changes", () => {
+describe.only("github issues > #1960 Migration generator produces duplicated changes", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
