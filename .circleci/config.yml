@@ -15,6 +15,7 @@ jobs:
     working_directory: ~/typeorm
 
     steps:
+      - setup_remote_docker
       - checkout
       - run: sudo npm install -g npm@latest
       - run: cp ormconfig.circleci.json ormconfig.json
