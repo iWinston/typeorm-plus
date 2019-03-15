@@ -9,7 +9,6 @@ jobs:
       - image: circleci/node:10.15.0
       - image: circleci/mysql:5.7.24
         environment:
-          MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_USER: "root"
           MYSQL_PASSWORD: ""
           MYSQL_DATABASE: "circle_test"
