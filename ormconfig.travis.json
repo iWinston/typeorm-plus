@@ -1,6 +1,6 @@
 [
   {
-    "skip": true,
+    "skip": false,
     "name": "mysql",
     "type": "mysql",
     "host": "localhost",
@@ -10,7 +10,7 @@
     "database": "test"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -20,13 +20,13 @@
     "database": "test"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sqlite",
     "type": "sqlite",
     "database": "temp/sqlitedb.db"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",
@@ -37,12 +37,12 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sqljs",
     "type": "sqljs"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
@@ -68,11 +68,10 @@
     "port": 26257,
     "username": "root",
     "password": "",
-    "database": "defaultdb",
-    "logging": true
+    "database": "defaultdb"
   },
   {
-    "skip": true,
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
