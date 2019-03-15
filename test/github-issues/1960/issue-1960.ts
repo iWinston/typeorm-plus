@@ -15,6 +15,7 @@ describe("github issues > #1960 Migration generator produces duplicated changes"
 
     it("should not execute any alter queries", () => Promise.all(connections.map(async function(connection) {
         const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+        console.log(sqlInMemory);
         sqlInMemory.upQueries.length.should.be.equal(0);
     })));
 
