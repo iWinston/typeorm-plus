@@ -1,8 +1,7 @@
 import "reflect-metadata";
 import {expect} from "chai";
-import {CockroachDriver} from "../../../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
+import {Connection} from "../../../../../src";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {Image} from "./entity/Image";
@@ -219,10 +218,6 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
 
     it("should load relation count on both sides of relation", () => Promise.all(connections.map(async connection => {
 
-        // todo: issue with GROUP BY
-        if (connection.driver instanceof CockroachDriver)
-            return;
-
         const category1 = new Category();
         category1.id = 1;
         category1.name = "cars";
@@ -255,8 +250,6 @@ describe("query builder > relation-count-decorator-many-to-many > many-to-many",
             .leftJoinAndSelect("post.categories", "categories")
             .addOrderBy("post.id, categories.id")
             .getMany();
-
-        // console.log(loadedPosts);
 
         expect(loadedPosts![0].categoryCount).to.be.equal(3);
         expect(loadedPosts![0].categories[0].postCount).to.be.equal(2);

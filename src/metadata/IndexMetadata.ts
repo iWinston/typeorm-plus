@@ -193,6 +193,7 @@ export class IndexMetadata {
 
             return updatedMap;
         }, {} as { [key: string]: number });
+
         this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
         return this;
     }

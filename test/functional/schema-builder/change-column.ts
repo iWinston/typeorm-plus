@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
+import {Connection} from "../../../src";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {expect} from "chai";
@@ -73,10 +73,6 @@ describe("schema builder > change column", () => {
     }));
 
     it("should correctly change column type", () => PromiseUtils.runInSequence(connections, async connection => {
-
-        // TODO: https://github.com/cockroachdb/cockroach/issues/34710
-        if (connection.driver instanceof CockroachDriver)
-            return;
 
         const postMetadata = connection.getMetadata(Post);
         const versionColumn = postMetadata.findColumnWithPropertyName("version")!;
