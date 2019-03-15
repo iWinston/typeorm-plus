@@ -3,6 +3,7 @@
 version: 2
 jobs:
   build:
+    working_directory: ~/typeorm
     docker:
       # specify pre-built docker images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -19,8 +20,6 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "circle_test"
       - image: circleci/mongo:3.4.18
-
-    working_directory: ~/typeorm
 
     steps:
       - checkout
