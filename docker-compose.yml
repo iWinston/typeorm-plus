@@ -15,7 +15,7 @@ services:
 
   # mysql
   mysql:
-    image: "mysql:5.7.10"
+    image: "mysql:8.0.15"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"

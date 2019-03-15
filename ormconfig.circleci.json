@@ -31,8 +31,8 @@
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
-    "username": "postgres",
-    "password": "mysecretpassword",
+    "username": "test",
+    "password": "test",
     "database": "circle_test",
     "logging": false
   },
