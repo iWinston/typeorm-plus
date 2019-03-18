@@ -23,6 +23,12 @@ jobs:
           POSTGRES_PASSWORD: "test"
           POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
+      - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
+        environment:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
+      - image: cockroachdb/cockroach-unstable:latest
+        command: start --insecure
 
     steps:
       - checkout
