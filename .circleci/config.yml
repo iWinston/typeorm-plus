@@ -9,14 +9,13 @@ jobs:
       # documented at https://circleci.com/docs/2.0/circleci-images/
       - image: circleci/node:10.15.0
       - image: mysql:5.7.24
-          name: mysql
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_USER: "test"
           MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
-      - image: mariadb:10.1.37
-          name: mariadb
+      - image: circleci/mariadb:10.1.37
+        name: mariadb
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_USER: "test"
