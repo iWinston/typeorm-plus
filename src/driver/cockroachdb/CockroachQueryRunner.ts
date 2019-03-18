@@ -49,6 +49,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected releaseCallback: Function;
 
+    /**
+     * Stores all executed queries to be able to run them again if transaction fails.
+     */
+    protected queries: { query: string, parameters?: any[] }[] = [];
+
+    /**
+     * Indicates if running queries must be stored
+     */
+    protected storeQueries: boolean = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -120,9 +130,11 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         this.isTransactionActive = true;
         await this.query("START TRANSACTION");
+        await this.query("SAVEPOINT cockroach_restart");
         if (isolationLevel) {
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         }
+        this.storeQueries = true;
     }
 
     /**
@@ -133,8 +145,21 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.query("COMMIT");
-        this.isTransactionActive = false;
+        this.storeQueries = false;
+
+        try {
+            await this.query("RELEASE SAVEPOINT cockroach_restart");
+            await this.query("COMMIT");
+            this.queries = [];
+            this.isTransactionActive = false;
+
+        } catch (e) {
+            if (e.code === "40001") {
+                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
+                await PromiseUtils.runInSequence(this.queries, q => this.query(q.query, q.parameters));
+                await this.commitTransaction();
+            }
+        }
     }
 
     /**
@@ -145,14 +170,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
+        this.storeQueries = false;
         await this.query("ROLLBACK");
+        this.queries = [];
         this.isTransactionActive = false;
     }
 
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(query: string, parameters?: any[], options?: {  }): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -163,6 +190,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 const queryStartTime = +new Date();
 
                 databaseConnection.query(query, parameters, (err: any, result: any) => {
+                    if (this.isTransactionActive && this.storeQueries)
+                        this.queries.push({ query, parameters });
 
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
@@ -172,7 +201,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
+                        if (err.code !== "40001")
+                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         fail(new QueryFailedError(query, parameters, err));
                     } else {
                         switch (result.command) {
