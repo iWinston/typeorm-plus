@@ -17,7 +17,7 @@
     "port": 3307,
     "username": "root",
     "password": "admin",
-    "database": "circle_test"
+    "database": "test"
   },
   {
     "skip": false,

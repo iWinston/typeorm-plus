@@ -19,6 +19,11 @@ jobs:
       - image: circleci/mariadb:10.1.37
         ports:
           - "3307:3306"
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
       - image: circleci/postgres:9.6.11-postgis
       - image: circleci/mongo:3.4.18
 
