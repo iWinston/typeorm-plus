@@ -116,7 +116,9 @@ export class UniqueMetadata {
                 if (relationWithSameName) {
                     return relationWithSameName.joinColumns;
                 }
-                throw new Error(`Unique constraint ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyName);
+                const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
+                const entityName = this.entityMetadata.targetName;
+                throw new Error(`Unique constraint ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyName);
             })
             .reduce((a, b) => a.concat(b));
         }
