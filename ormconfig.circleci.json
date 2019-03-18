@@ -7,8 +7,7 @@
     "port": 3306,
     "username": "root",
     "password": "admin",
-    "database": "test",
-    "logging": true
+    "database": "test"
   },
   {
     "skip": true,
@@ -21,13 +20,13 @@
     "database": "test"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sqlite",
     "type": "sqlite",
     "database": "temp/sqlitedb.db"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",
@@ -38,7 +37,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sqljs",
     "type": "sqljs"
   },
@@ -62,7 +61,7 @@
     "sid": "xe.oracle.docker"
   },
   {
-    "skip": true,
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
