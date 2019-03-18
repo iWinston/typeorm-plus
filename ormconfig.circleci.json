@@ -10,7 +10,7 @@
     "database": "test"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -33,7 +33,7 @@
     "port": 5432,
     "username": "test",
     "password": "test",
-    "database": "circle_test",
+    "database": "test",
     "logging": false
   },
   {
