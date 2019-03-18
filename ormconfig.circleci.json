@@ -7,10 +7,11 @@
     "port": 3306,
     "username": "root",
     "password": "admin",
-    "database": "test"
+    "database": "test",
+    "logging": true
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -20,13 +21,13 @@
     "database": "test"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite",
     "type": "sqlite",
     "database": "temp/sqlitedb.db"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",
@@ -37,7 +38,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqljs",
     "type": "sqljs"
   },
@@ -61,7 +62,7 @@
     "sid": "xe.oracle.docker"
   },
   {
-    "skip": false,
+    "skip": true,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
