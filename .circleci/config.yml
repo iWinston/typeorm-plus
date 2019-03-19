@@ -17,9 +17,6 @@ jobs:
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_DATABASE: "test"
-          DB_PORT: "3307"
-        expose:
-          - "3307"
       - image: circleci/postgres:9.6.11-postgis
         environment:
           POSTGRES_USER: "test"
