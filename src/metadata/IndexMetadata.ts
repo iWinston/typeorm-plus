@@ -181,7 +181,9 @@ export class IndexMetadata {
                 if (relationWithSameName) {
                     return relationWithSameName.joinColumns;
                 }
-                throw new Error(`Index ${this.givenName ? "\"" + this.givenName + "\" " : ""}contains column that is missing in the entity: ` + propertyPath);
+                const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
+                const entityName = this.entityMetadata.targetName;
+                throw new Error(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
             })
             .reduce((a, b) => a.concat(b));
         }
