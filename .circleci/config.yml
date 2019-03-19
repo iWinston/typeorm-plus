@@ -27,7 +27,7 @@ jobs:
         environment:
           SA_PASSWORD: "Admin12345"
           ACCEPT_EULA: "Y"
-      - image: cockroachdb/cockroach-unstable:latest
+      - image: cockroachdb/cockroach-unstable:v19.1.0-beta.20190304
         command: start --insecure
 
     steps:
