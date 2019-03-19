@@ -207,7 +207,7 @@ In order to use an API to change a database schema you can use `QueryRunner`.
 Example:
 
 ```ts
-import {MigrationInterface, QueryRunner, Table } from "typeorm";
+import {MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     
