@@ -12,7 +12,7 @@ jobs:
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_DATABASE: "test"
-      - image: circleci/mariadb:10.1.37
+      - image: mariadb:10.1.37
         name: mariadb
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
