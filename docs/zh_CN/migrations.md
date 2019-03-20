@@ -191,7 +191,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 例如:
 
 ```ts
-import { MigrationInterface, QueryRunner, Table } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<any> {
