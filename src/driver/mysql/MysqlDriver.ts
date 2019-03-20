@@ -485,16 +485,11 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value);
 
-        } else if (
-            (
-                columnMetadata.type === "enum"
-                || columnMetadata.type === "simple-enum"
-            )
+        } else if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
             && columnMetadata.enum
             && !isNaN(value)
-            && columnMetadata.enum.indexOf(parseInt(value)) >= 0
-        ) {
-            // convert to number if that exists in poosible enum options
+            && columnMetadata.enum.indexOf(parseInt(value)) >= 0) {
+            // convert to number if that exists in possible enum options
             value = parseInt(value);
         }
 
@@ -558,13 +553,7 @@ export class MysqlDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string {
         const defaultValue = columnMetadata.default;
 
-        if (
-            (
-                columnMetadata.type === "enum" ||
-                columnMetadata.type === "simple-enum"
-            ) &&
-            defaultValue !== undefined
-        ) {
+        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }
 
@@ -727,6 +716,7 @@ export class MysqlDriver implements Driver {
             // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
             // console.log("comment:", tableColumn.comment, columnMetadata.comment);
             // console.log("default:", tableColumn.default, columnMetadata.default);
+            // console.log("enum:", tableColumn.enum, columnMetadata.enum);
             // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
             // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
@@ -753,6 +743,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.generatedType !== columnMetadata.generatedType
                 // || tableColumn.comment !== columnMetadata.comment // todo
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
+                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable

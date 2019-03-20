@@ -773,15 +773,7 @@ export class PostgresDriver implements Driver {
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (
-                    tableColumn.enum
-                    && columnMetadata.enum
-                    // enums in postgres are always strings
-                    && !OrmUtils.isArraysEqual(
-                        tableColumn.enum,
-                        columnMetadata.enum.map(val => val + "")
-                    )
-                )
+                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
                 || tableColumn.srid !== columnMetadata.srid;
