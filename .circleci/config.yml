@@ -11,12 +11,24 @@ jobs:
       - image: mysql:5.7.24
         environment:
           MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "root"
-          MYSQL_PASSWORD: "admin"
           MYSQL_DATABASE: "test"
-      - image: circleci/mariadb:10.1.37
+      - image: mariadb:10.1.37
+        name: mariadb
+        environment:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_DATABASE: "test"
       - image: circleci/postgres:9.6.11-postgis
+        environment:
+          POSTGRES_USER: "test"
+          POSTGRES_PASSWORD: "test"
+          POSTGRES_DB: "test"
       - image: circleci/mongo:3.4.18
+      - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
+        environment:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
+      - image: cockroachdb/cockroach-unstable:latest
+        command: start --insecure
 
     steps:
       - checkout
