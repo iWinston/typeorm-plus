@@ -5,7 +5,7 @@ import { Category } from "./entity/Category";
 import { In } from "../../../src";
 import { expect } from "chai";
 
-describe.only("github issues > #3349 Multiple where conditions with parameters", () => {
+describe("github issues > #3349 Multiple where conditions with parameters", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
