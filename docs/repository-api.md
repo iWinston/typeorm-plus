@@ -100,25 +100,27 @@ If the entity already exist in the database, it is updated.
 If the entity does not exist in the database, it is inserted.
 It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
 Also supports partial updating since all undefined properties are skipped.
+Returns the saved entity/entities.
 
 ```typescript
-await repository.save(user);
-await repository.save([
-    category1,
-    category2,
-    category3
+const user = await repository.save(user);
+const users = await repository.save([
+    user1,
+    user2,
+    user3
 ]);
 ```
 
 * `remove` - Removes a given entity or array of entities.
 It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
+Returns the removed entity/entities.
 
 ```typescript
-await repository.remove(user);
-await repository.remove([
-    category1,
-    category2,
-    category3
+const removedUser = await repository.remove(user);
+const removedUsers = await repository.remove([
+    user1,
+    user2,
+    user3
 ]);
 ```
 
