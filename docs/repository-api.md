@@ -105,9 +105,9 @@ Returns the saved entity/entities.
 ```typescript
 await repository.save(user);
 await repository.save([
-    user1,
-    user2,
-    user3
+    category1,
+    category2,
+    category3
 ]);
 ```
 
@@ -118,9 +118,9 @@ Returns the removed entity/entities.
 ```typescript
 await repository.remove(user);
 await repository.remove([
-    user1,
-    user2,
-    user3
+    category1,
+    category2,
+    category3
 ]);
 ```
 
