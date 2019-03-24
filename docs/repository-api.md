@@ -103,8 +103,8 @@ Also supports partial updating since all undefined properties are skipped.
 Returns the saved entity/entities.
 
 ```typescript
-const user = await repository.save(user);
-const users = await repository.save([
+await repository.save(user);
+await repository.save([
     user1,
     user2,
     user3
@@ -116,8 +116,8 @@ It removes all given entities in a single transaction (in the case of entity, ma
 Returns the removed entity/entities.
 
 ```typescript
-const removedUser = await repository.remove(user);
-const removedUsers = await repository.remove([
+await repository.remove(user);
+await repository.remove([
     user1,
     user2,
     user3
