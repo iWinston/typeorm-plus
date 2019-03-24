@@ -5,7 +5,15 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
-## 0.2.15
+## 0.2.16 (under development)
+
+### Bug fixes
+
+* removed unused parameters from `insert`, `update`, `delete` methods ([#3888](https://github.com/typeorm/typeorm/pull/3888))
+
+### Features
+
+## 0.2.15 (2019-03-14)
 
 ### Bug fixes
 
