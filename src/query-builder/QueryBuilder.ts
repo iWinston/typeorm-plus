@@ -753,6 +753,7 @@ export abstract class QueryBuilder<Entity> {
                             const aliasPath = this.expressionMap.aliasNamePrefixingEnabled ? `${this.alias}.${propertyPath}` : column.propertyPath;
                             let parameterValue = column.getEntityValue(where, true);
                             const parameterName = "where_" + whereIndex + "_" + propertyIndex + "_" + columnIndex;
+                            const parameterBaseCount = Object.keys(this.expressionMap.nativeParameters).filter(x => x.startsWith(parameterName)).length;
 
                             if (parameterValue === null) {
                                 return `${aliasPath} IS NULL`;
@@ -762,9 +763,9 @@ export abstract class QueryBuilder<Entity> {
                                 if (parameterValue.useParameter) {
                                     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
                                     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                                        this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
+                                        this.expressionMap.nativeParameters[parameterName + (parameterBaseCount + realParameterValueIndex)] = realParameterValue;
                                         parameterIndex++;
-                                        parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
+                                        parameters.push(this.connection.driver.createParameter(parameterName + (parameterBaseCount + realParameterValueIndex), parameterIndex - 1));
                                     });
                                 }
                                 return parameterValue.toSql(this.connection, aliasPath, parameters);
