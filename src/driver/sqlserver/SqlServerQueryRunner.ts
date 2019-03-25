@@ -1659,7 +1659,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             }), dbIndex => dbIndex["INDEX_NAME"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
-                const indices = dbIndices.filter(index => index["INDEX_NAME"] === constraint["INDEX_NAME"]);
+                const indices = dbIndices.filter(index => {
+                    return index["TABLE_CATALOG"] === constraint["TABLE_CATALOG"]
+                        && index["TABLE_SCHEMA"] === constraint["TABLE_SCHEMA"]
+                        && index["TABLE_NAME"] === constraint["TABLE_NAME"]
+                        && index["INDEX_NAME"] === constraint["INDEX_NAME"];
+                });
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["INDEX_NAME"],

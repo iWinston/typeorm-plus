@@ -1559,7 +1559,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }), dbIndex => dbIndex["constraint_name"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
-                const indices = dbIndices.filter(index => index["constraint_name"] === constraint["constraint_name"]);
+                const indices = dbIndices.filter(index => {
+                    return index["table_schema"] === constraint["table_schema"]
+                        && index["table_name"] === constraint["table_name"]
+                        && index["constraint_name"] === constraint["constraint_name"];
+                });
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["constraint_name"],
