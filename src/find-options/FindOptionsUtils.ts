@@ -29,6 +29,7 @@ export class FindOptionsUtils {
                     possibleOptions.cache instanceof Object ||
                     typeof possibleOptions.cache === "boolean" ||
                     typeof possibleOptions.cache === "number" ||
+                    possibleOptions.lock instanceof Object ||
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
                     typeof possibleOptions.loadEagerRelations === "boolean"
@@ -167,6 +168,14 @@ export class FindOptionsUtils {
                 qb.cache(cache.id, cache.milliseconds);
             } else {
                 qb.cache(options.cache);
+            }
+        }
+
+        if (options.lock) {
+            if (options.lock.mode === "optimistic") {
+                qb.setLock(options.lock.mode, options.lock.version as any);
+            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write") {
+                qb.setLock(options.lock.mode);
             }
         }
 
