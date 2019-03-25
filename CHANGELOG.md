@@ -13,6 +13,8 @@ feel free to ask us and community.
 
 ### Features
 
+* added `lock` option in `FindOptions`
+
 ## 0.2.15 (2019-03-14)
 
 ### Bug fixes
