@@ -1242,7 +1242,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // create TableIndex objects from the loaded indices
             table.indices = dbIndices
-                .filter(dbIndex => dbIndex["TABLE_NAME"] === table.name )
+                .filter(dbIndex => dbIndex["TABLE_NAME"] === table.name)
                 .map(dbIndex => {
                     return new TableIndex({
                         name: dbIndex["INDEX_NAME"],
