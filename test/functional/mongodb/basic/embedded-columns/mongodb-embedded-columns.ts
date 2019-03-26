@@ -101,4 +101,30 @@ describe("mongodb > embedded columns", () => {
         loadedPost.counters.information.description.should.be.eql("Hello post");
 
     })));
+
+    it("should transform results to correct boolean value", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getMongoRepository(Post);
+
+        // save few posts
+        const post = new Post();
+        post.title = "Post #1";
+        post.text = "Everything about post";
+        post.counters = new Counters();
+        post.counters.likes = 5;
+        post.counters.comments = 0;
+        post.counters.favorites = 1;
+        post.counters.information = new Information();
+        post.counters.information.description = "Hello post";
+        post.counters.information.editable = false;
+        post.counters.information.visible = true;
+        await postRepository.save(post);
+
+        const loadedPosts = await postRepository.find();
+
+        loadedPosts[0]!.counters.comments.should.be.equal(0);
+        loadedPosts[0]!.counters.favorites.should.be.equal(1);
+        loadedPosts[0]!.counters.information.visible.should.be.equal(true);
+        loadedPosts[0]!.counters.information.editable.should.be.equal(false);
+
+    })));
 });
