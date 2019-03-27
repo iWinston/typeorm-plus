@@ -225,7 +225,7 @@ await repository.clear();
 ```
 ### Additional Options
 
-Optional `SaveOptions` can be passed as parameter for `save`.
+Optional `SaveOptions` can be passed as parameter for `save`, `insert` and `update`.
 
 * `data` -  Additional data to be passed with persist method. This data can be used in subscribers then.
 * `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
@@ -236,10 +236,10 @@ Optional `SaveOptions` can be passed as parameter for `save`.
 Example:
 ```typescript
 // users contains array of User Entities
-userRepository.save(users, {chunk: users.length / 1000});
+userRepository.insert(users, {chunk: users.length / 1000});
 ```
 
-Optional `RemoveOptions` can be passed as parameter for `remove`.
+Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 
 * `data` - Additional data to be passed with remove method. This data can be used in subscribers then.
 * `listener`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
