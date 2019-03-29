@@ -127,6 +127,7 @@ export class EntitySchemaTransformer {
                             nullable: relationSchema.nullable,
                             onDelete: relationSchema.onDelete,
                             onUpdate: relationSchema.onUpdate,
+                            deferrable: relationSchema.deferrable,
                             primary: relationSchema.primary,
                             persistence: relationSchema.persistence
                         }

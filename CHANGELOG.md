@@ -13,6 +13,8 @@ feel free to ask us and community.
 
 ### Features
 
+* added deferrable options for foreign keys (postgres) ([#2191](https://github.com/typeorm/typeorm/issues/2191))
+
 ## 0.2.16 (2019-03-26)
 
 ### Bug fixes
