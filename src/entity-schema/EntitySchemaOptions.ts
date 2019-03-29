@@ -93,4 +93,9 @@ export class EntitySchemaOptions<T> {
      */
     synchronize?: boolean;
 
+    /**
+     * View expression.
+     */
+    expression?: string;
+
 }

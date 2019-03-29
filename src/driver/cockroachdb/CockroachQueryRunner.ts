@@ -7,6 +7,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
+import {View} from "../../schema-builder/view/View";
 import {CockroachDriver} from "./CockroachDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {QueryFailedError} from "../../error/QueryFailedError";
@@ -414,6 +415,20 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             });
 
         await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
@@ -1237,6 +1252,33 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected async loadViews(viewNames: string[]): Promise<View[]> {
+        // if no views given then no need to proceed
+        if (!viewNames || !viewNames.length)
+            return [];
+
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+
+        const viewsCondition = viewNames.map(viewName => {
+            let [schema, name] = viewName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
+        }).join(" OR ");
+
+        const dbViews = await this.query(`SELECT * FROM "information_schema"."views" WHERE ` + viewsCondition);
+        return dbViews.map((dbView: any) => {
+            const view = new View();
+            const schema = dbView["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["table_schema"];
+            view.name = this.driver.buildTableName(dbView["table_name"], schema);
+            view.expression = dbView["view_definition"];
+            return view;
+        });
+    }
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.

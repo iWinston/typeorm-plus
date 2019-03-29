@@ -7,6 +7,7 @@ import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {View} from "../../schema-builder/view/View";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
@@ -248,6 +249,20 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
@@ -694,6 +709,10 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected async loadViews(viewNames: string[]): Promise<View[]> {
+        return Promise.resolve([]);
+    }
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.

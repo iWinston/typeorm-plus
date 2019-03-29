@@ -300,7 +300,10 @@ export class PostgresDriver implements Driver {
         const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
             return metadata.exclusions.length > 0;
         });
-        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasExclusionConstraints) {
+        const hasViews = this.connection.entityMetadatas.some(metadata => {
+            return metadata.tableType === "view";
+        });
+        if (hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasExclusionConstraints || hasViews) {
             await Promise.all([this.master, ...this.slaves].map(pool => {
                 return new Promise((ok, fail) => {
                     pool.connect(async (err: any, connection: any, release: Function) => {
@@ -336,6 +339,13 @@ export class PostgresDriver implements Driver {
                                 await this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "btree_gist"`);
                             } catch (_) {
                                 logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
+                            }
+                        if (hasViews)
+                            try {
+                                const query = `CREATE TABLE IF NOT EXISTS "typeorm_view_definition" ("schema" character varying, "name" character varying, "expression" text) `;
+                                await this.executeQuery(connection, query);
+                            } catch (_) {
+                                logger.log("warn", _);
                             }
                         release();
                         ok();

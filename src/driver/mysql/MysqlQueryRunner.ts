@@ -7,6 +7,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
+import {View} from "../../schema-builder/view/View";
 import {MysqlDriver} from "./MysqlDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {OrmUtils} from "../../util/OrmUtils";
@@ -334,6 +335,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
@@ -1113,6 +1128,31 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected async getCurrentDatabase(): Promise<string> {
         const currentDBQuery = await this.query(`SELECT DATABASE() AS \`db_name\``);
         return currentDBQuery[0]["db_name"];
+    }
+
+    protected async loadViews(viewNames: string[]): Promise<View[]> {
+        // if no views given then no need to proceed
+        if (!viewNames || !viewNames.length)
+            return [];
+
+        const currentDatabase = await this.getCurrentDatabase();
+        const viewsCondition = viewNames.map(tableName => {
+            let [database, name] = tableName.split(".");
+            if (!name) {
+                name = database;
+                database = this.driver.database || currentDatabase;
+            }
+            return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
+        }).join(" OR ");
+
+        const dbViews = await this.query(`SELECT * FROM "information_schema"."views" WHERE ` + viewsCondition);
+        return dbViews.map((dbView: any) => {
+            const view = new View();
+            const db = dbView["TABLE_SCHEMA"] === currentDatabase ? undefined : dbView["TABLE_SCHEMA"];
+            view.name = this.driver.buildTableName(dbView["TABLE_NAME"], undefined, db);
+            view.expression = dbView["VIEW_DEFINITION"];
+            return view;
+        });
     }
 
     /**

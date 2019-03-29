@@ -7,6 +7,7 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
+import {View} from "../../schema-builder/view/View";
 import {SqlServerDriver} from "./SqlServerDriver";
 import {ReadStream} from "../../platform/PlatformTools";
 import {MssqlParameter} from "./MssqlParameter";
@@ -509,6 +510,20 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
         await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
+        return Promise.resolve();
     }
 
     /**
@@ -1361,6 +1376,33 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     protected async getCurrentSchema(): Promise<string> {
         const currentSchemaQuery = await this.query(`SELECT SCHEMA_NAME() AS "schema_name"`);
         return currentSchemaQuery[0]["schema_name"];
+    }
+
+    protected async loadViews(viewNames: string[]): Promise<View[]> {
+        // if no views given then no need to proceed
+        if (!viewNames || !viewNames.length)
+            return [];
+
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+
+        const viewsCondition = viewNames.map(viewName => {
+            let [schema, name] = viewName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
+        }).join(" OR ");
+
+        const dbViews = await this.query(`SELECT * FROM "information_schema"."views" WHERE ` + viewsCondition);
+        return dbViews.map((dbView: any) => {
+            const view = new View();
+            const schema = dbView["table_schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["table_schema"];
+            view.name = this.driver.buildTableName(dbView["table_name"], schema);
+            view.expression = dbView["view_definition"];
+            return view;
+        });
     }
 
     /**

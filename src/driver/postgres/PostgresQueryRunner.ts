@@ -1,25 +1,26 @@
-import {QueryRunner} from "../../query-runner/QueryRunner";
+import {PromiseUtils} from "../../";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {QueryFailedError} from "../../error/QueryFailedError";
+import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {Table} from "../../schema-builder/table/Table";
-import {TableIndex} from "../../schema-builder/table/TableIndex";
-import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
-import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {PostgresDriver} from "./PostgresDriver";
-import {ReadStream} from "../../platform/PlatformTools";
-import {QueryFailedError} from "../../error/QueryFailedError";
-import {Broadcaster} from "../../subscriber/Broadcaster";
-import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
-import {TableUnique} from "../../schema-builder/table/TableUnique";
-import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
-import {OrmUtils} from "../../util/OrmUtils";
-import {PromiseUtils} from "../../";
-import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {ColumnType} from "../../index";
-import {IsolationLevel} from "../types/IsolationLevel";
+import {ReadStream} from "../../platform/PlatformTools";
+import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions";
+import {Table} from "../../schema-builder/table/Table";
+import {TableCheck} from "../../schema-builder/table/TableCheck";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {TableIndex} from "../../schema-builder/table/TableIndex";
+import {TableUnique} from "../../schema-builder/table/TableUnique";
+import {View} from "../../schema-builder/view/View";
+import {Broadcaster} from "../../subscriber/Broadcaster";
+import {OrmUtils} from "../../util/OrmUtils";
+import {IsolationLevel} from "../types/IsolationLevel";
+import {PostgresDriver} from "./PostgresDriver";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -376,6 +377,35 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         upQueries.push(this.dropTableSql(table));
         downQueries.push(this.createTableSql(table, createForeignKeys));
 
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+        upQueries.push(this.createViewSql(view));
+        upQueries.push(this.insertViewDefinitionSql(view));
+        downQueries.push(this.dropViewSql(view));
+        downQueries.push(this.deleteViewDefinitionSql(view));
+        await this.executeQueries(upQueries, downQueries);
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
+        const viewName = target instanceof View ? target.name : target;
+        const view = await this.getCachedView(viewName);
+
+        const upQueries: string[] = [];
+        const downQueries: string[] = [];
+        upQueries.push(this.deleteViewDefinitionSql(view));
+        upQueries.push(this.dropViewSql(view));
+        downQueries.push(this.insertViewDefinitionSql(view));
+        downQueries.push(this.createViewSql(view));
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -1250,10 +1280,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         try {
             // ignore spatial_ref_sys; it's a special table supporting PostGIS
             // TODO generalize this as this.driver.ignoreTables
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND tablename NOT IN ('spatial_ref_sys')`;
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND tablename NOT IN ('spatial_ref_sys', 'typeorm_view_definition')`;
             const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
             await Promise.all(dropQueries.map(q => this.query(q["query"])));
             await this.dropEnumTypes(schemaNamesString);
+            await this.query(`TRUNCATE TABLE "typeorm_view_definition"`);
 
             await this.commitTransaction();
 
@@ -1268,6 +1299,31 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    protected async loadViews(viewNames: string[]): Promise<View[]> {
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+
+        const viewsCondition = viewNames.map(viewName => {
+            let [schema, name] = viewName.split(".");
+            if (!name) {
+                name = schema;
+                schema = this.driver.options.schema || currentSchema;
+            }
+            return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
+        }).join(" OR ");
+
+        const query = `SELECT "t".*, "v"."check_option" FROM "typeorm_view_definition" "t" ` +
+            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
+        const dbViews = await this.query(query);
+        return dbViews.map((dbView: any) => {
+            const view = new View();
+            const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
+            view.name = this.driver.buildTableName(dbView["name"], schema);
+            view.expression = dbView["expression"];
+            return view;
+        });
+    }
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
@@ -1420,7 +1476,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     }
 
                     if (tableColumn.type === "geometry") {
-                      const geometryColumnSql = `SELECT * FROM (
+                        const geometryColumnSql = `SELECT * FROM (
                         SELECT
                           "f_table_schema" "table_schema",
                           "f_table_name" "table_name",
@@ -1431,13 +1487,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                       ) AS _
                       WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
-                      const results: ObjectLiteral[] = await this.query(geometryColumnSql);
-                      tableColumn.spatialFeatureType = results[0].type;
-                      tableColumn.srid = results[0].srid;
+                        const results: ObjectLiteral[] = await this.query(geometryColumnSql);
+                        tableColumn.spatialFeatureType = results[0].type;
+                        tableColumn.srid = results[0].srid;
                     }
 
                     if (tableColumn.type === "geography") {
-                      const geographyColumnSql = `SELECT * FROM (
+                        const geographyColumnSql = `SELECT * FROM (
                         SELECT
                           "f_table_schema" "table_schema",
                           "f_table_name" "table_name",
@@ -1448,9 +1504,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                       ) AS _
                       WHERE ${tablesCondition} AND "column_name" = '${tableColumn.name}'`;
 
-                      const results: ObjectLiteral[] = await this.query(geographyColumnSql);
-                      tableColumn.spatialFeatureType = results[0].type;
-                      tableColumn.srid = results[0].srid;
+                        const results: ObjectLiteral[] = await this.query(geographyColumnSql);
+                        tableColumn.spatialFeatureType = results[0].type;
+                        tableColumn.srid = results[0].srid;
                     }
 
                     // check only columns that have length property
@@ -1656,6 +1712,22 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return sql;
     }
 
+    protected createViewSql(view: View): string {
+        return `CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression}`;
+    }
+
+    protected insertViewDefinitionSql(view: View): string {
+        const splittedName = view.name.split(".");
+        let schema = this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()";
+        let name = view.name;
+        if (splittedName.length === 2) {
+            schema = `'${splittedName[0]}'`;
+            name = splittedName[1];
+        }
+
+        return `INSERT INTO "typeorm_view_definition" ("schema", "name", "expression") VALUES (${schema}, '${name}', '${view.expression.trim()}')`;
+    }
+
     /**
      * Extracts schema name from given Table object or table name string.
      */
@@ -1713,6 +1785,29 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected dropTableSql(tableOrPath: Table|string): string {
         return `DROP TABLE ${this.escapeTableName(tableOrPath)}`;
+    }
+
+    /**
+     * Builds drop view sql.
+     */
+    protected dropViewSql(viewOrPath: View|string): string {
+        return `DROP VIEW ${this.escapeViewName(viewOrPath)}`;
+    }
+
+    /**
+     * Builds remove view sql.
+     */
+    protected deleteViewDefinitionSql(viewOrPath: View|string) {
+        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
+        const splittedName = viewName.split(".");
+        let schema = this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()";
+        let name = viewName;
+        if (splittedName.length === 2) {
+            schema = `'${splittedName[0]}'`;
+            name = splittedName[1];
+        }
+
+        return `DELETE FROM "typeorm_view_definition" WHERE "schema" = ${schema} AND "name" = '${name}'`;
     }
 
     /**
@@ -1856,6 +1951,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return enumName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
         }).join(".").toLowerCase();
+    }
+
+    /**
+     * Escapes given view path.
+     */
+    protected escapeViewName(target: View|string, disableEscape?: boolean): string {
+        let viewName = target instanceof View ? target.name : target;
+        viewName = viewName.indexOf(".") === -1 && this.driver.options.schema ? `${this.driver.options.schema}.${viewName}` : viewName;
+
+        return viewName.split(".").map(i => {
+            return disableEscape ? i : `"${i}"`;
+        }).join(".");
     }
 
     /**

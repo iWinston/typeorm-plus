@@ -50,4 +50,9 @@ export interface TableMetadataArgs {
      */
     synchronize?: boolean;
 
+    /**
+     * View expression.
+     */
+    expression?: string;
+
 }

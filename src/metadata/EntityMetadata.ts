@@ -96,6 +96,12 @@ export class EntityMetadata {
     name: string;
 
     /**
+     * View's expression.
+     * Used in views
+     */
+    expression?: string;
+
+    /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
      * If user haven't specified a table name this property will be undefined.
      */
@@ -489,6 +495,7 @@ export class EntityMetadata {
         this.tableMetadataArgs = options.args;
         this.target = this.tableMetadataArgs.target;
         this.tableType = this.tableMetadataArgs.type;
+        this.expression = this.tableMetadataArgs.expression;
     }
 
     // -------------------------------------------------------------------------
@@ -778,6 +785,7 @@ export class EntityMetadata {
         this.tableName = entityPrefix ? namingStrategy.prefixTableName(entityPrefix, this.tableNameWithoutPrefix) : this.tableNameWithoutPrefix;
         this.target = this.target ? this.target : this.tableName;
         this.name = this.targetName ? this.targetName : this.tableName;
+        this.expression = this.tableMetadataArgs.expression;
         this.tablePath = this.buildTablePath();
         this.schemaPath = this.buildSchemaPath();
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
