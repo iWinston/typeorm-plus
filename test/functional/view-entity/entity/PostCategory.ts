@@ -20,8 +20,8 @@ import {Post} from "./Post";
         .addSelect("category.name", "categoryName")
         .from(Post, "post")
         .leftJoin(Category, "category", "category.id = post.categoryId")
-        .where("post.id = :id", { id: 1 })
-        .andWhere("post.name = :name", { name: "BMW" })
+        .where("post.id = 1")
+        .andWhere(`post.name = 'BMW'`)
 })
 export class PostCategory {
 
