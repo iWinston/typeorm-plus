@@ -104,6 +104,10 @@ export class MongoDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "int",
         cacheResult: "int",
+        viewDatabase: "int",
+        viewSchema: "int",
+        viewName: "int",
+        viewExpression: "int",
     };
 
     /**

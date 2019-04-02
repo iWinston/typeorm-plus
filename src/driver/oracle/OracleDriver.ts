@@ -165,6 +165,10 @@ export class OracleDriver implements Driver {
         cacheDuration: "number",
         cacheQuery: "clob",
         cacheResult: "clob",
+        viewDatabase: "varchar2",
+        viewSchema: "varchar2",
+        viewName: "varchar2",
+        viewExpression: "clob",
     };
 
     /**

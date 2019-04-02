@@ -1,3 +1,4 @@
+import {Query} from "../driver/Query";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {View} from "../schema-builder/view/View";
 import {PromiseUtils} from "../util/PromiseUtils";
@@ -173,14 +174,14 @@ export abstract class BaseQueryRunner {
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, downQuery => this.query(downQuery));
+        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries.reverse(), downQuery => this.query(downQuery));
+        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries.reverse(), downQuery => this.query(downQuery.query, downQuery.parameters));
     }
 
     // -------------------------------------------------------------------------
@@ -370,10 +371,10 @@ export abstract class BaseQueryRunner {
     /**
      * Executes sql used special for schema build.
      */
-    protected async executeQueries(upQueries: string|string[], downQueries: string|string[]): Promise<void> {
-        if (typeof upQueries === "string")
+    protected async executeQueries(upQueries: Query|Query[], downQueries: Query|Query[]): Promise<void> {
+        if (upQueries instanceof Query)
             upQueries = [upQueries];
-        if (typeof downQueries === "string")
+        if (downQueries instanceof Query)
             downQueries = [downQueries];
 
         this.sqlInMemory.upQueries.push(...upQueries);
@@ -383,7 +384,7 @@ export abstract class BaseQueryRunner {
         if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
 
-        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery));
+        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
     }
 
 }

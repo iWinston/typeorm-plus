@@ -71,16 +71,10 @@ export class EntityMetadataBuilder {
         const allTables = entityClasses ? this.metadataArgsStorage.filterTables(entityClasses) : this.metadataArgsStorage.tables;
 
         // filter out table metadata args for those we really create entity metadatas and tables in the db
-        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "entity-child");
+        const realTables = allTables.filter(table => table.type === "regular" || table.type === "closure" || table.type === "entity-child" || table.type === "view");
 
         // create entity metadatas for a user defined entities (marked with @Entity decorator or loaded from entity schemas)
         const entityMetadatas = realTables.map(tableArgs => this.createEntityMetadata(tableArgs));
-
-        // filter out view metadata args for those we really create entity metadatas and views in the db
-        const views = allTables.filter(table => table.type === "view");
-
-        if (views.length > 0)
-            entityMetadatas.push(...views.map(view => this.createViewEntityMetadata(view)));
 
         // compute parent entity metadatas for table inheritance
         entityMetadatas.forEach(entityMetadata => this.computeParentEntityMetadata(entityMetadatas, entityMetadata));
@@ -320,13 +314,6 @@ export class EntityMetadataBuilder {
             inheritanceTree: inheritanceTree,
             tableTree: tableTree,
             inheritancePattern: tableInheritance ? tableInheritance.pattern : undefined
-        });
-    }
-
-    protected createViewEntityMetadata(tableArgs: TableMetadataArgs): EntityMetadata {
-        return new EntityMetadata({
-            connection: this.connection,
-            args: tableArgs,
         });
     }
 

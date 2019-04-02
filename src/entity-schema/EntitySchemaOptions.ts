@@ -1,3 +1,4 @@
+import {Connection, SelectQueryBuilder} from "..";
 import {EntitySchemaIndexOptions} from "./EntitySchemaIndexOptions";
 import {EntitySchemaColumnOptions} from "./EntitySchemaColumnOptions";
 import {EntitySchemaRelationOptions} from "./EntitySchemaRelationOptions";
@@ -96,6 +97,6 @@ export class EntitySchemaOptions<T> {
     /**
      * View expression.
      */
-    expression?: string;
+    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
 }

@@ -1,29 +1,29 @@
-import {ColumnMetadata} from "./ColumnMetadata";
-import {RelationMetadata} from "./RelationMetadata";
-import {IndexMetadata} from "./IndexMetadata";
-import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
-import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import {QueryRunner, SelectQueryBuilder} from "..";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {RelationIdMetadata} from "./RelationIdMetadata";
-import {RelationCountMetadata} from "./RelationCountMetadata";
-import {TableType} from "./types/TableTypes";
-import {OrderByCondition} from "../find-options/OrderByCondition";
-import {OrmUtils} from "../util/OrmUtils";
-import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {Connection} from "../connection/Connection";
-import {EntityListenerMetadata} from "./EntityListenerMetadata";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
-import {TreeType} from "./types/TreeTypes";
+import {OrderByCondition} from "../find-options/OrderByCondition";
+import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
 import {TreeMetadataArgs} from "../metadata-args/TreeMetadataArgs";
-import {UniqueMetadata} from "./UniqueMetadata";
+import {OrmUtils} from "../util/OrmUtils";
+import {shorten} from "../util/StringUtils";
 import {CheckMetadata} from "./CheckMetadata";
-import {QueryRunner} from "..";
+import {ColumnMetadata} from "./ColumnMetadata";
+import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {ExclusionMetadata} from "./ExclusionMetadata";
-import { shorten } from "../util/StringUtils";
+import {ForeignKeyMetadata} from "./ForeignKeyMetadata";
+import {IndexMetadata} from "./IndexMetadata";
+import {RelationCountMetadata} from "./RelationCountMetadata";
+import {RelationIdMetadata} from "./RelationIdMetadata";
+import {RelationMetadata} from "./RelationMetadata";
+import {TableType} from "./types/TableTypes";
+import {TreeType} from "./types/TreeTypes";
+import {UniqueMetadata} from "./UniqueMetadata";
 
 /**
  * Contains all entity metadata.
@@ -99,7 +99,7 @@ export class EntityMetadata {
      * View's expression.
      * Used in views
      */
-    expression?: string;
+    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).

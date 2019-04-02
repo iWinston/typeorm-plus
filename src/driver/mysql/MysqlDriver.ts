@@ -245,6 +245,10 @@ export class MysqlDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "text",
         cacheResult: "text",
+        viewDatabase: "varchar",
+        viewSchema: "varchar",
+        viewName: "varchar",
+        viewExpression: "text",
     };
 
     /**

@@ -91,4 +91,24 @@ export interface MappedColumnTypes {
      */
     cacheResult: ColumnType;
 
+    /**
+     * Column type for database column in typeorm views table.
+     */
+    viewDatabase: ColumnType;
+
+    /**
+     * Column type for schema column in typeorm views table.
+     */
+    viewSchema: ColumnType;
+
+    /**
+     * Column type for name column in typeorm views table.
+     */
+    viewName: ColumnType;
+
+    /**
+     * Column type for expression column in typeorm views table.
+     */
+    viewExpression: ColumnType;
+
 }

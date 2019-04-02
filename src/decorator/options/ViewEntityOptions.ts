@@ -1,7 +1,8 @@
-
 /**
  * Describes all entity view's options.
  */
+import {Connection, SelectQueryBuilder} from "../..";
+
 export interface ViewEntityOptions {
 
     /**
@@ -13,7 +14,7 @@ export interface ViewEntityOptions {
     /**
      * View expression.
      */
-    expression?: string;
+    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
      * Database name. Used in Mysql and Sql Server.

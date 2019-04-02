@@ -1,3 +1,5 @@
+import {Connection, SelectQueryBuilder} from "../..";
+
 /**
  * View options.
  */
@@ -15,6 +17,6 @@ export interface ViewOptions {
     /**
      * View expression.
      */
-    expression: string;
+    expression: string|((connection: Connection) => SelectQueryBuilder<any>);
 
 }

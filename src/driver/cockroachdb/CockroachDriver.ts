@@ -182,6 +182,10 @@ export class CockroachDriver implements Driver {
         cacheDuration: Number,
         cacheQuery: "string",
         cacheResult: "string",
+        viewDatabase: "varchar",
+        viewSchema: "varchar",
+        viewName: "varchar",
+        viewExpression: "string",
     };
 
     /**

@@ -174,6 +174,10 @@ export class SqlServerDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "nvarchar(MAX)" as any,
         cacheResult: "nvarchar(MAX)" as any,
+        viewDatabase: "varchar",
+        viewSchema: "varchar",
+        viewName: "varchar",
+        viewExpression: "nvarchar(MAX)" as any,
     };
 
     /**

@@ -19,6 +19,7 @@ import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {View} from "../../schema-builder/view/View";
 import {Broadcaster} from "../../subscriber/Broadcaster";
 import {OrmUtils} from "../../util/OrmUtils";
+import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {PostgresDriver} from "./PostgresDriver";
 
@@ -288,7 +289,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     async createSchema(schema: string, ifNotExist?: boolean): Promise<void> {
         const up = ifNotExist ? `CREATE SCHEMA IF NOT EXISTS "${schema}"` : `CREATE SCHEMA "${schema}"`;
         const down = `DROP SCHEMA "${schema}" CASCADE`;
-        await this.executeQueries(up, down);
+        await this.executeQueries(new Query(up), new Query(down));
     }
 
     /**
@@ -298,7 +299,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const schema = schemaPath.indexOf(".") === -1 ? schemaPath : schemaPath.split(".")[0];
         const up = ifExist ? `DROP SCHEMA IF EXISTS "${schema}" ${isCascade ? "CASCADE" : ""}` : `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`;
         const down = `CREATE SCHEMA "${schema}"`;
-        await this.executeQueries(up, down);
+        await this.executeQueries(new Query(up), new Query(down));
     }
 
     /**
@@ -309,8 +310,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const isTableExist = await this.hasTable(table);
             if (isTableExist) return Promise.resolve();
         }
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         // if table have column with ENUM type, we must create this type in postgres.
         await Promise.all(table.columns
@@ -360,8 +361,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const createForeignKeys: boolean = dropForeignKeys;
         const tableName = target instanceof Table ? target.name : target;
         const table = await this.getCachedTable(tableName);
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
 
         if (dropIndices) {
@@ -384,8 +385,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Creates a new view.
      */
     async createView(view: View): Promise<void> {
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
         upQueries.push(this.createViewSql(view));
         upQueries.push(this.insertViewDefinitionSql(view));
         downQueries.push(this.dropViewSql(view));
@@ -400,8 +401,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const viewName = target instanceof View ? target.name : target;
         const view = await this.getCachedView(viewName);
 
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
         upQueries.push(this.deleteViewDefinitionSql(view));
         upQueries.push(this.dropViewSql(view));
         downQueries.push(this.insertViewDefinitionSql(view));
@@ -413,16 +414,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Renames the given table.
      */
     async renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void> {
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
         const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
         const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(oldTable)} RENAME TO "${newTableName}"`);
-        downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME TO "${oldTableName}"`);
+        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(oldTable)} RENAME TO "${newTableName}"`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME TO "${oldTableName}"`));
 
         // rename column primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -431,8 +432,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const oldPkName = this.connection.namingStrategy.primaryKeyName(oldTable, columnNames);
             const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
 
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
         }
 
         // rename unique constraints
@@ -441,8 +442,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
 
             // build queries
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
 
             // replace constraint name
             unique.name = newUniqueName;
@@ -457,8 +458,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             // build queries
             const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
             const down = schema ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"` : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`;
-            upQueries.push(up);
-            downQueries.push(down);
+            upQueries.push(new Query(up));
+            downQueries.push(new Query(down));
 
             // replace constraint name
             index.name = newIndexName;
@@ -470,8 +471,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
 
             // build queries
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`));
 
             // replace constraint name
             foreignKey.name = newForeignKeyName;
@@ -481,8 +482,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         newTable.columns
             .filter(column => column.type === "enum" || column.type === "simple-enum")
             .forEach(column => {
-                upQueries.push(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`);
-                downQueries.push(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`);
+                upQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(oldTable, column)} RENAME TO ${this.buildEnumName(newTable, column, false)}`));
+                downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO ${this.buildEnumName(oldTable, column, false)}`));
             });
 
         await this.executeQueries(upQueries, downQueries);
@@ -494,8 +495,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const clonedTable = table.clone();
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         if (column.type === "enum" || column.type === "simple-enum") {
             const hasEnum = await this.hasEnumType(table, column);
@@ -505,8 +506,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
         }
 
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
-        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
+        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`));
 
         // create or update primary key constraint
         if (column.isPrimary) {
@@ -515,15 +516,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (primaryColumns.length > 0) {
                 const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                 const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
             }
 
             primaryColumns.push(column);
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
             const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
         }
 
         // create column index
@@ -540,8 +541,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 columnNames: [column.name]
             });
             clonedTable.uniques.push(uniqueConstraint);
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${column.name}")`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${column.name}")`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -583,8 +584,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     async changeColumn(tableOrName: Table|string, oldTableColumnOrName: TableColumn|string, newColumn: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         let clonedTable = table.clone();
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         const oldColumn = oldTableColumnOrName instanceof TableColumn
             ? oldTableColumnOrName
@@ -603,13 +604,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`);
+                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`));
 
                 // rename ENUM type
                 if (oldColumn.type === "enum" || oldColumn.type === "simple-enum") {
-                    upQueries.push(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`);
-                    downQueries.push(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`);
+                    upQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(table, oldColumn)} RENAME TO ${this.buildEnumName(table, newColumn, false)}`));
+                    downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO ${this.buildEnumName(table, oldColumn, false)}`));
                 }
 
                 // rename column primary key constraint
@@ -627,8 +628,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build new primary constraint name
                     const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
 
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
                 }
 
                 // rename column sequence
@@ -642,8 +643,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                     const up = schema ? `ALTER SEQUENCE "${schema}"."${seqName}" RENAME TO "${newSeqName}"` : `ALTER SEQUENCE "${seqName}" RENAME TO "${newSeqName}"`;
                     const down = schema ? `ALTER SEQUENCE "${schema}"."${newSeqName}" RENAME TO "${seqName}"` : `ALTER SEQUENCE "${newSeqName}" RENAME TO "${seqName}"`;
-                    upQueries.push(up);
-                    downQueries.push(down);
+                    upQueries.push(new Query(up));
+                    downQueries.push(new Query(down));
                 }
 
                 // rename unique constraints
@@ -654,8 +655,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
 
                     // build queries
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
 
                     // replace constraint name
                     unique.name = newUniqueName;
@@ -672,8 +673,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build queries
                     const up = schema ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"` : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`;
                     const down = schema ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"` : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`;
-                    upQueries.push(up);
-                    downQueries.push(down);
+                    upQueries.push(new Query(up));
+                    downQueries.push(new Query(down));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -687,8 +688,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
 
                     // build queries
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${foreignKey.name}" TO "${newForeignKeyName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} RENAME CONSTRAINT "${newForeignKeyName}" TO "${foreignKey.name}"`));
 
                     // replace constraint name
                     foreignKey.name = newForeignKeyName;
@@ -701,8 +702,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
 
             if (newColumn.precision !== oldColumn.precision || newColumn.scale !== oldColumn.scale) {
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
+                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`));
             }
 
             if (
@@ -717,8 +718,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const oldEnumNameWithoutSchema = this.buildEnumName(table, newColumn, false, false, true);
 
                 // rename old ENUM
-                upQueries.push(`ALTER TYPE ${enumName} RENAME TO ${oldEnumNameWithoutSchema}`);
-                downQueries.push(`ALTER TYPE ${oldEnumName} RENAME TO ${enumNameWithoutSchema}`);
+                upQueries.push(new Query(`ALTER TYPE ${enumName} RENAME TO ${oldEnumNameWithoutSchema}`));
+                downQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO ${enumNameWithoutSchema}`));
 
                 // create new ENUM
                 upQueries.push(this.createEnumTypeSql(table, newColumn));
@@ -726,8 +727,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // if column have default value, we must drop it to avoid issues with type casting
                 if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
                 }
 
                 // build column types
@@ -735,13 +736,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const downType = `${oldEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumName}${arraySuffix}`;
 
                 // update column to use new type
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`);
+                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`));
 
                 // if column have default value and we dropped it before, we must bring it back
                 if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
                 }
 
                 // remove old ENUM
@@ -751,17 +752,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
                 if (newColumn.isNullable) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" SET NOT NULL`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" SET NOT NULL`));
                 } else {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" SET NOT NULL`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" SET NOT NULL`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${oldColumn.name}" DROP NOT NULL`));
                 }
             }
 
             if (oldColumn.comment !== newColumn.comment) {
-                upQueries.push(`COMMENT ON COLUMN ${this.escapeTableName(table)}."${oldColumn.name}" IS '${newColumn.comment}'`);
-                downQueries.push(`COMMENT ON COLUMN ${this.escapeTableName(table)}."${newColumn.name}" IS '${oldColumn.comment}'`);
+                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapeTableName(table)}."${oldColumn.name}" IS '${newColumn.comment}'`));
+                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapeTableName(table)}."${newColumn.name}" IS '${oldColumn.comment}'`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -771,8 +772,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 if (primaryColumns.length > 0) {
                     const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                     const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
                 }
 
                 if (newColumn.isPrimary === true) {
@@ -782,8 +783,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     column!.isPrimary = true;
                     const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                     const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
 
                 } else {
                     const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
@@ -797,8 +798,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (primaryColumns.length > 0) {
                         const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
                         const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-                        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
                     }
                 }
             }
@@ -810,55 +811,55 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         columnNames: [newColumn.name]
                     });
                     clonedTable.uniques.push(uniqueConstraint);
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
 
                 } else {
                     const uniqueConstraint = clonedTable.uniques.find(unique => {
                         return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
                     });
                     clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint!.name}"`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueConstraint!.name}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`));
                 }
             }
 
             if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
                 if (newColumn.isGenerated === true) {
-                    upQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`);
-                    downQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`);
+                    upQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`));
+                    downQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`));
 
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
 
                 } else {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.buildSequenceName(table, newColumn, undefined, true)}')`));
 
-                    upQueries.push(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`);
-                    downQueries.push(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`);
+                    upQueries.push(new Query(`DROP SEQUENCE ${this.buildSequenceName(table, newColumn)}`));
+                    downQueries.push(new Query(`CREATE SEQUENCE ${this.buildSequenceName(table, newColumn)} OWNED BY ${this.escapeTableName(table)}."${newColumn.name}"`));
                 }
             }
 
             if (newColumn.default !== oldColumn.default) {
                 if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
 
                     if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`);
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`));
                     } else {
-                        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
                     }
 
                 } else if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`);
-                    downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`);
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${oldColumn.default}`));
                 }
             }
 
             if ((newColumn.spatialFeatureType || "").toLowerCase() !== (oldColumn.spatialFeatureType || "").toLowerCase() || newColumn.srid !== oldColumn.srid) {
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`);
+                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`));
             }
 
         }
@@ -884,15 +885,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         const clonedTable = table.clone();
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         // drop primary key constraint
         if (column.isPrimary) {
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
             const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP CONSTRAINT "${pkName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP CONSTRAINT "${pkName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
 
             // update column in table
             const tableColumn = clonedTable.findColumnByName(column.name);
@@ -902,8 +903,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if (clonedTable.primaryColumns.length > 0) {
                 const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
                 const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
-                upQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`);
-                downQueries.push(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP CONSTRAINT "${pkName}"`);
+                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP CONSTRAINT "${pkName}"`));
             }
         }
 
@@ -931,8 +932,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
         }
 
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`);
-        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`);
+        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN "${column.name}"`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(table, column)}`));
 
         // drop enum type
         if (column.type === "enum" || column.type === "simple-enum") {
@@ -983,16 +984,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const clonedTable = table.clone();
         const columnNames = columns.map(column => column.name);
-        const upQueries: string[] = [];
-        const downQueries: string[] = [];
+        const upQueries: Query[] = [];
+        const downQueries: Query[] = [];
 
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0) {
             const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
             const columnNamesString = primaryColumns.map(column => `"${column.name}"`).join(", ");
-            upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
-            downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`);
+            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`));
         }
 
         // update columns in table.
@@ -1002,8 +1003,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, columnNames);
         const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
-        upQueries.push(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`);
-        downQueries.push(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`);
+        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${pkName}"`));
 
         await this.executeQueries(upQueries, downQueries);
         this.replaceCachedTable(table, clonedTable);
@@ -1278,13 +1279,17 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.startTransaction();
         try {
+            const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
+             `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`;
+            const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+            await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
+
             // ignore spatial_ref_sys; it's a special table supporting PostGIS
             // TODO generalize this as this.driver.ignoreTables
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND tablename NOT IN ('spatial_ref_sys', 'typeorm_view_definition')`;
-            const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-            await Promise.all(dropQueries.map(q => this.query(q["query"])));
+            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`;
+            const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
+            await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
             await this.dropEnumTypes(schemaNamesString);
-            await this.query(`TRUNCATE TABLE "typeorm_view_definition"`);
 
             await this.commitTransaction();
 
@@ -1313,7 +1318,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT "t".*, "v"."check_option" FROM "typeorm_view_definition" "t" ` +
+        const query = `SELECT "t".*, "v"."check_option" FROM "typeorm_views" "t" ` +
             `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
@@ -1638,7 +1643,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds create table sql.
      */
-    protected createTableSql(table: Table, createForeignKeys?: boolean): string {
+    protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(table, column)).join(", ");
         let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
 
@@ -1709,14 +1714,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         sql += `)`;
 
-        return sql;
+        return new Query(sql);
     }
 
-    protected createViewSql(view: View): string {
-        return `CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression}`;
+    protected createViewSql(view: View): Query {
+        if (typeof view.expression === "string") {
+            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression}`);
+        } else {
+            const [query, parameters] = view.expression(this.connection).getQueryAndParameters();
+            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${query}`, parameters);
+        }
     }
 
-    protected insertViewDefinitionSql(view: View): string {
+    protected insertViewDefinitionSql(view: View): Query {
         const splittedName = view.name.split(".");
         let schema = this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()";
         let name = view.name;
@@ -1725,7 +1735,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             name = splittedName[1];
         }
 
-        return `INSERT INTO "typeorm_view_definition" ("schema", "name", "expression") VALUES (${schema}, '${name}', '${view.expression.trim()}')`;
+        let expression = "";
+        if (typeof view.expression === "string") {
+            expression = view.expression.trim();
+        } else {
+            const qb = view.expression(this.connection);
+            const [query, parameters] = qb.getQueryAndParameters();
+            expression = query + (parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : "");
+        }
+
+        return new Query(`INSERT INTO "typeorm_views" ("schema", "name", "expression") VALUES (${schema}, '${name}', '${expression}')`);
     }
 
     /**
@@ -1764,40 +1783,40 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Builds create ENUM type sql.
      */
-    protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): string {
+    protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
         if (!enumName)
             enumName = this.buildEnumName(table, column);
         const enumValues = column.enum!.map(value => `'${value}'`).join(", ");
-        return `CREATE TYPE ${enumName} AS ENUM(${enumValues})`;
+        return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`);
     }
 
     /**
      * Builds create ENUM type sql.
      */
-    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): string {
+    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
         if (!enumName)
             enumName = this.buildEnumName(table, column);
-        return `DROP TYPE ${enumName}`;
+        return new Query(`DROP TYPE ${enumName}`);
     }
 
     /**
      * Builds drop table sql.
      */
-    protected dropTableSql(tableOrPath: Table|string): string {
-        return `DROP TABLE ${this.escapeTableName(tableOrPath)}`;
+    protected dropTableSql(tableOrPath: Table|string): Query {
+        return new Query(`DROP TABLE ${this.escapeTableName(tableOrPath)}`);
     }
 
     /**
      * Builds drop view sql.
      */
-    protected dropViewSql(viewOrPath: View|string): string {
-        return `DROP VIEW ${this.escapeViewName(viewOrPath)}`;
+    protected dropViewSql(viewOrPath: View|string): Query {
+        return new Query(`DROP VIEW ${this.escapeViewName(viewOrPath)}`);
     }
 
     /**
      * Builds remove view sql.
      */
-    protected deleteViewDefinitionSql(viewOrPath: View|string) {
+    protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
         const splittedName = viewName.split(".");
         let schema = this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()";
@@ -1807,94 +1826,94 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             name = splittedName[1];
         }
 
-        return `DELETE FROM "typeorm_view_definition" WHERE "schema" = ${schema} AND "name" = '${name}'`;
+        return new Query(`DELETE FROM "typeorm_views" WHERE "schema" = ${schema} AND "name" = '${name}'`);
     }
 
     /**
      * Builds create index sql.
      */
-    protected createIndexSql(table: Table, index: TableIndex): string {
+    protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)} ${index.isSpatial ? "USING GiST " : ""}(${columns}) ${index.where ? "WHERE " + index.where : ""}`;
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON ${this.escapeTableName(table)} ${index.isSpatial ? "USING GiST " : ""}(${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**
      * Builds drop index sql.
      */
-    protected dropIndexSql(table: Table, indexOrName: TableIndex|string): string {
+    protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
         const schema = this.extractSchema(table);
-        return schema ? `DROP INDEX "${schema}"."${indexName}"` : `DROP INDEX "${indexName}"`;
+        return schema ? new Query(`DROP INDEX "${schema}"."${indexName}"`) : new Query(`DROP INDEX "${indexName}"`);
     }
 
     /**
      * Builds create primary key sql.
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): string {
+    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
         const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`);
     }
 
     /**
      * Builds drop primary key sql.
      */
-    protected dropPrimaryKeySql(table: Table): string {
+    protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map(column => column.name);
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
-        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${primaryKeyName}"`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${primaryKeyName}"`);
     }
 
     /**
      * Builds create unique constraint sql.
      */
-    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): string {
+    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
         const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
-        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`);
     }
 
     /**
      * Builds drop unique constraint sql.
      */
-    protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): string {
+    protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): Query {
         const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
-        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${uniqueName}"`);
     }
 
     /**
      * Builds create check constraint sql.
      */
-    protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): string {
-        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`;
+    protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): Query {
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`);
     }
 
     /**
      * Builds drop check constraint sql.
      */
-    protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): string {
+    protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): Query {
         const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
-        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${checkName}"`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${checkName}"`);
     }
 
     /**
      * Builds create exclusion constraint sql.
      */
-    protected createExclusionConstraintSql(table: Table, exclusionConstraint: TableExclusion): string {
-        return `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${exclusionConstraint.name}" EXCLUDE ${exclusionConstraint.expression}`;
+    protected createExclusionConstraintSql(table: Table, exclusionConstraint: TableExclusion): Query {
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${exclusionConstraint.name}" EXCLUDE ${exclusionConstraint.expression}`);
     }
 
     /**
      * Builds drop exclusion constraint sql.
      */
-    protected dropExclusionConstraintSql(table: Table, exclusionOrName: TableExclusion|string): string {
+    protected dropExclusionConstraintSql(table: Table, exclusionOrName: TableExclusion|string): Query {
         const exclusionName = exclusionOrName instanceof TableExclusion ? exclusionOrName.name : exclusionOrName;
-        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${exclusionName}"`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${exclusionName}"`);
     }
 
     /**
      * Builds create foreign key sql.
      */
-    protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): string {
+    protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
         let sql = `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
@@ -1904,15 +1923,15 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (foreignKey.onUpdate)
             sql += ` ON UPDATE ${foreignKey.onUpdate}`;
 
-        return sql;
+        return new Query(sql);
     }
 
     /**
      * Builds drop foreign key sql.
      */
-    protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): string {
+    protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
         const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
-        return `ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${foreignKeyName}"`;
+        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP CONSTRAINT "${foreignKeyName}"`);
     }
 
     /**

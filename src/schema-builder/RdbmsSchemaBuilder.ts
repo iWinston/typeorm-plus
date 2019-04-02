@@ -67,6 +67,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.startTransaction();
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            if (this.viewEntityToSyncMetadatas.length > 0)
+                await this.createViewsTable();
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
             await this.executeSchemaSyncOperationsInProperOrder();
@@ -718,6 +720,39 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected metadataColumnsToTableColumnOptions(columns: ColumnMetadata[]): TableColumnOptions[] {
         return columns.map(columnMetadata => TableUtils.createTableColumnOptions(columnMetadata, this.connection.driver));
+    }
+
+    /**
+     * Creates typeorm service table for storing user defined Views.
+     */
+    protected async createViewsTable() {
+        await this.queryRunner.createTable(new Table(
+            {
+                name: "typeorm_views",
+                columns: [
+                    {
+                        name: "database",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewDatabase}),
+                        isNullable: true
+                    },
+                    {
+                        name: "schema",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewSchema}),
+                        isNullable: true
+                    },
+                    {
+                        name: "name",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewName}),
+                        isNullable: false
+                    },
+                    {
+                        name: "expression",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewExpression}),
+                        isNullable: false
+                    },
+                ]
+            },
+        ));
     }
 
 }

@@ -15,6 +15,7 @@ export function ViewColumn(): Function {
             target: object.constructor,
             propertyName: propertyName,
             mode: "regular",
+            options: {}
         } as ColumnMetadataArgs);
     };
 }

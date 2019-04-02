@@ -1,5 +1,6 @@
-import {TableType} from "../metadata/types/TableTypes";
+import {Connection, SelectQueryBuilder} from "..";
 import {OrderByCondition} from "../find-options/OrderByCondition";
+import {TableType} from "../metadata/types/TableTypes";
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -53,6 +54,6 @@ export interface TableMetadataArgs {
     /**
      * View expression.
      */
-    expression?: string;
+    expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
 }
