@@ -97,6 +97,11 @@ export class ColumnMetadata {
     isSelect: boolean = true;
 
     /**
+     * Indicates if column is inserted by default or not.
+     */
+    isInsert: boolean = true;
+
+    /**
      * Indicates if column is protected from updates or not.
      */
     isReadonly: boolean = false;
@@ -334,6 +339,8 @@ export class ColumnMetadata {
             this.isNullable = options.args.options.nullable;
         if (options.args.options.select !== undefined)
             this.isSelect = options.args.options.select;
+        if (options.args.options.insert !== undefined)
+            this.isInsert = options.args.options.insert;
         if (options.args.options.readonly !== undefined)
             this.isReadonly = options.args.options.readonly;
         if (options.args.options.comment)

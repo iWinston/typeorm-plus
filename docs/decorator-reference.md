@@ -174,6 +174,7 @@ you specify column type and length options.
 By default column is `nullable: false`.
 * `readonly: boolean` - Indicates if column value is not updated by "save" operation. It means you'll be able to write this value only when you first time insert the object.
 Default value is `false`.
+* `insert: boolean` - Indicates if column value is set the first time you insert the object.  Default value is `true`.
 * `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
 * `default: string` - Adds database-level column's `DEFAULT` value.
 * `primary: boolean` - Marks column as primary. Same as using  `@PrimaryColumn`.

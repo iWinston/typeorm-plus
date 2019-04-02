@@ -48,6 +48,12 @@ export interface ColumnOptions extends ColumnCommonOptions {
     select?: boolean;
 
     /**
+     * Indicates if column is inserted by default.
+     * Default value is "true".
+     */
+    insert?: boolean;
+
+    /**
      * Default database value.
      */
     default?: any;
