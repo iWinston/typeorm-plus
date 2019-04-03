@@ -345,9 +345,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
         upQueries.push(this.createViewSql(view));
-        upQueries.push(this.insertViewDefinitionSql(view));
+        upQueries.push(await this.insertViewDefinitionSql(view));
         downQueries.push(this.dropViewSql(view));
-        downQueries.push(this.deleteViewDefinitionSql(view));
+        downQueries.push(await this.deleteViewDefinitionSql(view));
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -360,9 +360,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
-        upQueries.push(this.deleteViewDefinitionSql(view));
+        upQueries.push(await this.deleteViewDefinitionSql(view));
         upQueries.push(this.dropViewSql(view));
-        downQueries.push(this.insertViewDefinitionSql(view));
+        downQueries.push(await this.insertViewDefinitionSql(view));
         downQueries.push(this.createViewSql(view));
         await this.executeQueries(upQueries, downQueries);
     }
@@ -1115,6 +1115,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.startTransaction();
         try {
+
+            const selectViewDropsQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
+            const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+            await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
+
             const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`;
             const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`;
@@ -1147,10 +1152,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
-        // if no views given then no need to proceed
-        if (!viewNames || !viewNames.length)
-            return [];
-
         const currentDatabase = await this.getCurrentDatabase();
         const viewsCondition = viewNames.map(tableName => {
             let [database, name] = tableName.split(".");
@@ -1161,7 +1162,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM \`typeorm_views\` \`t\` ` +
+        const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapeTableName(this.getViewsTableName())} \`t\` ` +
             `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
@@ -1493,22 +1494,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (typeof view.expression === "string") {
             return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression}`);
         } else {
-            const [query, parameters] = view.expression(this.connection).getQueryAndParameters();
-            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${query}`, parameters);
+            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
-    protected insertViewDefinitionSql(view: View): Query {
-        let expression = "";
-        if (typeof view.expression === "string") {
-            expression = view.expression.trim();
-        } else {
-            const qb = view.expression(this.connection);
-            const [query, parameters] = qb.getQueryAndParameters();
-            expression = query + (parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : "");
-        }
+    protected async insertViewDefinitionSql(view: View): Promise<Query> {
+        const currentDatabase = await this.getCurrentDatabase();
+        const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+        const [query, parameters] = this.connection.createQueryBuilder()
+            .insert()
+            .into(this.getViewsTableName())
+            .values({ schema: currentDatabase, name: view.name, expression })
+            .getQueryAndParameters();
 
-        return new Query(`INSERT INTO \`typeorm_views\` (\`name\`, \`expression\`) VALUES ('${view.name}', '${expression}')`);
+        return new Query(query, parameters);
     }
 
     /**
@@ -1521,9 +1520,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds remove view sql.
      */
-    protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
+    protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
+        const currentDatabase = await this.getCurrentDatabase();
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        return new Query(`DELETE FROM \`typeorm_views\` WHERE \`name\` = '${viewName}'`);
+        const qb = this.connection.createQueryBuilder();
+        const [query, parameters] = qb.delete()
+            .from(this.getViewsTableName())
+            .where(`${qb.escape("schema")} = :schema`, { schema: currentDatabase })
+            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
+            .getQueryAndParameters();
+
+        return new Query(query, parameters);
     }
 
     /**
