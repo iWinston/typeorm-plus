@@ -379,8 +379,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
         // rename table
-        upQueries.push(new Query(`RENAME TABLE ${this.escapeTableName(oldTable.name)} TO ${this.escapeTableName(newTable.name)}`));
-        downQueries.push(new Query(`RENAME TABLE ${this.escapeTableName(newTable.name)} TO ${this.escapeTableName(oldTable.name)}`));
+        upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable.name)} TO ${this.escapePath(newTable.name)}`));
+        downQueries.push(new Query(`RENAME TABLE ${this.escapePath(newTable.name)} TO ${this.escapePath(oldTable.name)}`));
 
         // rename index constraints
         newTable.indices.forEach(index => {
@@ -396,8 +396,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 indexType += "SPATIAL ";
             if (index.isFulltext)
                 indexType += "FULLTEXT ";
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
 
             // replace constraint name
             index.name = newIndexName;
@@ -411,15 +411,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames);
 
             // build queries
-            let up = `ALTER TABLE ${this.escapeTableName(newTable)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
-                `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+            let up = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
             if (foreignKey.onDelete)
                 up += ` ON DELETE ${foreignKey.onDelete}`;
             if (foreignKey.onUpdate)
                 up += ` ON UPDATE ${foreignKey.onUpdate}`;
 
-            let down = `ALTER TABLE ${this.escapeTableName(newTable)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
-                `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+            let down = `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+                `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
             if (foreignKey.onDelete)
                 down += ` ON DELETE ${foreignKey.onDelete}`;
             if (foreignKey.onUpdate)
@@ -449,8 +449,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const skipColumnLevelPrimary = clonedTable.primaryColumns.length > 0;
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN \`${column.name}\``));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column, skipColumnLevelPrimary, false)}`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN \`${column.name}\``));
 
         // create or update primary key constraint
         if (column.isPrimary && skipColumnLevelPrimary) {
@@ -460,27 +460,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const nonGeneratedColumn = generatedColumn.clone();
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`));
             }
 
             const primaryColumns = clonedTable.primaryColumns;
             let columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
 
             primaryColumns.push(column);
             columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
 
             // if we previously dropped AUTO_INCREMENT property, we must bring it back
             if (generatedColumn) {
                 const nonGeneratedColumn = generatedColumn.clone();
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(column, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${column.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
             }
         }
 
@@ -501,8 +501,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 name: uniqueIndex.name,
                 columnNames: uniqueIndex.columnNames
             }));
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${column.name}\`)`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${column.name}\`)`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex.name}\``));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -566,8 +566,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true, true)}`));
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach(index => {
@@ -585,8 +585,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         indexType += "SPATIAL ";
                     if (index.isFulltext)
                         indexType += "FULLTEXT ";
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${index.name}\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${index.name}\` (${columnNames})`));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -602,15 +602,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames);
 
                     // build queries
-                    let up = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
-                        `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+                    let up = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKey.name}\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                        `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
                     if (foreignKey.onDelete)
                         up += ` ON DELETE ${foreignKey.onDelete}`;
                     if (foreignKey.onUpdate)
                         up += ` ON UPDATE ${foreignKey.onUpdate}`;
 
-                    let down = `ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
-                        `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+                    let down = `ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+                        `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
                     if (foreignKey.onDelete)
                         down += ` ON DELETE ${foreignKey.onDelete}`;
                     if (foreignKey.onUpdate)
@@ -630,8 +630,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newColumn.name}\` ${this.buildCreateColumnSql(oldColumn, true)}`));
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -642,8 +642,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     nonGeneratedColumn.isGenerated = false;
                     nonGeneratedColumn.generationStrategy = undefined;
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
                 }
 
                 const primaryColumns = clonedTable.primaryColumns;
@@ -651,8 +651,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
                     const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
                 }
 
                 if (newColumn.isPrimary === true) {
@@ -661,8 +661,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const column = clonedTable.columns.find(column => column.name === newColumn.name);
                     column!.isPrimary = true;
                     const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
 
                 } else {
                     const primaryColumn = primaryColumns.find(c => c.name === newColumn.name);
@@ -674,8 +674,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
                         const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-                        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`));
-                        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
                     }
                 }
 
@@ -685,8 +685,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     nonGeneratedColumn.isGenerated = false;
                     nonGeneratedColumn.generationStrategy = undefined;
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
                 }
             }
 
@@ -702,8 +702,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         name: uniqueIndex.name,
                         columnNames: uniqueIndex.columnNames
                     }));
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex.name}\``));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex.name}\``));
 
                 } else {
                     const uniqueIndex = clonedTable.indices.find(index => {
@@ -714,8 +714,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const tableUnique = clonedTable.uniques.find(unique => unique.name === uniqueIndex!.name);
                     clonedTable.uniques.splice(clonedTable.uniques.indexOf(tableUnique!), 1);
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${uniqueIndex!.name}\``));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex!.name}\``));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`));
                 }
             }
         }
@@ -753,14 +753,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
 
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
             }
 
             // dropping primary key constraint
             const columnNames = clonedTable.primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP PRIMARY KEY`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD PRIMARY KEY (${columnNames})`));
 
             // update column in table
             const tableColumn = clonedTable.findColumnByName(column.name);
@@ -769,8 +769,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
                 const columnNames = clonedTable.primaryColumns.map(primaryColumn => `\`${primaryColumn.name}\``).join(", ");
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} ADD PRIMARY KEY (${columnNames})`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(clonedTable)} DROP PRIMARY KEY`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD PRIMARY KEY (${columnNames})`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP PRIMARY KEY`));
             }
 
             // if we have generated column, and we dropped AUTO_INCREMENT property before, and this column is not current dropping column, we must bring it back
@@ -779,8 +779,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 nonGeneratedColumn.isGenerated = false;
                 nonGeneratedColumn.generationStrategy = undefined;
 
-                upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
             }
         }
 
@@ -803,12 +803,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (foundIndex)
                 clonedTable.indices.splice(clonedTable.indices.indexOf(foundIndex), 1);
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP INDEX \`${indexName}\``));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD UNIQUE INDEX \`${indexName}\` (\`${column.name}\`)`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${indexName}\``));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${indexName}\` (\`${column.name}\`)`));
         }
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP COLUMN \`${column.name}\``));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD ${this.buildCreateColumnSql(column, true)}`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN \`${column.name}\``));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column, true)}`));
 
         await this.executeQueries(upQueries, downQueries);
 
@@ -858,16 +858,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             nonGeneratedColumn.isGenerated = false;
             nonGeneratedColumn.generationStrategy = undefined;
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${generatedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(generatedColumn, true)}`));
         }
 
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0) {
             const columnNames = primaryColumns.map(column => `\`${column.name}\``).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNames})`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNames})`));
         }
 
         // update columns in table.
@@ -876,8 +876,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             .forEach(column => column.isPrimary = true);
 
         const columnNamesString = columnNames.map(columnName => `\`${columnName}\``).join(", ");
-        upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNamesString})`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNamesString})`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`));
 
         // if we already have generated column or column is changed to generated, and we dropped AUTO_INCREMENT property before, we must bring it back
         const newOrExistGeneratedColumn = generatedColumn ? generatedColumn : columns.find(column => column.isGenerated && column.generationStrategy === "increment");
@@ -886,8 +886,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             nonGeneratedColumn.isGenerated = false;
             nonGeneratedColumn.generationStrategy = undefined;
 
-            upQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(newOrExistGeneratedColumn, true)}`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapeTableName(table)} CHANGE \`${newOrExistGeneratedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
+            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${nonGeneratedColumn.name}\` ${this.buildCreateColumnSql(newOrExistGeneratedColumn, true)}`));
+            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} CHANGE \`${newOrExistGeneratedColumn.name}\` ${this.buildCreateColumnSql(nonGeneratedColumn, true)}`));
 
             // if column changed to generated, we must update it in table
             const changedGeneratedColumn = clonedTable.columns.find(column => column.name === newOrExistGeneratedColumn.name);
@@ -1095,7 +1095,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
     async clearTable(tableOrName: Table|string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapeTableName(tableOrName)}`);
+        await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`);
     }
 
     /**
@@ -1162,7 +1162,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapeTableName(this.getViewsTableName())} \`t\` ` +
+        const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(this.getViewsTableName())} \`t\` ` +
             `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
@@ -1399,7 +1399,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, true)).join(", ");
-        let sql = `CREATE TABLE ${this.escapeTableName(table)} (${columnDefinitions}`;
+        let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
 
         // we create unique indexes instead of unique constraints, because MySql does not have unique constraints.
         // if we mark column as Unique, it means that we create UNIQUE INDEX.
@@ -1461,7 +1461,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `\`${columnName}\``).join(", ");
 
-                let constraint = `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapeTableName(fk.referencedTableName)} (${referencedColumnNames})`;
+                let constraint = `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
                 if (fk.onDelete)
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)
@@ -1487,14 +1487,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop table sql
      */
     protected dropTableSql(tableOrName: Table|string): Query {
-        return new Query(`DROP TABLE ${this.escapeTableName(tableOrName)}`);
+        return new Query(`DROP TABLE ${this.escapePath(tableOrName)}`);
     }
 
     protected createViewSql(view: View): Query {
         if (typeof view.expression === "string") {
-            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression}`);
+            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression}`);
         } else {
-            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
@@ -1514,7 +1514,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop view sql.
      */
     protected dropViewSql(viewOrPath: View|string): Query {
-        return new Query(`DROP VIEW ${this.escapeViewName(viewOrPath)}`);
+        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`);
     }
 
     /**
@@ -1545,7 +1545,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             indexType += "SPATIAL ";
         if (index.isFulltext)
             indexType += "FULLTEXT ";
-        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapeTableName(table)} (${columns})`);
+        return new Query(`CREATE ${indexType}INDEX \`${index.name}\` ON ${this.escapePath(table)} (${columns})`);
     }
 
     /**
@@ -1553,7 +1553,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX \`${indexName}\` ON ${this.escapeTableName(table)}`);
+        return new Query(`DROP INDEX \`${indexName}\` ON ${this.escapePath(table)}`);
     }
 
     /**
@@ -1561,14 +1561,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const columnNamesString = columnNames.map(columnName => `\`${columnName}\``).join(", ");
-        return new Query(`ALTER TABLE ${this.escapeTableName(table)} ADD PRIMARY KEY (${columnNamesString})`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD PRIMARY KEY (${columnNamesString})`);
     }
 
     /**
      * Builds drop primary key sql.
      */
     protected dropPrimaryKeySql(table: Table): Query {
-        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP PRIMARY KEY`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP PRIMARY KEY`);
     }
 
     /**
@@ -1577,8 +1577,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected createForeignKeySql(table: Table, foreignKey: TableForeignKey): Query {
         const columnNames = foreignKey.columnNames.map(column => `\`${column}\``).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `\`${column}\``).join(",");
-        let sql = `ALTER TABLE ${this.escapeTableName(table)} ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
-            `REFERENCES ${this.escapeTableName(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
+            `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
         if (foreignKey.onDelete)
             sql += ` ON DELETE ${foreignKey.onDelete}`;
         if (foreignKey.onUpdate)
@@ -1592,7 +1592,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropForeignKeySql(table: Table, foreignKeyOrName: TableForeignKey|string): Query {
         const foreignKeyName = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName.name : foreignKeyOrName;
-        return new Query(`ALTER TABLE ${this.escapeTableName(table)} DROP FOREIGN KEY \`${foreignKeyName}\``);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKeyName}\``);
     }
 
     protected parseTableName(target: Table|string) {
@@ -1604,19 +1604,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Escapes given table name.
+     * Escapes given table or view path.
      */
-    protected escapeTableName(target: Table|string, disableEscape?: boolean): string {
-        const tableName = target instanceof Table ? target.name : target;
+    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
+        const tableName = target instanceof Table || target instanceof View ? target.name : target;
         return tableName.split(".").map(i => disableEscape ? i : `\`${i}\``).join(".");
-    }
-
-    /**
-     * Escapes given view path.
-     */
-    protected escapeViewName(target: View|string, disableEscape?: boolean): string {
-        const viewName = target instanceof View ? target.name : target;
-        return viewName.split(".").map(i => disableEscape ? i : `\`${i}\``).join(".");
     }
 
     /**
