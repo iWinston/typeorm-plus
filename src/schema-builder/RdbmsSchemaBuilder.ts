@@ -1,4 +1,6 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {Table} from "./table/Table";
 import {TableColumn} from "./table/TableColumn";
 import {TableForeignKey} from "./table/TableForeignKey";
@@ -382,7 +384,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
                 const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
                 const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
-                return view.name === fullViewName && view.expression.trim() === metadata.expression!.trim();
+                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
+                return view.name === fullViewName && viewExpression === metadataExpression;
             });
             if (existView)
                 return;
@@ -402,8 +406,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
                 const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
                 const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
-
-                return view.name === fullViewName && view.expression.trim() === metadata.expression!.trim();
+                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
+                return view.name === fullViewName && viewExpression === metadataExpression;
             });
 
             if (existViewMetadata)
@@ -726,9 +731,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates typeorm service table for storing user defined Views.
      */
     protected async createViewsTable() {
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const viewsTable = this.connection.driver.buildTableName("typeorm_views", options.schema, options.database);
+
         await this.queryRunner.createTable(new Table(
             {
-                name: "typeorm_views",
+                name: viewsTable,
                 columns: [
                     {
                         name: "database",
@@ -752,7 +760,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     },
                 ]
             },
-        ));
+        ), true);
     }
 
 }

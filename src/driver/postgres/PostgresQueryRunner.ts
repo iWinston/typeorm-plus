@@ -388,9 +388,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
         upQueries.push(this.createViewSql(view));
-        upQueries.push(this.insertViewDefinitionSql(view));
+        upQueries.push(await this.insertViewDefinitionSql(view));
         downQueries.push(this.dropViewSql(view));
-        downQueries.push(this.deleteViewDefinitionSql(view));
+        downQueries.push(await this.deleteViewDefinitionSql(view));
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -403,9 +403,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
-        upQueries.push(this.deleteViewDefinitionSql(view));
+        upQueries.push(await this.deleteViewDefinitionSql(view));
         upQueries.push(this.dropViewSql(view));
-        downQueries.push(this.insertViewDefinitionSql(view));
+        downQueries.push(await this.insertViewDefinitionSql(view));
         downQueries.push(this.createViewSql(view));
         await this.executeQueries(upQueries, downQueries);
     }
@@ -1318,7 +1318,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT "t".*, "v"."check_option" FROM "typeorm_views" "t" ` +
+        const query = `SELECT "t".*, "v"."check_option" FROM ${this.escapeTableName(this.getViewsTableName())} "t" ` +
             `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
@@ -1717,34 +1717,72 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return new Query(sql);
     }
 
+    /**
+     * Builds drop table sql.
+     */
+    protected dropTableSql(tableOrPath: Table|string): Query {
+        return new Query(`DROP TABLE ${this.escapeTableName(tableOrPath)}`);
+    }
+
     protected createViewSql(view: View): Query {
         if (typeof view.expression === "string") {
             return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression}`);
         } else {
-            const [query, parameters] = view.expression(this.connection).getQueryAndParameters();
-            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${query}`, parameters);
+            return new Query(`CREATE VIEW ${this.escapeViewName(view)} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
-    protected insertViewDefinitionSql(view: View): Query {
+    protected async insertViewDefinitionSql(view: View): Promise<Query> {
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
         const splittedName = view.name.split(".");
-        let schema = this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()";
+        let schema = this.driver.options.schema || currentSchema;
         let name = view.name;
         if (splittedName.length === 2) {
-            schema = `'${splittedName[0]}'`;
+            schema = splittedName[0];
             name = splittedName[1];
         }
 
-        let expression = "";
-        if (typeof view.expression === "string") {
-            expression = view.expression.trim();
-        } else {
-            const qb = view.expression(this.connection);
-            const [query, parameters] = qb.getQueryAndParameters();
-            expression = query + (parameters && parameters.length ? " -- PARAMETERS: " + JSON.stringify(parameters) : "");
+        const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+        const [query, parameters] = this.connection.createQueryBuilder()
+            .insert()
+            .into(this.getViewsTableName())
+            .values({ schema, name, expression })
+            .getQueryAndParameters();
+
+        return new Query(query, parameters);
+    }
+
+    /**
+     * Builds drop view sql.
+     */
+    protected dropViewSql(viewOrPath: View|string): Query {
+        return new Query(`DROP VIEW ${this.escapeViewName(viewOrPath)}`);
+    }
+
+    /**
+     * Builds remove view sql.
+     */
+    protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
+        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
+        const currentSchema = currentSchemaQuery[0]["current_schema"];
+        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
+        const splittedName = viewName.split(".");
+        let schema = this.driver.options.schema || currentSchema;
+        let name = viewName;
+        if (splittedName.length === 2) {
+            schema = splittedName[0];
+            name = splittedName[1];
         }
 
-        return new Query(`INSERT INTO "typeorm_views" ("schema", "name", "expression") VALUES (${schema}, '${name}', '${expression}')`);
+        const qb = this.connection.createQueryBuilder();
+        const [query, parameters] = qb.delete()
+            .from(this.getViewsTableName())
+            .where(`${qb.escape("schema")} = :schema`, { schema })
+            .andWhere(`${qb.escape("name")} = :name`, { name })
+            .getQueryAndParameters();
+
+        return new Query(query, parameters);
     }
 
     /**
@@ -1797,36 +1835,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!enumName)
             enumName = this.buildEnumName(table, column);
         return new Query(`DROP TYPE ${enumName}`);
-    }
-
-    /**
-     * Builds drop table sql.
-     */
-    protected dropTableSql(tableOrPath: Table|string): Query {
-        return new Query(`DROP TABLE ${this.escapeTableName(tableOrPath)}`);
-    }
-
-    /**
-     * Builds drop view sql.
-     */
-    protected dropViewSql(viewOrPath: View|string): Query {
-        return new Query(`DROP VIEW ${this.escapeViewName(viewOrPath)}`);
-    }
-
-    /**
-     * Builds remove view sql.
-     */
-    protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
-        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const splittedName = viewName.split(".");
-        let schema = this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()";
-        let name = viewName;
-        if (splittedName.length === 2) {
-            schema = `'${splittedName[0]}'`;
-            name = splittedName[1];
-        }
-
-        return new Query(`DELETE FROM "typeorm_views" WHERE "schema" = ${schema} AND "name" = '${name}'`);
     }
 
     /**

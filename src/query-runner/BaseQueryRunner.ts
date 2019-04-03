@@ -1,5 +1,7 @@
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {Query} from "../driver/Query";
 import {SqlInMemory} from "../driver/SqlInMemory";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {View} from "../schema-builder/view/View";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
@@ -235,6 +237,11 @@ export abstract class BaseQueryRunner {
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
         }
+    }
+
+    protected getViewsTableName(): string {
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        return this.connection.driver.buildTableName("typeorm_views", options.schema, options.database);
     }
 
     /**
