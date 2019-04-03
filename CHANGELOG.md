@@ -10,6 +10,8 @@ feel free to ask us and community.
 ### Bug fixes
 
 * fixed transform embeddeds with boolean values (mongodb) ([#3900](https://github.com/typeorm/typeorm/pull/3900))
+* fix performance issue when inserting into raw tables with QueryBuilder
+  ([#3931](https://github.com/typeorm/typeorm/issues/3931))
 
 ### Features
 
