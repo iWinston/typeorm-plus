@@ -7,7 +7,7 @@ describe.only("view entity", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mssql"]
+        enabledDrivers: ["cockroachdb"]
     }));
     // beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
