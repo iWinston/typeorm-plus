@@ -10,7 +10,7 @@ import {PhotoAlbumCategory} from "./entity/PhotoAlbumCategory";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
 
-describe.only("view entity > general", () => {
+describe("view entity > general", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
@@ -32,7 +32,7 @@ describe.only("view entity > general", () => {
 
     })));
 
-    it("should correctly return view data", () => Promise.all(connections.map(async connection => {
+    it("should correctly return data from View", () => Promise.all(connections.map(async connection => {
         const category1 = new Category();
         category1.name = "Cars";
         await connection.manager.save(category1);

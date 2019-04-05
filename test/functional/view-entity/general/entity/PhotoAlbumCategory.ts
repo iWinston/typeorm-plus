@@ -1,11 +1,11 @@
-import {Connection, SelectQueryBuilder} from "../../../../../src";
+import {Connection} from "../../../../../src";
 import {ViewColumn} from "../../../../../src/decorator/columns/ViewColumn";
 import {ViewEntity} from "../../../../../src/decorator/entity-view/ViewEntity";
 import {Album} from "./Album";
 import {Category} from "./Category";
 import {Photo} from "./Photo";
 
-@ViewEntity({ expression: (connection: Connection) => new SelectQueryBuilder(connection)
+@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
         .select("photo.id", "id")
         .addSelect("photo.name", "name")
         .addSelect("category.name", "categoryName")

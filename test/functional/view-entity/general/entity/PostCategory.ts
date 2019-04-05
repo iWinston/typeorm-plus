@@ -1,20 +1,10 @@
-import {Connection, SelectQueryBuilder} from "../../../../../src";
+import {Connection} from "../../../../../src";
 import {ViewColumn} from "../../../../../src/decorator/columns/ViewColumn";
 import {ViewEntity} from "../../../../../src/decorator/entity-view/ViewEntity";
 import {Category} from "./Category";
 import {Post} from "./Post";
 
-// @ViewEntity({ expression: `
-//     SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
-//     FROM "post" "post"
-//     LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
-// `})
-// @ViewEntity({ expression: `
-//     SELECT \`post\`.\`id\` \`id\`, \`post\`.\`name\` AS \`name\`, \`category\`.\`name\` AS \`categoryName\`
-//     FROM \`post\` \`post\`
-//     LEFT JOIN \`category\` \`category\` ON \`post\`.\`categoryId\` = \`category\`.\`id\`
-// `})
-@ViewEntity({ expression: (connection: Connection) => new SelectQueryBuilder(connection)
+@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
         .addSelect("category.name", "categoryName")
