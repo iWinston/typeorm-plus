@@ -1438,7 +1438,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const viewsCondition = viewPaths.map(viewPath => {
             const [schema, name] = extractTableSchemaAndName(viewPath);
-            return `("T"."TABLE_SCHEMA" = '${schema}' AND "T"."TABLE_NAME" = '${name}')`;
+            return `("T"."SCHEMA" = '${schema}' AND "T"."NAME" = '${name}')`;
         }).join(" OR ");
 
         const query = dbNames.map(dbName => {

@@ -1,6 +1,6 @@
-import {Connection, SelectQueryBuilder} from "../../../../src";
-import {ViewColumn} from "../../../../src/decorator/columns/ViewColumn";
-import {ViewEntity} from "../../../../src/decorator/entity-view/ViewEntity";
+import {Connection, SelectQueryBuilder} from "../../../../../src";
+import {ViewColumn} from "../../../../../src/decorator/columns/ViewColumn";
+import {ViewEntity} from "../../../../../src/decorator/entity-view/ViewEntity";
 import {Category} from "./Category";
 import {Post} from "./Post";
 
@@ -20,8 +20,6 @@ import {Post} from "./Post";
         .addSelect("category.name", "categoryName")
         .from(Post, "post")
         .leftJoin(Category, "category", "category.id = post.categoryId")
-        .where("post.id = 1")
-        .andWhere(`post.name = 'BMW'`)
 })
 export class PostCategory {
 

@@ -80,18 +80,18 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
             // we are using simple quoted string instead of template string syntax
             if (connection.driver instanceof MysqlDriver) {
-                sqlInMemory.upQueries.forEach(query => {
-                    upSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
-                sqlInMemory.downQueries.forEach(query => {
-                    downSqls.push("        await queryRunner.query(\"" + query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\");");
                 });
             } else {
-                sqlInMemory.upQueries.forEach(query => {
-                    upSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
-                sqlInMemory.downQueries.forEach(query => {
-                    downSqls.push("        await queryRunner.query(`" + query.replace(new RegExp("`", "g"), "\\`") + "`);");
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`);");
                 });
             }
 
