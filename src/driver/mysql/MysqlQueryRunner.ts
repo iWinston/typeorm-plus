@@ -1152,6 +1152,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
+        const hasTable = await this.hasTable(this.getViewsTableName());
+        if (!hasTable)
+            return Promise.resolve([]);
+
         const currentDatabase = await this.getCurrentDatabase();
         const viewsCondition = viewNames.map(tableName => {
             let [database, name] = tableName.split(".");

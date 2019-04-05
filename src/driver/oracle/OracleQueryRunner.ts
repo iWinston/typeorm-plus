@@ -1126,6 +1126,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
+        const hasTable = await this.hasTable(this.getViewsTableName());
+        if (!hasTable)
+            return Promise.resolve([]);
+
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
         let query = `SELECT "T".* FROM "${this.getViewsTableName()}" "T" INNER JOIN "USER_VIEWS" "V" ON "V"."VIEW_NAME" = "T"."name"`;
         if (viewNamesString.length > 0)

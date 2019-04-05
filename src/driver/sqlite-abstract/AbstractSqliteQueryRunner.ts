@@ -731,6 +731,10 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
+        const hasTable = await this.hasTable(this.getViewsTableName());
+        if (!hasTable)
+            return Promise.resolve([]);
+
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
         let query = `SELECT "t".* FROM "${this.getViewsTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view'`;
         if (viewNamesString.length > 0)

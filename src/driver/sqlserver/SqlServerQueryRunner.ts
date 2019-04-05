@@ -1406,6 +1406,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected async loadViews(viewPaths: string[]): Promise<View[]> {
+        const hasTable = await this.hasTable(this.getViewsTableName());
+        if (!hasTable)
+            return Promise.resolve([]);
+
         const currentSchema = await this.getCurrentSchema();
         const currentDatabase = await this.getCurrentDatabase();
 

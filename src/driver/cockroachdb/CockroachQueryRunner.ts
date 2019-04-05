@@ -1275,6 +1275,10 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
+        const hasTable = await this.hasTable(this.getViewsTableName());
+        if (!hasTable)
+            return Promise.resolve([]);
+
         const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
         const currentSchema = currentSchemaQuery[0]["current_schema"];
 
