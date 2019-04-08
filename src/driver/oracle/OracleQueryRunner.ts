@@ -174,7 +174,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.driver.connection.logger.logQueryError(err, query, parameters, this);
                         return fail(new QueryFailedError(query, parameters, err));
                     }
-                    ok(result.rows || result.outBinds);
+                    // TODO: find better solution. Must return result instead of properties
+                    ok(result.rows || result.outBinds || result.rowsAffected);
                 };
                 const executionOptions = {
                     autoCommit: this.isTransactionActive ? false : true
