@@ -78,6 +78,62 @@ export class User {
 
 Learn more about [Entities](entities.md).
 
+#### `@ViewEntity`
+
+View entity is a class that maps to a database view.
+
+`@ViewEntity()` accepts following options:
+
+* `name` - view name. If not specified, then view name is generated from entity class name.
+* `database` - database name in selected DB server.
+* `schema` - schema name.
+* `expression` - view definition. **Required parameter**.
+
+`expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
+
+```typescript
+@ViewEntity({ 
+    expression: `
+        SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `
+})
+export class PostCategory {
+```
+
+or an instance of QueryBuilder
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+})
+export class PostCategory {
+```
+
+**Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+        .where("category.name = :name", { name: "Cars" })  // <-- this is wrong
+        .where("category.name = 'Cars'")                   // <-- and this is right
+})
+export class PostCategory {
+```
+
+Learn more about [View Entities](view-entities.md).
+
 ## Column decorators
 
 #### `@Column`
