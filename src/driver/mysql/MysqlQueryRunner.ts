@@ -1152,7 +1152,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getViewsTableName());
+        const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
             return Promise.resolve([]);
 
@@ -1163,17 +1163,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 name = database;
                 database = this.driver.database || currentDatabase;
             }
-            return `(\`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}')`;
+            return `(\`t\`.\`schema\` = '${database}' AND \`t\`.\`name\` = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(this.getViewsTableName())} \`t\` ` +
-            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
+        const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(this.getTypeormMetadataTableName())} \`t\` ` +
+            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
             const db = dbView["schema"] === currentDatabase ? undefined : dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], undefined, db);
-            view.expression = dbView["expression"];
+            view.expression = dbView["value"];
             return view;
         });
     }
@@ -1507,8 +1507,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
-            .into(this.getViewsTableName())
-            .values({ schema: currentDatabase, name: view.name, expression })
+            .into(this.getTypeormMetadataTableName())
+            .values({ type: "VIEW", schema: currentDatabase, name: view.name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1529,8 +1529,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
-            .from(this.getViewsTableName())
-            .where(`${qb.escape("schema")} = :schema`, { schema: currentDatabase })
+            .from(this.getTypeormMetadataTableName())
+            .where(`${qb.escape("type")} = 'VIEW'`)
+            .andWhere(`${qb.escape("schema")} = :schema`, { schema: currentDatabase })
             .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
             .getQueryAndParameters();
 

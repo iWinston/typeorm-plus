@@ -156,10 +156,12 @@ export abstract class AbstractSqliteDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "text",
         cacheResult: "text",
-        viewDatabase: "varchar",
-        viewSchema: "varchar",
-        viewName: "varchar",
-        viewExpression: "text",
+        metadataType: "varchar",
+        metadataDatabase: "varchar",
+        metadataSchema: "varchar",
+        metadataTable: "varchar",
+        metadataName: "varchar",
+        metadataValue: "text",
     };
 
     /**

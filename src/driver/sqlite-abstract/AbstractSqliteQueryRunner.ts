@@ -731,19 +731,19 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getViewsTableName());
+        const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
             return Promise.resolve([]);
 
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
-        let query = `SELECT "t".* FROM "${this.getViewsTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view'`;
+        let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = 'VIEW'`;
         if (viewNamesString.length > 0)
-            query += ` WHERE "t"."name" IN (${viewNamesString})`;
+            query += ` AND "t"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
             view.name = dbView["name"];
-            view.expression = dbView["expression"];
+            view.expression = dbView["value"];
             return view;
         });
     }
@@ -1021,8 +1021,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
-            .into(this.getViewsTableName())
-            .values({ name: view.name, expression })
+            .into(this.getTypeormMetadataTableName())
+            .values({ type: "VIEW", name: view.name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1043,8 +1043,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
-            .from(this.getViewsTableName())
-            .where(`${qb.escape("name")} = :name`, { name: viewName })
+            .from(this.getTypeormMetadataTableName())
+            .where(`${qb.escape("type")} = 'VIEW'`)
+            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
             .getQueryAndParameters();
 
         return new Query(query, parameters);

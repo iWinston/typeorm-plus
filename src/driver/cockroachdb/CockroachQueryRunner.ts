@@ -1275,7 +1275,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getViewsTableName());
+        const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
             return Promise.resolve([]);
 
@@ -1291,14 +1291,14 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(this.getViewsTableName())} "t" ` +
-            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
+        const query = `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
+            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema);
-            view.expression = dbView["expression"];
+            view.expression = dbView["value"];
             return view;
         });
     }
@@ -1682,8 +1682,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
-            .into(this.getViewsTableName())
-            .values({ schema, name, expression })
+            .into(this.getTypeormMetadataTableName())
+            .values({ type: "VIEW", schema: schema, name: name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1713,8 +1713,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
-            .from(this.getViewsTableName())
-            .where(`${qb.escape("schema")} = :schema`, { schema })
+            .from(this.getTypeormMetadataTableName())
+            .where(`${qb.escape("type")} = 'VIEW'`)
+            .andWhere(`${qb.escape("schema")} = :schema`, { schema })
             .andWhere(`${qb.escape("name")} = :name`, { name })
             .getQueryAndParameters();
 

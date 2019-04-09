@@ -165,10 +165,12 @@ export class OracleDriver implements Driver {
         cacheDuration: "number",
         cacheQuery: "clob",
         cacheResult: "clob",
-        viewDatabase: "varchar2",
-        viewSchema: "varchar2",
-        viewName: "varchar2",
-        viewExpression: "clob",
+        metadataType: "varchar2",
+        metadataDatabase: "varchar2",
+        metadataSchema: "varchar2",
+        metadataTable: "varchar2",
+        metadataName: "varchar2",
+        metadataValue: "clob",
     };
 
     /**

@@ -19,17 +19,20 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
 ```typescript
-@ViewEntity({ expression: `
-    SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
-    FROM "post" "post"
-    LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
-`})
+@ViewEntity({ 
+    expression: `
+        SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `
+})
 ```
 
 or an instance of QueryBuilder
 
 ```typescript
-@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
         .addSelect("category.name", "categoryName")
@@ -41,7 +44,8 @@ or an instance of QueryBuilder
 **Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
 
 ```typescript
-@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
         .addSelect("category.name", "categoryName")
@@ -52,7 +56,7 @@ or an instance of QueryBuilder
 })
 ```
 
-Each view entity must be registered in your connection options as well as ordinary entities:
+Each view entity must be registered in your connection options:
 
 ```typescript
 import {createConnection, Connection} from "typeorm";
@@ -87,19 +91,21 @@ const connection: Connection = await createConnection({
 
 ## View Entity columns
 
-To map data from view into the correct entity columns you must mark an entity columns with `@ViewColumn()`
+To map data from view into the correct entity columns you must mark entity columns with `@ViewColumn()`
 decorator and specify these columns as select statement aliases. 
 
-with string expression definition:
+example with string expression definition:
 
 ```typescript
 import {ViewEntity, ViewColumn} from "typeorm";
 
-@ViewEntity({ expression: `
-    SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
-    FROM "post" "post"
-    LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
-`})
+@ViewEntity({ 
+    expression: `
+        SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `
+})
 export class PostCategory {
 
     @ViewColumn()
@@ -114,12 +120,13 @@ export class PostCategory {
 }
 ```
 
-or using QueryBuilder:
+example using using QueryBuilder:
 
 ```typescript
 import {ViewEntity, ViewColumn} from "typeorm";
 
-@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
         .addSelect("category.name", "categoryName")
@@ -185,7 +192,8 @@ export class Post {
 ```typescript
 import {ViewEntity, ViewColumn} from "typeorm";
 
-@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
         .addSelect("category.name", "categoryName")
@@ -240,14 +248,14 @@ const postCategory = await entityManager.findOne(PostCategory, { id: 1 });
 
 the result in `postCategories` will be:
 
-```json
+```
 [ PostCategory { id: 1, name: 'About BMW', categoryName: 'Cars' },
   PostCategory { id: 2, name: 'About Boeing', categoryName: 'Airplanes' } ]
 ```
 
 and in `postCategory`:
 
-```json
+```
 PostCategory { id: 1, name: 'About BMW', categoryName: 'Cars' }
 ```
 

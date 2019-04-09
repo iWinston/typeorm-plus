@@ -1406,7 +1406,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected async loadViews(viewPaths: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getViewsTableName());
+        const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
         if (!hasTable)
             return Promise.resolve([]);
 
@@ -1446,8 +1446,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }).join(" OR ");
 
         const query = dbNames.map(dbName => {
-            return `SELECT "T".*, "V"."CHECK_OPTION" FROM ${this.escapePath(this.getViewsTableName())} "t" ` +
-                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."VIEWS" "V" ON "V"."TABLE_SCHEMA" = "T"."SCHEMA" AND "v"."TABLE_NAME" = "T"."NAME" ${viewsCondition ? `WHERE ${viewsCondition}` : ""}`;
+            return `SELECT "T".*, "V"."CHECK_OPTION" FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
+                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."VIEWS" "V" ON "V"."TABLE_SCHEMA" = "T"."SCHEMA" AND "v"."TABLE_NAME" = "T"."NAME" WHERE "T"."TYPE" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         }).join(" UNION ALL ");
 
         const dbViews = await this.query(query);
@@ -1456,7 +1456,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const db = dbView["TABLE_CATALOG"] === currentDatabase ? undefined : dbView["TABLE_CATALOG"];
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema, db);
-            view.expression = dbView["expression"];
+            view.expression = dbView["value"];
             return view;
         });
     }
@@ -1866,8 +1866,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
-            .into(this.getViewsTableName())
-            .values({ database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.name, expression })
+            .into(this.getTypeormMetadataTableName())
+            .values({ type: "VIEW", database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.name, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1889,8 +1889,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
-            .from(this.getViewsTableName())
-            .where(`${qb.escape("database")} = :database`, { database: parsedTableName.database })
+            .from(this.getTypeormMetadataTableName())
+            .where(`${qb.escape("type")} = 'VIEW'`)
+            .andWhere(`${qb.escape("database")} = :database`, { database: parsedTableName.database })
             .andWhere(`${qb.escape("schema")} = :schema`, { schema: parsedTableName.schema })
             .andWhere(`${qb.escape("name")} = :name`, { name: parsedTableName.name })
             .getQueryAndParameters();

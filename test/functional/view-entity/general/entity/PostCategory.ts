@@ -4,7 +4,8 @@ import {ViewEntity} from "../../../../../src/decorator/entity-view/ViewEntity";
 import {Category} from "./Category";
 import {Post} from "./Post";
 
-@ViewEntity({ expression: (connection: Connection) => connection.createQueryBuilder()
+@ViewEntity({
+    expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
         .addSelect("category.name", "categoryName")

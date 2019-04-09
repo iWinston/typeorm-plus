@@ -69,8 +69,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.startTransaction();
         try {
             const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
+            // TODO: typeorm_metadata table needs only for Views for now.
+            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
             if (this.viewEntityToSyncMetadatas.length > 0)
-                await this.createViewsTable();
+                await this.createTypeormMetadataTable();
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
             await this.executeSchemaSyncOperationsInProperOrder();
@@ -730,33 +732,43 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates typeorm service table for storing user defined Views.
      */
-    protected async createViewsTable() {
+    protected async createTypeormMetadataTable() {
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        const viewsTable = this.connection.driver.buildTableName("typeorm_views", options.schema, options.database);
+        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
 
         await this.queryRunner.createTable(new Table(
             {
-                name: viewsTable,
+                name: typeormMetadataTable,
                 columns: [
                     {
+                        name: "type",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataType}),
+                        isNullable: false
+                    },
+                    {
                         name: "database",
-                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewDatabase}),
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataDatabase}),
                         isNullable: true
                     },
                     {
                         name: "schema",
-                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewSchema}),
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataSchema}),
+                        isNullable: true
+                    },
+                    {
+                        name: "table",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataTable}),
                         isNullable: true
                     },
                     {
                         name: "name",
-                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewName}),
-                        isNullable: false
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataName}),
+                        isNullable: true
                     },
                     {
-                        name: "expression",
-                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.viewExpression}),
-                        isNullable: false
+                        name: "value",
+                        type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataValue}),
+                        isNullable: true
                     },
                 ]
             },

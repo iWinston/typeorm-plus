@@ -239,9 +239,9 @@ export abstract class BaseQueryRunner {
         }
     }
 
-    protected getViewsTableName(): string {
+    protected getTypeormMetadataTableName(): string {
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        return this.connection.driver.buildTableName("typeorm_views", options.schema, options.database);
+        return this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
     }
 
     /**
