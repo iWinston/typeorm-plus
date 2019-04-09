@@ -1396,9 +1396,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return `("ns"."nspname" = '${schema}' AND "cl"."relname" = '${name}')`;
         }).join(" OR ");
         const foreignKeysSql = `SELECT "con"."conname" AS "constraint_name", "con"."nspname" AS "table_schema", "con"."relname" AS "table_name", "att2"."attname" AS "column_name", ` +
-            `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", "con"."confupdtype" AS "on_update" ` +
+            `"ns"."nspname" AS "referenced_table_schema", "cl"."relname" AS "referenced_table_name", "att"."attname" AS "referenced_column_name", "con"."confdeltype" AS "on_delete", ` +
+            `"con"."confupdtype" AS "on_update", "con"."condeferrable" AS "deferrable", "con"."condeferred" AS "deferred" ` +
             `FROM ( ` +
-            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", "cl"."relname", ` +
+            `SELECT UNNEST ("con1"."conkey") AS "parent", UNNEST ("con1"."confkey") AS "child", "con1"."confrelid", "con1"."conrelid", "con1"."conname", "con1"."contype", "ns"."nspname", ` + 
+            `"cl"."relname", "con1"."condeferrable", ` + 
+            `CASE WHEN "con1"."condeferred" THEN 'INITIALLY DEFERRED' ELSE 'INITIALLY IMMEDIATE' END as condeferred, ` +
             `CASE "con1"."confdeltype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confdeltype", ` +
             `CASE "con1"."confupdtype" WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE' WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' END as "confupdtype" ` +
             `FROM "pg_class" "cl" ` +
@@ -1614,7 +1617,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
                     onDelete: dbForeignKey["on_delete"],
-                    onUpdate: dbForeignKey["on_update"]
+                    onUpdate: dbForeignKey["on_update"],
+                    deferrable: dbForeignKey["deferrable"] ? dbForeignKey["deferred"] : undefined,
                 });
             });
 
@@ -1702,6 +1706,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)
                     constraint += ` ON UPDATE ${fk.onUpdate}`;
+                if (fk.deferrable)
+                    constraint += ` DEFERRABLE ${fk.deferrable}`;
 
                 return constraint;
             }).join(", ");
@@ -1935,6 +1941,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             sql += ` ON DELETE ${foreignKey.onDelete}`;
         if (foreignKey.onUpdate)
             sql += ` ON UPDATE ${foreignKey.onUpdate}`;
+        if (foreignKey.deferrable)
+            sql += ` DEFERRABLE ${foreignKey.deferrable}`;
 
         return new Query(sql);
     }

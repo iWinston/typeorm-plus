@@ -5,7 +5,17 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
-## 0.2.16 (under development)
+## 0.2.17 (under development)
+
+### Bug fixes
+
+* fixed transform embeddeds with boolean values (mongodb) ([#3900](https://github.com/typeorm/typeorm/pull/3900))
+
+### Features
+
+* added deferrable options for foreign keys (postgres) ([#2191](https://github.com/typeorm/typeorm/issues/2191))
+
+## 0.2.16 (2019-03-26)
 
 ### Bug fixes
 
