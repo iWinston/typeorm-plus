@@ -2,6 +2,7 @@
 
 * [Entity decorators](#entity-decorators)
     * [`@Entity`](#entity)
+    * [`@ViewEntity`](#viewentity)
 * [Column decorators](#column-decorators)
     * [`@Column`](#column)
     * [`@PrimaryColumn`](#primarycolumn)
