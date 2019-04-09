@@ -14,6 +14,7 @@ feel free to ask us and community.
 ### Features
 
 * added deferrable options for foreign keys (postgres) ([#2191](https://github.com/typeorm/typeorm/issues/2191))
+* added View entity implementation ([#1024](https://github.com/typeorm/typeorm/issues/1024)). Read more at [View entities](https://typeorm.io/#/view-entities)
 
 ## 0.2.16 (2019-03-26)
 

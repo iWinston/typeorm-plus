@@ -60,7 +60,7 @@
     "sid": "xe.oracle.docker"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "cockroachdb",
     "type": "cockroachdb",
     "host": "localhost",

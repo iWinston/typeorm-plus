@@ -1,4 +1,5 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ObjectType} from "../common/ObjectType";
@@ -72,10 +73,15 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             if (driver instanceof MysqlDriver) {
                 deleteResult.raw = result;
                 deleteResult.affected = result.affectedRows;
+
             } else if (driver instanceof SqlServerDriver || driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                 deleteResult.raw = result[0] ? result[0] : null;
                 // don't return 0 because it could confuse. null means that we did not receive this value
                 deleteResult.affected = typeof result[1] === "number" ? result[1] : null;
+
+            } else if (driver instanceof OracleDriver) {
+                deleteResult.affected = result;
+
             } else {
                 deleteResult.raw = result;
             }

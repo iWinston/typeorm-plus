@@ -505,7 +505,7 @@ export class Connection {
         ObjectUtils.assign(this, { migrations: migrations });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
-        entityMetadataValidator.validateMany(this.entityMetadatas, this.driver);
+        entityMetadataValidator.validateMany(this.entityMetadatas.filter(metadata => metadata.tableType !== "view"), this.driver);
     }
 
 }

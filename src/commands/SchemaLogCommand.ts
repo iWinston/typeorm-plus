@@ -56,8 +56,8 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length)}):`));
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
 
-                sqlInMemory.upQueries.forEach(query => {
-                    let sqlString = query;
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    let sqlString = upQuery.query;
                     sqlString = sqlString.trim();
                     sqlString = sqlString.substr(-1) === ";" ? sqlString : sqlString + ";";
                     console.log(highlight(sqlString));
