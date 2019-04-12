@@ -50,6 +50,12 @@ export class UniqueMetadata {
      */
     name: string;
 
+    /**
+     * Map of column names with order set.
+     * Used only by MongoDB driver.
+     */
+    columnNamesWithOrderingMap: { [key: string]: number } = {};
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -122,6 +128,15 @@ export class UniqueMetadata {
             })
             .reduce((a, b) => a.concat(b));
         }
+
+        this.columnNamesWithOrderingMap = Object.keys(map).reduce((updatedMap, key) => {
+            const column = this.entityMetadata.columns.find(column => column.propertyPath === key);
+            if (column)
+                updatedMap[column.databasePath] = map[key];
+
+            return updatedMap;
+        }, {} as { [key: string]: number });
+
         this.name = this.givenName ? this.givenName : namingStrategy.uniqueConstraintName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName));
         return this;
     }
