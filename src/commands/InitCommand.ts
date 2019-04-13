@@ -525,7 +525,7 @@ Steps to run this project:
         Object.assign(packageJson.devDependencies, {
             "ts-node": "3.3.0",
             "@types/node": "^8.0.29",
-            "typescript": "2.5.2"
+            "typescript": "3.3.3333"
         });
 
         if (!packageJson.dependencies) packageJson.dependencies = {};
