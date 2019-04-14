@@ -182,6 +182,12 @@ export class CockroachDriver implements Driver {
         cacheDuration: Number,
         cacheQuery: "string",
         cacheResult: "string",
+        metadataType: "varchar",
+        metadataDatabase: "varchar",
+        metadataSchema: "varchar",
+        metadataTable: "varchar",
+        metadataName: "varchar",
+        metadataValue: "string",
     };
 
     /**
