@@ -41,7 +41,8 @@ export class EntitySchemaTransformer {
                 schema: options.schema,
                 type: options.type || "regular",
                 orderBy: options.orderBy,
-                synchronize: options.synchronize
+                synchronize: options.synchronize,
+                expression: options.expression
             };
             metadataArgsStorage.tables.push(tableMetadata);
 

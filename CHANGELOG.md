@@ -10,12 +10,14 @@ feel free to ask us and community.
 ### Bug fixes
 
 * fixed transform embeddeds with boolean values (mongodb) ([#3900](https://github.com/typeorm/typeorm/pull/3900))
+* revert changes from [#3814](https://github.com/typeorm/typeorm/pull/3814) ([#3828](https://github.com/typeorm/typeorm/pull/3828))
 * fix performance issue when inserting into raw tables with QueryBuilder
   ([#3931](https://github.com/typeorm/typeorm/issues/3931))
 
 ### Features
 
 * added deferrable options for foreign keys (postgres) ([#2191](https://github.com/typeorm/typeorm/issues/2191))
+* added View entity implementation ([#1024](https://github.com/typeorm/typeorm/issues/1024)). Read more at [View entities](https://typeorm.io/#/view-entities)
 
 ## 0.2.16 (2019-03-26)
 

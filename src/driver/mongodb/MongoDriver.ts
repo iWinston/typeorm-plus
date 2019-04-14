@@ -104,6 +104,12 @@ export class MongoDriver implements Driver {
         cacheDuration: "int",
         cacheQuery: "int",
         cacheResult: "int",
+        metadataType: "int",
+        metadataDatabase: "int",
+        metadataSchema: "int",
+        metadataTable: "int",
+        metadataName: "int",
+        metadataValue: "int",
     };
 
     /**
