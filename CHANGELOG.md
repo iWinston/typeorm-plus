@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Bug fixes
 
 * fixed transform embeddeds with boolean values (mongodb) ([#3900](https://github.com/typeorm/typeorm/pull/3900))
+* fixed issue with schema inheritance in STI pattern ([#3957](https://github.com/typeorm/typeorm/issues/3957))
 
 ### Features
 
