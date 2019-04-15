@@ -165,6 +165,12 @@ export class OracleDriver implements Driver {
         cacheDuration: "number",
         cacheQuery: "clob",
         cacheResult: "clob",
+        metadataType: "varchar2",
+        metadataDatabase: "varchar2",
+        metadataSchema: "varchar2",
+        metadataTable: "varchar2",
+        metadataName: "varchar2",
+        metadataValue: "clob",
     };
 
     /**
@@ -383,7 +389,7 @@ export class OracleDriver implements Driver {
             return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
 
         if (columnMetadata.type === Boolean) {
-            value = value === 1 ? true : false;
+            value = value ? true : false;
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);

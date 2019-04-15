@@ -56,7 +56,12 @@ export class RawSqlResultsToEntityTransformer {
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
         const map = new Map();
-        const keys = alias.metadata.primaryColumns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName));
+        const keys: string[] = [];
+        if (alias.metadata.tableType === "view") {
+            keys.push(...alias.metadata.columns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
+        } else {
+            keys.push(...alias.metadata.primaryColumns.map(column => DriverUtils.buildColumnAlias(this.driver, alias.name, column.databaseName)));
+        }
         rawResults.forEach(rawResult => {
             const id = keys.map(key => rawResult[key]).join("_"); // todo: check partial
             if (!id) return;

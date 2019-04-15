@@ -4,6 +4,7 @@ import { TableColumn } from "../../schema-builder/table/TableColumn";
 import { Table } from "../../schema-builder/table/Table";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 import { TableIndex } from "../../schema-builder/table/TableIndex";
+import {View} from "../../schema-builder/view/View";
 import {
     AggregationCursor,
     BulkWriteOpResultObject,
@@ -93,6 +94,11 @@ export class MongoQueryRunner implements QueryRunner {
      * All synchronized tables in the database.
      */
     loadedTables: Table[];
+
+    /**
+     * All synchronized views in the database.
+     */
+    loadedViews: View[];
 
     /**
      * Real database connection from a connection pool used to perform queries.
@@ -484,7 +490,20 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async getTables(collectionNames: string[]): Promise<Table[]> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
-        // так я от тебя не слышу что ты получаешь удовольствие. все что я слышу это как ты делаешь холодные расчеты для вы
+    }
+
+    /**
+     * Loads given views's data from the database.
+     */
+    async getView(collectionName: string): Promise<View | undefined> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Loads all views (with given names) from the database and creates a Table from them.
+     */
+    async getViews(collectionNames: string[]): Promise<View[]> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
     /**
@@ -554,6 +573,20 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops the table.
      */
     async dropTable(tableName: Table | string): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Creates a new view.
+     */
+    async createView(view: View): Promise<void> {
+        throw new Error(`Schema update queries are not supported by MongoDB driver.`);
+    }
+
+    /**
+     * Drops the view.
+     */
+    async dropView(target: View|string): Promise<void> {
         throw new Error(`Schema update queries are not supported by MongoDB driver.`);
     }
 
