@@ -10,6 +10,6 @@ export class Post {
     @Column()
     title: string;
 
-    @Column({default: "Test"})
+    @Column({default: "default value"})
     addedField: string;
 }

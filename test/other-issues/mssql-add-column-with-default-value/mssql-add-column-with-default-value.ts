@@ -1,6 +1,7 @@
 
 import {createTestingConnections} from "../../utils/test-utils";
 import {Connection} from "../../../src";
+import {Post} from "./entity/Post-Succeed";
 
 describe("mssql -> add column to existing table", () => {
     let connection: Connection;
@@ -12,7 +13,7 @@ describe("mssql -> add column to existing table", () => {
         }))[0];
 
         await connection.synchronize(true);
-        await connection.getRepository("Post").insert({id: 0, title: "test"});
+        await connection.getRepository("Post").insert({title: "test"});
         await connection.close();
     });
 
@@ -36,5 +37,13 @@ describe("mssql -> add column to existing table", () => {
         }))[0];
 
         await connection.synchronize().should.eventually.eq(undefined);
+        const post = await connection.getRepository<Post>("Post").findOne();
+        if (!post) {
+            throw "Post should exist";
+        }
+        post.should.exist;
+        post.id.should.be.eq(1);
+        post.title.should.be.eq("test");
+        post.addedField.should.be.eq("default value");
     });
 })
