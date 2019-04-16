@@ -46,4 +46,4 @@ describe("mssql -> add column to existing table", () => {
         post.title.should.be.eq("test");
         post.addedField.should.be.eq("default value");
     });
-})
+});
