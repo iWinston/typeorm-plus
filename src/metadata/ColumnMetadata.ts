@@ -10,6 +10,7 @@ import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {PromiseUtils} from "../util/PromiseUtils";
 import {FindOperator} from "../find-options/FindOperator";
+import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
 /**
  * This metadata contains all information about entity's column.
@@ -255,7 +256,7 @@ export class ColumnMetadata {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    transformer?: ValueTransformer;
+    transformer?: ValueTransformer|ValueTransformer[];
 
     /**
      * Column type in the case if this column is in the closure table.
@@ -534,7 +535,7 @@ export class ColumnMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-     getEntityValue(entity: ObjectLiteral, transform: boolean = false): any|undefined {
+    getEntityValue(entity: ObjectLiteral, transform: boolean = false): any|undefined {
         if (entity === undefined || entity === null) return undefined;
 
         // extract column value from embeddeds of entity if column is in embedded
@@ -600,7 +601,7 @@ export class ColumnMetadata {
         }
 
         if (transform && this.transformer)
-            value = this.transformer.to(value);
+            value = ApplyValueTransformers.outerTransform(this.transformer, value);
 
         return value;
     }

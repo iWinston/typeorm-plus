@@ -18,6 +18,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ApplyValueTransformers} from '../../util/ApplyValueTransformers';
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -385,7 +386,7 @@ export class PostgresDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.outerTransform(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -442,7 +443,7 @@ export class PostgresDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
+            return columnMetadata.transformer ? ApplyValueTransformers.innerTransform(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
@@ -496,7 +497,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.innerTransform(columnMetadata.transformer, value);
 
         return value;
     }
@@ -695,13 +696,13 @@ export class PostgresDriver implements Driver {
         } else if (column.type === "timestamp with time zone") {
             type = "TIMESTAMP" + (column.precision !== null && column.precision !== undefined ? "(" + column.precision + ")" : "") + " WITH TIME ZONE";
         } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
-          if (column.spatialFeatureType != null && column.srid != null) {
-            type = `${column.type}(${column.spatialFeatureType},${column.srid})`;
-          } else if (column.spatialFeatureType != null) {
-            type = `${column.type}(${column.spatialFeatureType})`;
-          } else {
-            type = column.type;
-          }
+            if (column.spatialFeatureType != null && column.srid != null) {
+                type = `${column.type}(${column.spatialFeatureType},${column.srid})`;
+            } else if (column.spatialFeatureType != null) {
+                type = `${column.type}(${column.spatialFeatureType})`;
+            } else {
+                type = column.type;
+            }
         }
 
         if (column.isArray)
