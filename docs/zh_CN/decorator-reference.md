@@ -2,6 +2,7 @@
 
 * [实体装饰器](#实体装饰器)
     * [`@Entity`](#entity)
+    * [`@ViewEntity`](#viewentity)
 * [列装饰器](#列装饰器)
     * [`@Column`](#column)
     * [`@PrimaryColumn`](#primarycolumn)
@@ -77,6 +78,62 @@ export class User {
 ```
 
 了解有关 [Entities](entities.md)的更多信息。
+
+#### `@ViewEntity`
+
+视图实体是一个映射到数据库视图的类。
+
+`@ViewEntity()` 接收以下参数：
+
+* `name` - 视图名称。 如果未指定，则从实体类名生成视图名称。
+* `database` - 所选DB服务器中的数据库名称。
+* `schema` - 架构名称。
+* `expression` - 视图定义。 **必需参数**。
+
+`expression`可以是带有正确转义的列和表的字符串，取决于所使用的数据库（示例中为postgres）：
+
+```typescript
+@ViewEntity({ 
+    expression: `
+        SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `
+})
+export class PostCategory {
+```
+
+或者是QueryBuilder的一个实例
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+})
+export class PostCategory {
+```
+
+**注意:** 由于驱动程序的限制，不支持参数绑定。请改用文字参数。
+
+```typescript
+@ViewEntity({ 
+    expression: (connection: Connection) => connection.createQueryBuilder()
+        .select("post.id", "id")
+        .addSelect("post.name", "name")
+        .addSelect("category.name", "categoryName")
+        .from(Post, "post")
+        .leftJoin(Category, "category", "category.id = post.categoryId")
+        .where("category.name = :name", { name: "Cars" })  // <-- 这是错的
+        .where("category.name = 'Cars'")                   // <-- 这是对的
+})
+export class PostCategory {
+```
+
+了解有关[View Entities](view-entities.md)的更多信息。
 
 ## 列装饰器
 
