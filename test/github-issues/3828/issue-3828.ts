@@ -3,7 +3,7 @@ import { createTestingConnections, closeTestingConnections, reloadTestingDatabas
 import { Connection } from "../../../src/connection/Connection";
 import { MyEntity } from "./entity/Entity";
 
-describe("github issues > #3828 Conflicting PR to fix postgres schema:log with uppercase table names and enums", () => {
+describe.skip("github issues > #3828 Conflicting PR to fix postgres schema:log with uppercase table names and enums", () => {
 
     let connections: Connection[];
 
