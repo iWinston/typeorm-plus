@@ -17,6 +17,7 @@ import {OracleConnectionCredentialsOptions} from "./OracleConnectionCredentialsO
 import {DriverUtils} from "../DriverUtils";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -352,7 +353,7 @@ export class OracleDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.outerTransform(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -386,7 +387,7 @@ export class OracleDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
+            return columnMetadata.transformer ? ApplyValueTransformers.innerTransform(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
@@ -414,7 +415,7 @@ export class OracleDriver implements Driver {
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.innerTransform(columnMetadata.transformer, value);
 
         return value;
     }
