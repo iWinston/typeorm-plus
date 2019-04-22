@@ -9,6 +9,16 @@ export const encode: ValueTransformer = {
     },
 };
 
+export const encrypt: ValueTransformer = {
+    to: (entityValue: string) => {
+        return Buffer.from(entityValue).toString("base64");
+    },
+    from: (databaseValue: string) => {
+        return Buffer.from(databaseValue, "base64").toString();
+    },
+};
+
+
 export const lowercase: ValueTransformer = {
     to: (entityValue: string) => {
         return entityValue.toLocaleLowerCase();
