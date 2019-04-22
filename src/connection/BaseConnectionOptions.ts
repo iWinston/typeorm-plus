@@ -133,6 +133,11 @@ export interface BaseConnectionOptions {
          */
         readonly duration?: number;
 
+        /**
+         * Configurable Table Name or query-result-cache as Default.
+         */
+        readonly cacheTableName?: string;
+
     };
 
     /**
