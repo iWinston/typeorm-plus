@@ -28,7 +28,7 @@ export class DbQueryResultCache implements QueryResultCache {
     constructor(protected connection: Connection) {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        this.queryResultCacheTable = this.connection.driver.buildTableName("query-result-cache", options.schema, options.database);
+        this.queryResultCacheTable = this.connection.driver.buildTableName(options.cacheTableName || "query_result_cache", options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
