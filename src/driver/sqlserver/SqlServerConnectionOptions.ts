@@ -34,6 +34,11 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
     readonly schema?: string;
 
     /**
+     * Configurable Table Name or query-result-cache as Default
+     */
+    readonly cacheTableName?: string;
+
+    /**
      * An optional object/dictionary with the any of the properties
      */
     readonly pool?: {
