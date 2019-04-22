@@ -17,11 +17,6 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly schema?: string;
 
     /**
-     * Configurable Table Name or query-result-cache as Default
-     */
-    readonly cacheTableName?: string;
-
-    /**
      * Replication setup.
      */
     readonly replication?: {
