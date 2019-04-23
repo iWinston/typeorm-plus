@@ -601,7 +601,7 @@ export class ColumnMetadata {
         }
 
         if (transform && this.transformer)
-            value = ApplyValueTransformers.outerTransform(this.transformer, value);
+            value = ApplyValueTransformers.transformTo(this.transformer, value);
 
         return value;
     }

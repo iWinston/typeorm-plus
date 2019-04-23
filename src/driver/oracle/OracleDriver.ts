@@ -353,7 +353,7 @@ export class OracleDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.outerTransform(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -387,7 +387,7 @@ export class OracleDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? ApplyValueTransformers.innerTransform(columnMetadata.transformer, value) : value;
+            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (columnMetadata.type === Boolean) {
             value = value ? true : false;
@@ -415,7 +415,7 @@ export class OracleDriver implements Driver {
         }
 
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.innerTransform(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }

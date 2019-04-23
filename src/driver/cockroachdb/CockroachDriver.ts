@@ -291,7 +291,7 @@ export class CockroachDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.outerTransform(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -332,7 +332,7 @@ export class CockroachDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? ApplyValueTransformers.innerTransform(columnMetadata.transformer, value) : value;
+            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
         if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
@@ -364,7 +364,7 @@ export class CockroachDriver implements Driver {
         }
 
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.innerTransform(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }

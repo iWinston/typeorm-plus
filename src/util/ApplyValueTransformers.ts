@@ -1,7 +1,7 @@
 import { ValueTransformer } from "../decorator/options/ValueTransformer";
 
 export class ApplyValueTransformers {
-    static innerTransform(transformer: ValueTransformer | ValueTransformer[], databaseValue: any) {
+    static transformFrom(transformer: ValueTransformer | ValueTransformer[], databaseValue: any) {
         if (Array.isArray(transformer)) {
             const reverseTransformers = transformer.slice().reverse();
             return reverseTransformers.reduce((transformedValue, _transformer) => {
@@ -10,7 +10,7 @@ export class ApplyValueTransformers {
         }
         return transformer.from(databaseValue);
     }
-    static outerTransform(transformer: ValueTransformer | ValueTransformer[], entityValue: any) {
+    static transformTo(transformer: ValueTransformer | ValueTransformer[], entityValue: any) {
         if (Array.isArray(transformer)) {
             return transformer.reduce((transformedValue, _transformer) => {
                 return _transformer.to(transformedValue);

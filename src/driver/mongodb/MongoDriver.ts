@@ -291,7 +291,7 @@ export class MongoDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.outerTransform(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         return value;
     }
 
@@ -300,7 +300,7 @@ export class MongoDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.innerTransform(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
     }
 
