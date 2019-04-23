@@ -17,7 +17,7 @@ describe("github issues > #85 - Column option insert: false, update: false", () 
 
   it("should be able to have a non-inserted Column", () => Promise.all(connections.map(async connection => {
     const queryRunner = connection.createQueryRunner();
-    await queryRunner.dropColumn('document', 'permission');
+    await queryRunner.dropColumn("document", "permission");
 
     const doc1 = new Document();
     doc1.id = 1;
@@ -25,7 +25,7 @@ describe("github issues > #85 - Column option insert: false, update: false", () 
     const docs = connection.getRepository(Document);
     expect(await docs.count()).to.eql(1);
 
-    await queryRunner.dropColumn('document', 'name');
+    await queryRunner.dropColumn("document", "name");
 
     const doc2 = new Document();
     doc2.id = 2;
