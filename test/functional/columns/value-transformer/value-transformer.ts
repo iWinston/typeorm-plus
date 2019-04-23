@@ -3,15 +3,16 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 import {Connection} from "../../../../src/connection/Connection";
-import { PhoneBook } from "./entity/PhoneBook";
+import {PhoneBook} from "./entity/PhoneBook";
 import {Post} from "./entity/Post";
+import {User} from "./entity/User";
 import {expect} from "chai";
 
 describe("columns > value-transformer functionality", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post, PhoneBook],
+        entities: [Post, PhoneBook, User],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -54,5 +55,17 @@ describe("columns > value-transformer functionality", () => {
 
     })));
 
+    it("should apply three transformers", () => Promise.all(connections.map(async connection => {
+        const userRepository = await connection.getRepository(User);
+        const email = `${connection.name}@JOHN.doe`;
+        const user = new User();
+        user.email = email;
+
+        await userRepository.save(user);
+
+        const dbUser = await userRepository.findOne();
+        dbUser && dbUser.email.should.be.eql(email.toLocaleLowerCase());
+
+    })));
 
 });
