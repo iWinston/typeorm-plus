@@ -4,6 +4,6 @@ import {ChildEntity, Column} from "../../../../src";
 @ChildEntity()
 export class Women extends Person {
 
-    @Column("varchar")
-    boobSize: string;
+    @Column("int")
+    brassiereSize: string;
 }

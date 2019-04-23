@@ -4,6 +4,6 @@ import {ChildEntity, Column} from "../../../../src";
 @ChildEntity()
 export class Men extends Person {
 
-    @Column("bigint")
-    dickLength: number;
+    @Column("string")
+    beardColor: number;
 }
