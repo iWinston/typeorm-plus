@@ -4,6 +4,6 @@ import {ChildEntity, Column} from "../../../../src";
 @ChildEntity()
 export class Men extends Person {
 
-    @Column("string")
-    beardColor: number;
+    @Column("varchar")
+    beardColor: string;
 }

@@ -5,5 +5,5 @@ import {ChildEntity, Column} from "../../../../src";
 export class Women extends Person {
 
     @Column("int")
-    brassiereSize: string;
+    brassiereSize: number;
 }
