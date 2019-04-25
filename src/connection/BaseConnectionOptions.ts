@@ -1,8 +1,8 @@
-import {EntitySchema} from "../entity-schema/EntitySchema";
-import {LoggerOptions} from "../logger/LoggerOptions";
-import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
-import {DatabaseType} from "../driver/types/DatabaseType";
-import {Logger} from "../logger/Logger";
+import { EntitySchema } from "../entity-schema/EntitySchema";
+import { LoggerOptions } from "../logger/LoggerOptions";
+import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface";
+import { DatabaseType } from "../driver/types/DatabaseType";
+import { Logger } from "../logger/Logger";
 
 /**
  * BaseConnectionOptions is set of connection options shared by all database types.
@@ -25,21 +25,21 @@ export interface BaseConnectionOptions {
      * Accepts both entity classes and directories where from entities need to be loaded.
      * Directories support glob patterns.
      */
-    readonly entities?: ((Function|string|EntitySchema<any>))[];
+    readonly entities?: ((Function | string | EntitySchema<any>))[];
 
     /**
      * Subscribers to be loaded for this connection.
      * Accepts both subscriber classes and directories where from subscribers need to be loaded.
      * Directories support glob patterns.
      */
-    readonly subscribers?: (Function|string)[];
+    readonly subscribers?: (Function | string)[];
 
     /**
      * Migrations to be loaded for this connection.
      * Accepts both migration classes and directories where from migrations need to be loaded.
      * Directories support glob patterns.
      */
-    readonly migrations?: (Function|string)[];
+    readonly migrations?: (Function | string)[];
 
     /**
      * Migrations table name, in case of different name from "migrations".
@@ -60,7 +60,7 @@ export interface BaseConnectionOptions {
     /**
      * Logger instance used to log queries and events in the ORM.
      */
-    readonly logger?: "advanced-console"|"simple-console"|"file"|"debug"|Logger;
+    readonly logger?: "advanced-console" | "simple-console" | "file" | "debug" | Logger;
 
     /**
      * Maximum number of milliseconds query should be executed before logger log a warning.
@@ -106,7 +106,7 @@ export interface BaseConnectionOptions {
     /**
      * Allows to setup cache options.
      */
-    readonly cache?: boolean|{
+    readonly cache?: boolean | {
 
         /**
          * Type of caching.
@@ -119,7 +119,15 @@ export interface BaseConnectionOptions {
         /**
          * Used to provide redis connection options.
          */
-        readonly options?: any;
+        readonly options?: any | {
+
+            /**
+            * Configurable table name for "database" type cache.
+            * Default value is "query-result-cache"
+            */
+            readonly tableName?: string;
+
+        };
 
         /**
          * If set to true then queries (using find methods and QueryBuilder's methods) will always be cached.
@@ -132,11 +140,6 @@ export interface BaseConnectionOptions {
          * Default value is 1000 which is equivalent to 1 second.
          */
         readonly duration?: number;
-
-        /**
-         * Configurable Table Name or query-result-cache as Default.
-         */
-        readonly cacheTableName?: string;
 
     };
 
