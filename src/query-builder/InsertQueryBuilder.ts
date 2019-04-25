@@ -414,8 +414,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     //     expression += subQuery;
 
                     } else if (column.isDiscriminator) {
-                        this.expressionMap.nativeParameters["discriminator_value"] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
-                        expression += this.connection.driver.createParameter("discriminator_value", parametersCount);
+                        this.expressionMap.nativeParameters["discriminator_value_" + parametersCount] = this.expressionMap.mainAlias!.metadata.discriminatorValue;
+                        expression += this.connection.driver.createParameter("discriminator_value_" + parametersCount, parametersCount);
                         parametersCount++;
                         // return "1";
 
@@ -490,37 +490,55 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 return "";
 
             return expression;
-
         } else { // for tables without metadata
-
             // get values needs to be inserted
-            return valueSets.map((valueSet, insertionIndex) => {
-                const columnValues = Object.keys(valueSet).map(columnName => {
+            let expression = "";
+            let parametersCount = Object.keys(this.expressionMap.nativeParameters).length;
+
+            valueSets.forEach((valueSet, insertionIndex) => {
+                const columns = Object.keys(valueSet);
+                columns.forEach((columnName, columnIndex) => {
+                    if (columnIndex === 0) {
+                        expression += "(";
+                    }
                     const paramName = "i" + insertionIndex + "_" + columnName;
                     const value = valueSet[columnName];
 
                     // support for SQL expressions in queries
                     if (value instanceof Function) {
-                        return value();
+                        expression += value();
 
                     // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (this.connection.driver instanceof AbstractSqliteDriver) {
-                            return "NULL";
+                            expression += "NULL";
 
                         } else {
-                            return "DEFAULT";
+                            expression += "DEFAULT";
                         }
 
                     // just any other regular value
                     } else {
                         this.expressionMap.nativeParameters[paramName] = value;
-                        return this.connection.driver.createParameter(paramName, Object.keys(this.expressionMap.nativeParameters).length - 1);
+                        expression += this.connection.driver.createParameter(paramName, parametersCount);
+                        parametersCount++;
                     }
 
-                }).join(", ").trim();
-                return columnValues ? "(" + columnValues + ")" : "";
-            }).join(", ");
+                    if (columnIndex === Object.keys(valueSet).length - 1) {
+                        if (insertionIndex === valueSets.length - 1) {
+                            expression += ")";
+                        } else {
+                            expression += "), ";
+                        }
+                    }
+                    else {
+                        expression += ", ";
+                    }
+                });
+            });
+            if (expression === "()")
+                return "";
+            return expression;
         }
     }
 

@@ -1,7 +1,8 @@
 import {ColumnType} from "../driver/types/ColumnTypes";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
+import { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions";
 
-export interface EntitySchemaColumnOptions {
+export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
 
     /**
      * Indicates if this column is a primary column.
