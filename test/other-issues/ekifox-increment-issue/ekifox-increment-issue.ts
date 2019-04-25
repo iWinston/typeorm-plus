@@ -4,7 +4,7 @@ import {Connection} from "../../../src/connection/Connection";
 import {User} from "./entity/User";
 import {expect} from "chai";
 
-describe.only("other issues > ekifox reported issue with increment", () => {
+describe("other issues > ekifox reported issue with increment", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
