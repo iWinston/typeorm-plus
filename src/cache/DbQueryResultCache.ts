@@ -30,7 +30,8 @@ export class DbQueryResultCache implements QueryResultCache {
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
         const defaultTableName: string = "query-result-cache";
-        this.queryResultCacheTable = this.connection.driver.buildTableName(cacheOptions.options.tableName || defaultTableName , options.schema, options.database);
+        const configurableTableName: string = cacheOptions.options["tableName"];
+        this.queryResultCacheTable = this.connection.driver.buildTableName( configurableTableName || defaultTableName , options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
