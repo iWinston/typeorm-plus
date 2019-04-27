@@ -1,14 +1,14 @@
-import { QueryResultCache } from "./QueryResultCache";
-import { QueryResultCacheOptions } from "./QueryResultCacheOptions";
-import { Table } from "../schema-builder/table/Table";
-import { QueryRunner } from "../query-runner/QueryRunner";
-import { Connection } from "../connection/Connection";
-import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver";
-import { MssqlParameter } from "../driver/sqlserver/MssqlParameter";
-import { ObjectLiteral } from "../common/ObjectLiteral";
-import { OracleDriver } from "../driver/oracle/OracleDriver";
-import { PostgresConnectionOptions } from "../driver/postgres/PostgresConnectionOptions";
-import { SqlServerConnectionOptions } from "../driver/sqlserver/SqlServerConnectionOptions";
+import {QueryResultCache} from "./QueryResultCache";
+import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
+import {Table} from "../schema-builder/table/Table";
+import {QueryRunner} from "../query-runner/QueryRunner";
+import {Connection} from "../connection/Connection";
+import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
+import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -27,11 +27,11 @@ export class DbQueryResultCache implements QueryResultCache {
 
     constructor(protected connection: Connection) {
 
-        const options = <SqlServerConnectionOptions | PostgresConnectionOptions>this.connection.driver.options;
+        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
         const cacheOptions = typeof this.connection.options.cache === "object" ? this.connection.options.cache : {};
-        const cacheTableName: string = cacheOptions.options.tableName || "query-result-cache";
-
-        this.queryResultCacheTable = this.connection.driver.buildTableName(cacheTableName, options.schema, options.database);
+        const defaultTableName: string = "query-result-cache";
+        const configurableTableName: string = cacheOptions.options["tableName"];
+        this.queryResultCacheTable = this.connection.driver.buildTableName( configurableTableName || defaultTableName , options.schema, options.database);
     }
 
     // -------------------------------------------------------------------------
@@ -68,36 +68,36 @@ export class DbQueryResultCache implements QueryResultCache {
                         name: "id",
                         isPrimary: true,
                         isNullable: false,
-                        type: driver.normalizeType({ type: driver.mappedDataTypes.cacheId }),
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheId}),
                         generationStrategy: "increment",
                         isGenerated: true
                     },
                     {
                         name: "identifier",
-                        type: driver.normalizeType({ type: driver.mappedDataTypes.cacheIdentifier }),
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheIdentifier}),
                         isNullable: true
                     },
                     {
                         name: "time",
-                        type: driver.normalizeType({ type: driver.mappedDataTypes.cacheTime }),
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheTime}),
                         isPrimary: false,
                         isNullable: false
                     },
                     {
                         name: "duration",
-                        type: driver.normalizeType({ type: driver.mappedDataTypes.cacheDuration }),
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheDuration}),
                         isPrimary: false,
                         isNullable: false
                     },
                     {
                         name: "query",
-                        type: driver.normalizeType({ type: driver.mappedDataTypes.cacheQuery }),
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheQuery}),
                         isPrimary: false,
                         isNullable: false
                     },
                     {
                         name: "result",
-                        type: driver.normalizeType({ type: driver.mappedDataTypes.cacheResult }),
+                        type: driver.normalizeType({type: driver.mappedDataTypes.cacheResult}),
                         isNullable: false
                     },
                 ]
@@ -110,7 +110,7 @@ export class DbQueryResultCache implements QueryResultCache {
      * Returns cache result if found.
      * Returns undefined if result is not cached.
      */
-    getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions | undefined> {
+    getFromCache(options: QueryResultCacheOptions, queryRunner?: QueryRunner): Promise<QueryResultCacheOptions|undefined> {
         queryRunner = this.getQueryRunner(queryRunner);
         const qb = this.connection
             .createQueryBuilder(queryRunner)
@@ -150,7 +150,7 @@ export class DbQueryResultCache implements QueryResultCache {
     /**
      * Stores given query result in the cache.
      */
-    async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions | undefined, queryRunner?: QueryRunner): Promise<void> {
+    async storeInCache(options: QueryResultCacheOptions, savedCache: QueryResultCacheOptions|undefined, queryRunner?: QueryRunner): Promise<void> {
         queryRunner = this.getQueryRunner(queryRunner);
 
         let insertedValues: ObjectLiteral = options;
@@ -213,7 +213,7 @@ export class DbQueryResultCache implements QueryResultCache {
             const qb = this.getQueryRunner(queryRunner).manager.createQueryBuilder();
             return qb.delete()
                 .from(this.queryResultCacheTable)
-                .where(`${qb.escape("identifier")} = :identifier`, { identifier })
+                .where(`${qb.escape("identifier")} = :identifier`, {identifier})
                 .execute();
         }));
     }
@@ -225,7 +225,7 @@ export class DbQueryResultCache implements QueryResultCache {
     /**
      * Gets a query runner to work with.
      */
-    protected getQueryRunner(queryRunner: QueryRunner | undefined): QueryRunner {
+    protected getQueryRunner(queryRunner: QueryRunner|undefined): QueryRunner {
         if (queryRunner)
             return queryRunner;
 
