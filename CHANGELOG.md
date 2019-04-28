@@ -13,6 +13,7 @@ feel free to ask us and community.
 * revert changes from [#3814](https://github.com/typeorm/typeorm/pull/3814) ([#3828](https://github.com/typeorm/typeorm/pull/3828))
 * fix performance issue when inserting into raw tables with QueryBuilder
   ([#3931](https://github.com/typeorm/typeorm/issues/3931))
+* sqlite date hydration is susceptible to corruption ([#3949](https://github.com/typeorm/typeorm/issues/3949))
 
 ### Features
 

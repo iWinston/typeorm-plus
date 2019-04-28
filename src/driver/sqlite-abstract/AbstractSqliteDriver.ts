@@ -286,7 +286,18 @@ export abstract class AbstractSqliteDriver implements Driver {
              * https://www.w3.org/TR/NOTE-datetime
              */
             if (value && typeof value === "string") {
-                value = value.replace(" ", "T") + "Z";
+                // There are various valid time string formats a sqlite time string might have:
+                // https://www.sqlite.org/lang_datefunc.html
+                // There are two separate fixes we may need to do:
+                //   1) Add 'T' separator if space is used instead
+                //   2) Add 'Z' UTC suffix if no timezone or offset specified
+
+                if (/^\d\d\d\d-\d\d-\d\d \d\d:\d\d/.test(value)) {
+                    value = value.replace(" ", "T");
+                }
+                if (/^\d\d\d\d-\d\d-\d\dT\d\d:\d\d(:\d\d(\.\d\d\d)?)?$/.test(value)) {
+                    value += "Z";
+                }
             }
 
             value = DateUtils.normalizeHydratedDate(value);
