@@ -139,7 +139,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
-    transformer?: ValueTransformer;
+    transformer?: ValueTransformer|ValueTransformer[];
 
     /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)

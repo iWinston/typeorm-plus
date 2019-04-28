@@ -15,6 +15,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ConnectionOptions} from "../../connection/ConnectionOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {ObjectUtils} from "../../util/ObjectUtils";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with MongoDB.
@@ -290,7 +291,7 @@ export class MongoDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         return value;
     }
 
@@ -299,7 +300,7 @@ export class MongoDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
     }
 

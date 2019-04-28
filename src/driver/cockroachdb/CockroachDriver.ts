@@ -18,6 +18,7 @@ import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -290,7 +291,7 @@ export class CockroachDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.to(value);
+            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (value === null || value === undefined)
             return value;
@@ -331,7 +332,7 @@ export class CockroachDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? columnMetadata.transformer.from(value) : value;
+            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         // unique_rowid() generates bigint value and should not be converted to number
         if ((columnMetadata.type === Number && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
@@ -363,7 +364,7 @@ export class CockroachDriver implements Driver {
         }
 
         if (columnMetadata.transformer)
-            value = columnMetadata.transformer.from(value);
+            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
         return value;
     }

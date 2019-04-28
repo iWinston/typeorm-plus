@@ -3,15 +3,18 @@ import "reflect-metadata";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
 
 import {Connection} from "../../../../src/connection/Connection";
-import { PhoneBook } from "./entity/PhoneBook";
+import {PhoneBook} from "./entity/PhoneBook";
 import {Post} from "./entity/Post";
+import {User} from "./entity/User";
+import {Category} from "./entity/Category";
+import {View} from "./entity/View";
 import {expect} from "chai";
 
 describe("columns > value-transformer functionality", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Post, PhoneBook],
+        entities: [Post, PhoneBook, User, Category, View],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -54,5 +57,42 @@ describe("columns > value-transformer functionality", () => {
 
     })));
 
+    it("should apply three transformers in the right order", () => Promise.all(connections.map(async connection => {
+        const userRepository = await connection.getRepository(User);
+        const email = `${connection.name}@JOHN.doe`;
+        const user = new User();
+        user.email = email;
 
+        await userRepository.save(user);
+
+        const dbUser = await userRepository.findOne();
+        dbUser && dbUser.email.should.be.eql(email.toLocaleLowerCase());
+
+    })));
+
+    it("should apply all the transformers", () => Promise.all(connections.map(async connection => {
+        const categoryRepository = await connection.getRepository(Category);
+        const description = `  ${connection.name}-DESCRIPTION   `;
+        const category = new Category();
+        category.description = description;
+
+        await categoryRepository.save(category);
+
+        const dbCategory = await categoryRepository.findOne();
+        dbCategory && dbCategory.description.should.be.eql(description.toLocaleLowerCase().trim());
+
+    })));
+
+    it("should apply no transformer", () => Promise.all(connections.map(async connection => {
+        const viewRepository = await connection.getRepository(View);
+        const title = `${connection.name}`;
+        const view = new View();
+        view.title = title;
+
+        await viewRepository.save(view);
+
+        const dbView = await viewRepository.findOne();
+        dbView && dbView.title.should.be.eql(title);
+
+    })));
 });
