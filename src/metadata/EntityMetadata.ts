@@ -767,7 +767,15 @@ export class EntityMetadata {
         const entityPrefix = this.connection.options.entityPrefix;
         this.engine = this.tableMetadataArgs.engine;
         this.database = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.database : this.tableMetadataArgs.database;
-        this.schema = this.tableMetadataArgs.schema || (this.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
+        if (this.tableMetadataArgs.schema) {
+            this.schema = this.tableMetadataArgs.schema;
+        }
+        else if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata) {
+            this.schema = this.parentEntityMetadata.schema;
+        }
+        else {
+            this.schema = (this.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
+        }
         this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
         this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
         this.targetName = this.tableMetadataArgs.target instanceof Function ? (this.tableMetadataArgs.target as any).name : this.tableMetadataArgs.target;
