@@ -14,7 +14,8 @@ export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite
     |"decimal" // mysql, postgres, mssql, sqlite
     |"fixed" // mysql
     |"numeric" // postgres, mssql, sqlite
-    |"number"; // oracle
+    |"number" // oracle
+    |"uuid"; // postgres
 
 /**
  * Column types where spatial properties are used.
