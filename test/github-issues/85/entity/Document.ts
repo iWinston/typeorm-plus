@@ -8,6 +8,9 @@ export class Document {
   @Column({nullable: true, select: false})
   name: string;
 
-  @Column({insert: false, select: false})
+  @Column({insert: false, select: false, nullable: true})
   permission: number;
+
+  @Column({insert: false, default: 1})
+  version: number;
 }
