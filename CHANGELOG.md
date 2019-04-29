@@ -15,7 +15,8 @@ feel free to ask us and community.
 * fix performance issue when inserting into raw tables with QueryBuilder
   ([#3931](https://github.com/typeorm/typeorm/issues/3931))
 * sqlite date hydration is susceptible to corruption ([#3949](https://github.com/typeorm/typeorm/issues/3949))
-
+* fixed mongodb uniques, support 3 ways to define uniques ([#3986](https://github.com/typeorm/typeorm/pull/3986))
+* fixed mongodb TTL index ([#4044](https://github.com/typeorm/typeorm/pull/4044))
 
 ### Features
 
