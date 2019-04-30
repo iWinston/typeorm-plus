@@ -113,7 +113,7 @@ await connection.queryResultCache.remove(["users_admins"]);
 
 
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
-Table name is configurable under options property so you could change its by give the value in the tableName property.
+Table name is configurable, so you could change its by give the value in the tableName property.
 Example:
 
 ```typescript

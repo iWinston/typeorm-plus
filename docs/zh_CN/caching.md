@@ -106,7 +106,7 @@ await connection.queryResultCache.remove(["users_admins"]);
 ```
 
 默认情况下，TypeORM 使用一个名为`query-result-cache`的单独表，并在那里存储所有查询和结果。
-表格名称可以在 options 属性下配置，因此您可以通过在 tableName 属性中给出值来更改它。
+表名是可配置的，因此您可以通过在 tableName 属性中给出值来更改它
 例如：
 
 ```typescript
