@@ -39,7 +39,7 @@ export interface BaseConnectionOptions {
      * Accepts both migration classes and directories where from migrations need to be loaded.
      * Directories support glob patterns.
      */
-    readonly migrations?: (Function | string)[];
+    readonly migrations?: (Function|string)[];
 
     /**
      * Migrations table name, in case of different name from "migrations".
