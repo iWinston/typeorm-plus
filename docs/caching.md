@@ -123,10 +123,8 @@ Example:
     username: "test",
     ...
     cache: {
-        type: "redis",
-        options: {
-           tableName: "configurable-table-query-result-cache"
-        }
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
     }
 }
 ```

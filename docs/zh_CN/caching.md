@@ -116,10 +116,8 @@ await connection.queryResultCache.remove(["users_admins"]);
     username: "test",
     ...
     cache: {
-        type: "redis",
-        options: {
-           tableName: "configurable-table-query-result-cache"
-        }
+        type: "database",
+        tableName: "configurable-table-query-result-cache"
     }
 }
 ```
