@@ -480,14 +480,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         });
 
         // rename ENUM types
-        await Promise.all(newTable.columns
-            .filter(column => column.type === "enum" || column.type === "simple-enum")
-            .map(async column => {
-                const oldEnumType = await this.getEnumTypeName(oldTable, column);
-                upQueries.push(new Query(`ALTER TYPE "${oldEnumType.enumTypeSchema}"."${oldEnumType.enumTypeName}" RENAME TO ${this.buildEnumName(newTable, column, false)}`));
-                downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO "${oldEnumType.enumTypeName}"`));
-            })
-        );
+        const enumColumns = newTable.columns.filter(column => column.type === "enum" || column.type === "simple-enum");
+        for (let column of enumColumns) {
+            const oldEnumType = await this.getEnumTypeName(oldTable, column);
+            upQueries.push(new Query(`ALTER TYPE "${oldEnumType.enumTypeSchema}"."${oldEnumType.enumTypeName}" RENAME TO ${this.buildEnumName(newTable, column, false)}`));
+            downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO "${oldEnumType.enumTypeName}"`));
+        }
         await this.executeQueries(upQueries, downQueries);
     }
 
