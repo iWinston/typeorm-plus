@@ -102,9 +102,9 @@ export class ColumnMetadata {
     isInsert: boolean = true;
 
     /**
-     * Indicates if column is protected from updates or not.
+     * Indicates if column allows updates or not.
      */
-    isReadonly: boolean = false;
+    isUpdate: boolean = true;
 
     /**
      * Specifies generation strategy if this column will use auto increment.
@@ -341,8 +341,10 @@ export class ColumnMetadata {
             this.isSelect = options.args.options.select;
         if (options.args.options.insert !== undefined)
             this.isInsert = options.args.options.insert;
+        if (options.args.options.update !== undefined)
+            this.isUpdate = options.args.options.update;
         if (options.args.options.readonly !== undefined)
-            this.isReadonly = options.args.options.readonly;
+            this.isUpdate = !options.args.options.readonly;
         if (options.args.options.comment)
             this.comment = options.args.options.comment;
         if (options.args.options.default !== undefined)
