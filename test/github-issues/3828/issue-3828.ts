@@ -13,7 +13,6 @@ describe("github issues > #3828 Conflicting PR to fix postgres schema:log with u
             enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
-            logging: true
         });
     });
 
