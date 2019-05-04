@@ -11,7 +11,7 @@ feel free to ask us and community.
 
 * deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
 
-## 0.2.17 (2019-01-02)
+## 0.2.17 (2019-05-01)
 
 ### Bug fixes
 
