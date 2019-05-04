@@ -5,6 +5,12 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
+## 0.2.18 (UNRELEASED)
+
+### Features
+
+* deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
+
 ## 0.2.17 (2019-01-02)
 
 ### Bug fixes
@@ -17,7 +23,6 @@ feel free to ask us and community.
 * sqlite date hydration is susceptible to corruption ([#3949](https://github.com/typeorm/typeorm/issues/3949))
 * fixed mongodb uniques, support 3 ways to define uniques ([#3986](https://github.com/typeorm/typeorm/pull/3986))
 * fixed mongodb TTL index ([#4044](https://github.com/typeorm/typeorm/pull/4044))
-* deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
 
 ### Features
 
