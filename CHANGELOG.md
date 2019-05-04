@@ -5,6 +5,12 @@ however since API is already quite stable we don't expect too much breaking chan
 If we missed a note on some change or you have a questions on migrating from old version,
 feel free to ask us and community.
 
+## 0.2.18 (UNRELEASED)
+
+### Features
+
+* deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
+
 ## 0.2.17 (2019-05-01)
 
 ### Bug fixes
