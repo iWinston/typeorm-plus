@@ -127,16 +127,14 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
+    "all": true,
+    "cache": false,
     "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "exclude": [
-      "**/*.d.ts"
+      ".ts"
     ],
     "include": [
-      "src/**/*.ts"
+      "src/**/*"
     ],
-    "all": true
+    "reporter": "json"
   }
 }

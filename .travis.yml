@@ -23,5 +23,4 @@ script:
   - npx nyc npm test
 
 after_success:
-  - npx nyc report --reporter=json > coverage/coverage.json
   - bash <(curl -s https://codecov.io/bash)
