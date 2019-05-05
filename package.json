@@ -129,12 +129,16 @@
   "nyc": {
     "all": true,
     "cache": false,
+    "exclude": [
+      "**/*.d.ts"
+    ],
     "extension": [
       ".ts"
     ],
     "include": [
-      "src/**/*"
+      "build/compiled/src/**",
+      "src/**"
     ],
-    "reporter": "json"
+    "reporter":"json"
   }
 }
