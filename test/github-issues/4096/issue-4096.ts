@@ -18,18 +18,18 @@ describe("github issues > #4096 SQLite support for orUpdate", () => {
 
     after(() => closeTestingConnections(connections));
 
-    const user1 = new User();
-    user1.email = "example@example.org";
-    user1.username = "example";
-    user1.bio = "My bio";
-
-    const user2 = new User();
-    user2.email = "example@example.org";
-    user2.username = "example";
-    user2.bio = "Updated bio";
-
     it("should overwrite using current value in SQLite", () => Promise.all(connections.map(async connection => {
       try {
+        const user1 = new User();
+        user1.email = "example@example.org";
+        user1.username = "example";
+        user1.bio = "My bio";
+
+        const user2 = new User();
+        user2.email = "example@example.org";
+        user2.username = "example";
+        user2.bio = "Updated bio";
+
         const UserRepository = connection.manager.getRepository(User);
 
         await UserRepository
