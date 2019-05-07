@@ -249,7 +249,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
       if (statement && statement.overwrite instanceof Array) {
         if (this.connection.driver instanceof MysqlDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = VALUES(${column})`).join(", ");
-        } else if (this.connection.driver instanceof PostgresDriver) {
+        } else if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver) {
           this.expressionMap.onUpdate.overwrite = statement.overwrite.map(column => `${column} = EXCLUDED.${column}`).join(", ");
         }
       }
