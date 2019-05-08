@@ -247,7 +247,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected async createDatabaseConnectionWithImport(database?: Uint8Array): Promise<any> {
         // sql.js < 1.0 exposes an object with a `Database` method.
-        const isLegacyVersion = typeof this.sqlite.Database === 'function';
+        const isLegacyVersion = typeof this.sqlite.Database === "function";
         const sqlite = isLegacyVersion ? this.sqlite : await this.sqlite(); 
         if (database && database.length > 0) {
             this.databaseConnection = new sqlite.Database(database);
