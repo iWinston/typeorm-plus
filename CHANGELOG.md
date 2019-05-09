@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Features
 
 * deprecate column `readonly` option in favor of `update` and `insert` options ([#4035](https://github.com/typeorm/typeorm/pull/4035))
+* support sql.js v1.0 ([#4104](https://github.com/typeorm/typeorm/issues/4104))
 * added support for `orUpdate` in SQLlite ([#4097](https://github.com/typeorm/typeorm/pull/4097))
 
 ## 0.2.17 (2019-05-01)
