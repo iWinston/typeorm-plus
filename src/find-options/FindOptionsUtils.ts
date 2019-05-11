@@ -234,7 +234,7 @@ export class FindOptionsUtils {
 
     public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
         metadata.eagerRelations.forEach(relation => {
-            const relationAlias = alias + "_" + relation.propertyPath.replace(".", "_");
+            const relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath);
             qb.leftJoinAndSelect(alias + "." + relation.propertyPath, relationAlias);
             this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
