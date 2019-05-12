@@ -15,7 +15,7 @@ feel free to ask us and community.
 
 ### Bug fixes
 
-* fixed transform embeddeds with no columns but with nested embeddeds (mongodb)
+* fixed transform embeddeds with no columns but with nested embeddeds (mongodb) ([#4131](https://github.com/typeorm/typeorm/pull/44131))
 
 ## 0.2.17 (2019-05-01)
 
