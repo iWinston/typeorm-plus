@@ -13,6 +13,10 @@ feel free to ask us and community.
 * support sql.js v1.0 ([#4104](https://github.com/typeorm/typeorm/issues/4104))
 * added support for `orUpdate` in SQLlite ([#4097](https://github.com/typeorm/typeorm/pull/4097))
 
+### Bug fixes
+
+* fixed transform embeddeds with no columns but with nested embeddeds (mongodb)
+
 ## 0.2.17 (2019-05-01)
 
 ### Bug fixes
