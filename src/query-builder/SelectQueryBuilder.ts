@@ -949,12 +949,12 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "pessimistic_read"|"pessimistic_write"): this;
+    setLock(lockMode: "pessimistic_read"|"pessimistic_write"|"dirty_read"): this;
 
     /**
      * Sets locking mode.
      */
-    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write", lockVersion?: number|Date): this {
+    setLock(lockMode: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read", lockVersion?: number|Date): this {
         this.expressionMap.lockMode = lockMode;
         this.expressionMap.lockVersion = lockVersion;
         return this;
@@ -1385,6 +1385,9 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 case "pessimistic_write":
                     lock = " WITH (UPDLOCK, ROWLOCK)";
                     break;
+                case "dirty_read":
+                    lock = " WITH (NOLOCK)";
+                    break;
             }
         }
 
@@ -1614,6 +1617,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return " FOR UPDATE";
 
                 } else if (driver instanceof SqlServerDriver) {
+                    return "";
+
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError();
+                }
+            case "dirty_read":
+                if (driver instanceof SqlServerDriver) {
+                    return " WITH (NOLOCK)";
+                    
+                } else if (driver instanceof MysqlDriver || driver instanceof PostgresDriver || driver instanceof OracleDriver) {
                     return "";
 
                 } else {

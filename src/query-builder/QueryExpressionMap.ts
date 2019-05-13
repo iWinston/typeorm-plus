@@ -140,7 +140,7 @@ export class QueryExpressionMap {
     /**
      * Locking mode.
      */
-    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write";
+    lockMode?: "optimistic"|"pessimistic_read"|"pessimistic_write"|"dirty_read";
 
     /**
      * Current version of the entity, used for locking.
