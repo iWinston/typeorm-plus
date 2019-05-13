@@ -144,20 +144,6 @@ describe("query builder > locking", () => {
 
     })));
 
-    it("should attach pessimistic read lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
-        if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver)
-            return;
-
-        const sql = connection.createQueryBuilder(PostWithVersion, "post")
-            .setLock("dirty_read")
-            .where("post.id = :id", { id: 1 })
-            .getSql();
-
-        if (connection.driver instanceof SqlServerDriver) {
-            expect(sql.indexOf("WITH (NOLOCK)") !== -1).to.be.true;
-        }
-    })));
-
     it("should throw error if optimistic lock used with getMany method", () => Promise.all(connections.map(async connection => {
 
        return connection.createQueryBuilder(PostWithVersion, "post")
