@@ -1622,19 +1622,6 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
                 }
-            case "dirty_read":
-                if (driver instanceof SqlServerDriver) {
-                    return " WITH (NOLOCK)";
-                    
-                } else if (driver instanceof PostgresDriver) {
-                    return " NOWAIT";
-
-                } else if (driver instanceof MysqlDriver || driver instanceof OracleDriver) {
-                    return "";
-                    
-                } else {
-                    throw new LockNotSupportedOnGivenDriverError();
-                }
             default:
                 return "";
         }
