@@ -1,6 +1,6 @@
 # Using CLI
 
-* [Notes on entity files written in typescript](#notes-on-entity-files-written-in-typescript)
+* [Installing CLI](#installing-cli)
 * [Initialize a new TypeORM project](#initialize-a-new-typeorm-project)
 * [Create a new entity](#create-a-new-entity)
 * [Create a new subscriber](#create-a-new-subscriber)
@@ -17,6 +17,8 @@
 
 ## Installing CLI
 ### If entities files are in javascript
+If you have a local typeorm version, make sure it matches the global version we are going to install.
+
 Install typeorm globally with `npm i -g typeorm`.
 You can also chose to use `npx typeorm <params>` for each command if you prefer not having to install it.
 
