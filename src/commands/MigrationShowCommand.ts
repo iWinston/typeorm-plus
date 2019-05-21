@@ -52,10 +52,11 @@ export class MigrationShowCommand implements yargs.CommandModule {
       const options = {
         transaction: args["t"] === "false" ? false : true
       };
-      await connection.showMigrations(options);
+      const unappliedMigrations = await connection.showMigrations(options);
       await connection.close();
-      // exit process if no errors
-      process.exit(0);
+
+      // return error code if there are unapplied migrations for CI
+      process.exit(unappliedMigrations ? 1 : 0);
 
     } catch (err) {
       if (connection) await (connection as Connection).close();

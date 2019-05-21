@@ -307,8 +307,9 @@ export class Connection {
 
     /**
      * Runs all pending migrations.
+     * Returns true if there are no pending migrations
      */
-    async showMigrations(options?: { transaction?: boolean }): Promise<void> {
+    async showMigrations(options?: { transaction?: boolean }): Promise<boolean> {
         if (!this.isConnected) {
             throw new CannotExecuteNotConnectedError(this.name);
         }

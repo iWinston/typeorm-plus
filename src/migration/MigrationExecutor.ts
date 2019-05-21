@@ -50,8 +50,10 @@ export class MigrationExecutor {
 
     /**
      * Lists all migrations and whether they have been executed or not
+     * returns true if there are unapplied migrations
      */
-    async showMigrations(): Promise<void> {
+    async showMigrations(): Promise<boolean> {
+        let hasUnappliedMigrations = false;
         const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
@@ -67,6 +69,7 @@ export class MigrationExecutor {
             if (executedMigration) {
                 this.connection.logger.logSchemaBuild(` ✅ ${migration.name}`);
             } else {
+                hasUnappliedMigrations = true;
                 this.connection.logger.logSchemaBuild(` ⏳ ${migration.name}`);
             }
         }
@@ -75,6 +78,8 @@ export class MigrationExecutor {
         if (!this.queryRunner) {
             await queryRunner.release();
         }
+
+        return hasUnappliedMigrations;
     }
 
     /**
