@@ -49,6 +49,35 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     /**
+     * Lists all migrations and whether they have been executed or not
+     */
+    async showMigrations(): Promise<void> {
+        const queryRunner = this.queryRunner || this.connection.createQueryRunner("master");
+        // create migrations table if its not created yet
+        await this.createMigrationsTableIfNotExist(queryRunner);
+        // get all migrations that are executed and saved in the database
+        const executedMigrations = await this.loadExecutedMigrations(queryRunner);
+
+        // get all user's migrations in the source code
+        const allMigrations = this.getMigrations();
+
+        for (const migration of allMigrations) {
+            const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
+
+            if (executedMigration) {
+                this.connection.logger.logSchemaBuild(` ✅ ${migration.name}`);
+            } else {
+                this.connection.logger.logSchemaBuild(` ⏳ ${migration.name}`);
+            }
+        }
+
+        // if query runner was created by us then release it
+        if (!this.queryRunner) {
+            await queryRunner.release();
+        }
+    }
+
+    /**
      * Executes all pending migrations. Pending migrations are migrations that are not yet executed,
      * thus not saved in the database.
      */
