@@ -228,9 +228,9 @@ To show all migrations and whether they've been run or not use following command
 typeorm migration:show
 ```
 
-✅ = Migration has been ran
+[X] = Migration has been ran
 
-⏳ = Migration is pending/unapplied
+[ ] = Migration is pending/unapplied
 
 This command also returns an error code if there are unapplied migrations.
 

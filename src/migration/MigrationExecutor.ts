@@ -67,10 +67,10 @@ export class MigrationExecutor {
             const executedMigration = executedMigrations.find(executedMigration => executedMigration.name === migration.name);
 
             if (executedMigration) {
-                this.connection.logger.logSchemaBuild(` ✅ ${migration.name}`);
+                this.connection.logger.logSchemaBuild(` [X] ${migration.name}`);
             } else {
                 hasUnappliedMigrations = true;
-                this.connection.logger.logSchemaBuild(` ⏳ ${migration.name}`);
+                this.connection.logger.logSchemaBuild(` [ ] ${migration.name}`);
             }
         }
 
