@@ -20,11 +20,6 @@ export class MigrationShowCommand implements yargs.CommandModule {
         default: "default",
         describe: "Name of the connection on which run a query."
       })
-      .option("transaction", {
-        alias: "t",
-        default: "default",
-        describe: "Indicates if transaction should be used or not for migration run. Enabled by default."
-      })
       .option("config", {
         alias: "f",
         default: "ormconfig",
@@ -48,11 +43,7 @@ export class MigrationShowCommand implements yargs.CommandModule {
         logging: ["query", "error", "schema"]
       });
       connection = await createConnection(connectionOptions);
-
-      const options = {
-        transaction: args["t"] === "false" ? false : true
-      };
-      const unappliedMigrations = await connection.showMigrations(options);
+      const unappliedMigrations = await connection.showMigrations();
       await connection.close();
 
       // return error code if there are unapplied migrations for CI
