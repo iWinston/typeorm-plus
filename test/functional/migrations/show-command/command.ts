@@ -6,7 +6,7 @@ describe("migrations > show command", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         migrations: [__dirname + "/migration/*.js"],
-        enabledDrivers: ["mysql", "mariadb", "oracle", "mssql", "sqljs", "sqlite", "postgres"],
+        enabledDrivers: ["postgres"],
         schemaCreate: true,
         dropSchema: true,
     }));
