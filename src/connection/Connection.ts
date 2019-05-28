@@ -306,7 +306,7 @@ export class Connection {
     }
 
     /**
-     * Runs all pending migrations.
+     * Lists all migrations and whether they have been run.
      * Returns true if there are no pending migrations
      */
     async showMigrations(): Promise<boolean> {
