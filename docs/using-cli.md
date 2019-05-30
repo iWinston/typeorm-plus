@@ -8,6 +8,7 @@
 * [Generate a migration from exist table schema](#generate-a-migration-from-exist-table-schema)
 * [Run migrations](#run-migrations)
 * [Revert migrations](#revert-migrations)
+* [Show migrations](#show-migrations)
 * [Sync database schema](#sync-database-schema)
 * [Log sync database schema queries without actual running them](#log-sync-database-schema-queries-without-actual-running-them)
 * [Drop database schema](#drop-database-schema)
@@ -219,6 +220,19 @@ typeorm migration:revert
 This command will undo only the last executed migration.
 You can execute this command multiple times to revert multiple migrations.
 Learn more about [Migrations](./migrations.md).
+
+## Show migrations
+To show all migrations and whether they've been run or not use following command:
+
+```
+typeorm migration:show
+```
+
+[X] = Migration has been ran
+
+[ ] = Migration is pending/unapplied
+
+This command also returns an error code if there are unapplied migrations.
 
 ## Sync database schema
 
