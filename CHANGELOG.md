@@ -10,6 +10,7 @@ feel free to ask us and community.
 ### Bug fixes
 
 * fixed loadRelationCountAndMap when entities' primary keys are strings ([#3946](https://github.com/typeorm/typeorm/issues/3946))
+* fixed QueryExpressionMap not cloning all values correctly ([#4156](https://github.com/typeorm/typeorm/issues/4156))
 
 ### Features
 
