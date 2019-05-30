@@ -20,6 +20,10 @@ feel free to ask us and community.
 * added support for `dirty_read` (NOLOCK) in SQLServer ([#4133](https://github.com/typeorm/typeorm/pull/4133))
 * extend afterLoad() subscriber interface to take LoadEvent ([issue #4185](https://github.com/typeorm/typeorm/issues/4185))
 
+### Bug fixes
+
+* fixed transform embeddeds with no columns but with nested embeddeds (mongodb) ([#4131](https://github.com/typeorm/typeorm/pull/44131))
+
 ## 0.2.17 (2019-05-01)
 
 ### Bug fixes
