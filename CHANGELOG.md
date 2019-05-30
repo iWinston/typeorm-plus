@@ -7,6 +7,10 @@ feel free to ask us and community.
 
 ## 0.2.18 (UNRELEASED)
 
+### Bug fixes
+
+* fixed loadRelationCountAndMap when entities' primary keys are strings ([#3946](https://github.com/typeorm/typeorm/issues/3946))
+
 ### Features
 
 * adds `typeorm migration:show` command ([#4173](https://github.com/typeorm/typeorm/pull/4173))
