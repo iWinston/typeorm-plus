@@ -6,6 +6,7 @@ If we missed a note on some change or you have a questions on migrating from old
 feel free to ask us and community.
 
 ## 0.2.18 (UNRELEASED)
+1. fixed the getMany() result being droped randomly bug when using the buffer as primary key. ([#4220](https://github.com/typeorm/typeorm/issues/4220))
 
 ### Bug fixes
 
