@@ -213,22 +213,26 @@ createConnection().then(connection => {
     });
 
     app.get("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.findOne(req.params.id);
+        const results = await userRepository.findOne(req.params.id);
+        return res.send(results);
     });
 
     app.post("/users", async function(req: Request, res: Response) {
-        const user = userRepository.create(req.body);
-        return userRepository.save(user);
+        const user = await userRepository.create(req.body);
+        const results = await userRepository.save(user);
+        return res.send(results);
     });
 
-    app.put("/users/:id", function(req: Request, res: Response) {
-        const user = userRepository.findOne(req.params.id);
-        userRepository.merge(user, req.body);
-        return userRepository.save(user);
+    app.put("/users/:id", async function(req: Request, res: Response) {
+        const user = await userRepository.findOne(req.params.id);
+        await userRepository.merge(user, req.body);
+        const results = await userRepository.save(user);
+        return res.send(results);
     });
 
     app.delete("/users/:id", async function(req: Request, res: Response) {
-        return userRepository.remove(req.params.id);
+        const results = await userRepository.remove(req.params.id);
+        return res.send(results);
     });
 
     // start express server
