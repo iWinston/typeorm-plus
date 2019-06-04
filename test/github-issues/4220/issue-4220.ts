@@ -11,6 +11,7 @@ describe("github issues > #4220 Fix the bug when using buffer as the key.", () =
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
+        enabledDrivers: ["mysql", "mssql"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
