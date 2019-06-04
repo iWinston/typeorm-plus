@@ -55,6 +55,6 @@ describe("github issues > #4220 Fix the bug when using buffer as the key.", () =
       .getMany();
 
       expect(result.length).equal(10);
-      expect(result[0].id.toString("hex").toUpperCase()).equal(ids[0])
+      expect(result[0].id.toString("hex").toUpperCase()).equal(ids[0]);
     })));
 });
