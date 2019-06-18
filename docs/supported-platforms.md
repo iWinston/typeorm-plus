@@ -20,14 +20,12 @@ You can use [sql.js](https://github.com/kripken/sql.js) in the browser.
 In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. Prior to TypeORM 0.1.7, the package is setup in a way that loaders like webpack will automatically use the `browser` folder. With 0.1.7 this was dropped to support Webpack usage in Node.js projects. This means, that the `NormalModuleReplacementPlugin` has to be used to insure that the correct version is loaded for browser projects. The configuration in your webpack config file, for this plugin looks like this:
 
 ```js
+// webpack.config.js
 plugins: [
     ..., // any existing plugins that you already have
     new webpack.NormalModuleReplacementPlugin(/typeorm$/, function (result) {
         result.request = result.request.replace(/typeorm/, "typeorm/browser");
     }),
-    new webpack.ProvidePlugin({
-      'window.SQL': 'sql.js/js/sql.js'
-    })
 ]
 ```
 
@@ -49,6 +47,57 @@ In your main html page, you need to include reflect-metadata:
 
 ```html
 <script src="./node_modules/reflect-metadata/Reflect.js"></script>
+```
+
+### Loading Sql.js
+
+From Sql.js v1.0 there are a couple of options for loading, since it comes in both pure JavaScript (asm.js) and WebAssembly versions.
+
+**Using the WebAssembly version**
+
+When the WebAssembly version runs in the browser, it will attempt to fetch the `sql-wasm.wasm` file from the directory where the
+script is located. Therefore you'll need to copy this file over as part of your build:
+
+```js
+// webpack.config.js
+const CopyPlugin = require('copy-webpack-plugin');
+
+plugins: [
+    ..., // any existing plugins that you already have
+    new webpack.ProvidePlugin({
+        'window.initSqlJs': 'sql.js',
+    }),
+    new CopyPlugin([
+        { from: 'node_modules/sql.js/dist/sql-wasm.wasm' },
+    ]),
+]
+```
+
+**Using the asm.js version**
+
+In this case you can omit the file copy step and just point directly to the asm.js version:
+
+```js
+// webpack.config.js
+plugins: [
+    ..., // any existing plugins that you already have
+    new webpack.ProvidePlugin({
+        'window.initSqlJs': path.join(__dirname, 'node_modules/sql.js/dist/sql-asm.js'),
+    }),
+]
+```
+
+**Sql.js < 1.0**
+
+For older versions of Sql.js, use the following webpack config:
+```js
+// webpack.config.js
+plugins: [
+    ..., // any existing plugins that you already have
+    new webpack.ProvidePlugin({
+        'window.SQL': 'sql.js'
+    }),
+]
 ```
 
 ## Cordova / PhoneGap / Ionic apps
