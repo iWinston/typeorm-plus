@@ -12,8 +12,7 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
-    SQL?: any;
-    initSqlJs?: any;
+    SQL: any;
     localforage: any;
 }
 declare var window: Window;
@@ -274,7 +273,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         if (PlatformTools.type === "browser") {
-            this.sqlite = window.SQL || window.initSqlJs;
+            this.sqlite = window.SQL;
         }
         else {
             try {
