@@ -21,6 +21,7 @@ import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
+import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -296,7 +297,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropOldChecks(): Promise<void> {
         // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver)
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
             return;
 
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
@@ -522,7 +523,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all composite uniques related to this column
             // Mysql does not support unique constraints.
-            if (!(this.connection.driver instanceof MysqlDriver)) {
+            if (!(this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) {
                 await PromiseUtils.runInSequence(changedColumns, changedColumn => this.dropColumnCompositeUniques(metadata.tablePath, changedColumn.databaseName));
             }
 
@@ -569,7 +570,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async createNewChecks(): Promise<void> {
         // Mysql does not support check constraints
-        if (this.connection.driver instanceof MysqlDriver)
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)
             return;
 
         await PromiseUtils.runInSequence(this.entityToSyncMetadatas, async metadata => {
