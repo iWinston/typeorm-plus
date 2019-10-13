@@ -4,12 +4,17 @@ import {Column} from "../../../../../src/decorator/columns/Column";
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column("cube", {
-      nullable: true
+        nullable: true
     })
-    color: number[];
+    mainColor: number[];
+
+    @Column("cube", {
+        nullable: true,
+        array: true
+    })
+    colors: number[][];
 }
