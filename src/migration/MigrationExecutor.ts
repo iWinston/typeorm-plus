@@ -339,8 +339,18 @@ export class MigrationExecutor {
             return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
         });
 
+        this.checkForDuplicateMigrations(migrations);
+
         // sort them by timestamp
         return migrations.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    protected checkForDuplicateMigrations(migrations: Migration[]) {
+        const migrationNames = migrations.map(migration => migration.name);
+        const duplicates = Array.from(new Set(migrationNames.filter((migrationName, index) => migrationNames.indexOf(migrationName) < index)));
+        if (duplicates.length > 0) {
+            throw Error(`Duplicate migrations: ${duplicates.join(", ")}`);
+        }
     }
 
     /**
