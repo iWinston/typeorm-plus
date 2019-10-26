@@ -5,6 +5,7 @@ import {QueryExpressionMap} from "./QueryExpressionMap";
 import {SelectQueryBuilder} from "./SelectQueryBuilder";
 import {UpdateQueryBuilder} from "./UpdateQueryBuilder";
 import {DeleteQueryBuilder} from "./DeleteQueryBuilder";
+import {SoftDeleteQueryBuilder} from "./SoftDeleteQueryBuilder";
 import {InsertQueryBuilder} from "./InsertQueryBuilder";
 import {RelationQueryBuilder} from "./RelationQueryBuilder";
 import {ObjectType} from "../common/ObjectType";
@@ -237,6 +238,28 @@ export abstract class QueryBuilder<Entity> {
             return this as any;
 
         return new DeleteQueryBuilderCls(this);
+    }
+
+    softDelete(): SoftDeleteQueryBuilder<any> {
+        this.expressionMap.queryType = "soft-delete";
+
+        // loading it dynamically because of circular issue
+        const SoftDeleteQueryBuilderCls = require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder;
+        if (this instanceof SoftDeleteQueryBuilderCls)
+            return this as any;
+
+        return new SoftDeleteQueryBuilderCls(this);
+    }
+
+    restore(): SoftDeleteQueryBuilder<any> {
+        this.expressionMap.queryType = "restore";
+
+        // loading it dynamically because of circular issue
+        const SoftDeleteQueryBuilderCls = require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder;
+        if (this instanceof SoftDeleteQueryBuilderCls)
+            return this as any;
+
+        return new SoftDeleteQueryBuilderCls(this);
     }
 
     /**
@@ -618,7 +641,7 @@ export abstract class QueryBuilder<Entity> {
             let columnsExpression = columns.map(column => {
                 const name = this.escape(column.databaseName);
                 if (driver instanceof SqlServerDriver) {
-                    if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update") {
+                    if (this.expressionMap.queryType === "insert" || this.expressionMap.queryType === "update" || this.expressionMap.queryType === "soft-delete" || this.expressionMap.queryType === "restore") {
                         return "INSERTED." + name;
                     } else {
                         return this.escape(this.getMainTableName()) + "." + name;
