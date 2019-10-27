@@ -565,6 +565,82 @@ export class EntityManager {
     }
 
     /**
+     * Records the delete date of entities by a given condition(s).
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
+     */
+    softDelete<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|any): Promise<UpdateResult> {
+
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (criteria instanceof Array && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+        }
+
+        if (typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date ||
+            criteria instanceof Array) {
+
+            return this.createQueryBuilder()
+                .softDelete()
+                .from(targetOrEntity)
+                .whereInIds(criteria)
+                .execute();
+
+        } else {
+            return this.createQueryBuilder()
+                .softDelete()
+                .from(targetOrEntity)
+                .where(criteria)
+                .execute();
+        }
+    }
+
+    /**
+     * Restores entities by a given condition(s).
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient DELETE query.
+     * Does not check if entity exist in the database.
+     * Condition(s) cannot be empty.
+     */
+    restore<Entity>(targetOrEntity: ObjectType<Entity>|EntitySchema<Entity>|string, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|any): Promise<UpdateResult> {
+
+        // if user passed empty criteria or empty list of criterias, then throw an error
+        if (criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (criteria instanceof Array && criteria.length === 0)) {
+
+            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+        }
+
+        if (typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date ||
+            criteria instanceof Array) {
+
+            return this.createQueryBuilder()
+                .restore()
+                .from(targetOrEntity)
+                .whereInIds(criteria)
+                .execute();
+
+        } else {
+            return this.createQueryBuilder()
+                .restore()
+                .from(targetOrEntity)
+                .where(criteria)
+                .execute();
+        }
+    }
+
+    /**
      * Counts entities that match given options.
      * Useful for pagination.
      */

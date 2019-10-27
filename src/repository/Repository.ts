@@ -198,6 +198,26 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Records the delete date of entities by a given criteria.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient SOFT-DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    softDelete(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<UpdateResult> {
+        return this.manager.softDelete(this.metadata.target as any, criteria as any);
+    }
+
+    /**
+     * Restores entities by a given criteria.
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient SOFT-DELETE query.
+     * Does not check if entity exist in the database.
+     */
+    restore(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<UpdateResult> {
+        return this.manager.restore(this.metadata.target as any, criteria as any);
+    }
+
+    /**
      * Counts entities that match given options.
      */
     count(options?: FindManyOptions<Entity>): Promise<number>;
