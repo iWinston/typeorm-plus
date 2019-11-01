@@ -13,7 +13,7 @@ describe("repository > soft-delete", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should perform soft deletion and recovery correctly", () => Promise.all(connections.map(async connection => {
+    it("should perform soft deletion and restoration correctly", () => Promise.all(connections.map(async connection => {
 
         const postRepository = connection.getRepository(Post);
 
