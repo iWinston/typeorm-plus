@@ -104,7 +104,7 @@ export class EntityMetadata {
     /**
      * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
      */
-    withoutRowid?: boolean = false;    
+    withoutRowid?: boolean = false;
 
     /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
@@ -267,6 +267,11 @@ export class EntityMetadata {
      * Gets entity column which contains an update date value.
      */
     updateDateColumn?: ColumnMetadata;
+
+    /**
+     * Gets entity column which contains a delete date value.
+     */
+    deleteDateColumn?: ColumnMetadata;
 
     /**
      * Gets entity column which contains an entity version.
