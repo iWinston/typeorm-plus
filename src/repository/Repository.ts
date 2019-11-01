@@ -168,6 +168,60 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entities: T[], options: SaveOptions & { reload: false }): Promise<T[]>;
+
+    /**
+     * Records the delete date of all given entities.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<(T & Entity)[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entity: T, options: SaveOptions & { reload: false }): Promise<T>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T & Entity>;
+
+    /**
+     * Records the delete date of one or many given entities.
+     */
+    softRemove<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return this.manager.softRemove<T>(this.metadata.target as any, entityOrEntities as any, options);
+    }
+
+    /**
+     * Recovers all given entities in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entities: T[], options: SaveOptions & { reload: false }): Promise<T[]>;
+
+    /**
+     * Recovers all given entities in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entities: T[], options?: SaveOptions): Promise<(T & Entity)[]>;
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entity: T, options: SaveOptions & { reload: false }): Promise<T>;
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover<T extends DeepPartial<Entity>>(entity: T, options?: SaveOptions): Promise<T & Entity>;
+
+    /**
+     * Recovers one or many given entities.
+     */
+    recover<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return this.manager.recover<T>(this.metadata.target as any, entityOrEntities as any, options);
+    }
+
+    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
