@@ -35,6 +35,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {IsNull} from "../find-options/operator/IsNull";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -67,12 +68,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Gets query to be executed with all parameters used in it.
      */
     getQueryAndParameters(): [string, any[]] {
+        // applys query scope to SELECT query builder
         const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
         const scope = this.expressionMap.scope;
         if (metadata && scope) {
-            const scopeConditions = (metadata.target as any).scope || {};
-            if (scopeConditions[scope]) {
+            const scopeConditions = (metadata.target as any).scope;
+            if (scopeConditions && scopeConditions[scope]) {
                 this.andWhere(scopeConditions[scope] as any);
+            } else if (scope === "default" && metadata.deleteDateColumn && metadata.deleteDateColumn.target === metadata.target) {
+                this.andWhere({
+                    [metadata.deleteDateColumn.propertyName]: IsNull()
+                } as any);
             }
         }
 
