@@ -66,7 +66,7 @@ export class Entity {
 `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set.
 
 ```TypeScript
-import {createConnection} from "typeorm";
+import {createConnection} from "typeorm-plus";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {
@@ -132,7 +132,7 @@ await connection.manager.softRemove(newQuestion);
 As you can see in this example we did not call `save` or `softRemove` for category1 and category2. But They will be automatically saved and soft-deleted when the `cascade` of relation options is set to true like this:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm-plus";
 import {Category} from "./Category";
 
 @Entity()
@@ -221,7 +221,7 @@ TypeORM+'s paginator is integrated with the `query builder` and `repository` and
 ### 1. Paginating Query Builder Results
 In this example, the arguments passed to  the paginate method is the current page number and the number of items you would like displayed "per page":
 ```TypeScript
-import {createConnection} from "typeorm";
+import {createConnection} from "typeorm-plus";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {
@@ -236,7 +236,7 @@ createConnection(/*...*/).then(async connection => {
 ```
 TypeORM+'s paginator also supports `raw` mode:
 ```TypeScript
-import {createConnection} from "typeorm";
+import {createConnection} from "typeorm-plus";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {
@@ -254,7 +254,7 @@ createConnection(/*...*/).then(async connection => {
 You may also paginate queries with the `repository`.
 
 ```TypeScript
-import {createConnection} from "typeorm";
+import {createConnection} from "typeorm-plus";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {
@@ -276,7 +276,7 @@ The property `current` of the find options defines an offset page (paginated) wh
 Sometimes you may want clauses to apply to a query only when something else is true. For instance, you may only want to apply a where statement if a given input value is present on the incoming request. You may accomplish this using the when method:
 
 ```TypeScript
-import {createConnection} from "typeorm";
+import {createConnection} from "typeorm-plus";
 import {Entity} from "./entity";
 
 createConnection(/*...*/).then(async connection => {
