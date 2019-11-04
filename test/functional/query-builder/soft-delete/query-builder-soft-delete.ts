@@ -32,7 +32,7 @@ describe("query builder > soft-delete", () => {
             .where("name = :name", { name: "Alex Messer" })
             .execute();
 
-        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Alex Messer" });
+        const loadedUser1 = await connection.getRepository(User).findOne({ name: "Alex Messer" }, { scope: false });
         expect(loadedUser1).to.exist;
         expect(loadedUser1!.deletedAt).to.be.instanceof(Date);
 
@@ -43,7 +43,7 @@ describe("query builder > soft-delete", () => {
             .where("name = :name", { name: "Alex Messer" })
             .execute();
 
-        const loadedUser2 = await connection.getRepository(User).findOne({ name: "Alex Messer" });
+        const loadedUser2 = await connection.getRepository(User).findOne({ name: "Alex Messer" }, { scope: false });
         expect(loadedUser2).to.exist;
         expect(loadedUser2!.deletedAt).to.be.equals(null);
 
@@ -69,7 +69,10 @@ describe("query builder > soft-delete", () => {
             .limit(limitNum)
             .execute();
 
-            const loadedUsers = await connection.getRepository(User).find({deletedAt: Not(IsNull())});
+            const loadedUsers = await connection.getRepository(User).find({
+                 where: { deletedAt: Not(IsNull()) },
+                 scope: false
+            });
             expect(loadedUsers).to.exist;
             loadedUsers!.length.should.be.equal(limitNum);
         } else {
@@ -107,7 +110,10 @@ describe("query builder > soft-delete", () => {
             .from(User)
             .execute();
 
-            const loadedUsers = await connection.getRepository(User).find({deletedAt: IsNull()});
+            const loadedUsers = await connection.getRepository(User).find({
+                 where: { deletedAt: Not(IsNull()) },
+                 scope: false
+            });
             expect(loadedUsers).to.exist;
             loadedUsers!.length.should.be.equal(limitNum);
         } else {
