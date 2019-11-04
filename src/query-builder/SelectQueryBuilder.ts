@@ -63,6 +63,25 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         return sql;
     }
 
+    /**
+     * Gets query to be executed with all parameters used in it.
+     */
+    getQueryAndParameters(): [string, any[]] {
+        const metadata = this.expressionMap.mainAlias!.hasMetadata ? this.expressionMap.mainAlias!.metadata : undefined;
+        const scope = this.expressionMap.scope;
+        if (metadata && scope) {
+            const scopeConditions = (metadata.target as any).scope || {};
+            if (scopeConditions[scope]) {
+                this.andWhere(scopeConditions[scope] as any);
+            }
+        }
+
+        // this execution order is important because getQuery method generates this.expressionMap.nativeParameters values
+        const query = this.getQuery();
+        const parameters = this.getParameters();
+        return this.connection.driver.escapeQueryWithParameters(query, parameters, this.expressionMap.nativeParameters);
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -75,6 +94,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         qb.expressionMap.subQuery = true;
         qb.expressionMap.parentQueryBuilder = this;
         return qb;
+    }
+
+    setScope(scope: string | false) {
+        this.expressionMap.scope = scope;
+        return this;
     }
 
     /**

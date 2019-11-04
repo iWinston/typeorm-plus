@@ -42,6 +42,13 @@ export class QueryExpressionMap {
     queryType: "select"|"update"|"delete"|"insert"|"relation"|"soft-delete"|"restore" = "select";
 
     /**
+     * Specifies what scope should be applied to the repository
+     * If it is fasle, none of scopes will be applied
+     * If it is undefined, the value will be "default"
+     */
+    scope: string | false = "default";
+
+    /**
      * Data needs to be SELECT-ed.
      */
     selects: SelectQuery[] = [];

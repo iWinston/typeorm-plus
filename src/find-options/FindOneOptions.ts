@@ -54,4 +54,10 @@ export interface FindOneOptions<Entity = any> {
      */
     loadEagerRelations?: boolean;
 
+    /**
+     * Specifies what scope should be applied to the repository
+     * If it is fasle, none of scopes will be applied
+     * If it is undefined, the value will be "default"
+     */
+    scope?: string | false;
 }
