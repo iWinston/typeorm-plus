@@ -84,7 +84,8 @@ export class SubjectDatabaseEntityLoader {
                 loadRelationIds: {
                     relations: loadRelationPropertyPaths,
                     disableMixedMap: true
-                }
+                },
+                scope: false
             };
 
             // load database entities for all given ids
