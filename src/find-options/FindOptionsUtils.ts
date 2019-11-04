@@ -33,7 +33,9 @@ export class FindOptionsUtils {
                     possibleOptions.lock instanceof Object ||
                     possibleOptions.loadRelationIds instanceof Object ||
                     typeof possibleOptions.loadRelationIds === "boolean" ||
-                    typeof possibleOptions.loadEagerRelations === "boolean"
+                    typeof possibleOptions.loadEagerRelations === "boolean" ||
+                    typeof possibleOptions.scope === "string" ||
+                    typeof possibleOptions.scope === "boolean"
                 );
     }
 
@@ -185,6 +187,10 @@ export class FindOptionsUtils {
 
         } else if (options.loadRelationIds instanceof Object) {
             qb.loadAllRelationIds(options.loadRelationIds as any);
+        }
+
+        if (typeof options.scope !== "undefined") {
+            qb.setScope(options.scope);
         }
 
         return qb;
