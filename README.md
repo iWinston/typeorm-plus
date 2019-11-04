@@ -60,8 +60,33 @@ export class Entity {
 }
 ```
 
-### 2. Applying Soft Delete To Repository
-`@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call delete of entity manager or repository softly. You don't need to set this column - it will be automatically set. You can delete entity softly:
+
+### 2. Applying Soft Delete To QueryBuilder
+
+`@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set.
+
+```TypeScript
+import {createConnection} from "typeorm";
+import {Entity} from "./entity";
+
+createConnection(/*...*/).then(async connection => {
+
+    await connection
+      .getRepository(Entity)
+      .createQueryBuilder()
+      .softDelete()
+
+    // And You can restore it using restore;
+    await connection
+      .getRepository(Entity)
+      .createQueryBuilder()
+      .restore()
+
+}).catch(error => console.log(error));
+```
+
+
+### 3. Applying Soft Delete To Repository
 
 ```TypeScript
 import {createConnection} from "typeorm-plus";
@@ -77,7 +102,7 @@ createConnection(/*...*/).then(async connection => {
     // And You can restore it using restore;
     await repository.restore(1);
 
-    // Or You can delete them softly using softRemove
+    // Or You can soft-delete them using softRemove
     const entities = await repository.find();
     const entitiesAfterSoftRemove = await repository.softRemove(entities);
 
@@ -86,6 +111,8 @@ createConnection(/*...*/).then(async connection => {
 
 }).catch(error => console.log(error));
 ```
+
+### 4. Cascading Soft Deletes
 
 This example show what the cascading soft deletes behaves in TypeORM+.
 
@@ -124,28 +151,6 @@ export class Question {
 ```
 
 
-### 3. Applying Soft Delete To QueryBuilder
-```TypeScript
-import {createConnection} from "typeorm";
-import {Entity} from "./entity";
-
-createConnection(/*...*/).then(async connection => {
-
-    await connection
-      .getRepository(Entity)
-      .createQueryBuilder()
-      .softDelete()
-
-    // And You can restore it using restore;
-    await connection
-      .getRepository(Entity)
-      .createQueryBuilder()
-      .restore()
-
-}).catch(error => console.log(error));
-```
-
-
 ## Query Scopes
 
 Query scopes allow you to add constraints to all queries for a given entity. You can register scopes in your entity:
@@ -168,7 +173,23 @@ export class Entity {
 }
 ```
 
-### 2. Applying Scopes To Repository
+### 2. Applying Scopes To QueryBuilder
+When you are calling `queryBuilder`, you can also apply the scope.
+
+```TypeScript
+import {createConnection} from "typeorm-plus";
+import {Entity} from "./entity";
+
+createConnection(/*...*/).then(async connection => {
+
+    const repository = connection.getRepository(Entity);
+    await repository.createQueryBuilder().setScope("myScope").getMany();
+
+}).catch(error => console.log(error));
+```
+The param `scope` of the setScope function selects scope to apply to the repository. If it is false, none of the scopes will be applied. If it is undefined, the value will be "default".
+
+### 3. Applying Scopes To Repository
 When you are calling `repository`, you can apply the scope. The scope mode supports these methods of `repository`: `find`, `findOne`, `findOneOrFail`, `count`、`findByIds` And `findAndCount`.
 ```TypeScript
 import {createConnection} from "typeorm-plus";
@@ -186,23 +207,8 @@ createConnection(/*...*/).then(async connection => {
 ```
 The property `scope` of the find options selects scope to apply to the repository. If it is false, none of the scopes will be applied. If it is undefined, the value will be "default".
 
-### 2. Applying Scopes To QueryBuilder
-When you are calling `queryBuilder`, you can also apply the scope.
 
-```TypeScript
-import {createConnection} from "typeorm-plus";
-import {Entity} from "./entity";
-
-createConnection(/*...*/).then(async connection => {
-
-    const repository = connection.getRepository(Entity);
-    await repository.createQueryBuilder().setScope("myScope").getMany();
-
-}).catch(error => console.log(error));
-```
-The param `scope` of the setScope function selects scope to apply to the repository. If it is false, none of the scopes will be applied. If it is undefined, the value will be "default".
-
-### 3. Working with Soft Delete
+### 4. Working with Soft Delete
 
 TypeORM's own soft delete functionality utilizes global scopes to only pull "non-deleted" entities from the database.
 
