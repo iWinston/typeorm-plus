@@ -1,13 +1,13 @@
 {
-  "name": "typeorm",
+  "name": "typeorm-plus",
   "private": true,
-  "version": "0.2.20",
-  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
+  "version": "0.0.55",
+  "description": "TypeORM+ adds functionality to TypeORM intending to make the `Repository` and `QueryBuilder` more powerful.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "Winston Lee",
+    "email": "iwinston@163.com"
   },
   "main": "./index.js",
   "browser": {
@@ -23,12 +23,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/typeorm/typeorm.git"
+    "url": "https://github.com/iwinston/typeorm-plus.git"
   },
   "bugs": {
-    "url": "https://github.com/typeorm/typeorm/issues"
+    "url": "https://github.com/iwinston/typeorm-plus/issues"
   },
   "tags": [
+    "typeorm",
     "orm",
     "typescript",
     "typescript-orm",
