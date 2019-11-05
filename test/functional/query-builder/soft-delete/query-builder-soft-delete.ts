@@ -108,6 +108,7 @@ describe("query builder > soft-delete", () => {
             await connection.createQueryBuilder()
             .restore()
             .from(User)
+            .limit(limitNum)
             .execute();
 
             const loadedUsers = await connection.getRepository(User).find({
