@@ -43,7 +43,7 @@ export class QueryExpressionMap {
 
     /**
      * Specifies what scope should be applied to the repository
-     * If it is fasle, none of scopes will be applied
+     * If it is false, none of the scopes will be applied
      * If it is undefined, the value will be "default"
      */
     scope: string | false = "default";
@@ -404,6 +404,7 @@ export class QueryExpressionMap {
         map.offset = this.offset;
         map.skip = this.skip;
         map.take = this.take;
+        map.scope = this.scope;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
         map.parameters = Object.assign({}, this.parameters);
