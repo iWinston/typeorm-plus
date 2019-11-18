@@ -35,7 +35,7 @@ import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import { QueryBuilderUtils } from "./QueryBuilderUtils";
+import {QueryBuilderUtils} from "./QueryBuilderUtils";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
