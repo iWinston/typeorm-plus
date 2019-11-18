@@ -1,3 +1,5 @@
+import {Alias} from "./Alias";
+
 /**
  * Helper utility functions for QueryBuilder.
  */
@@ -27,6 +29,16 @@ export class QueryBuilderUtils {
             return false;
 
         return true;
+    }
+
+    static getScopeWhere(mainAlias: Alias, scope: string | false) {
+        const metadata = mainAlias!.hasMetadata ? mainAlias!.metadata : undefined;
+        if (metadata && scope) {
+            const scopeWheres = (metadata.target as any).scope;
+            if (scopeWheres && scopeWheres[scope]) {
+                return scopeWheres[scope];
+            }
+        }
     }
 
 }
