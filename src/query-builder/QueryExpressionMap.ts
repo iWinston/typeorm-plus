@@ -39,7 +39,7 @@ export class QueryExpressionMap {
     /**
      * Represents query type. QueryBuilder is able to build SELECT, UPDATE and DELETE queries.
      */
-    queryType: "select"|"update"|"delete"|"insert"|"relation" = "select";
+    queryType: "select"|"update"|"delete"|"insert"|"relation"|"soft-delete"|"restore" = "select";
 
     /**
      * Specifies what scope should be applied to the repository

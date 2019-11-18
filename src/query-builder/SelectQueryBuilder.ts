@@ -952,6 +952,44 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Sets the current page number and the number of items you would like displayed "per page".
+     */
+    paginate(current: number, size: number): this {
+        current = this.normalizeNumber(current);
+        size = this.normalizeNumber(size);
+        if (current !== undefined && isNaN(current))
+            throw new Error(
+                `Provided "current" value is not a number. Please provide a numeric value.`
+            );
+        if (size !== undefined && isNaN(size))
+            throw new Error(
+                `Provided "size" value is not a number. Please provide a numeric value.`
+            );
+        this.expressionMap.take = size;
+        this.expressionMap.skip = (current - 1) * size;
+        return this;
+    }
+
+    /**
+     * Sets the current page number and the number of items you would like displayed "per page".
+     */
+    paginateRaw(current: number, size: number): this {
+        current = this.normalizeNumber(current);
+        size = this.normalizeNumber(size);
+        if (current !== undefined && isNaN(current))
+            throw new Error(
+                `Provided "current" value is not a number. Please provide a numeric value.`
+            );
+        if (size !== undefined && isNaN(size))
+            throw new Error(
+                `Provided "size" value is not a number. Please provide a numeric value.`
+            );
+        this.expressionMap.limit = size;
+        this.expressionMap.offset = (current - 1) * size;
+        return this;
+    }
+
+    /**
      * Sets locking mode.
      */
     setLock(lockMode: "optimistic", lockVersion: number): this;
