@@ -39,7 +39,8 @@ export class QueryBuilderUtils {
             if (scopeWheres && scopeWheres[scope]) {
                 return scopeWheres[scope];
             }
-            if (scope === "default" && metadata.deleteDateColumn) {
+            // default scope can't support deleteDateColumn in embedded now
+            if (scope === "default" && metadata.deleteDateColumn && !metadata.deleteDateColumn.embeddedMetadata) {
                 return {
                     [metadata.deleteDateColumn.propertyName]: IsNull()
                 };
