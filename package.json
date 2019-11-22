@@ -1,7 +1,7 @@
 {
   "name": "typeorm-plus",
   "private": true,
-  "version": "0.0.57",
+  "version": "0.0.58",
   "description": "TypeORM+ adds functionality to TypeORM intending to make the `Repository` and `QueryBuilder` more powerful.",
   "license": "MIT",
   "readmeFilename": "README.md",
