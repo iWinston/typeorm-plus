@@ -39,7 +39,7 @@ export class QueryBuilderUtils {
             if (scopeWheres && scopeWheres[scope]) {
                 return scopeWheres[scope];
             }
-            if (scope === "default" && metadata.deleteDateColumn && metadata.deleteDateColumn.target === metadata.target) {
+            if (scope === "default" && metadata.deleteDateColumn) {
                 return {
                     [metadata.deleteDateColumn.propertyName]: IsNull()
                 };
