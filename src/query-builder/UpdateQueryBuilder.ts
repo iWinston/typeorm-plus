@@ -1,4 +1,5 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
+import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
@@ -373,7 +374,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof AuroraDataApiDriver ||
                                 this.connection.driver instanceof OracleDriver ||
-                                this.connection.driver instanceof AbstractSqliteDriver
+                                this.connection.driver instanceof AbstractSqliteDriver ||
+                                this.connection.driver instanceof SapDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
@@ -401,6 +403,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     // todo: duplication zone
                     if (value instanceof Function) { // support for SQL expressions in update query
                         updateColumnAndValues.push(this.escape(column.databaseName) + " = " + value());
+                    } else if (this.connection.driver instanceof SapDriver && value === null) {
+                        updateColumnAndValues.push(this.escape(column.databaseName) + " = NULL");
                     } else {
                         if (this.connection.driver instanceof SqlServerDriver) {
                             value = this.connection.driver.parametrizeValue(column, value);
@@ -412,7 +416,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         if (this.connection.driver instanceof MysqlDriver ||
                             this.connection.driver instanceof AuroraDataApiDriver ||
                             this.connection.driver instanceof OracleDriver ||
-                            this.connection.driver instanceof AbstractSqliteDriver) {
+                            this.connection.driver instanceof AbstractSqliteDriver ||
+                            this.connection.driver instanceof SapDriver) {
                             newParameters[paramName] = value;
                         } else {
                             this.expressionMap.nativeParameters[paramName] = value;
@@ -454,6 +459,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 // todo: duplication zone
                 if (value instanceof Function) { // support for SQL expressions in update query
                     updateColumnAndValues.push(this.escape(key) + " = " + value());
+                } else if (this.connection.driver instanceof SapDriver && value === null) {
+                    updateColumnAndValues.push(this.escape(key) + " = NULL");
                 } else {
 
                     // we need to store array values in a special class to make sure parameter replacement will work correctly
@@ -463,7 +470,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     if (this.connection.driver instanceof MysqlDriver ||
                         this.connection.driver instanceof AuroraDataApiDriver ||
                         this.connection.driver instanceof OracleDriver ||
-                        this.connection.driver instanceof AbstractSqliteDriver) {
+                        this.connection.driver instanceof AbstractSqliteDriver ||
+                        this.connection.driver instanceof SapDriver) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -484,7 +492,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (this.connection.driver instanceof MysqlDriver ||
             this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
-            this.connection.driver instanceof AbstractSqliteDriver) {
+            this.connection.driver instanceof AbstractSqliteDriver ||
+            this.connection.driver instanceof SapDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 
