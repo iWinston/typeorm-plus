@@ -1,3 +1,24 @@
+## [0.2.22](https://github.com/typeorm/typeorm/compare/0.2.21...0.2.22) (2019-12-23)
+
+
+### Bug Fixes
+
+* use a prefix on SelectQueryBuilder internal parameters ([#5178](https://github.com/typeorm/typeorm/issues/5178)) ([cacb08b](https://github.com/typeorm/typeorm/commit/cacb08b)), closes [#5174](https://github.com/typeorm/typeorm/issues/5174) [#5174](https://github.com/typeorm/typeorm/issues/5174)
+
+
+### Features
+
+* hash aliases to avoid conflicts ([#5227](https://github.com/typeorm/typeorm/issues/5227)) ([edc8e6d](https://github.com/typeorm/typeorm/commit/edc8e6d))
+* implement driver options for NativeScript ([#5217](https://github.com/typeorm/typeorm/issues/5217)) ([3e58426](https://github.com/typeorm/typeorm/commit/3e58426))
+* SAP Hana support ([#5246](https://github.com/typeorm/typeorm/issues/5246)) ([ec90341](https://github.com/typeorm/typeorm/commit/ec90341))
+* speed ​​up id search in buildChildrenEntityTree ([#5202](https://github.com/typeorm/typeorm/issues/5202)) ([2e628c3](https://github.com/typeorm/typeorm/commit/2e628c3))
+
+
+### BREAKING CHANGES
+
+* aliases for very long relation names may be replaced with hashed strings
+
+
 ## [0.2.21](https://github.com/typeorm/typeorm/compare/0.2.20...0.2.21) (2019-12-05)
 
 
