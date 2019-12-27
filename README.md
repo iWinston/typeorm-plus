@@ -19,7 +19,7 @@ and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 
 ## TypeORM vs TypeORM+
 
-TypeORM+ is a fork of [TypeORM](https://github.com/typeorm/typeorm"). TypeORM+ adds functionality to TypeORM intending to make the `Repository` and `QueryBuilder` more powerful. Since this is a fork we'll pull in changes from the original TypeORM regularly as they are released.
+TypeORM+ is a fork of [TypeORM](https://github.com/typeorm/typeorm). TypeORM+ adds functionality to TypeORM intending to make the `Repository` and `QueryBuilder` more powerful. Since this is a fork we'll pull in changes from the original TypeORM regularly as they are released.
 
 TypeORM+ is intended to replace TypeORM, so any changes in its interface are documented below.
 
