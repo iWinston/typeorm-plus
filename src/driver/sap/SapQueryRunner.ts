@@ -1714,7 +1714,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     constraint += ` ON DELETE ${onDelete}`;
                 }
                 if (fk.onUpdate) {
-                    const onUpdate = fk.onDelete === "NO ACTION" ? "RESTRICT" : fk.onDelete;
+                    const onUpdate = fk.onUpdate === "NO ACTION" ? "RESTRICT" : fk.onUpdate;
                     constraint += ` ON UPDATE ${onUpdate}`;
                 }
 
