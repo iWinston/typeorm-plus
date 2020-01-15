@@ -439,9 +439,6 @@ export class SapDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
 
-        } else if (defaultValue === null) {
-            return undefined as any;
-
         } else {
             return defaultValue;
         }
@@ -565,13 +562,16 @@ export class SapDriver implements Driver {
             // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
 
+            const normalizeDefault = this.normalizeDefault(columnMetadata);
+            const hanaNullComapatibleDefault = normalizeDefault == null ? undefined : normalizeDefault;
+
             return  tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
-                || (!tableColumn.isGenerated && this.normalizeDefault(columnMetadata) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && (hanaNullComapatibleDefault !== tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
