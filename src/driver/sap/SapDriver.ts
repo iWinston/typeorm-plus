@@ -439,6 +439,9 @@ export class SapDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'`;
 
+        } else if (defaultValue === null) {
+            return undefined as any;
+
         } else {
             return defaultValue;
         }
