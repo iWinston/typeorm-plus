@@ -1580,7 +1580,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.default = undefined;
 
                     } else {
-                        tableColumn.default = dbColumn["DEFAULT_VALUE"] === "CURRENT_TIMESTAMP" ? dbColumn["DEFAULT_VALUE"] : `'${dbColumn["DEFAULT_VALUE"]}'`;
+                        if (tableColumn.type === "char" || tableColumn.type === "nchar" || tableColumn.type === "varchar" ||
+                            tableColumn.type === "nvarchar" || tableColumn.type === "alphanum" || tableColumn.type === "shorttext") {
+                            tableColumn.default = `'${dbColumn["DEFAULT_VALUE"]}'`;
+                        } else if (tableColumn.type === "boolean") {
+                            tableColumn.default = dbColumn["DEFAULT_VALUE"] === "1" ? "true" : "false";
+                        } else {
+                            tableColumn.default = dbColumn["DEFAULT_VALUE"];
+                        }
                     }
                     tableColumn.comment = ""; // dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["character_set_name"])

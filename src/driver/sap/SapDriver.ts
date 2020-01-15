@@ -430,6 +430,9 @@ export class SapDriver implements Driver {
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
 
+        } else if (typeof defaultValue === "boolean") {
+            return defaultValue === true ? "true" : "false";
+
         } else if (typeof defaultValue === "function") {
             return defaultValue();
 
