@@ -70,11 +70,11 @@
     "database": "defaultdb"
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sap",
     "type": "sap",
     "host": "localhost",
-    "port": 39015,
+    "port": 39017,
     "username": "SYSTEM",
     "password": "HXEHana1",
     "database": "HXE",
