@@ -65,6 +65,8 @@ jobs:
           - v1-dependencies-
 
       - run: npm install
+      - run: npm config set @sap:registry https://npm.sap.com
+      - run: npm i @sap/hdbext     
 
       - save_cache:
           paths:
