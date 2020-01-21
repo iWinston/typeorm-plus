@@ -16,7 +16,7 @@ import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {SqljsDriver} from "../driver/sqljs/SqljsDriver";
 import {BroadcasterResult} from "../subscriber/BroadcasterResult";
-import {EntitySchema} from "../";
+import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
@@ -68,21 +68,33 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
             }
 
+            let declareSql: string | null = null;
+            let selectOutputSql: string | null = null;
+
             // if update entity mode is enabled we may need extra columns for the returning statement
             // console.time(".prepare returning statement");
             const returningResultsEntityUpdator = new ReturningResultsEntityUpdator(queryRunner, this.expressionMap);
             if (this.expressionMap.updateEntity === true && this.expressionMap.mainAlias!.hasMetadata) {
                 this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getInsertionReturningColumns();
+
+                if (this.expressionMap.extraReturningColumns.length > 0 && this.connection.driver instanceof SqlServerDriver) {
+                    declareSql = this.connection.driver.buildTableVariableDeclaration("@OutputTable", this.expressionMap.extraReturningColumns);
+                    selectOutputSql = `SELECT * FROM @OutputTable`;
+                }
             }
             // console.timeEnd(".prepare returning statement");
 
             // execute query
             // console.time(".getting query and parameters");
-            const [sql, parameters] = this.getQueryAndParameters();
+            const [insertSql, parameters] = this.getQueryAndParameters();
             // console.timeEnd(".getting query and parameters");
             const insertResult = new InsertResult();
             // console.time(".query execution by database");
-            insertResult.raw = await queryRunner.query(sql, parameters);
+            const statements = [declareSql, insertSql, selectOutputSql];
+            insertResult.raw = await queryRunner.query(
+                statements.filter(sql => sql != null).join(";\n\n"),
+                parameters,
+            );
             // console.timeEnd(".query execution by database");
 
             // load returning results and set them to the entity if entity updation is enabled
