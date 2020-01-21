@@ -44,7 +44,7 @@ jobs:
          - 39041-39045:39041-39045
          - 1128-1129:1128-1129
          - 59013-59014:59013-59014
-      # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu
+      # - image: mcr.microsoft.com/mssql/server:2017-GA-ubuntu 
       #   environment:
       #     SA_PASSWORD: "Admin12345"
       #     ACCEPT_EULA: "Y"
