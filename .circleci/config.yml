@@ -73,8 +73,7 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       # - run: docker-compose up -d
-      - run: 
-        command: dockerize -wait tcp://localhost:39017 -timeout 15m
+      - run: dockerize -wait tcp://localhost:39017 -timeout 15m
 
       # run tests
       - run: npm run lint
