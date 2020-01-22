@@ -415,8 +415,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         value = column.referencedColumn.getEntityValue(value);
                     }*/
 
-                    // make sure our value is normalized by a driver
-                    value = this.connection.driver.preparePersistentValue(value, column);
+
+                    if (!(value instanceof Function)) {
+                      // make sure our value is normalized by a driver
+                      value = this.connection.driver.preparePersistentValue(value, column);
+                    }
 
                     // newly inserted entities always have a version equal to 1 (first version)
                     if (column.isVersion) {
