@@ -225,23 +225,22 @@ export class SapDriver implements Driver {
         if (this.options.encrypt) dbParams.key = this.options.key;
         if (this.options.encrypt) dbParams.cert = this.options.cert;
         if (this.options.encrypt) dbParams.ca = this.options.ca;
-  
 
         // pool options
-        const options : any = {
+        const options: any = {
             min: this.options.pool && this.options.pool.min ? this.options.pool && this.options.pool.min : 1,
             max: this.options.pool && this.options.pool.max ? this.options.pool && this.options.pool.max : 1,
         };
 
-        if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval
-        if (this.options.pool && this.options.pool.checkInterval) options.maxWaitingRequests = this.options.pool.maxWaitingRequests
-        if (this.options.pool && this.options.pool.checkInterval) options.requestTimeout = this.options.pool.requestTimeout
-        if (this.options.pool && this.options.pool.checkInterval) options.idleTimeout = this.options.pool.idleTimeout
+        if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
+        if (this.options.pool && this.options.pool.checkInterval) options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
+        if (this.options.pool && this.options.pool.checkInterval) options.requestTimeout = this.options.pool.requestTimeout;
+        if (this.options.pool && this.options.pool.checkInterval) options.idleTimeout = this.options.pool.idleTimeout;
 
         const { logger } = this.connection;
 
         const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
-        this.client.eventEmitter.on('poolError', poolErrorHandler);
+        this.client.eventEmitter.on("poolError", poolErrorHandler);
 
         // create the pool
         this.master = this.client.createPool(dbParams, options);

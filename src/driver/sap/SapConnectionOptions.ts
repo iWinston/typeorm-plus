@@ -54,6 +54,6 @@ export interface SapConnectionOptions extends BaseConnectionOptions, SapConnecti
         */
         readonly poolErrorHandler?: (err: any) => any;
 
-    }
+    };
 
 }
