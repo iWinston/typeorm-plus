@@ -29,7 +29,7 @@ export class SapDriver implements Driver {
     connection: Connection;
 
     /**
-     * Hana client instance.
+     * Hana Pool instance.
      */
     client: any;
 
@@ -208,6 +208,34 @@ export class SapDriver implements Driver {
      */
     async connect(): Promise<void> {
         // this.master = await this.createConnection(this.options);
+
+
+        // HANA connection info
+        const dbParams = {
+            hostName: this.options.host,
+            port: this.options.port,
+            userName: this.options.username,
+            password: this.options.password,
+            ...this.options.extra
+        };
+
+        if (this.options.database) dbParams.databaseName = this.options.database;
+        if (this.options.encrypt) dbParams.encrypt = this.options.encrypt;
+        if (this.options.encrypt) dbParams.validateCertificate = this.options.validateCertificate;
+        if (this.options.encrypt) dbParams.key = this.options.key;
+        if (this.options.encrypt) dbParams.cert = this.options.cert;
+        if (this.options.encrypt) dbParams.ca = this.options.ca;
+  
+
+        // pool options
+        const options = {
+            min: this.options.pool && this.options.pool.min ? this.options.pool && this.options.pool.min : 1,
+            max: this.options.pool && this.options.pool.max ? this.options.pool && this.options.pool.max : 2,
+        };
+
+        // create the pool
+        this.master = this.client.createPool(dbParams, options);
+
         this.database = this.options.database;
     }
 
@@ -222,21 +250,10 @@ export class SapDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        await this.closeConnection();
+        const promise = this.master.clear();
         this.master = undefined;
+        return promise;
     }
-
-
-    /**
-     * Closes connection pool.
-     */
-    protected async closeConnection(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (!this.master) return ok();
-            this.master.disconnect((err: any) => err ? fail(err) : ok());
-        });
-    }
-
 
     /**
      * Creates a schema builder used to build and sync a schema.
@@ -490,7 +507,7 @@ export class SapDriver implements Driver {
             type += `(${column.precision},${column.scale})`;
 
         } else if (column.precision !== null && column.precision !== undefined) {
-            type +=  `(${column.precision})`;
+            type += `(${column.precision})`;
         }
 
         if (column.isArray)
@@ -505,7 +522,7 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
-        return this.createConnection();
+        return this.master.getConnection();
     }
 
     /**
@@ -514,8 +531,7 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any> {
-        // return Promise.resolve(this.master);
-        return this.createConnection();
+        return this.obtainMasterConnection();
     }
 
     /**
@@ -609,43 +625,18 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.client = PlatformTools.load("@sap/hdbext");
+            this.client = PlatformTools.load("hdb-pool");
 
         } catch (e) { // todo: better error for browser env
-            throw new DriverPackageNotInstalledError("SAP Hana", "hdb");
+            throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool");
         }
-    }
 
-    /**
-     * Creates a new connection pool for a given database credentials.
-     */
-    protected createConnection(): Promise<any> {
+        try {
+            PlatformTools.load("@sap/hana-client");
 
-        // pooling is enabled either when its set explicitly to true,
-        // either when its not defined at all (e.g. enabled by default)
-        return new Promise<any>((ok, fail) => {
-            try {
-                // const master = ();
-                this.client.createConnection({
-                    host: this.options.host,
-                    port: this.options.port,
-                    uid: this.options.username,
-                    pwd: this.options.password,
-                    databaseName: this.options.database,
-                    pooling: true,
-                    ...this.options.extra
-                }, (err: any, master: any) => {
-                    if (err) {
-                        fail(err);
-                        return;
-                    }
-                    ok(master);
-                });
-
-            } catch (err) {
-                fail(err);
-            }
-        });
+        } catch (e) { // todo: better error for browser env
+            throw new DriverPackageNotInstalledError("SAP Hana", "@sap/hana-client");
+        }
     }
 
 }

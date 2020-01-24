@@ -71,19 +71,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates/uses database connection from the connection pool to perform further operations.
      * Returns obtained database connection.
      */
-    connect(): Promise<any> {
+    async connect(): Promise<any> {
         if (this.databaseConnection)
-            return Promise.resolve(this.databaseConnection);
-
-        if (this.databaseConnectionPromise)
-            return this.databaseConnectionPromise;
-
-        this.databaseConnectionPromise = this.driver.obtainMasterConnection().then(connection => {
-            this.databaseConnection = connection;
             return this.databaseConnection;
-        });
 
-        return this.databaseConnectionPromise;
+        this.databaseConnection = await this.driver.obtainMasterConnection();
+
+        return this.databaseConnection;
     }
 
     /**
@@ -91,11 +85,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            this.isReleased = true;
-            if (!this.databaseConnection) return ok();
-            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
-        });
+        this.isReleased = true;
+
+        if (this.databaseConnection) {
+            return this.driver.master.release(this.databaseConnection);
+        }
+
+        return Promise.resolve();        
     }
 
     /**

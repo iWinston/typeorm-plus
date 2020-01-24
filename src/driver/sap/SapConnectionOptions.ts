@@ -16,4 +16,20 @@ export interface SapConnectionOptions extends BaseConnectionOptions, SapConnecti
      */
     readonly schema?: string;
 
+    /**
+     * Pool options.
+     */
+    readonly pool?: {
+
+        /**
+        * Max number of connections.
+        */
+        readonly max?: number;
+
+        /**
+        * Minimum number of connections.
+        */
+        readonly min?: number;
+    };
+
 }
