@@ -228,10 +228,20 @@ export class SapDriver implements Driver {
   
 
         // pool options
-        const options = {
+        const options : any = {
             min: this.options.pool && this.options.pool.min ? this.options.pool && this.options.pool.min : 1,
-            max: this.options.pool && this.options.pool.max ? this.options.pool && this.options.pool.max : 2,
+            max: this.options.pool && this.options.pool.max ? this.options.pool && this.options.pool.max : 1,
         };
+
+        if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval
+        if (this.options.pool && this.options.pool.checkInterval) options.maxWaitingRequests = this.options.pool.maxWaitingRequests
+        if (this.options.pool && this.options.pool.checkInterval) options.requestTimeout = this.options.pool.requestTimeout
+        if (this.options.pool && this.options.pool.checkInterval) options.idleTimeout = this.options.pool.idleTimeout
+
+        const { logger } = this.connection;
+
+        const poolErrorHandler = options.poolErrorHandler || ((error: any) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+        this.client.eventEmitter.on('poolError', poolErrorHandler);
 
         // create the pool
         this.master = this.client.createPool(dbParams, options);
