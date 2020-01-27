@@ -210,7 +210,8 @@ await timber.remove();
 
         ```
         npm config set @sap:registry https://npm.sap.com
-        npm i @sap/hdbext
+        npm i @sap/hana-client
+		npm i hdb-pool
         ```
 
     * for **MongoDB** (experimental)
