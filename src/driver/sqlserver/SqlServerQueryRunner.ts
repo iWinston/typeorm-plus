@@ -867,9 +867,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 if (oldColumn.default !== null && oldColumn.default !== undefined) {
                     const oldDefaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
                     const newDefaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
+
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${oldDefaultName}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${oldDefaultName}" DEFAULT ${oldColumn.default} FOR "${newColumn.name}"`));
+
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${newDefaultName}" DEFAULT ${oldColumn.default} FOR "${newColumn.name}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${oldDefaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${newDefaultName}"`));
                 }
 
