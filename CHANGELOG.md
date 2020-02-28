@@ -1,4 +1,4 @@
-## [0.2.23](https://github.com/typeorm/typeorm/compare/0.2.22...0.2.23) (2020-02-28)
+## [0.2.23](https://github.com/typeorm/typeorm/compare/0.2.22...0.2.23), [0.2.24](https://github.com/typeorm/typeorm/compare/0.2.23...0.2.24) (2020-02-28)
 
 ### Bug Fixes
 
