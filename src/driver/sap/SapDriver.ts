@@ -228,7 +228,7 @@ export class SapDriver implements Driver {
         // pool options
         const options: any = {
             min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
-            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 1,
+            max: this.options.pool && this.options.pool.max ? this.options.pool.max : 10,
         };
 
         if (this.options.pool && this.options.pool.checkInterval) options.checkInterval = this.options.pool.checkInterval;
@@ -283,6 +283,10 @@ export class SapDriver implements Driver {
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
         const builtParameters: any[] = Object.keys(nativeParameters).map(key => {
+
+            if (nativeParameters[key] instanceof Date)
+                return DateUtils.mixedDateToDatetimeString(nativeParameters[key], true);
+
             return nativeParameters[key];
         });
 
@@ -309,6 +313,9 @@ export class SapDriver implements Driver {
 
             } else if (value instanceof Function) {
                 return value();
+
+            } else if (value instanceof Date) {
+                return DateUtils.mixedDateToDatetimeString(value, true);
 
             } else {
                 builtParameters.push(value);
