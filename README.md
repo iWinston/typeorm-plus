@@ -39,10 +39,10 @@ maintainable applications the most productive way.
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
  [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
  
- ## Sponsors
+## Sponsors
  
 TypeORM is being sponsored by the following partner:
-<a href="https://tracking.gitads.io/?repo=typeorm"> <img src="https://images.gitads.io/typeorm" alt="GitAds"/> </a>
+<a href="https://tracking.gitads.io/?repo=typeorm"> <img src="https://images.gitads.io/typeorm" alt="GitAds" style="width: 100%; margin-top: 20px;"/> </a>
 
 ## Features
 
