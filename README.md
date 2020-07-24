@@ -42,7 +42,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
  ## Sponsors
  
 TypeORM is being sponsored by the following partner:
-<!--<a href="https://tracking.gitads.io/?repo=typeorm"> <img src="https://images.gitads.io/typeorm" alt="GitAds"/> </a>-->
+<a href="https://tracking.gitads.io/?repo=typeorm"> <img src="https://images.gitads.io/typeorm" alt="GitAds"/> </a>
 
 ## Features
 
