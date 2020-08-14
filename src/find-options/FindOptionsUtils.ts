@@ -47,8 +47,12 @@ export class FindOptionsUtils {
             this.isFindOneOptions(possibleOptions) ||
             typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||
             typeof (possibleOptions as FindManyOptions<any>).take === "number" ||
+            typeof (possibleOptions as FindManyOptions<any>).current === "number" ||
+            typeof (possibleOptions as FindManyOptions<any>).size === "number" ||
             typeof (possibleOptions as FindManyOptions<any>).skip === "string" ||
-            typeof (possibleOptions as FindManyOptions<any>).take === "string"
+            typeof (possibleOptions as FindManyOptions<any>).take === "string" ||
+            typeof (possibleOptions as FindManyOptions<any>).current === "string" ||
+            typeof (possibleOptions as FindManyOptions<any>).size === "string"
         );
     }
 
@@ -108,6 +112,9 @@ export class FindOptionsUtils {
 
         if ((options as FindManyOptions<T>).take)
             qb.take((options as FindManyOptions<T>).take!);
+
+        if ((options as FindManyOptions<T>).current && (options as FindManyOptions<T>).size)
+            qb.paginate((options as FindManyOptions<T>).current!, (options as FindManyOptions<T>).size!);
 
         if (options.order)
             Object.keys(options.order).forEach(key => {
