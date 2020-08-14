@@ -123,6 +123,16 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
+     * Creates a conditional clause.
+     * The when method only executes the given closure when the first parameter is a truthy.
+     * If the first parameter is a falsy, the closure will not be executed.
+     */
+    when(condition: any, callback: (qb: this) => this): this {
+        if (condition) callback(this);
+        return this;
+    }
+
+    /**
      * Creates SELECT query.
      * Replaces all previous selections if they exist.
      */
