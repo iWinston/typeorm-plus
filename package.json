@@ -1,13 +1,13 @@
 {
-  "name": "typeorm",
+  "name": "typeorm-plus",
   "private": true,
-  "version": "0.2.25",
-  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
+  "version": "0.1.01",
+  "description": "TypeORM+ adds functionality to TypeORM intending to make the `Repository` and `QueryBuilder` more powerful.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "Winston Lee",
+    "email": "iwinston@163.com"
   },
   "main": "./index.js",
   "browser": {
@@ -20,16 +20,17 @@
     "./browser/driver/mongodb/MongoQueryRunner.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./index.js": "./browser/index.js"
+    "./index.js": "./browser/index.js" 
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/typeorm/typeorm.git"
+    "url": "https://github.com/iwinston/typeorm-plus.git"
   },
   "bugs": {
-    "url": "https://github.com/typeorm/typeorm/issues"
+    "url": "https://github.com/iwinston/typeorm-plus/issues"
   },
   "tags": [
+    "typeorm",
     "orm",
     "typescript",
     "typescript-orm",
@@ -53,28 +54,23 @@
     "@types/mocha": "^5.2.6",
     "@types/node": "^9.6.0",
     "@types/rimraf": "^2.0.2",
-    "@types/sha.js": "^2.4.0",
     "@types/sinon": "^7.0.8",
     "@types/source-map-support": "^0.4.2",
     "@types/yargs": "^12.0.9",
-    "@typescript-eslint/eslint-plugin": "^3.7.0",
-    "@typescript-eslint/parser": "^3.7.0",
-    "better-sqlite3": "^7.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "class-transformer": "^0.2.3",
     "conventional-changelog-angular": "^5.0.3",
     "conventional-changelog-cli": "^2.0.21",
     "del": "^3.0.0",
-    "eslint": "^7.5.0",
     "gulp": "^4.0.0",
-    "gulp-eslint": "^6.0.0",
     "gulp-istanbul": "^1.1.3",
     "gulp-mocha": "^6.0.0",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.6.5",
     "gulp-sourcemaps": "^2.6.5",
+    "gulp-tslint": "^8.1.4",
     "gulp-typescript": "^5.0.0",
     "gulpclass": "^0.2.0",
     "husky": "^1.3.1",
@@ -84,7 +80,7 @@
     "mssql": "^4.3.2",
     "mysql": "^2.15.0",
     "mysql2": "^1.6.5",
-    "pg": "^8.3.0",
+    "pg": "^7.8.1",
     "redis": "^2.8.0",
     "remap-istanbul": "^0.13.0",
     "rimraf": "^2.6.3",
@@ -94,11 +90,12 @@
     "sql.js": "^1.0.0",
     "sqlite3": "^4.0.9",
     "ts-node": "^8.0.2",
-    "typeorm-aurora-data-api-driver": "^1.3.0",
-    "typescript": "^3.3.3333"
+    "tslint": "^5.13.1",
+    "typescript": "^3.3.3333",
+    "typeorm-aurora-data-api-driver": "^1.1.1"
   },
   "dependencies": {
-    "app-root-path": "^3.0.0",
+    "app-root-path": "^2.0.1",
     "buffer": "^5.1.0",
     "chalk": "^2.4.2",
     "cli-highlight": "^2.0.0",
@@ -106,9 +103,8 @@
     "dotenv": "^6.2.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.13.1",
-    "mkdirp": "^1.0.3",
+    "mkdirp": "^0.5.1",
     "reflect-metadata": "^0.1.13",
-    "sha.js": "^2.4.11",
     "tslib": "^1.9.0",
     "xml2js": "^0.4.17",
     "yargonaut": "^1.1.2",
@@ -116,7 +112,7 @@
   },
   "lint-staged": {
     "*.ts": [
-      "eslint --fix",
+      "tslint --fix",
       "git add"
     ]
   },
@@ -125,9 +121,8 @@
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
-    "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
-    "lint": "eslint -c ./.eslintrc.js src/**/*.ts test/**/*.ts sample/**/*.ts",
+    "lint": "tslint -p .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
   "bin": {
