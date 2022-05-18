@@ -23,7 +23,7 @@ TypeORM+ is a fork of [TypeORM](https://github.com/typeorm/typeorm). TypeORM+ ad
 
 TypeORM+ is intended to replace TypeORM, so any changes in its interface are documented below.
 
-The soft-delete feature have been merged to the TypeORM. It is recommended to use the TypeORM directly if you don't the other features.
+The soft-delete feature has been merged to the TypeORM. It's recommended to use the TypeORM directly if you don't need the other features.
 
 ## Differences from TypeORM
 
