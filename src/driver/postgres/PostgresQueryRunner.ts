@@ -2019,9 +2019,26 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
         const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
             `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
+
+        let udtName = result[0]["udt_name"];
+
+        // You can not modify the array type. You need to edit the enum itself.
+        if (column.isArray) {
+            // Find the information about the array type
+            const typeResult = await this.query(`select "typelem" from pg_type where "typname" = '${udtName}';`);
+
+            const typelem = typeResult[0]["typelem"];
+            // Get with the oid of the enum array type the enum type
+            const baseTypeNameResult = await this.query(`select "typname" from pg_type where oid = ${typelem}`);
+
+            const baseTypeName = baseTypeNameResult[0]["typname"];
+
+            // Replace the udtName with the enum type
+            udtName = baseTypeName;
+        }
         return {
             enumTypeSchema: result[0]["udt_schema"],
-            enumTypeName: result[0]["udt_name"]
+            enumTypeName: udtName
         };
     }
 
